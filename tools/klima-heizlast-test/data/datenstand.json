@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-27T08:53:32.907900+00:00",
+  "bev": {
+    "source": "Österreichisches Adressregister",
+    "record_date": "2026-04-01",
+    "license": "CC BY 4.0"
+  },
+  "inca": {
+    "source": "GeoSphere Austria INCA-v1-1h-1km",
+    "parameter": "T2M",
+    "start_year": 2012,
+    "end_year": 2025,
+    "license": "CC BY 4.0",
+    "precomputed_status": "demo_profiles_only"
+  },
+  "oib_nat": {
+    "source": "OIB Normaußentemperaturen",
+    "document_date": "2015-06-16"
+  },
+  "oib_tnat13": {
+    "source": "OIB-330.6-055/26",
+    "document_date": "2026-04"
+  },
+  "tiris": {
+    "source": "Land Tirol / TIRIS Gelände Tirol",
+    "dataset": "DGM 5 m",
+    "mode": "live_point_query"
+  }
+}
