@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Energiefluss im Gebäude | Tools für Energieberatung</title>
+  <meta
+    name="description"
+    content="Heizenergiebedarf und Energieflüsse eines Gebäudes überschlägig berechnen und anschaulich darstellen."
+  >
+
+  <!-- Hauptdesign der Website -->
+  <link rel="stylesheet" href="../../styles.css">
+
+  <!-- Eigenes Design nur für dieses Tool -->
+  <link rel="stylesheet" href="energiefluss.css">
+</head>
+
+<body>
+
+  <!-- =====================================================
+       KOPFZEILE DER WEBSITE
+       Beim Drucken wird dieser Bereich ausgeblendet.
+  ====================================================== -->
+  <header class="site-header">
+    <div class="container header-inner">
+
+      <a href="../../index.html" class="circle-btn logo-circle" aria-label="Zur Startseite">
+        <img
+          src="../../assets/svg/logo/logo_48.svg"
+          alt="Tools für Energieberatung"
+          width="74"
+          height="74"
+        >
+      </a>
+
+      <nav aria-label="Hauptnavigation">
+        <ul class="nav-list">
+
+          <li>
+            <a
+              class="circle-btn nav-circle"
+              href="../../index.html"
+              aria-label="Startseite"
+            >
+              <img
+                src="../../assets/svg/icons/icon-home-48.svg"
+                class="nav-icon"
+                alt=""
+              >
+            </a>
+          </li>
+
+          <li>
+            <a
+              class="circle-btn nav-circle active"
+              href="../../pages/tools.html"
+              aria-label="Tools"
+              aria-current="page"
+            >
+              <img
+                src="../../assets/svg/icons/icon-tools-48.svg"
+                class="nav-icon"
+                alt=""
+              >
+            </a>
+          </li>
+
+          <li>
+            <a
+              class="circle-btn nav-circle"
+              href="../../pages/about.html"
+              aria-label="Über mich"
+            >
+              <img
+                src="../../assets/svg/icons/icon-about-48.svg"
+                class="nav-icon"
+                alt=""
+              >
+            </a>
+          </li>
+
+          <li>
+            <a
+              class="circle-btn nav-circle"
+              href="../../pages/kontakt.html"
+              aria-label="Kontakt"
+            >
+              <img
+                src="../../assets/svg/icons/icon-mail-48.svg"
+                class="nav-icon"
+                alt=""
+              >
+            </a>
+          </li>
+
+        </ul>
+      </nav>
+
+    </div>
+  </header>
+
+
+  <main class="energy-tool-page">
+
+    <!-- Diese kurze Einleitung ist nur am Bildschirm sichtbar. -->
+    <section class="tool-page-intro">
+      <div class="container">
+        <p class="eyebrow">Tool</p>
+        <h1>Energiefluss im Gebäude</h1>
+        <p>
+          Eine überschlägige Darstellung des Heizenergiebedarfs sowie der
+          wichtigsten Energiegewinne und Wärmeverluste.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         DRUCKBARES TOOL
+    ====================================================== -->
+    <section class="energy-tool-sheet" id="energiefluss-tool">
+
+      <div class="tool-sheet-heading">
+        <div>
+          <p class="tool-kicker">Energieberatung · überschlägige Berechnung</p>
+          <h2>Heizenergiebedarf und Energieflüsse des Gebäudes</h2>
+        </div>
+
+        <p class="tool-disclaimer">
+          Vereinfachte Abschätzung – kein Ersatz für einen Energieausweis.
+        </p>
+      </div>
+
+
+      <!-- Projektdaten -->
+      <div class="project-layout">
+
+        <div class="project-row project-row--split">
+          <div class="field">
+            <label for="proj">Projekttitel</label>
+            <input id="proj" type="text" placeholder="Titel">
+          </div>
+
+          <div class="field">
+            <label for="date">Datum</label>
+            <input id="date" type="date">
+          </div>
+        </div>
+
+        <div class="project-row project-row--split">
+          <div class="field">
+            <label for="str">Straße / HNr.</label>
+            <input id="str" type="text">
+          </div>
+
+          <div class="field">
+            <label for="beratungId">Beratungs-ID</label>
+            <input id="beratungId" type="text">
+          </div>
+        </div>
+
+        <div class="project-row project-row--location">
+          <div class="field">
+            <label for="plz">PLZ</label>
+            <input id="plz" type="text" inputmode="numeric">
+          </div>
+
+          <div class="field">
+            <label for="ort">Ort</label>
+            <input id="ort" type="text">
+          </div>
+        </div>
+
+        <div class="project-row">
+          <div class="field">
+            <label for="anm">Anmerkungen</label>
+            <input id="anm" type="text">
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- Grunddaten -->
+      <section class="tool-section">
+        <h3>Grunddaten</h3>
+
+        <p class="data-group-label">Eingaben</p>
+
+        <div class="data-grid data-grid--four">
+
+          <div class="field">
+            <label for="nf">Nutzfläche NF (m²)</label>
+            <input id="nf" type="number" value="120" min="1" step="1">
+          </div>
+
+          <div class="field">
+            <label for="beh">Beheizt (%)</label>
+            <input id="beh" type="range" min="0" max="100" value="90" step="1">
+            <output id="behLabel" class="range-value" for="beh">90 %</output>
+          </div>
+
+          <div class="field">
+            <label for="windowShare">Fensterflächenanteil</label>
+            <select id="windowShare">
+              <option value="0.15">Niedrig – 15 %</option>
+              <option value="0.25" selected>Mittel – 25 %</option>
+              <option value="0.40">Hoch – 40 %</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="pers">Personen</label>
+            <input id="pers" type="number" value="4" min="0" step="1">
+          </div>
+
+          <div class="field">
+            <label for="hz">Heizenergieverbrauch (kWh/a)</label>
+            <input id="hz" type="number" value="25000" min="0" step="100">
+          </div>
+
+          <div class="field">
+            <label for="ww">Warmwasser</label>
+            <select id="ww">
+              <option value="inkl" selected>inkludiert</option>
+              <option value="exkl">nicht inkludiert</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="jng">Jahresnutzungsgrad JNG</label>
+            <input id="jng" type="number" value="0.85" min="0.01" max="1" step="0.01">
+          </div>
+
+          <div class="field">
+            <label for="rt">Raumtemperatur (°C)</label>
+            <input id="rt" type="number" value="22" min="10" max="30" step="0.5">
+          </div>
+
+        </div>
+
+        <p class="data-group-label data-group-label--calculated">Berechnete Werte</p>
+
+        <div class="data-grid data-grid--four">
+
+          <div class="calculated-field">
+            <span class="calculated-label">BGF (m²)</span>
+            <output id="bgf" class="calculated-value">144</output>
+            <small>NF × 1,20</small>
+          </div>
+
+          <div class="calculated-field">
+            <span class="calculated-label">Gebäudevolumen (m³)</span>
+            <output id="volumen" class="calculated-value">432</output>
+            <small>BGF × 3,0 m</small>
+          </div>
+
+          <div class="calculated-field">
+            <span class="calculated-label">Fensterfläche (m²)</span>
+            <output id="windowArea" class="calculated-value">36,0</output>
+            <small>BGF × Fensterflächenanteil</small>
+          </div>
+
+          <div class="calculated-field">
+            <span class="calculated-label">Glasfläche A<sub>Glas</sub> (m²)</span>
+            <output id="glassArea" class="calculated-value">25,2</output>
+            <small>Fensterfläche × 0,70</small>
+          </div>
+
+          <div class="calculated-field">
+            <span class="calculated-label">Korrektur beheizte Fläche</span>
+            <output id="kbf" class="calculated-value">0,950</output>
+            <small>1 + (beheizt − 100) × 0,005</small>
+          </div>
+
+          <div class="calculated-field">
+            <span class="calculated-label">Korrektur Raumwärme</span>
+            <output id="krw" class="calculated-value">1,120</output>
+            <small>1 + (Raumtemperatur − 20) × 0,06</small>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- Energiefluss -->
+      <section class="tool-section tool-section--flow">
+        <h3>Energiefluss im Gebäude</h3>
+
+        <div class="flow-grid">
+
+          <!-- Einträge -->
+          <div class="flow-column">
+            <h4>Einträge</h4>
+
+            <div class="flow-item">
+              <div class="flow-label">
+                <span>Interne Gewinne (kWh)</span>
+                <strong id="ig">0</strong>
+              </div>
+              <small>2,7 × NF × 8,76</small>
+              <div class="bar-bg">
+                <div id="igb" class="bar-fill"></div>
+              </div>
+            </div>
+
+            <div class="flow-item">
+              <div class="flow-label">
+                <span>Solare Gewinne (kWh)</span>
+                <strong id="sg">0</strong>
+              </div>
+              <small>175 × A<sub>Fenster</sub> × 0,70</small>
+              <div class="bar-bg">
+                <div id="sgb" class="bar-fill"></div>
+              </div>
+            </div>
+
+            <div class="flow-item">
+              <div class="flow-label">
+                <span>Heizenergie (kWh)</span>
+                <strong id="he">0</strong>
+              </div>
+              <small>Eingabe Heizenergieverbrauch</small>
+              <div class="bar-bg">
+                <div id="heb" class="bar-fill"></div>
+              </div>
+            </div>
+
+            <div class="flow-total">
+              <div>
+                <span>Summe</span>
+                <strong><span id="sumEin">0</span> kWh</strong>
+              </div>
+              <div class="bar-bg">
+                <div id="sumEinB" class="bar-fill"></div>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- Hausgrafik -->
+          <div class="house-graphic">
+
+
+            <img
+              id="houseGraphic"
+              src="Grafik-Stilisiert.svg"
+              alt="Stilisierte Darstellung eines Gebäudes"
+            >
+          </div>
+
+
+          <!-- Verluste -->
+          <div class="flow-column">
+            <h4>Verluste</h4>
+
+            <div class="flow-item">
+              <div class="flow-label">
+                <span>Wärmebrücken (kWh)</span>
+                <strong id="wb">0</strong>
+              </div>
+              <small>7,5 % der Bauteilverluste</small>
+              <div class="bar-bg">
+                <div id="wbb" class="bar-fill bar-fill--loss"></div>
+              </div>
+            </div>
+
+            <div class="flow-item">
+              <div class="flow-label">
+                <span>Lüftung (kWh)</span>
+                <strong id="lf">0</strong>
+              </div>
+              <small>10 kWh/m³ × Gebäudevolumen</small>
+              <div class="bar-bg">
+                <div id="lfb" class="bar-fill bar-fill--loss"></div>
+              </div>
+            </div>
+
+            <div class="flow-item">
+              <div class="flow-label">
+                <span>Anlage (kWh)</span>
+                <strong id="anl">0</strong>
+              </div>
+              <small>HEB − (HEB × JNG)</small>
+              <div class="bar-bg">
+                <div id="anlb" class="bar-fill bar-fill--loss"></div>
+              </div>
+            </div>
+
+            <div class="flow-item" id="wwlossblock">
+              <div class="flow-label">
+                <span>Warmwasser (kWh)</span>
+                <strong id="wwl">0</strong>
+              </div>
+              <small>1.000 kWh/Person</small>
+              <div class="bar-bg">
+                <div id="wwlb" class="bar-fill bar-fill--loss"></div>
+              </div>
+            </div>
+
+            <div class="flow-item">
+              <div class="flow-label">
+                <span>Bauteile (kWh)</span>
+                <strong id="bt">0</strong>
+              </div>
+              <small>(Summe − Lüftung − Anlage − WW) ÷ 1,075</small>
+              <div class="bar-bg">
+                <div id="btb" class="bar-fill bar-fill--loss"></div>
+              </div>
+            </div>
+
+            <div class="flow-total flow-total--loss">
+              <div>
+                <span>Summe</span>
+                <strong><span id="sumVer">0</span> kWh</strong>
+              </div>
+              <div class="bar-bg">
+                <div id="sumVerB" class="bar-fill bar-fill--loss"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <p class="plausibility-warning" id="plausibilityWarning" hidden>
+          Die gewählten Eingaben ergeben negative Bauteilverluste.
+          Bitte Heizenergie, Nutzungsgrad, Fensterflächenanteil oder Grunddaten prüfen.
+        </p>
+      </section>
+
+
+      <!-- HWB -->
+      <section class="tool-section tool-section--hwb">
+        <h3>Abschätzung Heizwärmebedarf (HWB)</h3>
+
+        <div class="hwb-box">
+          <div>
+            <span>HWB <small>Verbrauch</small></span>
+            <strong id="hwbv">0 kWh/m²a</strong>
+            <small>(HEB × JNG − WW) ÷ BGF</small>
+          </div>
+
+          <div>
+            <span>Energiebedarf</span>
+            <strong id="enb">0 kWh</strong>
+            <small>Summe der Energieeinträge</small>
+          </div>
+
+          <div>
+            <span>BGF</span>
+            <strong id="bgf2">0 m²</strong>
+            <small>NF × 1,20</small>
+          </div>
+        </div>
+
+        <div class="hwb-details">
+          <div>
+            HWB<sub>korrigiert</sub>:
+            <strong id="hwbk">0 kWh/m²a</strong>
+            <small>HWB<sub>Verbrauch</sub> ÷ KRW ÷ KBF</small>
+          </div>
+
+          <div>
+            Ziel Raumwärme:
+            <strong>20 °C</strong>
+          </div>
+
+          <div>
+            Ziel Warmwasser:
+            <strong>55 °C</strong>
+          </div>
+        </div>
+      </section>
+
+
+      <div class="tool-actions">
+        <button class="print-btn" id="printButton" type="button">
+          Drucken
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+
+  <!-- =====================================================
+       FUSSZEILE DER WEBSITE
+       Beim Drucken wird dieser Bereich ausgeblendet.
+  ====================================================== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+
+      <div>
+        <p class="footer-name">Tools</p>
+        <p class="footer-note">
+          Ein privates und unabhängiges Projekt von Michael Plattner.
+        </p>
+      </div>
+
+      <nav class="footer-links" aria-label="Rechtliche Informationen">
+        <a href="../../pages/kontakt.html#impressum">Impressum</a>
+        <a href="../../pages/kontakt.html#datenschutz">Datenschutz</a>
+      </nav>
+
+      <p class="copyright">
+        © <span id="year">2026</span>
+      </p>
+
+    </div>
+  </footer>
+
+
+  <script src="../../script.js"></script>
+  <script src="energiefluss.js"></script>
+
+</body>
+</html>

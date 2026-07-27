@@ -1,0 +1,714 @@
+/* =========================================================
+   ENERGIEFLUSS-TOOL
+   Diese Datei gestaltet nur die Tool-Unterseite.
+========================================================= */
+
+.energy-tool-page {
+  padding-bottom: var(--space-6);
+  background:
+    linear-gradient(
+      180deg,
+      var(--turquoise-soft) 0%,
+      var(--page-background) 36rem
+    );
+}
+
+.tool-page-intro {
+  padding: var(--space-5) 0 var(--space-4);
+}
+
+.tool-page-intro h1 {
+  margin-bottom: var(--space-2);
+}
+
+.tool-page-intro p:last-child {
+  max-width: 700px;
+  margin-bottom: 0;
+  color: var(--text-muted);
+}
+
+
+/* Druckbare A4-Fläche am Bildschirm */
+.energy-tool-sheet {
+  width: min(100% - 2rem, 820px);
+  margin-inline: auto;
+  padding: 24px;
+
+  border: 1px solid var(--line);
+  border-radius: var(--radius-large);
+
+  font-size: 12px;
+  line-height: 1.35;
+
+  background: var(--white);
+  box-shadow: var(--shadow-soft);
+}
+
+.energy-tool-sheet *,
+.energy-tool-sheet *::before,
+.energy-tool-sheet *::after {
+  box-sizing: border-box;
+}
+
+.energy-tool-sheet h2,
+.energy-tool-sheet h3,
+.energy-tool-sheet h4,
+.energy-tool-sheet p {
+  margin-top: 0;
+}
+
+.energy-tool-sheet h2 {
+  margin-bottom: 3px;
+  font-size: 18px;
+  letter-spacing: -0.015em;
+}
+
+.energy-tool-sheet h3 {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.energy-tool-sheet h4 {
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: var(--text-dark);
+}
+
+.tool-sheet-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tool-kicker {
+  margin-bottom: 2px;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--turquoise-dark);
+}
+
+.tool-disclaimer {
+  max-width: 230px;
+  margin-bottom: 0;
+  font-size: 8px;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+
+/* Projektdaten */
+.project-layout {
+  display: grid;
+  gap: 8px;
+}
+
+.project-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.project-row--split {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+}
+
+.project-row--location {
+  grid-template-columns: minmax(90px, 0.75fr) minmax(0, 3.25fr);
+}
+
+
+/* Grunddaten */
+.data-grid,
+.calculation-row {
+  display: grid;
+  gap: 8px;
+}
+
+.data-grid--four,
+.calculation-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.calculation-row {
+  margin-top: 10px;
+}
+
+.data-group-label {
+  margin: 0 0 6px;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--turquoise-dark);
+}
+
+.data-group-label--calculated {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  color: var(--berry-dark);
+}
+
+.field,
+.calculated-field {
+  min-width: 0;
+}
+
+.field label,
+.calculated-label {
+  display: block;
+  margin-bottom: 3px;
+
+  font-size: 8px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  min-height: 29px;
+  padding: 5px 7px;
+
+  border: 1px solid rgba(12, 39, 36, 0.2);
+  border-radius: 6px;
+
+  font: inherit;
+  font-size: 11px;
+  color: var(--text-dark);
+  background: var(--white);
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--turquoise);
+  outline: 2px solid var(--turquoise-light);
+  outline-offset: 1px;
+}
+
+.field input[type="range"] {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  accent-color: var(--turquoise);
+}
+
+.range-value {
+  display: block;
+  margin-top: 2px;
+  font-size: 8px;
+  color: var(--text-muted);
+}
+
+
+/*
+  Berechnete Werte haben bewusst keinen Rahmen.
+  Dadurch sehen sie nicht wie Eingabefelder aus.
+*/
+.calculated-field {
+  padding: 2px 0;
+}
+
+.calculated-value {
+  display: block;
+  min-height: 22px;
+
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--turquoise-dark);
+}
+
+.calculated-field small,
+.flow-item small,
+.hwb-box small,
+.hwb-details small {
+  display: block;
+  margin-top: 1px;
+
+  font-size: 8px;
+  line-height: 1.25;
+  color: var(--text-muted);
+}
+
+
+/* Abschnitte */
+.tool-section {
+  margin-top: 13px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+
+/* Energiefluss */
+.flow-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.flow-item {
+  margin-bottom: 8px;
+}
+
+.flow-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+
+  font-size: 9px;
+}
+
+.flow-label strong {
+  flex: 0 0 auto;
+  font-weight: 500;
+}
+
+.bar-bg {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+
+  margin-top: 3px;
+  border-radius: 999px;
+
+  background: rgba(12, 39, 36, 0.1);
+}
+
+.bar-fill {
+  width: 0;
+  height: 100%;
+
+  border-radius: inherit;
+  background: var(--turquoise);
+
+  transition: width 220ms ease;
+}
+
+.bar-fill--loss {
+  background: var(--berry);
+}
+
+.flow-total {
+  margin-top: 10px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+
+.flow-total > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+
+  font-size: 10px;
+}
+
+.house-graphic {
+  position: relative;
+
+  display: grid;
+  place-items: center;
+
+  min-height: 190px;
+}
+
+.house-graphic img {
+  position: relative;
+  z-index: 2;
+
+  display: block;
+  width: 100%;
+  max-width: 180px;
+  max-height: 210px;
+  object-fit: contain;
+}
+
+.house-graphic-placeholder {
+  position: absolute;
+  inset: 18px;
+  z-index: 1;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px dashed rgba(52, 171, 159, 0.45);
+  border-radius: 50%;
+
+  font-size: 9px;
+  color: var(--turquoise-dark);
+  background: var(--turquoise-soft);
+}
+
+.plausibility-warning {
+  margin: 8px 0 0;
+  padding: 6px 8px;
+
+  border-left: 3px solid var(--berry);
+
+  font-size: 8px;
+  color: var(--berry-dark);
+  background: var(--berry-soft);
+}
+
+
+/* HWB-Zusammenfassung */
+.hwb-box {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+
+  padding: 9px;
+  border-radius: 8px;
+
+  text-align: center;
+  color: var(--text-light);
+  background: var(--turquoise);
+}
+
+.hwb-box > div {
+  min-width: 0;
+}
+
+.hwb-box span {
+  display: block;
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.hwb-box strong {
+  display: block;
+  margin: 2px 0;
+
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.hwb-box small {
+  color: rgba(235, 249, 248, 0.78);
+}
+
+.hwb-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+
+  margin-top: 7px;
+  text-align: center;
+  font-size: 9px;
+}
+
+.hwb-details strong {
+  font-weight: 500;
+}
+
+.tool-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.print-btn {
+  padding: 8px 15px;
+
+  border: 2px solid var(--berry);
+  border-radius: 999px;
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+
+  color: var(--berry-dark);
+  background: var(--berry-light);
+  cursor: pointer;
+}
+
+.print-btn:hover,
+.print-btn:focus-visible {
+  background: var(--berry-soft);
+}
+
+.print-btn:focus-visible {
+  outline: 3px solid var(--turquoise-light);
+  outline-offset: 2px;
+}
+
+
+/* Tablet und Handy */
+@media (max-width: 760px) {
+  .energy-tool-sheet {
+    padding: 18px;
+  }
+
+  .project-row--split,
+  .project-row--location {
+    grid-template-columns: 1fr;
+  }
+
+  .data-grid--four,
+  .calculation-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .flow-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .house-graphic {
+    min-height: 150px;
+  }
+
+  .house-graphic img {
+    max-width: 170px;
+  }
+}
+
+@media (max-width: 480px) {
+  .energy-tool-sheet {
+    width: min(100% - 1rem, 820px);
+    padding: 14px;
+    border-radius: var(--radius-medium);
+  }
+
+  .tool-sheet-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .tool-disclaimer {
+    max-width: none;
+    text-align: left;
+  }
+
+  .data-grid--four,
+  .calculation-row,
+  .hwb-box,
+  .hwb-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   DRUCKANSICHT – EINE A4-SEITE
+========================================================= */
+
+@page {
+  size: A4 portrait;
+  margin: 7mm;
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  /* Nur das Tool wird gedruckt. */
+  .site-header,
+  .site-footer,
+  .tool-page-intro,
+  .tool-actions {
+    display: none !important;
+  }
+
+  .energy-tool-page {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .energy-tool-sheet {
+    width: 196mm;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+    border-radius: 0;
+
+    font-size: 9px;
+    line-height: 1.26;
+
+    box-shadow: none;
+  }
+
+  .energy-tool-sheet h2 {
+    font-size: 13px;
+  }
+
+  .energy-tool-sheet h3 {
+    margin-bottom: 2.4mm;
+    font-size: 11px;
+  }
+
+  .energy-tool-sheet h4 {
+    margin-bottom: 1.7mm;
+    font-size: 9.8px;
+  }
+
+  .tool-sheet-heading {
+    margin-bottom: 3mm;
+    padding-bottom: 2.3mm;
+  }
+
+  .tool-kicker,
+  .tool-disclaimer,
+  .field label,
+  .calculated-label,
+  .range-value {
+    font-size: 6.7px;
+  }
+
+  .data-group-label {
+    margin-bottom: 1.4mm;
+    font-size: 7px;
+  }
+
+  .data-group-label--calculated {
+    margin-top: 2.5mm;
+    padding-top: 1.8mm;
+  }
+
+  /* Mobile Regeln für den Ausdruck ausdrücklich überschreiben. */
+  .project-row--split {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) !important;
+  }
+
+  .project-row--location {
+    grid-template-columns: minmax(22mm, 0.75fr) minmax(0, 3.25fr) !important;
+  }
+
+  .data-grid--four,
+  .calculation-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .project-layout,
+  .project-row,
+  .data-grid,
+  .calculation-row {
+    gap: 2mm;
+  }
+
+  .calculation-row {
+    margin-top: 2.2mm;
+  }
+
+  .field input,
+  .field select {
+    min-height: 6.4mm;
+    padding: 1.1mm 1.5mm;
+    border-radius: 1.2mm;
+    font-size: 8.2px;
+  }
+
+  .calculated-value {
+    min-height: 4.5mm;
+    font-size: 10px;
+  }
+
+  .calculated-field small,
+  .flow-item small,
+  .hwb-box small,
+  .hwb-details small {
+    font-size: 6px;
+  }
+
+  .tool-section {
+    margin-top: 2.1mm;
+    padding-top: 1.5mm;
+  }
+
+  .flow-grid {
+    grid-template-columns: minmax(0, 1fr) 49mm minmax(0, 1fr) !important;
+    gap: 4.5mm;
+  }
+
+  .flow-item {
+    margin-bottom: 1.8mm;
+  }
+
+  .flow-label {
+    font-size: 7.7px;
+  }
+
+  .bar-bg {
+    height: 2.2mm;
+    margin-top: 0.6mm;
+  }
+
+  .flow-total {
+    margin-top: 1.5mm;
+    padding-top: 1.1mm;
+  }
+
+  .flow-total > div:first-child {
+    font-size: 7px;
+  }
+
+  .house-graphic {
+    min-height: 50mm;
+  }
+
+  .house-graphic img {
+    max-width: 48mm;
+    max-height: 53mm;
+  }
+
+  .house-graphic-placeholder {
+    inset: 3mm;
+    font-size: 6.3px;
+  }
+
+  .plausibility-warning {
+    margin-top: 1mm;
+    padding: 0.8mm 1.2mm;
+    font-size: 5.5px;
+  }
+
+  .hwb-box {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 2mm;
+    padding: 2.3mm;
+    border-radius: 1.2mm;
+  }
+
+  .hwb-box span {
+    font-size: 7.2px;
+  }
+
+  .hwb-box strong {
+    margin: 0.5mm 0;
+    font-size: 10.5px;
+  }
+
+  .hwb-details {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 2mm;
+    margin-top: 1.6mm;
+    font-size: 7.4px;
+  }
+
+  .tool-section,
+  .flow-column,
+  .hwb-box,
+  .hwb-details {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
