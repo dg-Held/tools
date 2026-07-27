@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "scope": "Technische Teststandorte; noch keine flächendeckende Tirol-Datei",
+  "source": {
+    "publisher": "Österreichisches Institut für Bautechnik (OIB)",
+    "document": "Normaussentemperaturen – OIB-Richtlinie 6",
+    "document_date": "2015-06-16",
+    "url": "https://www.oib.or.at/sites/default/files/normaussentemperaturen_-_oib-richtlinie_6.pdf",
+    "note": "Die Temperatur gilt am ELEVMIN der Katastralgemeinde. Eine standortbezogene Höhenbehandlung ist noch nicht umgesetzt."
+  },
+  "tnat13": {
+    "status": "offen",
+    "note": "Die aktuelle OIB-Seite stellt eine TNAT13-Datei bereit. Die vollständige maschinenlesbare Zuordnung wird in einer folgenden Stufe ergänzt."
+  },
+  "locations": [
+    {
+      "id": "terfens",
+      "kg_number": "87010",
+      "kg_name": "Terfens",
+      "federal_state": "Tirol",
+      "elevation_min_m": 541,
+      "elevation_max_m": 1494,
+      "nat_at_elevation_min_c": -12.6,
+      "climate_region": "NF"
+    },
+    {
+      "id": "innsbruck",
+      "kg_number": "81113",
+      "kg_name": "Innsbruck",
+      "federal_state": "Tirol",
+      "elevation_min_m": 572,
+      "elevation_max_m": 580,
+      "nat_at_elevation_min_c": -10.8,
+      "climate_region": "NF"
+    },
+    {
+      "id": "seefeld",
+      "kg_number": "81131",
+      "kg_name": "Seefeld",
+      "federal_state": "Tirol",
+      "elevation_min_m": 1039,
+      "elevation_max_m": 2017,
+      "nat_at_elevation_min_c": -14.5,
+      "climate_region": "NF"
+    }
+  ]
+}

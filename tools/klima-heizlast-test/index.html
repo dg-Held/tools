@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klimadaten-Prüflauf | Tools für Energieberatung</title>
+  <meta name="robots" content="noindex">
+
+  <link rel="stylesheet" href="../../styles.css">
+  <link rel="stylesheet" href="klima-test.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../../index.html" class="circle-btn logo-circle" aria-label="Zur Startseite">
+        <img src="../../assets/svg/logo/logo_48.svg" alt="Tools für Energieberatung" width="74" height="74">
+      </a>
+
+      <nav aria-label="Hauptnavigation">
+        <ul class="nav-list">
+          <li><a class="circle-btn nav-circle" href="../../index.html" aria-label="Startseite"><img src="../../assets/svg/icons/icon-home-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle active" href="../../pages/tools.html" aria-label="Tools"><img src="../../assets/svg/icons/icon-tools-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle" href="../../pages/about.html" aria-label="Über mich"><img src="../../assets/svg/icons/icon-about-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle" href="../../pages/kontakt.html" aria-label="Kontakt"><img src="../../assets/svg/icons/icon-mail-48.svg" class="nav-icon" alt=""></a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="climate-test-page">
+    <section class="container test-intro">
+      <p class="eyebrow">Entwicklungsstand · Datenprüfung</p>
+      <h1>Klimadaten-Prüflauf</h1>
+      <p>
+        Diese technische Testseite lädt echte stündliche INCA-Temperaturen
+        der Jahre 2012–2025 und prüft Stundenhäufigkeit, Extremwerte,
+        Hitzeindikatoren und standortbezogene Vollbenutzungsstunden.
+      </p>
+    </section>
+
+    <section class="container test-panel" aria-labelledby="test-settings-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Teststandorte</p>
+          <h2 id="test-settings-title">Reale Klimadaten laden</h2>
+        </div>
+        <span class="status-chip" id="connectionStatus">Noch nicht gestartet</span>
+      </div>
+
+
+      <section class="address-search-panel" aria-labelledby="address-search-title">
+        <div class="address-search-heading">
+          <div>
+            <p class="eyebrow">Gebäudestandort</p>
+            <h3 id="address-search-title">Adresse suchen</h3>
+            <p>
+              Über einen lokalen Index des Österreichischen Adressregisters.
+              Die nachfolgenden Klima-, TIRIS- und Heizlastmodule bleiben vom
+              Adressanbieter unabhängig.
+            </p>
+          </div>
+
+          <span class="address-provider-label" id="addressProviderLabel">
+            Adressmodul wird geladen …
+          </span>
+        </div>
+
+        <div class="address-search-control">
+          <label class="address-search-field">
+            <span>PLZ, Gemeinde, Straße und Hausnummer</span>
+            <input
+              id="addressSearchInput"
+              type="search"
+              autocomplete="off"
+              placeholder="z. B. 6123 Terfens …"
+              aria-autocomplete="list"
+              aria-controls="addressSuggestions"
+              aria-expanded="false"
+            >
+          </label>
+
+          <div
+            class="address-suggestions"
+            id="addressSuggestions"
+            role="listbox"
+            hidden
+          ></div>
+        </div>
+
+        <p class="address-search-status" id="addressSearchStatus">
+          Offizieller Tiroler Adressbestand wird geladen …
+        </p>
+
+        <article class="selected-address-card" id="selectedAddressCard" hidden>
+          <div>
+            <span>Ausgewählter Standort</span>
+            <strong id="selectedAddressLabel">–</strong>
+            <small id="selectedAddressMeta">–</small>
+          </div>
+
+          <button class="quiet-button" id="clearAddressButton" type="button">
+            Auswahl löschen
+          </button>
+        </article>
+      </section>
+
+      <div class="settings-grid">
+        <label class="setting-field">
+          <span>Teststandort</span>
+          <select id="locationSelect">
+            <option value="terfens">Terfens</option>
+            <option value="innsbruck">Innsbruck</option>
+            <option value="seefeld">Seefeld in Tirol</option>
+          </select>
+        </label>
+
+        <div class="setting-info">
+          <span>Zeitraum</span>
+          <strong>2012–2025</strong>
+        </div>
+
+        <div class="setting-info">
+          <span>Datenquelle</span>
+          <strong>INCA · T2M · 1 km</strong>
+        </div>
+      </div>
+
+      <details class="coordinate-test-panel">
+        <summary>Technische Standortdaten prüfen oder anpassen</summary>
+
+        <p>
+          Diese Eingaben sind eine vorläufige Rückfallebene. In der fertigen
+          Version werden Koordinaten und Geländehöhe über die Adresse ermittelt.
+        </p>
+
+        <div class="coordinate-input-grid">
+          <label class="setting-field setting-field--wide">
+            <span>Adresse / Standortbezeichnung</span>
+            <input id="siteLabelInput" type="text" value="Terfens">
+          </label>
+
+          <label class="setting-field">
+            <span>Breitengrad</span>
+            <input id="latitudeInput" type="number" step="0.000001" value="47.323">
+          </label>
+
+          <label class="setting-field">
+            <span>Längengrad</span>
+            <input id="longitudeInput" type="number" step="0.000001" value="11.646">
+          </label>
+
+          <label class="setting-field">
+            <span>NAT-Referenz (°C, automatisch über KG)</span>
+            <input id="natInput" type="number" step="0.1" value="-12.6">
+          </label>
+
+          <label class="setting-field">
+            <span>OIB-ELEVMIN (m, automatisch)</span>
+            <input id="natReferenceHeightInput" type="number" step="1" value="541">
+          </label>
+        </div>
+      </details>
+
+      <div class="button-row">
+        <button class="primary-button" id="loadSelectedButton" type="button">Adresse / Standort prüfen</button>
+        <button class="secondary-button" id="loadAllButton" type="button">Alle drei Standorte prüfen</button>
+        <button class="quiet-button" id="clearCacheButton" type="button">Zwischenspeicher löschen</button>
+      </div>
+
+      <div class="progress-area" aria-live="polite">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <p id="progressText">Bereit.</p>
+      </div>
+    </section>
+
+    <section class="container results-section" id="resultsSection" hidden>
+
+      <header class="print-report-header print-only">
+        <div>
+          <p class="print-kicker">Klima &amp; Heizlast · Beratungsübersicht</p>
+          <h1>Klimadaten am Standort</h1>
+        </div>
+
+        <dl class="print-meta-grid">
+          <div><dt>Standort</dt><dd id="printClimateLocation">–</dd></div>
+          <div><dt>Gebäudekoordinaten</dt><dd id="printClimateCoordinates">–</dd></div>
+          <div><dt>Gebäudehöhe</dt><dd id="printBuildingElevation">–</dd></div>
+          <div><dt>INCA-Rasterhöhe</dt><dd id="printGridElevation">–</dd></div>
+          <div><dt>Zeitraum</dt><dd>2012–2025</dd></div>
+          <div><dt>NAT-Referenz</dt><dd id="printClimateNat">–</dd></div>
+          <div><dt>Datenqualität</dt><dd id="printClimateQuality">–</dd></div>
+          <div><dt>Ausdruck</dt><dd id="printReportDate">–</dd></div>
+        </dl>
+      </header>
+
+      <div class="result-heading">
+        <div>
+          <p class="eyebrow">Auswertung</p>
+          <h2 id="resultTitle">Ergebnis</h2>
+          <p id="resultSubtitle"></p>
+          <p class="data-quality-summary" id="dataQualitySummary"></p>
+        </div>
+        <div class="result-actions">
+          <button class="primary-button" id="printButton" type="button">Drucken / PDF</button>
+          <button class="secondary-button" id="downloadButton" type="button">Ergebnis als JSON</button>
+        </div>
+      </div>
+
+
+      <section class="location-check-card" id="locationCheckCard">
+        <div class="location-check-heading">
+          <div>
+            <p class="eyebrow">Standortprüfung</p>
+            <h3>Standort, Klimaraster und Höhenbezug</h3>
+          </div>
+
+          <button
+            class="quiet-button location-retry-button"
+            id="retryHeightButton"
+            type="button"
+          >
+            Höhen erneut prüfen
+          </button>
+        </div>
+
+        <div class="location-facts" id="locationFacts"></div>
+
+        <p class="height-assessment" id="heightAssessment"></p>
+        <p class="height-service-note" id="heightServiceNote"></p>
+      </section>
+
+      <div class="metric-grid" id="metricGrid"></div>
+
+      <div class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <h3>Stundenhäufigkeit der Außentemperatur</h3>
+            <p>Helle Linien zeigen die Einzeljahre, die kräftige Linie den Median 2012–2025.</p>
+          </div>
+          <div class="chart-legend" aria-label="Legende">
+            <span><i class="legend-years"></i>Einzeljahre</span>
+            <span><i class="legend-median"></i>Median</span>
+            <span><i class="legend-nat"></i>NAT</span>
+            <span><i class="legend-heating"></i>Heizgrenze</span>
+          </div>
+        </div>
+        <div class="chart-wrap" id="chartWrap"></div>
+      </div>
+
+      <p class="print-source-note print-only">
+        Klimadaten: GeoSphere Austria, INCA-v1, stündliche T2M-Rasterwerte,
+        Auswertungszeitraum 2012–2025. Die NAT ist im derzeitigen Prüflauf
+        eine OIB-Referenz am ELEVMIN der Katastralgemeinde. Gebäude- und
+        Rasterhöhe werden aus dem TIRIS-Geländemodell abgefragt. Eine
+        automatische Temperatur- oder NAT-Höhenkorrektur wird nicht angewendet.
+      </p>
+
+
+      <section class="heating-load-card" id="heatingLoadCard" hidden>
+
+        <header class="print-report-header print-only print-page-two-header">
+          <div>
+            <p class="print-kicker">Klima &amp; Heizlast · Beratungsübersicht</p>
+            <h1>Heizlast und vorhandene Heizung</h1>
+          </div>
+
+          <dl class="print-meta-grid print-meta-grid--heating">
+            <div><dt>Standort</dt><dd id="printHeatingLocation">–</dd></div>
+            <div><dt>Heizlast Verbrauch</dt><dd id="printConsumptionLoad">–</dd></div>
+            <div><dt>Flächenorientierung</dt><dd id="printAreaLoad">–</dd></div>
+            <div><dt>Heizgerät</dt><dd id="printInstalledLoad">–</dd></div>
+            <div><dt>HWB-Vergleich</dt><dd id="printHwbLoad">–</dd></div>
+            <div><dt>Ausdruck</dt><dd id="printReportDate2">–</dd></div>
+          </dl>
+        </header>
+
+        <div class="heating-load-heading">
+          <div>
+            <p class="eyebrow">Gebäude und Heizung</p>
+            <h3>Heizlast abschätzen und Leistung vergleichen</h3>
+            <p>
+              Der Verbrauch liefert den bevorzugten Vergleichswert. Die
+              Flächenmethode dient als zusätzliche, bewusst grobe Orientierung.
+            </p>
+          </div>
+          <span
+            class="method-note-inline"
+            title="Die Ergebnisse dienen der Orientierung und ersetzen keine Norm-Heizlastberechnung."
+          >
+            <span aria-hidden="true">ⓘ</span>
+            Vereinfachte Abschätzung
+          </span>
+        </div>
+
+        <div class="heating-input-groups">
+
+          <fieldset class="heating-input-group">
+            <legend>Verbrauch</legend>
+
+            <label class="heating-field">
+              <span>Jahresverbrauch (kWh/a)</span>
+              <input id="annualConsumption" type="number" min="0" step="100" value="25000">
+            </label>
+
+            <label class="heating-field">
+              <span>Nutzwärmefaktor / JNG / JAZ</span>
+              <input id="usefulHeatFactor" type="number" min="0.01" max="10" step="0.01" value="0.85">
+              <small>Kessel: JNG · Wärmepumpe: JAZ · Direktheizung/Fernwärme meist 1,0</small>
+            </label>
+
+            <label class="heating-field">
+              <span>Warmwasser im Verbrauch?</span>
+              <select id="hotWaterIncluded">
+                <option value="yes" selected>Ja</option>
+                <option value="no">Nein</option>
+              </select>
+            </label>
+
+            <label class="heating-field">
+              <span>Personen</span>
+              <input id="persons" type="number" min="0" step="1" value="4">
+              <small>Vereinfachter Abzug: 1.000 kWh pro Person und Jahr</small>
+            </label>
+
+            <div class="column-main-result">
+              <div class="compact-card-heading">
+                <span>Heizlast aus Verbrauch</span>
+                <button
+                  class="info-tip"
+                  type="button"
+                  aria-label="Verbrauchsbasierte Heizlast: Nutzwärme für Raumheizung geteilt durch die klimatischen Vollbenutzungsstunden."
+                  data-tooltip="Nutzwärme für Raumheizung geteilt durch die klimatischen Vollbenutzungsstunden."
+                  title="Nutzwärme für Raumheizung geteilt durch die klimatischen Vollbenutzungsstunden."
+                >i</button>
+              </div>
+              <strong id="consumptionMainResult">–</strong>
+            </div>
+          </fieldset>
+
+
+          <fieldset class="heating-input-group">
+            <legend>Flächenvergleich</legend>
+
+            <label class="heating-field">
+              <span>Beheizte Nutzfläche (m²)</span>
+              <input id="heatedArea" type="number" min="0" step="1" value="150">
+            </label>
+
+            <label class="heating-field heating-field--wide">
+              <span>Gebäudezustand</span>
+              <select id="buildingCondition">
+                <option value="unsanierter_altbau">Unsanierter Altbau · 120–160 W/m²</option>
+                <option value="teilsanierter_bestand" selected>Teilsanierter Bestand · 80–120 W/m²</option>
+                <option value="sanierter_bestand">Sanierter Bestand · 50–80 W/m²</option>
+                <option value="neuerer_standard">Neuerer Standard / Neubau · 40–70 W/m²</option>
+              </select>
+            </label>
+
+            <div class="column-main-result">
+              <div class="compact-card-heading">
+                <span>Flächenorientierung</span>
+                <button
+                  class="info-tip"
+                  type="button"
+                  aria-label="Flächenorientierung: beheizte Nutzfläche multipliziert mit der gewählten Bandbreite in Watt pro Quadratmeter."
+                  data-tooltip="Beheizte Nutzfläche × gewählte Bandbreite in W/m². Bewusst grobe Plausibilitätskontrolle."
+                  title="Beheizte Nutzfläche × gewählte Bandbreite in W/m². Bewusst grobe Plausibilitätskontrolle."
+                >i</button>
+              </div>
+              <strong id="areaMainResult">–</strong>
+            </div>
+          </fieldset>
+
+
+          <fieldset class="heating-input-group">
+            <legend>Vorhandene Heizung</legend>
+
+            <label class="heating-field">
+              <span>Installierte Leistung (kW)</span>
+              <input id="installedMaximum" type="number" min="0" step="0.1" value="20">
+            </label>
+
+            <label class="heating-field">
+              <span>Minimale Leistung (kW, optional)</span>
+              <input id="installedMinimum" type="number" min="0" step="0.1" placeholder="z. B. 3">
+              <small>Bei einem Leistungsbereich wie 3–15 kW hier 3 kW eintragen.</small>
+            </label>
+
+            <div class="column-main-result">
+              <div class="compact-card-heading">
+                <span>Installierte Leistung</span>
+                <button
+                  class="info-tip"
+                  type="button"
+                  aria-label="Eingetragener Leistungsbereich des vorhandenen Wärmeerzeugers."
+                  data-tooltip="Eingetragener Leistungsbereich des vorhandenen Wärmeerzeugers."
+                  title="Eingetragener Leistungsbereich des vorhandenen Wärmeerzeugers."
+                >i</button>
+              </div>
+              <strong id="installedMainResult">–</strong>
+            </div>
+          </fieldset>
+
+        </div>
+
+
+        <details class="optional-method">
+          <summary>Unabhängigen HWB-Wert ergänzen</summary>
+          <p class="optional-method-note">
+            Nur als zusätzlicher Vergleich sinnvoll, wenn der HWB aus einem
+            Energieausweis oder einer unabhängigen Gebäudeberechnung stammt –
+            nicht, wenn er aus demselben Verbrauch abgeleitet wurde.
+          </p>
+
+          <div class="optional-method-grid">
+            <label class="heating-field">
+              <span>HWB (kWh/m²a)</span>
+              <input id="hwbValue" type="number" min="0" step="1" placeholder="optional">
+            </label>
+
+            <label class="heating-field">
+              <span>BGF (m²)</span>
+              <input id="hwbBgf" type="number" min="0" step="1" placeholder="optional">
+            </label>
+
+            <div class="column-main-result optional-result">
+              <div class="compact-card-heading">
+                <span>HWB-basierte Abschätzung</span>
+                <button
+                  class="info-tip"
+                  type="button"
+                  aria-label="Unabhängiger HWB multipliziert mit der BGF und geteilt durch die klimatischen Vollbenutzungsstunden."
+                  data-tooltip="HWB × BGF ÷ klimatische Vollbenutzungsstunden."
+                  title="HWB × BGF ÷ klimatische Vollbenutzungsstunden."
+                >i</button>
+              </div>
+              <strong id="hwbMainResult">–</strong>
+            </div>
+          </div>
+        </details>
+
+
+        <section class="secondary-results">
+          <p class="eyebrow">Weitere interessante Kennzahlen</p>
+          <div class="heating-result-grid" id="heatingResultGrid"></div>
+        </section>
+
+        <div class="heating-chart-card">
+          <div class="heating-chart-heading">
+            <div>
+              <h4>Heizleistungs-Dauerlinie</h4>
+              <p>
+                Rechnerisch erforderliche Leistung auf Basis des medianen
+                Temperaturverlaufs und der verbrauchsbasierten Abschätzung.
+              </p>
+            </div>
+
+            <div class="heating-chart-legend">
+              <span><i class="legend-required-power"></i>Gebäudeleistung</span>
+              <span><i class="legend-installed-power"></i>Installierte Leistung</span>
+              <span><i class="legend-minimum-power"></i>Mindestleistung</span>
+              <span><i class="legend-coverage-90"></i>90 % Heizstunden</span>
+                          </div>
+          </div>
+
+          <div class="chart-wrap heating-chart-wrap" id="heatingChartWrap"></div>
+
+          <p class="coverage-note" id="coverageNote"></p>
+        </div>
+
+        <p class="heating-interpretation" id="heatingInterpretation"></p>
+        <div class="calculation-warning" id="calculationWarning" hidden></div>
+
+        <details class="calculation-basis">
+          <summary>Berechnungsgrundlagen und Annahmen</summary>
+
+          <div class="calculation-basis-grid">
+            <section>
+              <h4>Klimadaten</h4>
+              <p>
+                GeoSphere Austria INCA-v1, stündliche Rasterwerte 2012–2025.
+                Heizgrenze 15 °C; NAT gemäß vorläufiger OIB-Referenz des Teststandorts.
+              </p>
+            </section>
+
+            <section>
+              <h4>Verbrauchsmethode</h4>
+              <p>
+                Nutzwärme Raumheizung = Jahresverbrauch × Nutzwärmefaktor −
+                1.000 kWh je Person, sofern Warmwasser enthalten ist.
+              </p>
+              <p>
+                Heizlast = Nutzwärme Raumheizung ÷ klimatische
+                Vollbenutzungsstunden.
+              </p>
+            </section>
+
+            <section>
+              <h4>Flächenmethode</h4>
+              <p>
+                Beheizte Nutzfläche × hinterlegte W/m²-Bandbreite ÷ 1.000.
+                Die Bandbreiten sind Beratungsfaustformeln, keine Normwerte.
+              </p>
+            </section>
+
+            <section>
+              <h4>Heizungsvergleich</h4>
+              <p>
+                Leistungsverhältnis = installierte Leistung ÷
+                verbrauchsbasierte Heizlast.
+              </p>
+              <p>
+                Der 90-%-Wert zeigt die Leistung, unter der der
+                rechnerische Bedarf während 90 % der Heizstunden liegt.
+              </p>
+            </section>
+
+            <section>
+              <h4>Grenzen der Abschätzung</h4>
+              <p>
+                Keine Norm-Heizlastberechnung. Warmwasser-Spitzen,
+                Aufheizreserven, Speicher, Regelung, hydraulische Einflüsse,
+                solare Gewinne und tatsächliche Ofennutzung werden nicht
+                stundengenau abgebildet.
+              </p>
+            </section>
+
+            <section class="current-calculation">
+              <h4>Aktuelle Zwischenergebnisse</h4>
+              <div id="calculationBasisValues"></div>
+            </section>
+          </div>
+        </details>
+
+        <p class="print-source-note print-only">
+          Vereinfachte Abschätzung; keine Norm-Heizlastberechnung. Die
+          90-%-Linie ist eine Vergleichsgröße für bivalente Konzepte und keine
+          Empfehlung zur monovalenten Auslegung.
+        </p>
+
+      </section>
+
+
+      <div class="comparison-card" id="comparisonCard" hidden>
+        <h3>Vergleich der Teststandorte</h3>
+        <div class="table-wrap"><table id="comparisonTable"></table></div>
+      </div>
+
+      <details class="quality-card technical-details">
+        <summary>Datenqualität und Jahreswerte</summary>
+        <div class="table-wrap"><table id="annualTable"></table></div>
+      </details>
+
+      <p class="method-note">
+        Die NAT-Werte sind in diesem Prüflauf noch OIB-Referenzwerte der
+        jeweiligen Katastralgemeinde. Höhenkorrektur und TNAT13 folgen im
+        nächsten Schritt. Hitzetage und Tropennächte werden aus stündlichen
+        INCA-Rasterwerten abgeleitet und sind keine offiziellen Stationsstatistiken.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div><p class="footer-name">Tools</p><p class="footer-note">Technischer Entwicklungsstand – nicht als fertige Beratungsausgabe verwenden.</p></div>
+      <nav class="footer-links" aria-label="Rechtliche Informationen"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav>
+      <p class="copyright">© <span id="year">2026</span></p>
+    </div>
+  </footer>
+
+  <script src="../../script.js"></script>
+  <script src="data/addresses/demo-data.js"></script>
+  <script src="data/oib/nat-tirol.js"></script>
+  <script src="address-provider-core.js"></script>
+  <script src="oib-nat-core.js"></script>
+  <script src="address-provider-bev-local.js"></script>
+  <script src="climate-core.js"></script>
+  <script src="heating-core.js"></script>
+  <script src="location-core.js"></script>
+  <script src="klima-test.js"></script>
+</body>
+</html>
