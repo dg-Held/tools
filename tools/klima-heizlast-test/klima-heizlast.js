@@ -100,6 +100,7 @@ const elements = {
   loadAllButton: document.getElementById('loadAllButton'),
   clearCacheButton: document.getElementById('clearCacheButton'),
   printButton: document.getElementById('printButton'),
+  printButtonBottom: document.getElementById('printButtonBottom'),
   downloadButton: document.getElementById('downloadButton'),
   connectionStatus: document.getElementById('connectionStatus'),
   progressFill: document.getElementById('progressFill'),
@@ -138,21 +139,12 @@ const elements = {
   coverageNote: document.getElementById('coverageNote'),
   calculationBasisValues: document.getElementById('calculationBasisValues'),
   printClimateLocation: document.getElementById('printClimateLocation'),
-  printClimateCoordinates: document.getElementById('printClimateCoordinates'),
-  printBuildingElevation:
-    document.getElementById('printBuildingElevation'),
-  printGridElevation:
-    document.getElementById('printGridElevation'),
-  printClimateNat: document.getElementById('printClimateNat'),
-  printClimateTnat13:
-    document.getElementById('printClimateTnat13'),
-  printClimateQuality: document.getElementById('printClimateQuality'),
+  printClimateContext: document.getElementById('printClimateContext'),
   printReportDate: document.getElementById('printReportDate'),
   printHeatingLocation: document.getElementById('printHeatingLocation'),
-  printConsumptionLoad: document.getElementById('printConsumptionLoad'),
-  printAreaLoad: document.getElementById('printAreaLoad'),
-  printInstalledLoad: document.getElementById('printInstalledLoad'),
-  printHwbLoad: document.getElementById('printHwbLoad'),
+  printHwbCard: document.getElementById('printHwbCard'),
+  printHwbCardValue: document.getElementById('printHwbCardValue'),
+  printHwbCardDetail: document.getElementById('printHwbCardDetail'),
   printReportDate2: document.getElementById('printReportDate2'),
   heatingInterpretation: document.getElementById('heatingInterpretation'),
   calculationWarning: document.getElementById('calculationWarning'),
@@ -1577,14 +1569,33 @@ function renderLocationCheck(result) {
       location.address_label ?? location.name
     ),
     locationFact(
-      'Gebäudehöhe',
-      elevationLabel(buildingElevation),
-      'TIRIS-DGM am eingegebenen Standort'
-    ),
-    locationFact(
       'INCA-Rasterpunkt',
       `${formatNumber(location.grid_latitude, 5)}° N / ` +
       `${formatNumber(location.grid_longitude, 5)}° E`
+    ),
+    locationFact(
+      'OIB-NAT-Referenz',
+      `${formatNumber(location.nat_c, 1)} °C ` +
+      `bei ${formatNumber(
+        location.nat_reference_height_m
+      )} m`,
+      location.kg_name
+        ? `KG ${location.kg_name} · ${location.kg_number} · Region ${location.climate_region}`
+        : 'manuell eingetragener Wert'
+    ),
+    locationFact(
+      'TNAT,13',
+      Number.isFinite(location.tnat13_c)
+        ? `${formatNumber(location.tnat13_c, 1)} °C`
+        : 'nicht eindeutig zugeordnet',
+      Number.isFinite(location.tnat13_c)
+        ? 'OIB April 2026 · Wert am ELEVmin'
+        : 'Bei mehreren KGNR erfolgt bewusst keine automatische Auswahl.'
+    ),
+    locationFact(
+      'Gebäudehöhe',
+      elevationLabel(buildingElevation),
+      'TIRIS-DGM am Gebäudestandort'
     ),
     locationFact(
       'INCA-Rasterhöhe',
@@ -1597,16 +1608,6 @@ function renderLocationCheck(result) {
         check.difference_building_grid_m
       ),
       'positiv = Gebäude liegt höher'
-    ),
-    locationFact(
-      'OIB-NAT-Referenz',
-      `${formatNumber(location.nat_c, 1)} °C ` +
-      `bei ${formatNumber(
-        location.nat_reference_height_m
-      )} m`,
-      location.kg_name
-        ? `KG ${location.kg_name} · ${location.kg_number} · Region ${location.climate_region}`
-        : 'manuell eingetragener Testwert'
     ),
     locationFact(
       'Gebäude / OIB-Referenzhöhe',
@@ -1624,19 +1625,10 @@ function renderLocationCheck(result) {
           ) &&
           location.address.cadastral_municipality_numbers.length > 1
           ? location.address.cadastral_municipality_numbers.join(' / ')
-          : 'noch nicht verfügbar',
+          : 'nicht verfügbar',
       location.address?.cadastral_municipality_numbers?.length > 1
-        ? 'Adresse berührt mehrere Katastralgemeinden; keine automatische Einzelzuordnung.'
+        ? 'Adresse berührt mehrere Katastralgemeinden; verwendete KG wird nach Auswahl übernommen.'
         : 'Direkte Zuordnung über ADRESSE_GST.csv'
-    ),
-    locationFact(
-      'TNAT,13',
-      Number.isFinite(location.tnat13_c)
-        ? `${formatNumber(location.tnat13_c, 1)} °C`
-        : 'nicht eindeutig zugeordnet',
-      Number.isFinite(location.tnat13_c)
-        ? 'OIB April 2026 · Außenlufttemperatur mit 130 Überschreitungstagen in 10 Jahren · Wert am ELEVmin'
-        : 'Bei mehreren KGNR erfolgt bewusst keine automatische Auswahl.'
     ),
   ].join('');
 
@@ -1706,41 +1698,45 @@ function currentDateLabel() {
 function updatePrintClimateMetadata(result, validPercent) {
   const location = result.location;
   const check = location.location_check ?? {};
-  const coordinateText =
-    `${formatNumber(location.latitude, 4)}° N / ` +
-    `${formatNumber(location.longitude, 4)}° E`;
-
-  elements.printClimateLocation.textContent = location.name;
-  elements.printClimateCoordinates.textContent =
-    coordinateText;
-  elements.printBuildingElevation.textContent =
+  const buildingElevation =
     elevationLabel(check.building?.elevation_m);
-  elements.printGridElevation.textContent =
-    `${elevationLabel(
-      check.inca_grid?.elevation_m
-    )} · Δ ${signedMeters(
-      check.difference_building_grid_m
-    )}`;
-  elements.printClimateNat.textContent =
-    `${formatNumber(location.nat_c, 1)} °C bei ` +
-    `${formatNumber(
-      location.nat_reference_height_m
-    )} m`;
-  elements.printClimateTnat13.textContent =
-    Number.isFinite(location.tnat13_c)
-      ? `${formatNumber(location.tnat13_c, 1)} °C bei ` +
-        `${formatNumber(
-          location.tnat13_reference_height_m ??
-          location.nat_reference_height_m
-        )} m`
-      : 'nicht eindeutig';
-  elements.printClimateQuality.textContent =
-    `${formatNumber(validPercent, 2)} % gültig`;
-  elements.printReportDate.textContent = currentDateLabel();
-  elements.printHeatingLocation.textContent = location.name;
-  elements.printReportDate2.textContent = currentDateLabel();
-}
+  const gridElevation =
+    elevationLabel(check.inca_grid?.elevation_m);
+  const gridDifference =
+    signedMeters(check.difference_building_grid_m);
+  const oibDifference =
+    signedMeters(
+      check.difference_building_nat_reference_m
+    );
 
+  const kgLabel =
+    location.kg_number && location.kg_name
+      ? `KG ${location.kg_number} ${location.kg_name}`
+      : 'KG nicht automatisch zugeordnet';
+
+  const tnatLabel =
+    Number.isFinite(location.tnat13_c)
+      ? `${formatNumber(location.tnat13_c, 1)} °C`
+      : 'nicht eindeutig';
+
+  elements.printClimateLocation.textContent =
+    location.name;
+  elements.printClimateContext.textContent =
+    `Standortbezug: Gebäudehöhe ${buildingElevation} · ` +
+    `INCA-Rasterhöhe ${gridElevation} (Δ ${gridDifference}) · ` +
+    `${kgLabel} · ELEVmin ${formatNumber(
+      location.nat_reference_height_m
+    )} m (Gebäude Δ ${oibDifference}) · ` +
+    `NAT ${formatNumber(location.nat_c, 1)} °C · ` +
+    `TNAT,13 ${tnatLabel}.`;
+
+  elements.printReportDate.textContent =
+    currentDateLabel();
+  elements.printHeatingLocation.textContent =
+    location.name;
+  elements.printReportDate2.textContent =
+    currentDateLabel();
+}
 
 function renderDataQuality(result) {
   const expected = result.annual_metrics.reduce(
@@ -2330,20 +2326,18 @@ function renderHeatingCalculation() {
         ? `${formatNumber(hwb.heat_load_kw, 1)} kW`
         : '–';
 
-    elements.printConsumptionLoad.textContent =
-      `${formatNumber(consumption.heat_load_kw, 1)} kW`;
-    elements.printAreaLoad.textContent =
-      `${formatNumber(area.minimum_kw, 1)}–` +
-      `${formatNumber(area.maximum_kw, 1)} kW`;
-    elements.printInstalledLoad.textContent =
-      comparison.installed_minimum_kw !== null
-        ? `${formatNumber(comparison.installed_minimum_kw, 1)}–` +
-          `${formatNumber(comparison.installed_maximum_kw, 1)} kW`
-        : `${formatNumber(comparison.installed_maximum_kw, 1)} kW`;
-    elements.printHwbLoad.textContent =
-      hwb.heat_load_kw !== null
-        ? `${formatNumber(hwb.heat_load_kw, 1)} kW`
-        : 'nicht verwendet';
+    if (hwb.heat_load_kw !== null) {
+      elements.printHwbCard.hidden = false;
+      elements.printHwbCardValue.textContent =
+        `${formatNumber(hwb.heat_load_kw, 1)} kW`;
+      elements.printHwbCardDetail.textContent =
+        `HWB ${formatNumber(hwb.hwb_kwh_m2a, 0)} kWh/m²a · ` +
+        `BGF ${formatNumber(hwb.bgf_m2, 0)} m²`;
+    } else {
+      elements.printHwbCard.hidden = true;
+      elements.printHwbCardValue.textContent = '–';
+      elements.printHwbCardDetail.textContent = '–';
+    }
 
     const cards = [];
 
@@ -2620,6 +2614,7 @@ window.addEventListener('beforeprint', () => {
 });
 
 elements.printButton.addEventListener('click', printReport);
+elements.printButtonBottom.addEventListener('click', printReport);
 
 
 const debouncedAddressSearch = debounce(runAddressSearch);

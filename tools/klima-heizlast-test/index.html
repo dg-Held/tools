@@ -7,7 +7,7 @@
   <meta name="description" content="Standortbezogene Klimaauswertung und vereinfachte Heizlastabschätzung für Gebäude in Tirol.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="klima-heizlast.css?v=17">
+  <link rel="stylesheet" href="klima-heizlast.css?v=18">
 </head>
 <body>
 
@@ -208,18 +208,13 @@
           <h1>Klima am Standort</h1>
         </div>
 
-        <dl class="print-meta-grid">
+        <dl class="print-meta-grid print-meta-grid--compact">
           <div><dt>Standort</dt><dd id="printClimateLocation">–</dd></div>
-          <div><dt>Gebäudekoordinaten</dt><dd id="printClimateCoordinates">–</dd></div>
-          <div><dt>Gebäudehöhe</dt><dd id="printBuildingElevation">–</dd></div>
-          <div><dt>INCA-Rasterhöhe</dt><dd id="printGridElevation">–</dd></div>
-          <div><dt>Zeitraum</dt><dd>2012–2025</dd></div>
-          <div><dt>NAT-Referenz</dt><dd id="printClimateNat">–</dd></div>
-          <div><dt>TNAT,13</dt><dd id="printClimateTnat13">–</dd></div>
-          <div><dt>Datenqualität</dt><dd id="printClimateQuality">–</dd></div>
           <div><dt>Ausdruck</dt><dd id="printReportDate">–</dd></div>
         </dl>
       </header>
+
+      <p class="print-context-line print-only" id="printClimateContext">–</p>
 
       <div class="result-heading">
         <div>
@@ -234,28 +229,6 @@
         </div>
       </div>
 
-
-      <section class="location-check-card" id="locationCheckCard">
-        <div class="location-check-heading">
-          <div>
-            <p class="eyebrow">Standortprüfung</p>
-            <h3>Standort, Klimaraster und Höhenbezug</h3>
-          </div>
-
-          <button
-            class="quiet-button location-retry-button"
-            id="retryHeightButton"
-            type="button"
-          >
-            Höhen erneut prüfen
-          </button>
-        </div>
-
-        <div class="location-facts" id="locationFacts"></div>
-
-        <p class="height-assessment" id="heightAssessment"></p>
-        <p class="height-service-note" id="heightServiceNote"></p>
-      </section>
 
       <div class="metric-grid" id="metricGrid"></div>
 
@@ -275,13 +248,20 @@
         <div class="chart-wrap" id="chartWrap"></div>
       </div>
 
-      <p class="print-source-note print-only">
-        Klimadaten: GeoSphere Austria, INCA-v1, stündliche T2M-Rasterwerte,
-        Auswertungszeitraum 2012–2025. NAT und TNAT,13 werden über die
-        Katastralgemeinde aus den OIB-Datensätzen zugeordnet. Gebäude- und
-        Rasterhöhe werden aus dem TIRIS-Geländemodell abgefragt. Eine
-        automatische Temperatur- oder NAT-Höhenkorrektur wird nicht angewendet.
-      </p>
+      <div class="print-source-note print-only">
+        <p>
+          <strong>Einordnung:</strong> Die Kennzahlen in den Kärtchen sind
+          Mittelwerte der Jahresauswertungen 2012–2025; die kräftige Linie der
+          Stundenhäufigkeit zeigt den Median der Jahreskurven. NAT ist die
+          OIB-Normaußentemperatur am ELEVmin, die Heizgrenze von 15 °C die
+          verwendete Modellgrenze für rechnerischen Heizbedarf. TNAT,13 ist
+          die OIB-Sommerreferenz mit 130 Überschreitungstagen in 10 Jahren.
+        </p>
+        <p class="print-data-reference">
+          Datenbasis: BEV 01.04.2026 · GeoSphere INCA-v1 2012–2025 ·
+          OIB NAT 16.06.2015 / TNAT,13 04/2026 · TIRIS DGM.
+        </p>
+      </div>
 
 
       <section class="heating-load-card" id="heatingLoadCard" hidden>
@@ -292,12 +272,8 @@
             <h1>Heizlast und vorhandene Heizung</h1>
           </div>
 
-          <dl class="print-meta-grid print-meta-grid--heating">
+          <dl class="print-meta-grid print-meta-grid--compact">
             <div><dt>Standort</dt><dd id="printHeatingLocation">–</dd></div>
-            <div><dt>Heizlast Verbrauch</dt><dd id="printConsumptionLoad">–</dd></div>
-            <div><dt>Flächenorientierung</dt><dd id="printAreaLoad">–</dd></div>
-            <div><dt>Heizgerät</dt><dd id="printInstalledLoad">–</dd></div>
-            <div><dt>HWB-Vergleich</dt><dd id="printHwbLoad">–</dd></div>
             <div><dt>Ausdruck</dt><dd id="printReportDate2">–</dd></div>
           </dl>
         </header>
@@ -432,6 +408,15 @@
         </div>
 
 
+        <article class="print-hwb-card print-only" id="printHwbCard" hidden>
+          <div>
+            <span>Zusätzlicher HWB-Vergleich</span>
+            <strong id="printHwbCardValue">–</strong>
+          </div>
+          <small id="printHwbCardDetail">–</small>
+        </article>
+
+
         <details class="optional-method">
           <summary>Unabhängigen HWB-Wert ergänzen</summary>
           <p class="optional-method-note">
@@ -499,6 +484,34 @@
         <p class="heating-interpretation" id="heatingInterpretation"></p>
         <div class="calculation-warning" id="calculationWarning" hidden></div>
 
+        <section class="location-check-card location-check-card--technical" id="locationCheckCard">
+          <div class="location-check-heading">
+            <div>
+              <p class="eyebrow">Technische Standortprüfung</p>
+              <h3>Standort, Klimaraster und Höhenbezug</h3>
+            </div>
+
+            <button
+              class="quiet-button location-retry-button"
+              id="retryHeightButton"
+              type="button"
+            >
+              Höhen erneut prüfen
+            </button>
+          </div>
+
+          <div class="location-facts" id="locationFacts"></div>
+
+          <p class="height-assessment" id="heightAssessment"></p>
+          <p class="height-service-note" id="heightServiceNote"></p>
+        </section>
+
+        <div class="bottom-result-actions">
+          <button class="primary-button" id="printButtonBottom" type="button">
+            Drucken / PDF
+          </button>
+        </div>
+
         <details class="calculation-basis">
           <summary>Berechnungsgrundlagen und Annahmen</summary>
 
@@ -561,11 +574,17 @@
           </div>
         </details>
 
-        <p class="print-source-note print-only">
-          Vereinfachte Abschätzung; keine Norm-Heizlastberechnung. Die
-          90-%-Linie ist eine Vergleichsgröße für bivalente Konzepte und keine
-          Empfehlung zur monovalenten Auslegung.
-        </p>
+        <div class="print-source-note print-only">
+          <p>
+            Vereinfachte Abschätzung; keine Norm-Heizlastberechnung. Die
+            90-%-Linie ist eine Vergleichsgröße für bivalente Konzepte und
+            keine Empfehlung zur monovalenten Auslegung.
+          </p>
+          <p class="print-data-reference">
+            Datenbasis: BEV 01.04.2026 · GeoSphere INCA-v1 2012–2025 ·
+            OIB NAT / TNAT,13 · TIRIS DGM.
+          </p>
+        </div>
 
       </section>
 
@@ -661,16 +680,16 @@
   </script>
 
   <script src="../../script.js"></script>
-  <script src="data/oib/nat-tirol.js?v=17"></script>
-  <script src="data/oib/tnat13-tirol.js?v=17"></script>
-  <script src="address-provider-core.js?v=17"></script>
-  <script src="oib-nat-core.js?v=17"></script>
-  <script src="oib-tnat13-core.js?v=17"></script>
-  <script src="address-provider-bev-local.js?v=17"></script>
-  <script src="climate-core.js?v=17"></script>
-  <script src="precomputed-climate-core.js?v=17"></script>
-  <script src="heating-core.js?v=17"></script>
-  <script src="location-core.js?v=17"></script>
-  <script src="klima-heizlast.js?v=17"></script>
+  <script src="data/oib/nat-tirol.js?v=18"></script>
+  <script src="data/oib/tnat13-tirol.js?v=18"></script>
+  <script src="address-provider-core.js?v=18"></script>
+  <script src="oib-nat-core.js?v=18"></script>
+  <script src="oib-tnat13-core.js?v=18"></script>
+  <script src="address-provider-bev-local.js?v=18"></script>
+  <script src="climate-core.js?v=18"></script>
+  <script src="precomputed-climate-core.js?v=18"></script>
+  <script src="heating-core.js?v=18"></script>
+  <script src="location-core.js?v=18"></script>
+  <script src="klima-heizlast.js?v=18"></script>
 </body>
 </html>

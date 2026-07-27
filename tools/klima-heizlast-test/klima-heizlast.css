@@ -1980,3 +1980,143 @@ tr:last-child td { border-bottom: 0; }
     display: none !important;
   }
 }
+
+
+/* =========================================================
+   STUFE 18 – FEINSCHLIFF BERATUNG & AUSDRUCK
+========================================================= */
+
+.location-check-card--technical {
+  margin-top: var(--space-3);
+}
+
+.location-facts > div:last-child {
+  grid-column: 1 / -1;
+  background: rgba(52, 171, 159, .08);
+}
+
+.bottom-result-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.print-context-line {
+  margin: 0 0 2.3mm;
+  padding: 1.3mm 1.6mm;
+  border-left: .7mm solid var(--turquoise);
+  font-size: 6pt;
+  line-height: 1.35;
+  color: var(--text-muted);
+  background: var(--turquoise-soft);
+}
+
+.print-source-note p {
+  margin: 0;
+}
+
+.print-source-note p + p {
+  margin-top: .8mm;
+}
+
+.print-data-reference {
+  font-weight: 500;
+}
+
+.print-hwb-card {
+  margin: 2mm 0 0;
+  padding: 1.8mm 2.2mm;
+  border: .2mm solid var(--line);
+  border-left: .8mm solid var(--berry);
+  border-radius: 2mm;
+  background: var(--berry-soft);
+}
+
+.print-hwb-card > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 3mm;
+}
+
+.print-hwb-card span {
+  font-size: 6.2pt;
+  color: var(--text-muted);
+}
+
+.print-hwb-card strong {
+  font-size: 10pt;
+}
+
+.print-hwb-card small {
+  display: block;
+  margin-top: .5mm;
+  font-size: 5.5pt;
+  color: var(--text-muted);
+}
+
+.print-hwb-card[hidden] {
+  display: none !important;
+}
+
+.chart-minimum-power {
+  stroke: var(--text-dark);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+.legend-minimum-power {
+  border-top: 2px dashed var(--text-dark);
+}
+
+@media print {
+  .bottom-result-actions {
+    display: none !important;
+  }
+
+  .print-report-header {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, .8fr) !important;
+    align-items: end !important;
+    margin-bottom: 1.8mm !important;
+  }
+
+  .print-meta-grid--compact {
+    grid-template-columns: 1fr !important;
+    gap: .8mm !important;
+  }
+
+  .print-meta-grid--compact > div {
+    display: grid;
+    grid-template-columns: 15mm 1fr;
+    gap: 1.5mm;
+    align-items: baseline;
+  }
+
+  .print-meta-grid--compact dt {
+    margin: 0 !important;
+  }
+
+  .print-context-line {
+    display: block !important;
+  }
+
+  .chart-minimum-power {
+    stroke: #202625 !important;
+    stroke-width: 2.2 !important;
+    stroke-dasharray: 4 3 !important;
+  }
+
+  .legend-minimum-power {
+    border-top-color: #202625 !important;
+    border-top-width: 2px !important;
+  }
+
+  .print-hwb-card {
+    display: block !important;
+    break-inside: avoid;
+  }
+
+  .print-hwb-card[hidden] {
+    display: none !important;
+  }
+}
