@@ -1,0 +1,1142 @@
+@font-face {
+  font-family: "Nunito";
+  src: url("assets/fonts/Nunito/static/Nunito-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Nunito";
+  src: url("assets/fonts/Nunito/static/Nunito-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Nunito";
+  src: url("assets/fonts/Nunito/static/Nunito-LightItalic.ttf") format("truetype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+
+/* =========================================================
+   1. DESIGN-SYSTEM
+   Hier werden Farben, Schriftgrößen und Abstände gesammelt.
+   Änderungen an diesen Werten wirken sich auf die ganze Seite aus.
+========================================================= */
+
+:root {
+  /* Hauptfarben */
+  --turquoise: #34ab9f;
+  --berry: #b3446c;
+
+  /* Helle Akzente */
+  --turquoise-light: #d8f3f0;
+  --berry-light: #f1dae2;
+
+  /* Sehr helle Flächen */
+  --turquoise-soft: #ebf9f8;
+  --berry-soft: #f8edf1;
+
+  /* Dunkle Akzente */
+  --turquoise-dark: #24756d;
+  --berry-dark: #6f2a43;
+
+  /* Textfarben */
+  --text-dark: #0c2724;
+  --text-light: #ebf9f8;
+  --text-muted: #526562;
+
+  /* Neutrale Farben */
+  --white: #ffffff;
+  --page-background: #f9fbfa;
+  --line: rgba(12, 39, 36, 0.12);
+
+  /* Schrift */
+  --font-body: "Nunito", sans-serif;
+
+  /* Abstände */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3rem;
+  --space-6: 4.5rem;
+
+  /* Rundungen */
+  --radius-small: 10px;
+  --radius-medium: 18px;
+  --radius-large: 28px;
+  --radius-round: 50%;
+
+  /* Schatten */
+  --shadow-soft: 0 12px 35px rgba(12, 39, 36, 0.08);
+  --shadow-hover: 0 16px 42px rgba(12, 39, 36, 0.13);
+}
+
+
+/* =========================================================
+   2. GRUNDEINSTELLUNGEN
+========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 300;
+  line-height: 1.65;
+  color: var(--text-dark);
+  background: var(--page-background);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+p,
+blockquote {
+  margin-top: 0;
+}
+
+figure {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+h1 {
+  margin-bottom: var(--space-3);
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  letter-spacing: -0.035em;
+}
+
+h2 {
+  margin-bottom: var(--space-3);
+  font-size: clamp(1.8rem, 4vw, 2.65rem);
+  letter-spacing: -0.025em;
+}
+
+h3 {
+  margin-bottom: var(--space-2);
+  font-size: 1.28rem;
+}
+
+p {
+  margin-bottom: var(--space-2);
+}
+
+.container {
+  width: min(100% - 2rem, 820px);
+  margin-inline: auto;
+}
+
+
+/* Kleine Überschrift oberhalb einer großen Überschrift */
+.eyebrow {
+  margin-bottom: 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--turquoise-dark);
+}
+
+
+/* =========================================================
+   3. RUNDE BUTTONS UND NAVIGATION
+========================================================= */
+
+.circle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  border: 2px solid var(--turquoise);
+  border-radius: var(--radius-round);
+
+  background: var(--turquoise-light);
+  color: var(--turquoise-dark);
+  text-decoration: none;
+
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.circle-btn:hover,
+.circle-btn:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--turquoise-dark);
+  background: var(--turquoise-soft);
+  box-shadow: 0 8px 20px rgba(12, 39, 36, 0.12);
+}
+
+.circle-btn:focus-visible {
+  outline: 3px solid var(--berry-light);
+  outline-offset: 3px;
+}
+
+.circle-btn.active {
+  border-color: var(--berry);
+  background: var(--berry-light);
+  color: var(--berry-dark);
+}
+
+.logo-circle {
+  width: 74px;
+  height: 74px;
+}
+
+.logo-circle img {
+  width: 62px;
+  height: 62px;
+}
+
+.nav-circle {
+  width: 54px;
+  height: 54px;
+}
+
+.nav-icon {
+  width: 38px;
+  height: 38px;
+}
+
+
+/* =========================================================
+   4. KOPFZEILE
+========================================================= */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 5px 16px rgba(12, 39, 36, 0.08);
+  background: rgba(249, 251, 250, 0.94);
+  backdrop-filter: blur(12px);
+}
+
+.header-inner {
+  min-height: 106px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.nav-list {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+
+/* =========================================================
+   5. HERO-BEREICH
+========================================================= */
+
+.hero {
+  padding: var(--space-6) 0 var(--space-5);
+  background:
+    linear-gradient(
+      180deg,
+      var(--turquoise-soft) 0%,
+      var(--page-background) 72%
+    );
+}
+
+.hero-text {
+  max-width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.hero-intro {
+  max-width: none;
+  margin-bottom: var(--space-2);
+  font-size: clamp(1.08rem, 2.5vw, 1.3rem);
+  color: var(--text-muted);
+}
+
+.hero-highlight {
+  margin-bottom: var(--space-3);
+  font-weight: 500;
+  color: var(--berry-dark);
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid currentColor;
+
+  font-weight: 500;
+  color: var(--turquoise-dark);
+  text-decoration: none;
+}
+
+.text-link:hover,
+.text-link:focus-visible {
+  color: var(--berry);
+}
+
+.hero-image {
+  overflow: hidden;
+  margin-bottom: 0;
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-soft);
+}
+
+.hero-image img {
+  width: 100%;
+  aspect-ratio: 820 / 144;
+  object-fit: cover;
+  object-position: center;
+}
+
+
+/* =========================================================
+   6. TEASER-BEREICH
+========================================================= */
+
+.teaser-section {
+  padding: var(--space-5) 0 var(--space-6);
+}
+
+.section-heading {
+  max-width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.teaser-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.teaser-card {
+  min-height: 245px;
+  padding: var(--space-3);
+
+  display: flex;
+  flex-direction: column;
+
+  border: 1px solid var(--line);
+  border-radius: var(--radius-medium);
+
+  background: var(--white);
+  box-shadow: 0 8px 24px rgba(12, 39, 36, 0.045);
+}
+
+a.teaser-card {
+  color: inherit;
+  text-decoration: none;
+
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+a.teaser-card:hover,
+a.teaser-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgba(52, 171, 159, 0.55);
+  box-shadow: var(--shadow-hover);
+}
+
+a.teaser-card:focus-visible {
+  outline: 3px solid var(--berry-light);
+  outline-offset: 3px;
+}
+
+.card-label {
+  align-self: flex-start;
+
+  margin-bottom: var(--space-3);
+  padding: 0.28rem 0.7rem;
+
+  border-radius: 999px;
+
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--turquoise-dark);
+  background: var(--turquoise-light);
+}
+
+.teaser-card p {
+  color: var(--text-muted);
+}
+
+.card-link {
+  margin-top: auto;
+  padding-top: var(--space-2);
+
+  font-weight: 500;
+  color: var(--turquoise-dark);
+}
+
+.teaser-card--tip {
+  background: var(--berry-soft);
+}
+
+.teaser-card--tip .card-label {
+  color: var(--berry-dark);
+  background: var(--berry-light);
+}
+
+.teaser-card--advice {
+  background: var(--turquoise-soft);
+}
+
+.teaser-card--future {
+  border-style: dashed;
+  background: transparent;
+}
+
+
+/* =========================================================
+   7. WOHLBEFINDEN UND BAUÖKOLOGIE
+========================================================= */
+
+.wellbeing-section {
+  padding: var(--space-6) 0;
+  background: var(--berry-soft);
+}
+
+.wellbeing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 144px) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.wellbeing-image {
+  overflow: hidden;
+  margin-bottom: 0;
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-soft);
+}
+
+.wellbeing-image img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+}
+
+.wellbeing-text p {
+  color: var(--text-muted);
+}
+
+blockquote {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+
+  border-left: 3px solid var(--berry);
+
+  font-size: 1.2rem;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--berry-dark);
+}
+
+
+/* =========================================================
+   8. FUSSZEILE
+========================================================= */
+
+.site-footer {
+  padding: var(--space-4) 0;
+  color: var(--text-light);
+  background: var(--text-dark);
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2) var(--space-4);
+  align-items: end;
+}
+
+.footer-name {
+  margin-bottom: 0.2rem;
+  font-weight: 500;
+}
+
+.footer-note,
+.copyright {
+  margin-bottom: 0;
+  font-size: 0.86rem;
+  color: rgba(235, 249, 248, 0.72);
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.footer-links a {
+  font-size: 0.92rem;
+  color: var(--text-light);
+  text-decoration: none;
+}
+
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  color: var(--berry-light);
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.copyright {
+  grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   9. ANPASSUNG FÜR TABLETS UND HANDYS
+========================================================= */
+
+@media (max-width: 680px) {
+  :root {
+    --space-6: 3.5rem;
+  }
+
+  .header-inner {
+    min-height: 88px;
+  }
+
+  .logo-circle {
+    width: 58px;
+    height: 58px;
+  }
+
+  .logo-circle img {
+    width: 49px;
+    height: 49px;
+  }
+
+  .nav-list {
+    gap: 0.45rem;
+  }
+
+  .nav-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .nav-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .hero {
+    padding-top: var(--space-5);
+  }
+
+  .teaser-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teaser-card {
+    min-height: auto;
+  }
+
+  .wellbeing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wellbeing-image img {
+    aspect-ratio: 16 / 10;
+    object-position: center;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .copyright {
+    grid-column: auto;
+  }
+}
+
+
+/*
+  Auf sehr schmalen Handys werden Logo und Navigation noch etwas kleiner,
+  damit alles sicher nebeneinander Platz hat.
+*/
+@media (max-width: 400px) {
+  .container {
+    width: min(100% - 1.25rem, 820px);
+  }
+
+  .logo-circle {
+    width: 50px;
+    height: 50px;
+  }
+
+  .logo-circle img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .nav-circle {
+    width: 39px;
+    height: 39px;
+  }
+
+  .nav-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-list {
+    gap: 0.3rem;
+  }
+}
+
+/* =========================================================
+   10. KONTAKTSEITE
+   Diesen gesamten Abschnitt am Ende von styles.css einfügen.
+========================================================= */
+
+.page-hero {
+  padding: var(--space-6) 0;
+  background:
+    linear-gradient(
+      180deg,
+      var(--turquoise-soft) 0%,
+      var(--page-background) 100%
+    );
+}
+
+.page-hero h1 {
+  margin-bottom: var(--space-2);
+}
+
+.page-intro {
+  max-width: 650px;
+  margin-bottom: var(--space-4);
+  font-size: clamp(1.08rem, 2.5vw, 1.3rem);
+  color: var(--text-muted);
+}
+
+.contact-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-medium);
+  background: var(--white);
+  box-shadow: var(--shadow-soft);
+}
+
+.contact-card-label {
+  margin-bottom: 0.15rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--turquoise-dark);
+}
+
+.contact-mail {
+  font-size: clamp(1rem, 3vw, 1.25rem);
+  font-weight: 500;
+  color: var(--text-dark);
+  text-decoration: none;
+}
+
+.contact-mail:hover,
+.contact-mail:focus-visible {
+  color: var(--berry);
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.contact-button {
+  flex: 0 0 auto;
+  padding: 0.8rem 1.15rem;
+  border: 2px solid var(--berry);
+  border-radius: 999px;
+  font-weight: 500;
+  color: var(--berry-dark);
+  background: var(--berry-light);
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.contact-button:hover,
+.contact-button:focus-visible {
+  transform: translateY(-2px);
+  background: var(--berry-soft);
+  box-shadow: 0 8px 20px rgba(12, 39, 36, 0.1);
+}
+
+.contact-button:focus-visible {
+  outline: 3px solid var(--turquoise-light);
+  outline-offset: 3px;
+}
+
+.contact-note {
+  margin: var(--space-2) 0 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.legal-section {
+  padding: var(--space-6) 0;
+  scroll-margin-top: 120px;
+}
+
+.legal-section--alternate {
+  background: var(--berry-soft);
+}
+
+.legal-card {
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-large);
+  background: var(--white);
+  box-shadow: var(--shadow-soft);
+}
+
+.legal-details {
+  margin: 0;
+}
+
+.legal-details > div {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.35fr) minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.legal-details > div:first-child {
+  padding-top: 0;
+}
+
+.legal-details > div:last-child {
+  border-bottom: 0;
+}
+
+.legal-details dt {
+  font-weight: 500;
+  color: var(--turquoise-dark);
+}
+
+.legal-details dd {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.legal-details a,
+.legal-text a {
+  color: var(--turquoise-dark);
+}
+
+.legal-note {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--berry);
+  color: var(--berry-dark);
+  background: var(--berry-soft);
+}
+
+.legal-text h3 {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-1);
+  font-size: 1.2rem;
+  color: var(--text-dark);
+}
+
+.legal-text h3:first-child {
+  margin-top: 0;
+}
+
+.legal-text p {
+  color: var(--text-muted);
+}
+
+.legal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.legal-link:hover,
+.legal-link:focus-visible {
+  color: var(--berry);
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.privacy-date {
+  margin-top: var(--space-4);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+@media (max-width: 680px) {
+  .contact-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .legal-details > div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
+/* =========================================================
+   11. ÜBER-MICH-SEITE
+   Diesen gesamten Abschnitt am Ende von styles.css einfügen.
+========================================================= */
+
+.about-section {
+  padding: var(--space-6) 0;
+  background:
+    linear-gradient(
+      180deg,
+      var(--turquoise-soft) 0%,
+      var(--page-background) 38%,
+      var(--page-background) 100%
+    );
+}
+
+.about-section h1 {
+  max-width: 720px;
+  margin-bottom: var(--space-4);
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.about-image {
+  overflow: hidden;
+  margin: 0;
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-soft);
+}
+
+.about-image img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: center;
+}
+
+.about-text p {
+  color: var(--text-muted);
+}
+
+.about-text p:last-child {
+  margin-bottom: 0;
+}
+
+.about-quote {
+  max-width: 690px;
+  margin: var(--space-5) 0 0 auto;
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+
+  border-left: 3px solid var(--berry);
+
+  font-size: 1.2rem;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--berry-dark);
+}
+
+@media (max-width: 680px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-image {
+    max-width: 360px;
+  }
+
+  .about-image img {
+    aspect-ratio: 16 / 11;
+  }
+
+  .about-quote {
+    margin-left: 0;
+  }
+}
+
+
+/* =========================================================
+   12. TOOLS-SEITE
+   Diesen gesamten Abschnitt am Ende von styles.css einfügen.
+========================================================= */
+
+.tools-section {
+  min-height: calc(100vh - 106px);
+  padding: var(--space-6) 0;
+  background:
+    linear-gradient(
+      180deg,
+      var(--turquoise-soft) 0%,
+      var(--page-background) 34%,
+      var(--page-background) 100%
+    );
+}
+
+.tools-section h1 {
+  margin-bottom: var(--space-2);
+}
+
+.tools-intro {
+  max-width: 680px;
+  margin-bottom: var(--space-5);
+  font-size: clamp(1.05rem, 2.3vw, 1.22rem);
+  color: var(--text-muted);
+}
+
+
+/* Drei Tools nebeneinander */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-3);
+}
+
+
+/* Eine vollständige Tool-Karte */
+.tool-card {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  color: inherit;
+  text-align: center;
+  text-decoration: none;
+}
+
+a.tool-card {
+  transition: transform 180ms ease;
+}
+
+a.tool-card:hover,
+a.tool-card:focus-visible {
+  transform: translateY(-5px);
+}
+
+a.tool-card:focus-visible {
+  border-radius: var(--radius-medium);
+  outline: 3px solid var(--berry-light);
+  outline-offset: 6px;
+}
+
+
+/* Rundes Vorschaubild */
+.tool-image {
+  position: relative;
+  isolation: isolate;
+
+  width: min(100%, 210px);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+
+  margin-bottom: var(--space-3);
+  border: 4px solid var(--white);
+  border-radius: 50%;
+
+  background: var(--turquoise-light);
+  box-shadow: var(--shadow-soft);
+}
+
+.tool-image img {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+}
+
+
+/*
+  Dieser Text liegt hinter dem Bild.
+  Solange noch kein Screenshot vorhanden ist, dient er als Platzhalter.
+*/
+.tool-image-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: var(--space-3);
+
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--turquoise-dark);
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      var(--turquoise-soft) 0%,
+      var(--turquoise-light) 52%,
+      var(--turquoise) 100%
+    );
+}
+
+.tool-image-placeholder--berry {
+  color: var(--berry-dark);
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      var(--berry-soft) 0%,
+      var(--berry-light) 52%,
+      var(--berry) 100%
+    );
+}
+
+.tool-image-placeholder--light {
+  color: var(--text-muted);
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      var(--white) 0%,
+      var(--turquoise-soft) 60%,
+      var(--turquoise-light) 100%
+    );
+}
+
+
+/* Text unter dem runden Bild */
+.tool-card-text {
+  width: 100%;
+}
+
+.tool-card h2 {
+  margin-bottom: var(--space-1);
+  font-size: 1.22rem;
+}
+
+.tool-card p {
+  margin-bottom: 0;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+
+/* Kleiner Status oberhalb des Toolnamens */
+.tool-status {
+  display: inline-block;
+
+  margin-bottom: 0.6rem;
+  padding: 0.22rem 0.65rem;
+
+  border-radius: 999px;
+
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+
+  color: var(--turquoise-dark);
+  background: var(--turquoise-light);
+}
+
+.tool-status--planned {
+  color: var(--berry-dark);
+  background: var(--berry-light);
+}
+
+
+/* Geplante Tools wirken bewusst etwas ruhiger */
+.tool-card--planned {
+  opacity: 0.78;
+}
+
+
+/* Zwei Spalten auf kleineren Bildschirmen */
+@media (max-width: 760px) {
+  .tools-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* Eine Spalte auf schmalen Handys */
+@media (max-width: 500px) {
+  .tools-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+
+  .tool-image {
+    width: min(72vw, 220px);
+  }
+
+  .tool-card-text {
+    max-width: 340px;
+  }
+}
