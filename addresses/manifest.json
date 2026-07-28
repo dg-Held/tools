@@ -1,0 +1,2300 @@
+{
+  "schema_version": 3,
+  "provider": "bev-local",
+  "dataset_mode": "official",
+  "dataset_date": "2026-04-01",
+  "generated_at": "2026-07-27T06:18:09.166789+00:00",
+  "address_count": 207322,
+  "license": "Creative Commons CC BY 4.0",
+  "attribution": "© Österreichisches Adressregister, Stichtagsdaten vom 01.04.2026",
+  "coordinate_system": "EPSG:4326",
+  "coordinate_strategy": "Gebäudekoordinate, wenn ein plausibler Gebäudepunkt höchstens 100 m von der Zugangskoordinate entfernt liegt; sonst Zugangskoordinate aus ADRESSE.csv.",
+  "address_count_using_building_coordinate": 193902,
+  "address_count_using_access_coordinate": 13420,
+  "building_rejected_over_100m": 309,
+  "address_count_with_cadastral_municipality": 207322,
+  "address_count_multiple_cadastral_municipalities": 115,
+  "unique_cadastral_municipalities": 350,
+  "unresolved_municipality_count": 0,
+  "unresolved_street_count": 0,
+  "unresolved_locality_count": 0,
+  "chunks": {
+    "6020": "prefix/602.json",
+    "6060": "prefix/606.json",
+    "6063": "prefix/606.json",
+    "6065": "prefix/606.json",
+    "6067": "prefix/606.json",
+    "6068": "prefix/606.json",
+    "6069": "prefix/606.json",
+    "6070": "prefix/607.json",
+    "6071": "prefix/607.json",
+    "6072": "prefix/607.json",
+    "6073": "prefix/607.json",
+    "6074": "prefix/607.json",
+    "6075": "prefix/607.json",
+    "6080": "prefix/608.json",
+    "6082": "prefix/608.json",
+    "6083": "prefix/608.json",
+    "6091": "prefix/609.json",
+    "6092": "prefix/609.json",
+    "6094": "prefix/609.json",
+    "6095": "prefix/609.json",
+    "6100": "prefix/610.json",
+    "6103": "prefix/610.json",
+    "6105": "prefix/610.json",
+    "6108": "prefix/610.json",
+    "6111": "prefix/611.json",
+    "6112": "prefix/611.json",
+    "6113": "prefix/611.json",
+    "6114": "prefix/611.json",
+    "6115": "prefix/611.json",
+    "6116": "prefix/611.json",
+    "6121": "prefix/612.json",
+    "6122": "prefix/612.json",
+    "6123": "prefix/612.json",
+    "6130": "prefix/613.json",
+    "6133": "prefix/613.json",
+    "6134": "prefix/613.json",
+    "6135": "prefix/613.json",
+    "6136": "prefix/613.json",
+    "6141": "prefix/614.json",
+    "6142": "prefix/614.json",
+    "6143": "prefix/614.json",
+    "6145": "prefix/614.json",
+    "6150": "prefix/615.json",
+    "6152": "prefix/615.json",
+    "6154": "prefix/615.json",
+    "6156": "prefix/615.json",
+    "6157": "prefix/615.json",
+    "6161": "prefix/616.json",
+    "6162": "prefix/616.json",
+    "6165": "prefix/616.json",
+    "6166": "prefix/616.json",
+    "6167": "prefix/616.json",
+    "6170": "prefix/617.json",
+    "6173": "prefix/617.json",
+    "6175": "prefix/617.json",
+    "6176": "prefix/617.json",
+    "6178": "prefix/617.json",
+    "6179": "prefix/617.json",
+    "6181": "prefix/618.json",
+    "6182": "prefix/618.json",
+    "6183": "prefix/618.json",
+    "6184": "prefix/618.json",
+    "6200": "prefix/620.json",
+    "6210": "prefix/621.json",
+    "6212": "prefix/621.json",
+    "6213": "prefix/621.json",
+    "6215": "prefix/621.json",
+    "6220": "prefix/622.json",
+    "6222": "prefix/622.json",
+    "6230": "prefix/623.json",
+    "6232": "prefix/623.json",
+    "6233": "prefix/623.json",
+    "6234": "prefix/623.json",
+    "6235": "prefix/623.json",
+    "6236": "prefix/623.json",
+    "6240": "prefix/624.json",
+    "6241": "prefix/624.json",
+    "6250": "prefix/625.json",
+    "6252": "prefix/625.json",
+    "6260": "prefix/626.json",
+    "6261": "prefix/626.json",
+    "6262": "prefix/626.json",
+    "6263": "prefix/626.json",
+    "6264": "prefix/626.json",
+    "6265": "prefix/626.json",
+    "6271": "prefix/627.json",
+    "6272": "prefix/627.json",
+    "6273": "prefix/627.json",
+    "6274": "prefix/627.json",
+    "6275": "prefix/627.json",
+    "6276": "prefix/627.json",
+    "6277": "prefix/627.json",
+    "6278": "prefix/627.json",
+    "6280": "prefix/628.json",
+    "6281": "prefix/628.json",
+    "6283": "prefix/628.json",
+    "6284": "prefix/628.json",
+    "6290": "prefix/629.json",
+    "6292": "prefix/629.json",
+    "6293": "prefix/629.json",
+    "6294": "prefix/629.json",
+    "6295": "prefix/629.json",
+    "6300": "prefix/630.json",
+    "6305": "prefix/630.json",
+    "6306": "prefix/630.json",
+    "6311": "prefix/631.json",
+    "6313": "prefix/631.json",
+    "6314": "prefix/631.json",
+    "6320": "prefix/632.json",
+    "6321": "prefix/632.json",
+    "6322": "prefix/632.json",
+    "6323": "prefix/632.json",
+    "6324": "prefix/632.json",
+    "6330": "prefix/633.json",
+    "6334": "prefix/633.json",
+    "6335": "prefix/633.json",
+    "6336": "prefix/633.json",
+    "6341": "prefix/634.json",
+    "6342": "prefix/634.json",
+    "6343": "prefix/634.json",
+    "6344": "prefix/634.json",
+    "6345": "prefix/634.json",
+    "6346": "prefix/634.json",
+    "6347": "prefix/634.json",
+    "6351": "prefix/635.json",
+    "6352": "prefix/635.json",
+    "6353": "prefix/635.json",
+    "6361": "prefix/636.json",
+    "6363": "prefix/636.json",
+    "6364": "prefix/636.json",
+    "6365": "prefix/636.json",
+    "6370": "prefix/637.json",
+    "6371": "prefix/637.json",
+    "6372": "prefix/637.json",
+    "6373": "prefix/637.json",
+    "6380": "prefix/638.json",
+    "6382": "prefix/638.json",
+    "6383": "prefix/638.json",
+    "6384": "prefix/638.json",
+    "6385": "prefix/638.json",
+    "6391": "prefix/639.json",
+    "6392": "prefix/639.json",
+    "6393": "prefix/639.json",
+    "6395": "prefix/639.json",
+    "6401": "prefix/640.json",
+    "6402": "prefix/640.json",
+    "6403": "prefix/640.json",
+    "6404": "prefix/640.json",
+    "6405": "prefix/640.json",
+    "6406": "prefix/640.json",
+    "6408": "prefix/640.json",
+    "6410": "prefix/641.json",
+    "6413": "prefix/641.json",
+    "6414": "prefix/641.json",
+    "6416": "prefix/641.json",
+    "6421": "prefix/642.json",
+    "6422": "prefix/642.json",
+    "6423": "prefix/642.json",
+    "6424": "prefix/642.json",
+    "6425": "prefix/642.json",
+    "6426": "prefix/642.json",
+    "6430": "prefix/643.json",
+    "6432": "prefix/643.json",
+    "6433": "prefix/643.json",
+    "6441": "prefix/644.json",
+    "6444": "prefix/644.json",
+    "6450": "prefix/645.json",
+    "6456": "prefix/645.json",
+    "6458": "prefix/645.json",
+    "6460": "prefix/646.json",
+    "6462": "prefix/646.json",
+    "6463": "prefix/646.json",
+    "6464": "prefix/646.json",
+    "6465": "prefix/646.json",
+    "6471": "prefix/647.json",
+    "6473": "prefix/647.json",
+    "6474": "prefix/647.json",
+    "6481": "prefix/648.json",
+    "6491": "prefix/649.json",
+    "6492": "prefix/649.json",
+    "6493": "prefix/649.json",
+    "6500": "prefix/650.json",
+    "6511": "prefix/651.json",
+    "6521": "prefix/652.json",
+    "6522": "prefix/652.json",
+    "6524": "prefix/652.json",
+    "6525": "prefix/652.json",
+    "6526": "prefix/652.json",
+    "6527": "prefix/652.json",
+    "6528": "prefix/652.json",
+    "6531": "prefix/653.json",
+    "6532": "prefix/653.json",
+    "6533": "prefix/653.json",
+    "6534": "prefix/653.json",
+    "6541": "prefix/654.json",
+    "6542": "prefix/654.json",
+    "6543": "prefix/654.json",
+    "6544": "prefix/654.json",
+    "6551": "prefix/655.json",
+    "6552": "prefix/655.json",
+    "6553": "prefix/655.json",
+    "6555": "prefix/655.json",
+    "6561": "prefix/656.json",
+    "6562": "prefix/656.json",
+    "6563": "prefix/656.json",
+    "6571": "prefix/657.json",
+    "6572": "prefix/657.json",
+    "6574": "prefix/657.json",
+    "6580": "prefix/658.json",
+    "6591": "prefix/659.json",
+    "6600": "prefix/660.json",
+    "6604": "prefix/660.json",
+    "6610": "prefix/661.json",
+    "6611": "prefix/661.json",
+    "6621": "prefix/662.json",
+    "6622": "prefix/662.json",
+    "6623": "prefix/662.json",
+    "6631": "prefix/663.json",
+    "6632": "prefix/663.json",
+    "6633": "prefix/663.json",
+    "6642": "prefix/664.json",
+    "6644": "prefix/664.json",
+    "6645": "prefix/664.json",
+    "6646": "prefix/664.json",
+    "6647": "prefix/664.json",
+    "6650": "prefix/665.json",
+    "6651": "prefix/665.json",
+    "6652": "prefix/665.json",
+    "6653": "prefix/665.json",
+    "6654": "prefix/665.json",
+    "6655": "prefix/665.json",
+    "6670": "prefix/667.json",
+    "6671": "prefix/667.json",
+    "6672": "prefix/667.json",
+    "6673": "prefix/667.json",
+    "6675": "prefix/667.json",
+    "6677": "prefix/667.json",
+    "6682": "prefix/668.json",
+    "6691": "prefix/669.json",
+    "6767": "prefix/676.json",
+    "9782": "prefix/978.json",
+    "9900": "prefix/990.json",
+    "9903": "prefix/990.json",
+    "9904": "prefix/990.json",
+    "9905": "prefix/990.json",
+    "9906": "prefix/990.json",
+    "9907": "prefix/990.json",
+    "9908": "prefix/990.json",
+    "9909": "prefix/990.json",
+    "9911": "prefix/991.json",
+    "9912": "prefix/991.json",
+    "9913": "prefix/991.json",
+    "9918": "prefix/991.json",
+    "9919": "prefix/991.json",
+    "9920": "prefix/992.json",
+    "9931": "prefix/993.json",
+    "9932": "prefix/993.json",
+    "9941": "prefix/994.json",
+    "9942": "prefix/994.json",
+    "9943": "prefix/994.json",
+    "9951": "prefix/995.json",
+    "9952": "prefix/995.json",
+    "9954": "prefix/995.json",
+    "9961": "prefix/996.json",
+    "9962": "prefix/996.json",
+    "9963": "prefix/996.json",
+    "9971": "prefix/997.json",
+    "9972": "prefix/997.json",
+    "9974": "prefix/997.json",
+    "9981": "prefix/998.json",
+    "9990": "prefix/999.json",
+    "9991": "prefix/999.json",
+    "9992": "prefix/999.json"
+  },
+  "municipalities": [
+    {
+      "code": "70701",
+      "name": "Abfaltersbach",
+      "postal_codes": [
+        "9913"
+      ]
+    },
+    {
+      "code": "70301",
+      "name": "Absam",
+      "postal_codes": [
+        "6067"
+      ]
+    },
+    {
+      "code": "70901",
+      "name": "Achenkirch",
+      "postal_codes": [
+        "6215"
+      ]
+    },
+    {
+      "code": "70702",
+      "name": "Ainet",
+      "postal_codes": [
+        "9951"
+      ]
+    },
+    {
+      "code": "70302",
+      "name": "Aldrans",
+      "postal_codes": [
+        "6071",
+        "6073"
+      ]
+    },
+    {
+      "code": "70501",
+      "name": "Alpbach",
+      "postal_codes": [
+        "6236"
+      ]
+    },
+    {
+      "code": "70703",
+      "name": "Amlach",
+      "postal_codes": [
+        "9908"
+      ]
+    },
+    {
+      "code": "70303",
+      "name": "Ampass",
+      "postal_codes": [
+        "6070"
+      ]
+    },
+    {
+      "code": "70502",
+      "name": "Angath",
+      "postal_codes": [
+        "6321"
+      ]
+    },
+    {
+      "code": "70528",
+      "name": "Angerberg",
+      "postal_codes": [
+        "6320"
+      ]
+    },
+    {
+      "code": "70704",
+      "name": "Anras",
+      "postal_codes": [
+        "9912"
+      ]
+    },
+    {
+      "code": "70201",
+      "name": "Arzl im Pitztal",
+      "postal_codes": [
+        "6471"
+      ]
+    },
+    {
+      "code": "70902",
+      "name": "Aschau im Zillertal",
+      "postal_codes": [
+        "6274"
+      ]
+    },
+    {
+      "code": "70705",
+      "name": "Assling",
+      "postal_codes": [
+        "9911"
+      ]
+    },
+    {
+      "code": "70401",
+      "name": "Aurach bei Kitzbühel",
+      "postal_codes": [
+        "6371"
+      ]
+    },
+    {
+      "code": "70706",
+      "name": "Außervillgraten",
+      "postal_codes": [
+        "9931"
+      ]
+    },
+    {
+      "code": "70304",
+      "name": "Axams",
+      "postal_codes": [
+        "6094"
+      ]
+    },
+    {
+      "code": "70801",
+      "name": "Bach",
+      "postal_codes": [
+        "6653",
+        "6654"
+      ]
+    },
+    {
+      "code": "70503",
+      "name": "Bad Häring",
+      "postal_codes": [
+        "6323"
+      ]
+    },
+    {
+      "code": "70305",
+      "name": "Baumkirchen",
+      "postal_codes": [
+        "6121"
+      ]
+    },
+    {
+      "code": "70802",
+      "name": "Berwang",
+      "postal_codes": [
+        "6621",
+        "6622"
+      ]
+    },
+    {
+      "code": "70803",
+      "name": "Biberwier",
+      "postal_codes": [
+        "6633"
+      ]
+    },
+    {
+      "code": "70804",
+      "name": "Bichlbach",
+      "postal_codes": [
+        "6621"
+      ]
+    },
+    {
+      "code": "70306",
+      "name": "Birgitz",
+      "postal_codes": [
+        "6092"
+      ]
+    },
+    {
+      "code": "70903",
+      "name": "Brandberg",
+      "postal_codes": [
+        "6290"
+      ]
+    },
+    {
+      "code": "70504",
+      "name": "Brandenberg",
+      "postal_codes": [
+        "6234"
+      ]
+    },
+    {
+      "code": "70505",
+      "name": "Breitenbach am Inn",
+      "postal_codes": [
+        "6252"
+      ]
+    },
+    {
+      "code": "70805",
+      "name": "Breitenwang",
+      "postal_codes": [
+        "6600"
+      ]
+    },
+    {
+      "code": "70402",
+      "name": "Brixen im Thale",
+      "postal_codes": [
+        "6364"
+      ]
+    },
+    {
+      "code": "70506",
+      "name": "Brixlegg",
+      "postal_codes": [
+        "6230"
+      ]
+    },
+    {
+      "code": "70904",
+      "name": "Bruck am Ziller",
+      "postal_codes": [
+        "6260"
+      ]
+    },
+    {
+      "code": "70905",
+      "name": "Buch in Tirol",
+      "postal_codes": [
+        "6220"
+      ]
+    },
+    {
+      "code": "70707",
+      "name": "Dölsach",
+      "postal_codes": [
+        "9991"
+      ]
+    },
+    {
+      "code": "70508",
+      "name": "Ebbs",
+      "postal_codes": [
+        "6341"
+      ]
+    },
+    {
+      "code": "70907",
+      "name": "Eben am Achensee",
+      "postal_codes": [
+        "6212",
+        "6213",
+        "6215"
+      ]
+    },
+    {
+      "code": "70806",
+      "name": "Ehenbichl",
+      "postal_codes": [
+        "6600",
+        "6671"
+      ]
+    },
+    {
+      "code": "70807",
+      "name": "Ehrwald",
+      "postal_codes": [
+        "6632"
+      ]
+    },
+    {
+      "code": "70808",
+      "name": "Elbigenalp",
+      "postal_codes": [
+        "6652",
+        "6653"
+      ]
+    },
+    {
+      "code": "70307",
+      "name": "Ellbögen",
+      "postal_codes": [
+        "6083"
+      ]
+    },
+    {
+      "code": "70509",
+      "name": "Ellmau",
+      "postal_codes": [
+        "6352"
+      ]
+    },
+    {
+      "code": "70809",
+      "name": "Elmen",
+      "postal_codes": [
+        "6644"
+      ]
+    },
+    {
+      "code": "70510",
+      "name": "Erl",
+      "postal_codes": [
+        "6343"
+      ]
+    },
+    {
+      "code": "70601",
+      "name": "Faggen",
+      "postal_codes": [
+        "6525"
+      ]
+    },
+    {
+      "code": "70602",
+      "name": "Fendels",
+      "postal_codes": [
+        "6528"
+      ]
+    },
+    {
+      "code": "70403",
+      "name": "Fieberbrunn",
+      "postal_codes": [
+        "6391"
+      ]
+    },
+    {
+      "code": "70908",
+      "name": "Finkenberg",
+      "postal_codes": [
+        "6292",
+        "6295"
+      ]
+    },
+    {
+      "code": "70603",
+      "name": "Fiss",
+      "postal_codes": [
+        "6533"
+      ]
+    },
+    {
+      "code": "70308",
+      "name": "Flaurling",
+      "postal_codes": [
+        "6403"
+      ]
+    },
+    {
+      "code": "70604",
+      "name": "Fließ",
+      "postal_codes": [
+        "6473",
+        "6500",
+        "6521"
+      ]
+    },
+    {
+      "code": "70605",
+      "name": "Flirsch",
+      "postal_codes": [
+        "6572"
+      ]
+    },
+    {
+      "code": "70810",
+      "name": "Forchach",
+      "postal_codes": [
+        "6670"
+      ]
+    },
+    {
+      "code": "70309",
+      "name": "Fritzens",
+      "postal_codes": [
+        "6122"
+      ]
+    },
+    {
+      "code": "70909",
+      "name": "Fügen",
+      "postal_codes": [
+        "6263"
+      ]
+    },
+    {
+      "code": "70910",
+      "name": "Fügenberg",
+      "postal_codes": [
+        "6264"
+      ]
+    },
+    {
+      "code": "70310",
+      "name": "Fulpmes",
+      "postal_codes": [
+        "6166",
+        "6167"
+      ]
+    },
+    {
+      "code": "70708",
+      "name": "Gaimberg",
+      "postal_codes": [
+        "9905"
+      ]
+    },
+    {
+      "code": "70911",
+      "name": "Gallzein",
+      "postal_codes": [
+        "6222"
+      ]
+    },
+    {
+      "code": "70606",
+      "name": "Galtür",
+      "postal_codes": [
+        "6563"
+      ]
+    },
+    {
+      "code": "70912",
+      "name": "Gerlos",
+      "postal_codes": [
+        "6281"
+      ]
+    },
+    {
+      "code": "70913",
+      "name": "Gerlosberg",
+      "postal_codes": [
+        "6280"
+      ]
+    },
+    {
+      "code": "70311",
+      "name": "Gnadenwald",
+      "postal_codes": [
+        "6069"
+      ]
+    },
+    {
+      "code": "70404",
+      "name": "Going am Wilden Kaiser",
+      "postal_codes": [
+        "6353"
+      ]
+    },
+    {
+      "code": "70312",
+      "name": "Götzens",
+      "postal_codes": [
+        "6091"
+      ]
+    },
+    {
+      "code": "70812",
+      "name": "Gramais",
+      "postal_codes": [
+        "6650"
+      ]
+    },
+    {
+      "code": "70811",
+      "name": "Grän",
+      "postal_codes": [
+        "6673"
+      ]
+    },
+    {
+      "code": "70313",
+      "name": "Gries am Brenner",
+      "postal_codes": [
+        "6156"
+      ]
+    },
+    {
+      "code": "70314",
+      "name": "Gries im Sellrain",
+      "postal_codes": [
+        "6182"
+      ]
+    },
+    {
+      "code": "70607",
+      "name": "Grins",
+      "postal_codes": [
+        "6500",
+        "6591"
+      ]
+    },
+    {
+      "code": "70315",
+      "name": "Grinzens",
+      "postal_codes": [
+        "6095"
+      ]
+    },
+    {
+      "code": "70317",
+      "name": "Gschnitz",
+      "postal_codes": [
+        "6150"
+      ]
+    },
+    {
+      "code": "70202",
+      "name": "Haiming",
+      "postal_codes": [
+        "6425",
+        "6430",
+        "6433"
+      ]
+    },
+    {
+      "code": "70914",
+      "name": "Hainzenberg",
+      "postal_codes": [
+        "6278"
+      ]
+    },
+    {
+      "code": "70354",
+      "name": "Hall in Tirol",
+      "postal_codes": [
+        "6060"
+      ]
+    },
+    {
+      "code": "70915",
+      "name": "Hart im Zillertal",
+      "postal_codes": [
+        "6265"
+      ]
+    },
+    {
+      "code": "70813",
+      "name": "Häselgehr",
+      "postal_codes": [
+        "6651"
+      ]
+    },
+    {
+      "code": "70318",
+      "name": "Hatting",
+      "postal_codes": [
+        "6402"
+      ]
+    },
+    {
+      "code": "70735",
+      "name": "Heinfels",
+      "postal_codes": [
+        "9919"
+      ]
+    },
+    {
+      "code": "70814",
+      "name": "Heiterwang",
+      "postal_codes": [
+        "6611"
+      ]
+    },
+    {
+      "code": "70815",
+      "name": "Hinterhornbach",
+      "postal_codes": [
+        "6646"
+      ]
+    },
+    {
+      "code": "70916",
+      "name": "Hippach",
+      "postal_codes": [
+        "6283"
+      ]
+    },
+    {
+      "code": "70405",
+      "name": "Hochfilzen",
+      "postal_codes": [
+        "6395"
+      ]
+    },
+    {
+      "code": "70816",
+      "name": "Höfen",
+      "postal_codes": [
+        "6604"
+      ]
+    },
+    {
+      "code": "70817",
+      "name": "Holzgau",
+      "postal_codes": [
+        "6654"
+      ]
+    },
+    {
+      "code": "70406",
+      "name": "Hopfgarten im Brixental",
+      "postal_codes": [
+        "6314",
+        "6361"
+      ]
+    },
+    {
+      "code": "70709",
+      "name": "Hopfgarten in Defereggen",
+      "postal_codes": [
+        "9961"
+      ]
+    },
+    {
+      "code": "70203",
+      "name": "Imst",
+      "postal_codes": [
+        "6460"
+      ]
+    },
+    {
+      "code": "70204",
+      "name": "Imsterberg",
+      "postal_codes": [
+        "6492"
+      ]
+    },
+    {
+      "code": "70710",
+      "name": "Innervillgraten",
+      "postal_codes": [
+        "9932"
+      ]
+    },
+    {
+      "code": "70101",
+      "name": "Innsbruck",
+      "postal_codes": [
+        "6020",
+        "6080"
+      ]
+    },
+    {
+      "code": "70319",
+      "name": "Inzing",
+      "postal_codes": [
+        "6401"
+      ]
+    },
+    {
+      "code": "70608",
+      "name": "Ischgl",
+      "postal_codes": [
+        "6561",
+        "6562"
+      ]
+    },
+    {
+      "code": "70711",
+      "name": "Iselsberg-Stronach",
+      "postal_codes": [
+        "9992"
+      ]
+    },
+    {
+      "code": "70407",
+      "name": "Itter",
+      "postal_codes": [
+        "6305"
+      ]
+    },
+    {
+      "code": "70917",
+      "name": "Jenbach",
+      "postal_codes": [
+        "6200"
+      ]
+    },
+    {
+      "code": "70205",
+      "name": "Jerzens",
+      "postal_codes": [
+        "6473",
+        "6474"
+      ]
+    },
+    {
+      "code": "70408",
+      "name": "Jochberg",
+      "postal_codes": [
+        "6373"
+      ]
+    },
+    {
+      "code": "70818",
+      "name": "Jungholz",
+      "postal_codes": [
+        "6691"
+      ]
+    },
+    {
+      "code": "70819",
+      "name": "Kaisers",
+      "postal_codes": [
+        "6655"
+      ]
+    },
+    {
+      "code": "70712",
+      "name": "Kals am Großglockner",
+      "postal_codes": [
+        "9981"
+      ]
+    },
+    {
+      "code": "70918",
+      "name": "Kaltenbach",
+      "postal_codes": [
+        "6272"
+      ]
+    },
+    {
+      "code": "70609",
+      "name": "Kappl",
+      "postal_codes": [
+        "6553",
+        "6555"
+      ]
+    },
+    {
+      "code": "70206",
+      "name": "Karres",
+      "postal_codes": [
+        "6462"
+      ]
+    },
+    {
+      "code": "70207",
+      "name": "Karrösten",
+      "postal_codes": [
+        "6460",
+        "6463"
+      ]
+    },
+    {
+      "code": "70713",
+      "name": "Kartitsch",
+      "postal_codes": [
+        "9941"
+      ]
+    },
+    {
+      "code": "70610",
+      "name": "Kaunerberg",
+      "postal_codes": [
+        "6527"
+      ]
+    },
+    {
+      "code": "70611",
+      "name": "Kaunertal",
+      "postal_codes": [
+        "6524"
+      ]
+    },
+    {
+      "code": "70612",
+      "name": "Kauns",
+      "postal_codes": [
+        "6526"
+      ]
+    },
+    {
+      "code": "70320",
+      "name": "Kematen in Tirol",
+      "postal_codes": [
+        "6175",
+        "6176"
+      ]
+    },
+    {
+      "code": "70409",
+      "name": "Kirchberg in Tirol",
+      "postal_codes": [
+        "6365"
+      ]
+    },
+    {
+      "code": "70511",
+      "name": "Kirchbichl",
+      "postal_codes": [
+        "6322"
+      ]
+    },
+    {
+      "code": "70410",
+      "name": "Kirchdorf in Tirol",
+      "postal_codes": [
+        "6382",
+        "6383"
+      ]
+    },
+    {
+      "code": "70411",
+      "name": "Kitzbühel",
+      "postal_codes": [
+        "6370"
+      ]
+    },
+    {
+      "code": "70322",
+      "name": "Kolsass",
+      "postal_codes": [
+        "6114"
+      ]
+    },
+    {
+      "code": "70323",
+      "name": "Kolsassberg",
+      "postal_codes": [
+        "6115"
+      ]
+    },
+    {
+      "code": "70412",
+      "name": "Kössen",
+      "postal_codes": [
+        "6345"
+      ]
+    },
+    {
+      "code": "70512",
+      "name": "Kramsach",
+      "postal_codes": [
+        "6233"
+      ]
+    },
+    {
+      "code": "70513",
+      "name": "Kufstein",
+      "postal_codes": [
+        "6330"
+      ]
+    },
+    {
+      "code": "70514",
+      "name": "Kundl",
+      "postal_codes": [
+        "6250"
+      ]
+    },
+    {
+      "code": "70613",
+      "name": "Ladis",
+      "postal_codes": [
+        "6532"
+      ]
+    },
+    {
+      "code": "70614",
+      "name": "Landeck",
+      "postal_codes": [
+        "6500"
+      ]
+    },
+    {
+      "code": "70208",
+      "name": "Längenfeld",
+      "postal_codes": [
+        "6444"
+      ]
+    },
+    {
+      "code": "70515",
+      "name": "Langkampfen",
+      "postal_codes": [
+        "6336"
+      ]
+    },
+    {
+      "code": "70325",
+      "name": "Lans",
+      "postal_codes": [
+        "6072"
+      ]
+    },
+    {
+      "code": "70714",
+      "name": "Lavant",
+      "postal_codes": [
+        "9906"
+      ]
+    },
+    {
+      "code": "70820",
+      "name": "Lechaschau",
+      "postal_codes": [
+        "6600"
+      ]
+    },
+    {
+      "code": "70715",
+      "name": "Leisach",
+      "postal_codes": [
+        "9909"
+      ]
+    },
+    {
+      "code": "70821",
+      "name": "Lermoos",
+      "postal_codes": [
+        "6631"
+      ]
+    },
+    {
+      "code": "70326",
+      "name": "Leutasch",
+      "postal_codes": [
+        "6105"
+      ]
+    },
+    {
+      "code": "70716",
+      "name": "Lienz",
+      "postal_codes": [
+        "9900"
+      ]
+    },
+    {
+      "code": "70516",
+      "name": "Mariastein",
+      "postal_codes": [
+        "6324"
+      ]
+    },
+    {
+      "code": "70370",
+      "name": "Matrei am Brenner",
+      "postal_codes": [
+        "6143",
+        "6150"
+      ]
+    },
+    {
+      "code": "70717",
+      "name": "Matrei in Osttirol",
+      "postal_codes": [
+        "9971"
+      ]
+    },
+    {
+      "code": "70920",
+      "name": "Mayrhofen",
+      "postal_codes": [
+        "6290",
+        "6295"
+      ]
+    },
+    {
+      "code": "70328",
+      "name": "Mieders",
+      "postal_codes": [
+        "6142"
+      ]
+    },
+    {
+      "code": "70209",
+      "name": "Mieming",
+      "postal_codes": [
+        "6414"
+      ]
+    },
+    {
+      "code": "70329",
+      "name": "Mils",
+      "postal_codes": [
+        "6068"
+      ]
+    },
+    {
+      "code": "70210",
+      "name": "Mils bei Imst",
+      "postal_codes": [
+        "6493"
+      ]
+    },
+    {
+      "code": "70211",
+      "name": "Mötz",
+      "postal_codes": [
+        "6423"
+      ]
+    },
+    {
+      "code": "70517",
+      "name": "Münster",
+      "postal_codes": [
+        "6232"
+      ]
+    },
+    {
+      "code": "70822",
+      "name": "Musau",
+      "postal_codes": [
+        "6600"
+      ]
+    },
+    {
+      "code": "70331",
+      "name": "Mutters",
+      "postal_codes": [
+        "6020",
+        "6162"
+      ]
+    },
+    {
+      "code": "70823",
+      "name": "Namlos",
+      "postal_codes": [
+        "6623"
+      ]
+    },
+    {
+      "code": "70212",
+      "name": "Nassereith",
+      "postal_codes": [
+        "6465"
+      ]
+    },
+    {
+      "code": "70332",
+      "name": "Natters",
+      "postal_codes": [
+        "6020",
+        "6091",
+        "6161"
+      ]
+    },
+    {
+      "code": "70615",
+      "name": "Nauders",
+      "postal_codes": [
+        "6542",
+        "6543"
+      ]
+    },
+    {
+      "code": "70333",
+      "name": "Navis",
+      "postal_codes": [
+        "6145"
+      ]
+    },
+    {
+      "code": "70824",
+      "name": "Nesselwängle",
+      "postal_codes": [
+        "6672"
+      ]
+    },
+    {
+      "code": "70334",
+      "name": "Neustift im Stubaital",
+      "postal_codes": [
+        "6167"
+      ]
+    },
+    {
+      "code": "70518",
+      "name": "Niederndorf",
+      "postal_codes": [
+        "6342"
+      ]
+    },
+    {
+      "code": "70519",
+      "name": "Niederndorferberg",
+      "postal_codes": [
+        "6346"
+      ]
+    },
+    {
+      "code": "70718",
+      "name": "Nikolsdorf",
+      "postal_codes": [
+        "9782"
+      ]
+    },
+    {
+      "code": "70719",
+      "name": "Nußdorf-Debant",
+      "postal_codes": [
+        "9990"
+      ]
+    },
+    {
+      "code": "70335",
+      "name": "Oberhofen im Inntal",
+      "postal_codes": [
+        "6406"
+      ]
+    },
+    {
+      "code": "70720",
+      "name": "Oberlienz",
+      "postal_codes": [
+        "9903"
+      ]
+    },
+    {
+      "code": "70336",
+      "name": "Obernberg am Brenner",
+      "postal_codes": [
+        "6157"
+      ]
+    },
+    {
+      "code": "70413",
+      "name": "Oberndorf in Tirol",
+      "postal_codes": [
+        "6372"
+      ]
+    },
+    {
+      "code": "70337",
+      "name": "Oberperfuss",
+      "postal_codes": [
+        "6173"
+      ]
+    },
+    {
+      "code": "70721",
+      "name": "Obertilliach",
+      "postal_codes": [
+        "9942"
+      ]
+    },
+    {
+      "code": "70213",
+      "name": "Obsteig",
+      "postal_codes": [
+        "6416"
+      ]
+    },
+    {
+      "code": "70214",
+      "name": "Oetz",
+      "postal_codes": [
+        "6433"
+      ]
+    },
+    {
+      "code": "70338",
+      "name": "Patsch",
+      "postal_codes": [
+        "6082"
+      ]
+    },
+    {
+      "code": "70339",
+      "name": "Pettnau",
+      "postal_codes": [
+        "6170",
+        "6408"
+      ]
+    },
+    {
+      "code": "70616",
+      "name": "Pettneu am Arlberg",
+      "postal_codes": [
+        "6574"
+      ]
+    },
+    {
+      "code": "70340",
+      "name": "Pfaffenhofen",
+      "postal_codes": [
+        "6405"
+      ]
+    },
+    {
+      "code": "70825",
+      "name": "Pfafflar",
+      "postal_codes": [
+        "6647"
+      ]
+    },
+    {
+      "code": "70826",
+      "name": "Pflach",
+      "postal_codes": [
+        "6600"
+      ]
+    },
+    {
+      "code": "70617",
+      "name": "Pfunds",
+      "postal_codes": [
+        "6542"
+      ]
+    },
+    {
+      "code": "70618",
+      "name": "Pians",
+      "postal_codes": [
+        "6551"
+      ]
+    },
+    {
+      "code": "70921",
+      "name": "Pill",
+      "postal_codes": [
+        "6136"
+      ]
+    },
+    {
+      "code": "70827",
+      "name": "Pinswang",
+      "postal_codes": [
+        "6600"
+      ]
+    },
+    {
+      "code": "70342",
+      "name": "Polling in Tirol",
+      "postal_codes": [
+        "6404"
+      ]
+    },
+    {
+      "code": "70723",
+      "name": "Prägraten am Großvenediger",
+      "postal_codes": [
+        "9974"
+      ]
+    },
+    {
+      "code": "70619",
+      "name": "Prutz",
+      "postal_codes": [
+        "6522"
+      ]
+    },
+    {
+      "code": "70520",
+      "name": "Radfeld",
+      "postal_codes": [
+        "6241"
+      ]
+    },
+    {
+      "code": "70922",
+      "name": "Ramsau im Zillertal",
+      "postal_codes": [
+        "6284"
+      ]
+    },
+    {
+      "code": "70343",
+      "name": "Ranggen",
+      "postal_codes": [
+        "6179"
+      ]
+    },
+    {
+      "code": "70521",
+      "name": "Rattenberg",
+      "postal_codes": [
+        "6240"
+      ]
+    },
+    {
+      "code": "70414",
+      "name": "Reith bei Kitzbühel",
+      "postal_codes": [
+        "6352",
+        "6353",
+        "6365",
+        "6370"
+      ]
+    },
+    {
+      "code": "70344",
+      "name": "Reith bei Seefeld",
+      "postal_codes": [
+        "6100",
+        "6103"
+      ]
+    },
+    {
+      "code": "70522",
+      "name": "Reith im Alpbachtal",
+      "postal_codes": [
+        "6235",
+        "6260"
+      ]
+    },
+    {
+      "code": "70523",
+      "name": "Rettenschöss",
+      "postal_codes": [
+        "6347"
+      ]
+    },
+    {
+      "code": "70828",
+      "name": "Reutte",
+      "postal_codes": [
+        "6600"
+      ]
+    },
+    {
+      "code": "70620",
+      "name": "Ried im Oberinntal",
+      "postal_codes": [
+        "6531"
+      ]
+    },
+    {
+      "code": "70923",
+      "name": "Ried im Zillertal",
+      "postal_codes": [
+        "6273"
+      ]
+    },
+    {
+      "code": "70215",
+      "name": "Rietz",
+      "postal_codes": [
+        "6421"
+      ]
+    },
+    {
+      "code": "70345",
+      "name": "Rinn",
+      "postal_codes": [
+        "6074"
+      ]
+    },
+    {
+      "code": "70924",
+      "name": "Rohrberg",
+      "postal_codes": [
+        "6280"
+      ]
+    },
+    {
+      "code": "70216",
+      "name": "Roppen",
+      "postal_codes": [
+        "6426"
+      ]
+    },
+    {
+      "code": "70346",
+      "name": "Rum",
+      "postal_codes": [
+        "6063"
+      ]
+    },
+    {
+      "code": "70218",
+      "name": "Sautens",
+      "postal_codes": [
+        "6432"
+      ]
+    },
+    {
+      "code": "70348",
+      "name": "Scharnitz",
+      "postal_codes": [
+        "6108"
+      ]
+    },
+    {
+      "code": "70829",
+      "name": "Schattwald",
+      "postal_codes": [
+        "6677"
+      ]
+    },
+    {
+      "code": "70524",
+      "name": "Scheffau am Wilden Kaiser",
+      "postal_codes": [
+        "6351"
+      ]
+    },
+    {
+      "code": "70727",
+      "name": "Schlaiten",
+      "postal_codes": [
+        "9954"
+      ]
+    },
+    {
+      "code": "70925",
+      "name": "Schlitters",
+      "postal_codes": [
+        "6262"
+      ]
+    },
+    {
+      "code": "70349",
+      "name": "Schmirn",
+      "postal_codes": [
+        "6154"
+      ]
+    },
+    {
+      "code": "70350",
+      "name": "Schönberg im Stubaital",
+      "postal_codes": [
+        "6020",
+        "6141"
+      ]
+    },
+    {
+      "code": "70622",
+      "name": "Schönwies",
+      "postal_codes": [
+        "6491"
+      ]
+    },
+    {
+      "code": "70926",
+      "name": "Schwaz",
+      "postal_codes": [
+        "6130"
+      ]
+    },
+    {
+      "code": "70927",
+      "name": "Schwendau",
+      "postal_codes": [
+        "6283",
+        "6290",
+        "6292"
+      ]
+    },
+    {
+      "code": "70418",
+      "name": "Schwendt",
+      "postal_codes": [
+        "6385"
+      ]
+    },
+    {
+      "code": "70525",
+      "name": "Schwoich",
+      "postal_codes": [
+        "6334"
+      ]
+    },
+    {
+      "code": "70623",
+      "name": "See",
+      "postal_codes": [
+        "6553",
+        "6555"
+      ]
+    },
+    {
+      "code": "70351",
+      "name": "Seefeld in Tirol",
+      "postal_codes": [
+        "6100"
+      ]
+    },
+    {
+      "code": "70352",
+      "name": "Sellrain",
+      "postal_codes": [
+        "6181"
+      ]
+    },
+    {
+      "code": "70624",
+      "name": "Serfaus",
+      "postal_codes": [
+        "6534",
+        "6541",
+        "6542"
+      ]
+    },
+    {
+      "code": "70728",
+      "name": "Sillian",
+      "postal_codes": [
+        "9920"
+      ]
+    },
+    {
+      "code": "70219",
+      "name": "Silz",
+      "postal_codes": [
+        "6183",
+        "6424"
+      ]
+    },
+    {
+      "code": "70353",
+      "name": "Sistrans",
+      "postal_codes": [
+        "6073"
+      ]
+    },
+    {
+      "code": "70220",
+      "name": "Sölden",
+      "postal_codes": [
+        "6450",
+        "6456",
+        "6458"
+      ]
+    },
+    {
+      "code": "70526",
+      "name": "Söll",
+      "postal_codes": [
+        "6306",
+        "6330",
+        "6351"
+      ]
+    },
+    {
+      "code": "70625",
+      "name": "Spiss",
+      "postal_codes": [
+        "6544"
+      ]
+    },
+    {
+      "code": "70621",
+      "name": "St. Anton am Arlberg",
+      "postal_codes": [
+        "6580"
+      ]
+    },
+    {
+      "code": "70724",
+      "name": "St. Jakob in Defereggen",
+      "postal_codes": [
+        "9963"
+      ]
+    },
+    {
+      "code": "70415",
+      "name": "St. Jakob in Haus",
+      "postal_codes": [
+        "6392"
+      ]
+    },
+    {
+      "code": "70725",
+      "name": "St. Johann im Walde",
+      "postal_codes": [
+        "9952"
+      ]
+    },
+    {
+      "code": "70416",
+      "name": "St. Johann in Tirol",
+      "postal_codes": [
+        "6380"
+      ]
+    },
+    {
+      "code": "70217",
+      "name": "St. Leonhard im Pitztal",
+      "postal_codes": [
+        "6481"
+      ]
+    },
+    {
+      "code": "70347",
+      "name": "St. Sigmund im Sellrain",
+      "postal_codes": [
+        "6184"
+      ]
+    },
+    {
+      "code": "70417",
+      "name": "St. Ulrich am Pillersee",
+      "postal_codes": [
+        "6393"
+      ]
+    },
+    {
+      "code": "70726",
+      "name": "St. Veit in Defereggen",
+      "postal_codes": [
+        "9962"
+      ]
+    },
+    {
+      "code": "70221",
+      "name": "Stams",
+      "postal_codes": [
+        "6182",
+        "6422"
+      ]
+    },
+    {
+      "code": "70928",
+      "name": "Stans",
+      "postal_codes": [
+        "6135",
+        "6200"
+      ]
+    },
+    {
+      "code": "70626",
+      "name": "Stanz bei Landeck",
+      "postal_codes": [
+        "6500"
+      ]
+    },
+    {
+      "code": "70830",
+      "name": "Stanzach",
+      "postal_codes": [
+        "6642"
+      ]
+    },
+    {
+      "code": "70831",
+      "name": "Steeg",
+      "postal_codes": [
+        "6655",
+        "6767"
+      ]
+    },
+    {
+      "code": "70355",
+      "name": "Steinach am Brenner",
+      "postal_codes": [
+        "6150"
+      ]
+    },
+    {
+      "code": "70929",
+      "name": "Steinberg am Rofan",
+      "postal_codes": [
+        "6215"
+      ]
+    },
+    {
+      "code": "70930",
+      "name": "Strass im Zillertal",
+      "postal_codes": [
+        "6200",
+        "6261"
+      ]
+    },
+    {
+      "code": "70729",
+      "name": "Strassen",
+      "postal_codes": [
+        "9918"
+      ]
+    },
+    {
+      "code": "70627",
+      "name": "Strengen",
+      "postal_codes": [
+        "6571"
+      ]
+    },
+    {
+      "code": "70931",
+      "name": "Stumm",
+      "postal_codes": [
+        "6275"
+      ]
+    },
+    {
+      "code": "70932",
+      "name": "Stummerberg",
+      "postal_codes": [
+        "6276"
+      ]
+    },
+    {
+      "code": "70832",
+      "name": "Tannheim",
+      "postal_codes": [
+        "6675"
+      ]
+    },
+    {
+      "code": "70222",
+      "name": "Tarrenz",
+      "postal_codes": [
+        "6464"
+      ]
+    },
+    {
+      "code": "70356",
+      "name": "Telfes im Stubai",
+      "postal_codes": [
+        "6165"
+      ]
+    },
+    {
+      "code": "70357",
+      "name": "Telfs",
+      "postal_codes": [
+        "6100",
+        "6410"
+      ]
+    },
+    {
+      "code": "70933",
+      "name": "Terfens",
+      "postal_codes": [
+        "6123"
+      ]
+    },
+    {
+      "code": "70358",
+      "name": "Thaur",
+      "postal_codes": [
+        "6063",
+        "6065"
+      ]
+    },
+    {
+      "code": "70527",
+      "name": "Thiersee",
+      "postal_codes": [
+        "6335"
+      ]
+    },
+    {
+      "code": "70731",
+      "name": "Thurn",
+      "postal_codes": [
+        "9904"
+      ]
+    },
+    {
+      "code": "70628",
+      "name": "Tobadill",
+      "postal_codes": [
+        "6552",
+        "6553"
+      ]
+    },
+    {
+      "code": "70629",
+      "name": "Tösens",
+      "postal_codes": [
+        "6541"
+      ]
+    },
+    {
+      "code": "70359",
+      "name": "Trins",
+      "postal_codes": [
+        "6152"
+      ]
+    },
+    {
+      "code": "70732",
+      "name": "Tristach",
+      "postal_codes": [
+        "9907"
+      ]
+    },
+    {
+      "code": "70360",
+      "name": "Tulfes",
+      "postal_codes": [
+        "6075"
+      ]
+    },
+    {
+      "code": "70934",
+      "name": "Tux",
+      "postal_codes": [
+        "6293",
+        "6294"
+      ]
+    },
+    {
+      "code": "70935",
+      "name": "Uderns",
+      "postal_codes": [
+        "6271"
+      ]
+    },
+    {
+      "code": "70223",
+      "name": "Umhausen",
+      "postal_codes": [
+        "6441"
+      ]
+    },
+    {
+      "code": "70361",
+      "name": "Unterperfuss",
+      "postal_codes": [
+        "6178"
+      ]
+    },
+    {
+      "code": "70733",
+      "name": "Untertilliach",
+      "postal_codes": [
+        "9943"
+      ]
+    },
+    {
+      "code": "70362",
+      "name": "Vals",
+      "postal_codes": [
+        "6154"
+      ]
+    },
+    {
+      "code": "70833",
+      "name": "Vils",
+      "postal_codes": [
+        "6682"
+      ]
+    },
+    {
+      "code": "70734",
+      "name": "Virgen",
+      "postal_codes": [
+        "9972"
+      ]
+    },
+    {
+      "code": "70365",
+      "name": "Volders",
+      "postal_codes": [
+        "6111"
+      ]
+    },
+    {
+      "code": "70364",
+      "name": "Völs",
+      "postal_codes": [
+        "6176"
+      ]
+    },
+    {
+      "code": "70936",
+      "name": "Vomp",
+      "postal_codes": [
+        "6134",
+        "6215"
+      ]
+    },
+    {
+      "code": "70834",
+      "name": "Vorderhornbach",
+      "postal_codes": [
+        "6645"
+      ]
+    },
+    {
+      "code": "70419",
+      "name": "Waidring",
+      "postal_codes": [
+        "6384"
+      ]
+    },
+    {
+      "code": "70529",
+      "name": "Walchsee",
+      "postal_codes": [
+        "6344"
+      ]
+    },
+    {
+      "code": "70835",
+      "name": "Wängle",
+      "postal_codes": [
+        "6610"
+      ]
+    },
+    {
+      "code": "70366",
+      "name": "Wattenberg",
+      "postal_codes": [
+        "6113"
+      ]
+    },
+    {
+      "code": "70367",
+      "name": "Wattens",
+      "postal_codes": [
+        "6112"
+      ]
+    },
+    {
+      "code": "70937",
+      "name": "Weer",
+      "postal_codes": [
+        "6116"
+      ]
+    },
+    {
+      "code": "70938",
+      "name": "Weerberg",
+      "postal_codes": [
+        "6133"
+      ]
+    },
+    {
+      "code": "70836",
+      "name": "Weißenbach am Lech",
+      "postal_codes": [
+        "6671",
+        "6672"
+      ]
+    },
+    {
+      "code": "70224",
+      "name": "Wenns",
+      "postal_codes": [
+        "6473"
+      ]
+    },
+    {
+      "code": "70420",
+      "name": "Westendorf",
+      "postal_codes": [
+        "6363"
+      ]
+    },
+    {
+      "code": "70939",
+      "name": "Wiesing",
+      "postal_codes": [
+        "6210"
+      ]
+    },
+    {
+      "code": "70368",
+      "name": "Wildermieming",
+      "postal_codes": [
+        "6413"
+      ]
+    },
+    {
+      "code": "70530",
+      "name": "Wildschönau",
+      "postal_codes": [
+        "6311",
+        "6313",
+        "6314"
+      ]
+    },
+    {
+      "code": "70531",
+      "name": "Wörgl",
+      "postal_codes": [
+        "6300"
+      ]
+    },
+    {
+      "code": "70630",
+      "name": "Zams",
+      "postal_codes": [
+        "6511",
+        "6653"
+      ]
+    },
+    {
+      "code": "70940",
+      "name": "Zell am Ziller",
+      "postal_codes": [
+        "6280",
+        "6283"
+      ]
+    },
+    {
+      "code": "70941",
+      "name": "Zellberg",
+      "postal_codes": [
+        "6277"
+      ]
+    },
+    {
+      "code": "70369",
+      "name": "Zirl",
+      "postal_codes": [
+        "6170"
+      ]
+    },
+    {
+      "code": "70837",
+      "name": "Zöblen",
+      "postal_codes": [
+        "6677"
+      ]
+    }
+  ],
+  "chunk_strategy": "postal_code_3_digit_prefix",
+  "chunk_file_count": 75,
+  "postal_code_count": 273,
+  "github_upload_note": "Der vollständige Tiroler Adressbestand liegt in 75 Präfix-Dateien. Damit kann der Datenordner in einem GitHub-Web-Upload mit weniger als 100 Dateien übertragen werden."
+}
