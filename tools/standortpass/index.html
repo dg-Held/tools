@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 15 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 16 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=15">
+  <link rel="stylesheet" href="schnittstellentest.css?v=16">
 </head>
 <body>
 
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 15</h1>
+      <h1>Schnittstellentest 16</h1>
       <p class="test-lead">
-        Die bisher bestätigten Standortmodule bleiben bestehen. Test 15 nimmt den problematischen Solar-Dachfokus bewusst wieder heraus und prüft stattdessen, welche Inhalte der regionalen Klimaanalyse Inntal für eine Energieberatung wirklich zusätzlichen Nutzen bringen.
+        Die bestätigten Standortmodule bleiben bestehen. Test 16 sucht jetzt gezielt nach den drei noch offenen TIRIS-Energiethemen: Wärmenetz-Gebiete, Wärmeerzeugungsanlagen und „Solarpotential pro Jahr – Gebäude“. Die exakten Themen- und Attributnamen aus tirisMaps dienen dabei als Fingerabdruck.
       </p>
       <p class="test-disclaimer">
-        Phase 15: Solar zeigt vorerst wieder die amtliche flächige Jahresstrahlung im Standortumfeld; das separate Orthofoto bleibt in der Gebäudeübersicht. Sommerklima und Nachtkühlung werden noch nicht in den Standortpass übernommen, sondern zunächst als eigener Erkundungsblock aus TIRIS KLIMAKARTEN INNTAL ausgewertet.
+        Phase 16: Die robuste Solarstrahlungs-Karte wird auf ca. 125 m eingezoomt. Zusätzlich durchsucht ein manueller Tiefenscan den öffentlichen ArcGIS-Server des Landes nach den drei konkreten Energielayern und prüft gefundene Kandidaten direkt am gewählten Standort. Der Klimablock bleibt nur als dokumentierte Erkundung bestehen.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -47,7 +47,7 @@
         <span><strong>Bild</strong> TIRIS Orthofoto WMS</span>
         <span><strong>Höhe</strong> bestehendes TIRIS-DGM-Modul</span>
         <span><strong>Solar</strong> GeoLand / voibos</span>
-        <span><strong>Wärmenetz</strong> TIRIS-Dienstsuche</span>
+        <span><strong>Energie</strong> TIRIS ArcGIS-Tiefenscan</span>
         <span><strong>Umweltwärme</strong> TIRIS WASSER</span>
         <span><strong>Hochwasser</strong> HQ30 / HQ100 / HQ300</span>
         <span><strong>Naturgefahren</strong> TIRIS NATURGEFAHREN</span>
@@ -356,18 +356,36 @@
     <section class="container test-panel" aria-labelledby="heat-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">6 · Wärmeversorgung</p>
-          <h2 id="heat-title">Wärmenetz-Schnittstelle entdecken</h2>
+          <p class="eyebrow">6 · Energie · gezielte Layer-Suche</p>
+          <h2 id="heat-title">Wärmenetz &amp; Gebäude-Solarpotential</h2>
           <p>
-            Der Wärmenetzkataster in tirisMaps zeigt Anschlussgebiete, Betreiber und Energieträger. Im öffentlichen OGD-REST-Angebot haben wir bisher jedoch keinen eindeutig passenden Wärmenetz-Layer gefunden. Die Dienstsuche bleibt zur Dokumentation erhalten.
+            Die exakten tirisMaps-Themen sind jetzt bekannt. Dieser Entwicklungstest durchsucht daher nicht mehr nur OGD-Dienste, sondern den öffentlichen ArcGIS-Server des Landes gezielt nach <strong>Wärmenetz-Gebiete</strong>, <strong>Wärmeerzeugungsanlagen</strong> und <strong>Solarpotential pro Jahr – Gebäude</strong> und vergleicht zusätzlich die Feldnamen mit den bereits beobachteten TIRIS-Attributen.
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="heatDiscoveryStatus">nicht geprüft</span>
       </div>
 
+      <div class="target-fingerprint-grid">
+        <article class="mini-test-card">
+          <span class="mini-label">Ziel 1</span>
+          <strong>Wärmenetz-Gebiete</strong>
+          <small>Fingerabdruck: Typ · Versorgungsgebiet · Stand · Erfassungsmaßstab · Kontakt</small>
+        </article>
+        <article class="mini-test-card">
+          <span class="mini-label">Ziel 2</span>
+          <strong>Wärmeerzeugungsanlagen</strong>
+          <small>Gesucht werden Layername und Felder zu Anlage, Betreiber bzw. Energieträger.</small>
+        </article>
+        <article class="mini-test-card">
+          <span class="mini-label">Ziel 3</span>
+          <strong>Solarpotential pro Jahr – Gebäude</strong>
+          <small>Fingerabdruck: Dachflächenklassen &lt;700 bis &gt;1500 kWh · Stand · Erfassungsmaßstab.</small>
+        </article>
+      </div>
+
       <div class="action-row">
-        <button class="primary-button" id="discoverHeatButton" type="button">TIRIS-Wärmedienste suchen</button>
-        <span class="action-note">Kontrolltest der öffentlich sichtbaren Dienste; noch keine fachliche Wärmenetzbewertung.</span>
+        <button class="primary-button" id="discoverHeatButton" type="button">Drei Energie-Layer gezielt suchen</button>
+        <span class="action-note">Manueller Entwicklungstest. Zuerst werden wahrscheinliche Dienste geprüft; nur wenn nötig folgt ein breiterer Scan des öffentlichen ArcGIS-Verzeichnisses.</span>
       </div>
 
       <div class="service-result" id="heatDiscoveryResult" hidden></div>
@@ -479,7 +497,7 @@
           <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
           <div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
           <div><h3>TIRIS Solarpotenzial-WMS</h3><pre id="rawSolarMap">–</pre></div>
-          <div><h3>TIRIS Wärmenetz-Suche</h3><pre id="rawHeatDiscovery">–</pre></div>
+          <div><h3>TIRIS Energie-Layer-Tiefenscan</h3><pre id="rawHeatDiscovery">–</pre></div>
           <div><h3>TIRIS Umweltwärme / WASSER</h3><pre id="rawEnvironmentalHeat">–</pre></div>
           <div><h3>Hochwasser & Naturgefahren</h3><pre id="rawHazards">–</pre></div>
           <div><h3>Kultur & Denkmalschutz</h3><pre id="rawHeritage">–</pre></div>
@@ -509,6 +527,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=15"></script>
+  <script src="schnittstellentest.js?v=16"></script>
 </body>
 </html>

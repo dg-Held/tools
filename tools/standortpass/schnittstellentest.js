@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 15
+   STANDORTPASS – SCHNITTSTELLENTEST 16
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -18,6 +18,7 @@
    12) amtliche Überflutungsflächen HQ30/HQ100/HQ300 direkt am Gebäude/Standort prüfen
    13) TIRIS NATURGEFAHREN dynamisch nach relevanten Gefahren-/Hinweisflächen prüfen
    14) TIRIS KLIMAKARTEN INNTAL als optionale Beratungsinformation erkunden
+   15) gesamten öffentlichen TIRIS-ArcGIS-Server gezielt nach Wärmenetz-Gebieten, Wärmeerzeugungsanlagen und Gebäude-Solarpotential durchsuchen
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -59,6 +60,38 @@ const HEAT_KEYWORDS = [
   'wärme', 'waerme', 'fernwärme', 'fernwaerme', 'nahwärme', 'nahwaerme',
   'anergie', 'heiz', 'energie', 'versorgung', 'biomasse',
 ];
+
+// Test 16: Die drei exakten tirisMaps-Themen sind durch Nutzerabfragen bekannt.
+// Deshalb durchsuchen wir bei Bedarf den gesamten öffentlich erreichbaren ArcGIS-Servicebaum
+// und verwenden Themenname + beobachtete Feld-Aliase als Fingerabdruck.
+const TIRIS_ARCGIS_ROOT_URL = 'https://gis.tirol.gv.at/arcgis/rest/services';
+
+const ENERGY_LAYER_TARGETS = [
+  {
+    id: 'heat_areas',
+    label: 'Wärmenetz-Gebiete',
+    namePatterns: ['wärmenetz-gebiete', 'wärmenetz gebiete', 'wärmenetzgebiet', 'wärmenetz - versorgungsgebiet', 'waermenetz-gebiete', 'waermenetz gebiete', 'waermenetz - versorgungsgebiet'],
+    serviceHints: ['wärme', 'waerme', 'energie', 'netz', 'tmap', 'master'],
+    fieldAliases: ['typ', 'versorgungsgebiet', 'stand', 'erfassungsmaßstab', 'kontakt'],
+  },
+  {
+    id: 'heat_plants',
+    label: 'Wärmeerzeugungsanlagen',
+    namePatterns: ['wärmeerzeugungsanlagen', 'waermeerzeugungsanlagen', 'wärmeerzeugungsanlage', 'waermeerzeugungsanlage'],
+    serviceHints: ['wärme', 'waerme', 'energie', 'heiz', 'tmap', 'master'],
+    fieldAliases: ['energieträger', 'energietraeger', 'betreiber', 'anlage', 'name', 'typ', 'stand'],
+  },
+  {
+    id: 'solar_building',
+    label: 'Solarpotential pro Jahr – Gebäude',
+    namePatterns: ['solarpotential pro jahr - gebäude', 'solarpotenzial pro jahr - gebäude', 'solarpotential pro jahr gebäude', 'solarpotenzial pro jahr gebäude', 'solarpotential pro jahr - gebaude', 'solarpotenzial pro jahr - gebaude', 'solarstatistik', 'eignungsflächen', 'eignungsflaechen'],
+    serviceHints: ['solar', 'energie', 'tmap', 'master'],
+    fieldAliases: ['dachfläche', 'dachflache', '700', '900', '1100', '1300', '1500', 'stand', 'erfassungsmaßstab'],
+  },
+];
+
+const ENERGY_SCAN_SERVICE_TYPES = new Set(['MapServer', 'FeatureServer']);
+const ENERGY_SCAN_CONCURRENCY = 5;
 
 const TIRIS_WATER_URL =
   'https://gis.tirol.gv.at/arcgis/rest/services/' +
@@ -2078,6 +2111,492 @@ function candidateLayersFromService(payload) {
     }));
 }
 
+function encodeArcgisServiceName(name) {
+  return String(name ?? '')
+    .split('/')
+    .filter(Boolean)
+    .map((part) => encodeURIComponent(part))
+    .join('/');
+}
+
+function arcgisServiceUrl(service) {
+  return `${TIRIS_ARCGIS_ROOT_URL}/${encodeArcgisServiceName(service.name)}/${service.type}`;
+}
+
+async function mapConcurrent(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function runner() {
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= items.length) return;
+      try {
+        results[index] = await worker(items[index], index);
+      } catch (error) {
+        results[index] = { error: error.message };
+      }
+    }
+  }
+
+  const count = Math.min(Math.max(1, limit), Math.max(1, items.length));
+  await Promise.all(Array.from({ length: count }, () => runner()));
+  return results;
+}
+
+function uniqueArcgisServices(services) {
+  const map = new Map();
+  (services || []).forEach((service) => {
+    if (!service?.name || !ENERGY_SCAN_SERVICE_TYPES.has(service?.type)) return;
+    const key = `${service.name}|${service.type}`;
+    if (!map.has(key)) map.set(key, { name: service.name, type: service.type });
+  });
+  return [...map.values()];
+}
+
+function energyServiceIsPriority(service) {
+  const text = normalizedDiscoveryText(service?.name);
+  return ENERGY_LAYER_TARGETS.some((target) =>
+    target.serviceHints.some((hint) => text.includes(normalizedDiscoveryText(hint)))
+  );
+}
+
+function energyLayerNameScore(target, serviceName, layerName, path = '') {
+  const layerText = normalizedDiscoveryText(`${layerName} ${path}`);
+  const serviceText = normalizedDiscoveryText(serviceName);
+  let score = 0;
+
+  target.namePatterns.forEach((pattern) => {
+    const normalized = normalizedDiscoveryText(pattern);
+    if (layerText === normalized) score = Math.max(score, 120);
+    else if (layerText.includes(normalized)) score = Math.max(score, 90);
+  });
+
+  if (target.id === 'heat_areas' && layerText.includes('warmenetz') && layerText.includes('gebiet')) score = Math.max(score, 80);
+  if (target.id === 'heat_areas' && layerText.includes('versorgungsgebiet') && target.serviceHints.some((hint) => serviceText.includes(normalizedDiscoveryText(hint)))) score = Math.max(score, 45);
+  if (target.id === 'heat_plants' && layerText.includes('warmeerzeug') && layerText.includes('anlage')) score = Math.max(score, 80);
+  if (target.id === 'solar_building' && layerText.includes('solar') && layerText.includes('jahr') && layerText.includes('gebaude')) score = Math.max(score, 80);
+  if (target.id === 'solar_building' && (layerText.includes('solarstatistik') || (layerText.includes('solar') && layerText.includes('eignung')))) score = Math.max(score, 55);
+
+  target.serviceHints.forEach((hint) => {
+    if (serviceText.includes(normalizedDiscoveryText(hint))) score += 2;
+  });
+  return score;
+}
+
+function layerFieldFingerprint(target, layerMetadata) {
+  const fields = Array.isArray(layerMetadata?.fields) ? layerMetadata.fields : [];
+  const searchable = fields.map((field) => ({
+    name: field.name,
+    alias: field.alias ?? field.name,
+    normalized: normalizedDiscoveryText(`${field.alias ?? ''} ${field.name ?? ''}`),
+  }));
+  const matched = [];
+
+  target.fieldAliases.forEach((clue) => {
+    const normalized = normalizedDiscoveryText(clue);
+    const match = searchable.find((field) => field.normalized.includes(normalized));
+    if (match) matched.push({ clue, name: match.name, alias: match.alias });
+  });
+
+  let bonus = matched.length * 6;
+  if (target.id === 'heat_areas' && matched.length >= 4) bonus += 35;
+  if (target.id === 'solar_building') {
+    const hasRoof = searchable.some((field) => field.normalized.includes('dachflache'));
+    const thresholdHits = ['700', '900', '1100', '1300', '1500']
+      .filter((threshold) => searchable.some((field) => field.normalized.includes(threshold))).length;
+    if (hasRoof && thresholdHits >= 4) bonus += 50;
+  }
+  if (target.id === 'heat_plants' && matched.some((item) => normalizedDiscoveryText(item.alias).includes('energietrager'))) bonus += 25;
+
+  return { matched, bonus, fields };
+}
+
+async function collectArcgisServiceDirectory(status) {
+  const root = await fetchJson(`${TIRIS_ARCGIS_ROOT_URL}?f=pjson`, 20000);
+  const folders = Array.isArray(root?.folders) ? root.folders : [];
+  const allServices = [...(Array.isArray(root?.services) ? root.services : [])];
+  const folderResults = [];
+  let finished = 0;
+
+  const results = await mapConcurrent(folders, ENERGY_SCAN_CONCURRENCY, async (folder) => {
+    const folderUrl = `${TIRIS_ARCGIS_ROOT_URL}/${encodeURIComponent(folder)}?f=pjson`;
+    try {
+      const payload = await fetchJson(folderUrl, 18000);
+      const services = (Array.isArray(payload?.services) ? payload.services : []).map((service) => ({
+        ...service,
+        name: String(service?.name ?? '').includes('/') ? service.name : `${folder}/${service.name}`,
+      }));
+      return {
+        folder,
+        url: folderUrl,
+        services,
+      };
+    } catch (error) {
+      return { folder, url: folderUrl, services: [], error: error.message };
+    } finally {
+      finished += 1;
+      setStatus(status, `Ordner ${finished}/${folders.length}`, 'working');
+    }
+  });
+
+  results.forEach((entry) => {
+    folderResults.push({
+      folder: entry?.folder ?? '–',
+      service_count: entry?.services?.length ?? 0,
+      error: entry?.error ?? null,
+    });
+    if (Array.isArray(entry?.services)) allServices.push(...entry.services);
+  });
+
+  return {
+    folders,
+    folderResults,
+    services: uniqueArcgisServices(allServices),
+  };
+}
+
+async function scanArcgisServiceForEnergyTargets(service) {
+  const url = arcgisServiceUrl(service);
+  const payload = await fetchJson(`${url}?f=pjson`, 18000);
+  const layers = Array.isArray(payload?.layers) ? payload.layers : [];
+  const candidates = [];
+
+  layers.forEach((layer) => {
+    const path = buildLayerParentPath(layers, layer);
+    ENERGY_LAYER_TARGETS.forEach((target) => {
+      const nameScore = energyLayerNameScore(target, service.name, layer?.name, path);
+      if (nameScore < 20) return;
+      candidates.push({
+        target_id: target.id,
+        target_label: target.label,
+        service_name: service.name,
+        service_type: service.type,
+        service_url: url,
+        layer_id: layer.id,
+        layer_name: layer.name,
+        layer_path: path,
+        layer_type: layer.type ?? null,
+        geometry_type: layer.geometryType ?? null,
+        name_score: nameScore,
+      });
+    });
+  });
+
+  return candidates;
+}
+
+async function enrichEnergyCandidate(candidate) {
+  const target = ENERGY_LAYER_TARGETS.find((item) => item.id === candidate.target_id);
+  const layerUrl = `${candidate.service_url}/${candidate.layer_id}`;
+  try {
+    const metadata = await fetchJson(`${layerUrl}?f=pjson`, 15000);
+    const fingerprint = layerFieldFingerprint(target, metadata);
+    return {
+      ...candidate,
+      layer_url: layerUrl,
+      metadata,
+      matched_fields: fingerprint.matched,
+      field_bonus: fingerprint.bonus,
+      total_score: candidate.name_score + fingerprint.bonus + (metadata?.type === 'Feature Layer' ? 8 : 0),
+    };
+  } catch (error) {
+    return {
+      ...candidate,
+      layer_url: layerUrl,
+      matched_fields: [],
+      field_bonus: 0,
+      total_score: candidate.name_score,
+      metadata_error: error.message,
+    };
+  }
+}
+
+function buildPointRadiusLayerQueryUrl(layerUrl, radiusM = 20000) {
+  const point = {
+    x: selectedAddress.longitude,
+    y: selectedAddress.latitude,
+    spatialReference: { wkid: 4326 },
+  };
+  const params = new URLSearchParams({
+    f: 'json',
+    where: '1=1',
+    geometry: JSON.stringify(point),
+    geometryType: 'esriGeometryPoint',
+    inSR: '4326',
+    spatialRel: 'esriSpatialRelIntersects',
+    outFields: '*',
+    returnGeometry: 'true',
+    outSR: '4326',
+    returnZ: 'false',
+    returnM: 'false',
+    resultRecordCount: '200',
+    distance: String(radiusM),
+    units: 'esriSRUnit_Meter',
+  });
+  return `${layerUrl}/query?${params.toString()}`;
+}
+
+function attributeFromFieldAlias(candidate, attributes, aliasNeedles) {
+  const fields = Array.isArray(candidate?.metadata?.fields) ? candidate.metadata.fields : [];
+  for (const needle of aliasNeedles) {
+    const normalizedNeedle = normalizedDiscoveryText(needle);
+    const field = fields.find((item) =>
+      normalizedDiscoveryText(`${item.alias ?? ''} ${item.name ?? ''}`).includes(normalizedNeedle)
+    );
+    if (field && attributes?.[field.name] !== undefined && attributes?.[field.name] !== null && attributes?.[field.name] !== '') {
+      return { value: attributes[field.name], field };
+    }
+  }
+  return null;
+}
+
+function formatEnergyRawValue(value, field = null) {
+  if (value === null || value === undefined || value === '') return '–';
+  if (field?.type === 'esriFieldTypeDate') return formatArcgisDate(value) ?? String(value);
+  return String(value);
+}
+
+function solarBuildingBins(candidate, attributes) {
+  const fields = Array.isArray(candidate?.metadata?.fields) ? candidate.metadata.fields : [];
+  return fields
+    .filter((field) => {
+      const text = normalizedDiscoveryText(`${field.alias ?? ''} ${field.name ?? ''}`);
+      return text.includes('dachflache') && /700|900|1100|1300|1500/.test(text);
+    })
+    .map((field) => ({
+      field: field.name,
+      label: field.alias ?? field.name,
+      value: finiteNumber(attributes?.[field.name]),
+    }))
+    .filter((item) => item.value !== null);
+}
+
+async function queryEnergyCandidateAtLocation(candidate) {
+  if (!selectedAddress || candidate?.metadata?.type !== 'Feature Layer') return null;
+  let queryUrl;
+  if (candidate.target_id === 'heat_plants') {
+    queryUrl = buildPointRadiusLayerQueryUrl(candidate.layer_url, 20000);
+  } else {
+    const reference = hazardReferenceGeometry();
+    queryUrl = buildHazardSpatialQueryUrl(candidate.layer_url, reference, {
+      returnGeometry: candidate.target_id === 'heat_plants',
+      resultRecordCount: 100,
+    });
+  }
+
+  try {
+    const response = await fetchJson(queryUrl, 18000);
+    const features = Array.isArray(response?.features) ? response.features : [];
+    const result = {
+      query_url: queryUrl,
+      count: features.length,
+      first_attributes: features[0]?.attributes ?? null,
+      response_fields: response?.fields ?? null,
+    };
+    if (candidate.target_id === 'heat_plants') {
+      const nearby = features.map((feature) => ({
+        distance_m: pointFeatureDistanceM(selectedAddress, feature),
+        attributes: feature.attributes ?? {},
+      })).sort((a, b) => (a.distance_m ?? Infinity) - (b.distance_m ?? Infinity));
+      result.nearby = nearby.slice(0, 5);
+    }
+    return result;
+  } catch (error) {
+    return { query_url: queryUrl, count: 0, error: error.message };
+  }
+}
+
+function energyCandidateConfidence(candidate) {
+  if ((candidate?.total_score ?? 0) >= 150) return 'sehr hoch';
+  if ((candidate?.total_score ?? 0) >= 100) return 'hoch';
+  if ((candidate?.total_score ?? 0) >= 65) return 'mittel';
+  return 'Hinweis';
+}
+
+function energyLocationDetailsHtml(candidate) {
+  const query = candidate?.location_query;
+  if (!query) return '<small>Noch keine Standortabfrage möglich.</small>';
+  if (query.error) return `<small>Layer gefunden, Standortabfrage fehlgeschlagen: ${escapeHtml(query.error)}</small>`;
+  if (!query.count) return '<small>Layer gefunden · kein Treffer bei der Standortabfrage.</small>';
+
+  const attrs = query.first_attributes ?? {};
+  if (candidate.target_id === 'heat_areas') {
+    const type = attributeFromFieldAlias(candidate, attrs, ['typ']);
+    const area = attributeFromFieldAlias(candidate, attrs, ['versorgungsgebiet']);
+    const stand = attributeFromFieldAlias(candidate, attrs, ['stand']);
+    const scale = attributeFromFieldAlias(candidate, attrs, ['erfassungsmaßstab', 'erfassungsmasstab']);
+    const contact = attributeFromFieldAlias(candidate, attrs, ['kontakt']);
+    const contactUrl = safeExternalUrl(contact?.value);
+    return `<small>${escapeHtml(area ? formatEnergyRawValue(area.value, area.field) : `${query.count} Flächentreffer`)}</small>
+      <small>${escapeHtml(type ? formatEnergyRawValue(type.value, type.field) : 'Wärmenetz-Gebiet')} · Stand ${escapeHtml(stand ? formatEnergyRawValue(stand.value, stand.field) : '–')} · Maßstab ${escapeHtml(scale ? formatEnergyRawValue(scale.value, scale.field) : '–')}</small>
+      ${contactUrl ? `<a class="external-action-link" href="${escapeHtml(contactUrl)}" target="_blank" rel="noopener noreferrer">Kontakt öffnen ↗</a>` : ''}`;
+  }
+
+  if (candidate.target_id === 'solar_building') {
+    const bins = solarBuildingBins(candidate, attrs);
+    const total = bins.reduce((sum, item) => sum + item.value, 0);
+    const stand = attributeFromFieldAlias(candidate, attrs, ['stand']);
+    const scale = attributeFromFieldAlias(candidate, attrs, ['erfassungsmaßstab', 'erfassungsmasstab']);
+    const rows = bins.length
+      ? `<ul>${bins.map((item) => `<li>${escapeHtml(item.label)}: <strong>${number0.format(item.value)} m²</strong></li>`).join('')}</ul>`
+      : '';
+    return `<small>${number0.format(query.count)} Gebäudetreffer · klassifizierte Dachfläche ${bins.length ? `${number0.format(total)} m²` : 'siehe Attribute'}</small>
+      <small>Stand ${escapeHtml(stand ? formatEnergyRawValue(stand.value, stand.field) : '–')} · Maßstab ${escapeHtml(scale ? formatEnergyRawValue(scale.value, scale.field) : '–')}</small>${rows}`;
+  }
+
+  const first = query.nearby?.[0];
+  if (candidate.target_id === 'heat_plants' && first) {
+    const name = attributeFromFieldAlias(candidate, first.attributes, ['name', 'anlage', 'bezeichnung']);
+    const carrier = attributeFromFieldAlias(candidate, first.attributes, ['energieträger', 'energietraeger']);
+    const operator = attributeFromFieldAlias(candidate, first.attributes, ['betreiber']);
+    const distance = Number.isFinite(first.distance_m) ? `${number0.format(first.distance_m)} m` : 'Entfernung unbekannt';
+    return `<small>${number0.format(query.count)} Treffer im 20-km-Testumkreis · nächster ca. ${escapeHtml(distance)}</small>
+      <small>${escapeHtml(name ? formatEnergyRawValue(name.value, name.field) : 'Wärmeerzeugungsanlage')} ${operator ? `· ${escapeHtml(formatEnergyRawValue(operator.value, operator.field))}` : ''} ${carrier ? `· ${escapeHtml(formatEnergyRawValue(carrier.value, carrier.field))}` : ''}</small>`;
+  }
+
+  return `<small>${number0.format(query.count)} Standorttreffer · Attribute siehe Rohdaten.</small>`;
+}
+
+function renderEnergyCandidate(candidate) {
+  const fields = candidate.matched_fields?.length
+    ? candidate.matched_fields.map((field) => escapeHtml(field.alias)).join(' · ')
+    : 'keine Fingerabdruck-Felder bestätigt';
+  const serviceLink = `<a class="external-action-link" href="${escapeHtml(`${candidate.layer_url}?f=pjson`)}" target="_blank" rel="noopener noreferrer">REST-Layer öffnen ↗</a>`;
+  return `<article class="discovery-card">
+    <span class="mini-label">Trefferwahrscheinlichkeit ${escapeHtml(energyCandidateConfidence(candidate))}</span>
+    <h3>${escapeHtml(candidate.layer_name)}</h3>
+    <p><strong>${escapeHtml(candidate.service_name)}</strong> · Layer ${escapeHtml(candidate.layer_id)} · ${escapeHtml(candidate.metadata?.type ?? candidate.layer_type ?? 'Layer')}</p>
+    <p class="geometry-note">${escapeHtml(candidate.layer_path)}</p>
+    <small>Bestätigte Feld-Aliase: ${fields}</small>
+    <div class="energy-location-detail">${energyLocationDetailsHtml(candidate)}</div>
+    ${serviceLink}
+  </article>`;
+}
+
+async function discoverEnergyLayersDeep() {
+  const status = $('heatDiscoveryStatus');
+  const resultBox = $('heatDiscoveryResult');
+  setStatus(status, 'Servicebaum lädt …', 'working');
+  resultBox.hidden = true;
+  resultBox.innerHTML = '';
+
+  const raw = {
+    tested_at: new Date().toISOString(),
+    address: selectedAddress ? {
+      label: selectedAddress.label,
+      latitude: selectedAddress.latitude,
+      longitude: selectedAddress.longitude,
+    } : null,
+    targets: ENERGY_LAYER_TARGETS.map((target) => ({
+      id: target.id,
+      label: target.label,
+      known_field_aliases: target.fieldAliases,
+    })),
+    directory: null,
+    scan: { priority_services: 0, full_scan_used: false, scanned_services: 0, service_errors: [] },
+    results: {},
+  };
+
+  try {
+    const directory = await collectArcgisServiceDirectory(status);
+    raw.directory = {
+      folders: directory.folders,
+      folder_results: directory.folderResults,
+      service_count: directory.services.length,
+    };
+
+    const priority = directory.services.filter(energyServiceIsPriority);
+    const remaining = directory.services.filter((service) => !energyServiceIsPriority(service));
+    raw.scan.priority_services = priority.length;
+    const candidates = [];
+    let scanned = 0;
+
+    const scanBatch = async (services, label) => {
+      const rows = await mapConcurrent(services, ENERGY_SCAN_CONCURRENCY, async (service) => {
+        try {
+          return await scanArcgisServiceForEnergyTargets(service);
+        } catch (error) {
+          raw.scan.service_errors.push({ service: service.name, type: service.type, error: error.message });
+          return [];
+        } finally {
+          scanned += 1;
+          raw.scan.scanned_services = scanned;
+          setStatus(status, `${label} ${scanned}/${directory.services.length}`, 'working');
+        }
+      });
+      rows.forEach((row) => { if (Array.isArray(row)) candidates.push(...row); });
+    };
+
+    await scanBatch(priority, 'Zielsuche');
+    const foundTargetIds = new Set(candidates.filter((item) => item.name_score >= 70).map((item) => item.target_id));
+    if (foundTargetIds.size < ENERGY_LAYER_TARGETS.length) {
+      raw.scan.full_scan_used = true;
+      await scanBatch(remaining, 'Tiefenscan');
+    }
+
+    for (const target of ENERGY_LAYER_TARGETS) {
+      const targetCandidates = candidates
+        .filter((candidate) => candidate.target_id === target.id)
+        .sort((a, b) => b.name_score - a.name_score)
+        .slice(0, 8);
+
+      const enriched = await mapConcurrent(targetCandidates, 4, enrichEnergyCandidate);
+      enriched.sort((a, b) => (b.total_score ?? 0) - (a.total_score ?? 0));
+
+      // Nur die zwei plausibelsten Kandidaten werden am Standort abgefragt.
+      for (const candidate of enriched.slice(0, 2)) {
+        candidate.location_query = await queryEnergyCandidateAtLocation(candidate);
+      }
+      raw.results[target.id] = enriched.map((candidate) => ({
+        ...candidate,
+        // Vollständige Layer-Metadaten sind im Rohblock nützlich, die Renderer-Struktur aber nicht.
+        metadata: candidate.metadata ? {
+          currentVersion: candidate.metadata.currentVersion,
+          id: candidate.metadata.id,
+          name: candidate.metadata.name,
+          type: candidate.metadata.type,
+          geometryType: candidate.metadata.geometryType,
+          displayField: candidate.metadata.displayField,
+          capabilities: candidate.metadata.capabilities,
+          maxRecordCount: candidate.metadata.maxRecordCount,
+          fields: candidate.metadata.fields,
+        } : null,
+      }));
+    }
+
+    $('rawHeatDiscovery').textContent = pretty(raw);
+
+    const sections = ENERGY_LAYER_TARGETS.map((target) => {
+      const items = raw.results[target.id] ?? [];
+      const good = items.filter((item) => (item.total_score ?? 0) >= 65);
+      const content = good.length
+        ? good.slice(0, 4).map(renderEnergyCandidate).join('')
+        : `<article class="discovery-card"><h3>Noch kein eindeutiger Layer</h3><p>Im öffentlich aufgelisteten ArcGIS-Servicebaum wurde für „${escapeHtml(target.label)}“ kein ausreichend passender Layer bestätigt.</p><small>Dann wäre als nächster Entwicklungsschritt die Netzwerkanalyse von tirisMaps sinnvoll, während genau dieses Thema ein-/ausgeschaltet oder abgefragt wird.</small></article>`;
+      return `<div class="energy-target-result"><h3>${escapeHtml(target.label)}</h3><div class="discovery-grid">${content}</div></div>`;
+    }).join('');
+
+    resultBox.innerHTML = `
+      <h3>Gezielte Suche im TIRIS-ArcGIS-Servicebaum</h3>
+      <p>Geprüft wurden ${number0.format(raw.directory.service_count)} öffentlich aufgelistete Map-/FeatureServices. Exakte Themenbezeichnungen und die aus tirisMaps bekannten Feld-Aliase erhöhen die Trefferbewertung.</p>
+      ${sections}
+      <p class="geometry-note"><strong>Hinweis:</strong> Ein gefundener Layer ist erst dann produktionsreif, wenn Geometrie, Attribute und Standortabfrage plausibel sind. Der Test verändert keine bestehenden Standortdaten.</p>`;
+    resultBox.hidden = false;
+
+    const confirmed = ENERGY_LAYER_TARGETS.filter((target) =>
+      (raw.results[target.id] ?? []).some((item) => (item.total_score ?? 0) >= 100)
+    ).length;
+    setStatus(status, `${confirmed}/3 stark`, confirmed ? 'success' : 'muted');
+  } catch (error) {
+    raw.error = error.message;
+    $('rawHeatDiscovery').textContent = pretty(raw);
+    resultBox.innerHTML = `<h3>Energie-Layer-Suche fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p><p class="geometry-note">Falls bereits das ArcGIS-Hauptverzeichnis blockiert wird, bleiben die bekannten tirisMaps-Themen nutzbar; für die technische URL wäre dann eine einmalige Netzwerkanalyse in tirisMaps der nächste Weg.</p>`;
+    resultBox.hidden = false;
+    setStatus(status, 'Fehler', 'error');
+  }
+}
+
 async function discoverHeatServices() {
   const status = $('heatDiscoveryStatus');
   const resultBox = $('heatDiscoveryResult');
@@ -2679,7 +3198,7 @@ async function testSolarMap() {
   const raw = {
     tested_at: new Date().toISOString(),
     mode: 'regional-raster-preview',
-    note: 'Test 15 verzichtet bewusst auf die fehlerhafte Dach-Überlagerung aus Test 12–14.',
+    note: 'Test 16 nutzt die robuste flächige Solarstrahlung und zoomt den Ausschnitt auf ca. 125 m; der echte Gebäudelayer wird separat gezielt gesucht.',
     tiris_building_view_url: TIRIS_SOLAR_BUILDING_VIEW_URL,
     services: [],
   };
@@ -2731,11 +3250,11 @@ async function testSolarMap() {
     }
 
     // Bewusst wieder eine eigenständige Rasterkarte ohne Orthofoto-Überlagerung.
-    // Für das Standortumfeld verwenden wir einen ca. 250 m breiten Ausschnitt;
+    // Für das Standortumfeld verwenden wir einen ca. 125 m breiten Ausschnitt;
     // das reine Orthofoto mit Gebäudeumriss bleibt separat in der Gebäudeübersicht.
     const lon = Number(selectedAddress.longitude);
     const lat = Number(selectedAddress.latitude);
-    const halfWidthM = 125;
+    const halfWidthM = 62.5;
     const halfHeightM = halfWidthM * (520 / 820);
     const latDelta = halfHeightM / 111320;
     const lonMetersPerDegree = 111320 * Math.cos(lat * Math.PI / 180);
@@ -2750,7 +3269,7 @@ async function testSolarMap() {
     raw.preview = {
       srs: 'EPSG:4326',
       bbox: [bounds.minX, bounds.minY, bounds.maxX, bounds.maxY],
-      ground_width_m: 250,
+      ground_width_m: 125,
       image_size_px: [820, 520],
       solar_layer: chosen.layer,
       preview_url: previewUrl,
@@ -2771,7 +3290,7 @@ async function testSolarMap() {
       </div>
       <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
       <div class="solar-map-meta">
-        <span>Ausschnitt ca. 250 m</span>
+        <span>Ausschnitt ca. 125 m</span>
         <span>Raster: ${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
       </div>
       <p class="geometry-note"><strong>Zwischenlösung:</strong> Diese Karte zeigt bewusst Gelände und Umgebung. Das Orthofoto mit Gebäudeumriss ist bereits separat vorhanden. Die spezielle tirisMaps-Gebäudepotenzialkarte bleibt über den Link erreichbar, bis deren öffentlicher Einzellayer eindeutig identifiziert ist.</p>
@@ -3558,7 +4077,7 @@ $('compareBuildingButton').addEventListener('click', compareBuildingGeometry);
 $('clearValidationButton').addEventListener('click', clearValidation);
 $('loadTerrainButton').addEventListener('click', loadTerrain);
 $('loadSolarButton').addEventListener('click', loadSolar);
-$('discoverHeatButton').addEventListener('click', discoverHeatServices);
+$('discoverHeatButton').addEventListener('click', discoverEnergyLayersDeep);
 $('testEnvironmentalHeatButton').addEventListener('click', testEnvironmentalHeat);
 $('testHazardButton').addEventListener('click', testHazards);
 $('testSolarMapButton').addEventListener('click', testSolarMap);

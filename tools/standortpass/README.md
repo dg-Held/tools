@@ -1,38 +1,97 @@
-# Standortpass – Schnittstellentest 15
+# Standortpass – Schnittstellentest 16
 
-Test 15 baut auf dem bestätigten Stand von Test 14 auf.
+Test 16 baut auf dem bestätigten Stand von Test 15 auf.
 
-Neu:
+## Neu
 
-1. **Solar-Dachfokus vorerst entfernt:** Die nicht deckungsgleiche Überlagerung aus Orthofoto + Solar-Raster wird nicht weiter künstlich angepasst. Stattdessen zeigt der Zusatzblock wieder eine robuste amtliche Solarstrahlungs-Rasterkarte für das Standortumfeld. Wenn vorhanden, wird bevorzugt `Image Jahressumme` verwendet. Das reine Orthofoto mit TIRIS-Gebäudeumriss bleibt unverändert in der Gebäudeübersicht bei ca. 1:500.
-2. **TIRIS-Gebäudesolarpotenzial bleibt verlinkt:** Der direkte Link auf „Solarpotenziale je Gebäude“ bleibt erhalten, bis der öffentliche Einzellayer eindeutig identifiziert ist.
-3. **Sommerklima & Lokalklima – Erkundung:** Neuer Testblock gegen `Service_Public/klims_map/MapServer`. Relevante Layer zu Wärmebelastung am Tag, Nachtklima, Kaltluft und Planhinweisen werden dynamisch gesucht und am Standort per ArcGIS-Identify geprüft.
-4. **Noch keine Aufnahme ins Standortpass-Ergebnis:** Der Klimablock ist bewusst nur ein Erkundungstest. Heiße Tage, Tropennächte, sommerliche Nachttemperaturen und Klimadiagramme bleiben vorerst dem späteren Klimablatt vorbehalten.
-5. **Radon:** Der bestätigte zweite Link auf das Energie-Tirol-Infoblatt bleibt erhalten.
+1. **Gezielte Suche nach den drei noch offenen TIRIS-Energiethemen**
+   - `Wärmenetz-Gebiete`
+   - `Wärmeerzeugungsanlagen`
+   - `Solarpotential pro Jahr – Gebäude`
+
+   Statt nur ausgewählte `Service_Public`-Dienste zu prüfen, liest Test 16 manuell den öffentlich erreichbaren ArcGIS-Servicebaum des Landes Tirol aus. Zuerst werden Dienste mit Energie-/Wärme-/Solar-/TMap-Bezug geprüft. Nur wenn damit noch nicht alle drei Themen gefunden werden, folgt ein breiterer Scan der übrigen öffentlich gelisteten Map-/FeatureServices.
+
+2. **Attribut-Fingerabdrücke**
+
+   Zusätzlich zum Layernamen werden die bekannten TIRIS-Felder zur Bestätigung verwendet.
+
+   Wärmenetz-Gebiet:
+   - Typ
+   - Versorgungsgebiet
+   - Stand
+   - Erfassungsmaßstab
+   - Kontakt
+
+   Solarpotential Gebäude:
+   - Dachfläche < 700 kWh
+   - 700–900 kWh
+   - 900–1100 kWh
+   - 1100–1300 kWh
+   - 1300–1500 kWh
+   - > 1500 kWh
+   - Stand
+   - Erfassungsmaßstab
+
+3. **Standorttest bei gefundenem Layer**
+
+   Bei einem plausiblen Wärmenetz- oder Gebäude-Solar-Layer wird der gewählte Standort bzw. das bestätigte TIRIS-Gebäudepolygon direkt gegen den Layer abgefragt. Bei Wärmeerzeugungsanlagen wird testweise ein 20-km-Umkreis verwendet, sofern es sich um einen abfragbaren Feature-Layer handelt.
+
+4. **Solarstrahlung im Umfeld stärker eingezoomt**
+
+   Die robuste flächige Solarstrahlungs-Zusatzkarte wird von ca. 250 m auf **ca. 125 m Kartenbreite** eingezoomt. Das Orthofoto der Gebäudeübersicht bleibt unverändert bei ca. 1:500 / 80 m.
+
+5. **Klimakarten Inntal bleiben nur Erkundung**
+
+   Der Testblock bleibt zur Dokumentation vorhanden, wird aber derzeit nicht als Bestandteil des Standortpass V1 vorgesehen.
 
 ## Einbau
 
-Die vier Dateien direkt nach `tools/standortpass/` kopieren und die Dateien aus Test 14 ersetzen.
+Die vier Dateien direkt nach `tools/standortpass/` kopieren und die Dateien aus Test 15 ersetzen.
 
 ## Besonders prüfen
 
-### Solar
-- Die Zusatzkarte zeigt wieder Solarstrahlung im gesamten Standortumfeld, nicht nur auf dem Dach.
-- Das separate Orthofoto in der Gebäudeübersicht bleibt unverändert.
-- Idealerweise wird `Image Jahressumme` als Raster gemeldet.
-- Der Link „Solarpotenziale je Gebäude in TIRIS öffnen“ bleibt funktionsfähig.
+### A · Drei Energie-Layer
 
-### Sommerklima & Lokalklima
-Nach Adressauswahl ganz unten `Klimakarten Inntal prüfen` anklicken.
+Nach Möglichkeit zuerst eine Adresse wählen und ein Gebäude bestätigen. Danach unter
 
-Bitte insbesondere zurückmelden:
-- Anzahl `relevante Layer gefunden`
-- Anzahl `Identify-Treffer am Standort`
-- die vier Kartenblöcke für Tag / Nacht / Kaltluft / Planhinweise
-- sowie bei Bedarf den Rohdatenblock `TIRIS Klimakarten Inntal`.
+`6 · Energie · gezielte Layer-Suche`
 
-Ziel ist noch nicht, diese Angaben sofort in den Standortpass aufzunehmen. Wir wollen zuerst beurteilen, ob sie für die schnelle Vorberatung einen eigenständigen Mehrwert gegenüber dem späteren Klimablatt liefern.
+auf **„Drei Energie-Layer gezielt suchen“** klicken.
 
-## Fachliche Einordnung
+Der Test kann einige Sekunden benötigen, weil bei Bedarf der öffentliche ArcGIS-Servicebaum breiter durchsucht wird. Er wird nur manuell gestartet und ist ausdrücklich ein Entwicklungstest.
 
-Die regionale Klimaanalyse Inntal ist besonders für Wärmebelastung am Tag und in der Nacht sowie für Kaltluftprozesse interessant. Ein einzelner Standortindikator kann als Vorinformation nützlich sein; detaillierte sommerliche Klimakennwerte gehören methodisch eher in ein eigenes Klimablatt.
+Bitte zurückmelden:
+
+- wie viele Dienste geprüft wurden,
+- ob einer oder mehrere der drei Ziel-Layer mit `Trefferwahrscheinlichkeit hoch/sehr hoch` gefunden wurden,
+- bei Wärmenetz-Gebieten den angezeigten Namen des Versorgungsgebiets,
+- bei Wärmeerzeugungsanlagen gefundene Felder bzw. nächstes Objekt,
+- beim Gebäude-Solarpotential die ausgegebenen Dachflächenklassen,
+- sowie bei Bedarf den Rohdatenblock `TIRIS Energie-Layer-Tiefenscan`.
+
+### B · Plausibilitätsbeispiele aus tirisMaps
+
+Bekannte Vergleichswerte aus manuellen TIRIS-Abfragen:
+
+Wärmenetz-Beispiel:
+- Typ: Wärmenetz - Versorgungsgebiet
+- Versorgungsgebiet: Wärmenetz Hall-Wattens
+- Stand: 01.12.2025
+- Erfassungsmaßstab: 5.000
+- Kontakt: Link
+
+Solar-Beispiel:
+- Dachfläche <700 kWh: 126 m²
+- 700–900 kWh: 440 m²
+- 900–1100 kWh: 142 m²
+- 1100–1300 kWh: 158 m²
+- 1300–1500 kWh: 456 m²
+- >1500 kWh: 0 m²
+- Stand: 01.09.2024
+- Erfassungsmaßstab: 5.000
+
+Diese Werte sind nur Plausibilitäts-Fingerabdrücke für die Layeridentifikation, keine allgemeine Standortpass-Berechnung.
+
+### C · Solar-Rasterkarte
+
+`Solarstrahlung-Karte prüfen` sollte jetzt einen Ausschnitt von ca. **125 m** zeigen. Sie bleibt bewusst eine flächige Rasterdarstellung über Gelände und Umgebung, bis der echte Gebäude-Layer technisch bestätigt ist.
