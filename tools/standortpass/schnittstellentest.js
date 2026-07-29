@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 04
+   STANDORTPASS – SCHNITTSTELLENTEST 05
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -10,6 +10,7 @@
    4) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
    5) TIRIS Orthofoto als visuelle Kontrolle
    6) bestehende TIRIS-DGM-Höhenfunktion
+   7) GeoLand/voibos Sonnenstand als Rohdaten-Schnittstellentest
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -35,6 +36,8 @@ const TIRIS_KG_LAYER_ID = 39;
 const TIRIS_ORTHOPHOTO_WMS_URL =
   'https://gis.tirol.gv.at/arcgis/services/' +
   'Service_Public/orthofoto/MapServer/WMSServer';
+
+const GEOLAND_SUN_URL = 'https://voibos.rechenraum.com/voibos/voibos';
 
 const TIRIS_LIVE_ADDRESS_LAYERS = [
   { id: 19, kind: 'building', label: 'AGWR Gebäudeadresse' },
@@ -583,7 +586,7 @@ async function initAddressModule() {
     $('addressSearchStatus').textContent =
       `${number0.format(info.address_count)} Adressen · Stand ${info.dataset_date ?? '–'} · nur Fallback/Vergleich`;
 
-    if (selectedAddress && selectedAddressProvider === 'tiris') {
+    if (selectedAddress && isTirisProvider(selectedAddressProvider)) {
       compareSelectedAddressWithBev(selectedAddress);
     }
   } catch (error) {
@@ -646,13 +649,17 @@ async function runAddressSearch() {
   }
 }
 
+function isTirisProvider(provider) {
+  return String(provider ?? '').startsWith('tiris');
+}
+
 function selectAddress(record, provider = 'bev') {
   selectedAddress = record;
   selectedAddressProvider = provider;
   buildingFeatures = [];
   selectedBuildingId = null;
 
-  if (provider === 'bev') {
+  if (!isTirisProvider(provider)) {
     $('addressSearchInput').value = record.label;
     $('addressSuggestions').hidden = true;
     $('addressSearchInput').setAttribute('aria-expanded', 'false');
@@ -661,7 +668,7 @@ function selectAddress(record, provider = 'bev') {
     $('tirisLiveAddressResults').hidden = true;
   }
 
-  const sourceLabel = provider === 'tiris' ? 'TIRIS live' : 'BEV Fallback';
+  const sourceLabel = isTirisProvider(provider) ? 'TIRIS live' : 'BEV Fallback';
   const stand = record.dataset_date ? ` · Stand ${record.dataset_date}` : '';
   const updated = record.updated_at ? ` · aktualisiert ${record.updated_at}` : '';
 
@@ -679,12 +686,15 @@ function selectAddress(record, provider = 'bev') {
   $('loadBuildingAreaButton').disabled = false;
   $('testTirisAddressLayersButton').disabled = false;
   $('loadTerrainButton').disabled = false;
+  $('loadSolarButton').disabled = false;
   setStatus($('buildingStatus'), 'bereit');
   setStatus($('terrainStatus'), 'bereit');
+  setStatus($('solarStatus'), 'bereit');
 
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
   resetTerrainOutput();
+  resetSolarOutput();
 
   loadKatastralgemeinde(record);
   compareSelectedAddressWithBev(record);
@@ -707,13 +717,16 @@ function clearAddress() {
   $('loadBuildingAreaButton').disabled = true;
   $('testTirisAddressLayersButton').disabled = true;
   $('loadTerrainButton').disabled = true;
+  $('loadSolarButton').disabled = true;
   setStatus($('buildingStatus'), 'Adresse fehlt');
   setStatus($('terrainStatus'), 'Adresse fehlt');
+  setStatus($('solarStatus'), 'Adresse fehlt');
   setStatus($('tirisLiveAddressStatus'), 'nicht geprüft');
   $('tirisParsedAddress').textContent = 'Noch keine Adresse zerlegt.';
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
   resetTerrainOutput();
+  resetSolarOutput();
 }
 
 /* ---------------------------------------------------------
@@ -1531,6 +1544,122 @@ function resetTerrainOutput(clearRaw = true) {
 }
 
 /* ---------------------------------------------------------
+   5. GeoLand / voibos Sonnenstand
+--------------------------------------------------------- */
+
+function buildGeoLandSunUrl(address) {
+  const params = new URLSearchParams({
+    name: 'sonnengang',
+    Koordinate: `${address.longitude},${address.latitude}`,
+    CRS: '4326',
+    H: '2',
+    Output: 'JSONDownload',
+  });
+
+  return `${GEOLAND_SUN_URL}?${params.toString()}`;
+}
+
+function formatSunHours(value) {
+  if (value === null || value === undefined || value === '') return '–';
+  return String(value);
+}
+
+async function loadSolar() {
+  if (!selectedAddress) return;
+
+  const status = $('solarStatus');
+  const resultBox = $('solarResult');
+  setStatus(status, 'lädt …', 'working');
+  resetSolarOutput(false);
+
+  const url = buildGeoLandSunUrl(selectedAddress);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`.trim());
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    const text = await response.text();
+    let payload;
+
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      throw new Error(`Antwort ist kein JSON (${contentType || 'Content-Type unbekannt'}).`);
+    }
+
+    const horizon = Array.isArray(payload?.horizont) ? payload.horizont : [];
+    const monthly = payload?.['sonnenstunden pro tag im monatsmittel'] ?? {};
+    const sample = horizon.filter((entry) => [0, 90, 180, 270].includes(Number(entry?.azimuth)));
+
+    $('rawSolar').textContent = pretty({ request_url: url, response: payload });
+
+    const monthRows = [
+      ['Jänner', monthly.januar],
+      ['März', monthly.maerz],
+      ['Juni', monthly.juni],
+      ['September', monthly.september],
+      ['Dezember', monthly.dezember],
+    ].map(([label, value]) => `<div><span>${label}</span><strong>${escapeHtml(formatSunHours(value))}</strong></div>`).join('');
+
+    const sampleRows = sample.map((entry) => `
+      <tr>
+        <td>${escapeHtml(entry.azimuth)}°</td>
+        <td>${escapeHtml(entry.hoehenwinkelDTM ?? '–')}°</td>
+        <td>${escapeHtml(entry.hoehenwinkelDSM ?? '–')}°</td>
+        <td>${escapeHtml(entry.entfernungDTM ?? '–')} m</td>
+        <td>${escapeHtml(entry.entfernungDSM ?? '–')} m</td>
+      </tr>
+    `).join('');
+
+    resultBox.innerHTML = `
+      <div class="solar-summary-grid">
+        <div><span>Status</span><strong>${escapeHtml(payload?.abfragestatus ?? '–')}</strong></div>
+        <div><span>Abfragehöhe</span><strong>${escapeHtml(payload?.abfragehoehe ?? '–')}</strong></div>
+        <div><span>Datengrundlage</span><strong>${escapeHtml(payload?.datengrundlage ?? '–')}</strong></div>
+        <div><span>Befliegungsjahr</span><strong>${escapeHtml(payload?.flugjahr ?? '–')}</strong></div>
+        <div><span>Horizontwerte</span><strong>${number0.format(horizon.length)}</strong></div>
+        <div><span>Serviceversion</span><strong>${escapeHtml(payload?.voibos ?? '–')}</strong></div>
+      </div>
+      <h3>Theoretische Sonnenscheindauer · Auswahl</h3>
+      <div class="solar-month-grid">${monthRows}</div>
+      <h3>Horizont-Stichprobe</h3>
+      <div class="table-scroll">
+        <table class="test-table">
+          <thead><tr><th>Azimut</th><th>Gelände DTM</th><th>Oberfläche DSM</th><th>Distanz DTM</th><th>Distanz DSM</th></tr></thead>
+          <tbody>${sampleRows || '<tr><td colspan="5">Keine Horizontwerte gefunden.</td></tr>'}</tbody>
+        </table>
+      </div>
+      <p class="geometry-note">Wenn dieser Test funktioniert, zeichnen wir im nächsten Schritt aus allen Horizontwerten unser eigenes SVG mit Sonnenbahnen, Gelände- und Oberflächenhorizont.</p>
+    `;
+    resultBox.hidden = false;
+    setStatus(status, payload?.abfragestatus === 'erfolgreich' ? 'erfolgreich' : 'Antwort erhalten', 'success');
+  } catch (error) {
+    $('rawSolar').textContent = pretty({ request_url: url, error: error.message });
+    resultBox.innerHTML = `
+      <h3>Direkter Browserabruf fehlgeschlagen</h3>
+      <p>${escapeHtml(error.message)}</p>
+      <p class="geometry-note">Das kann insbesondere an CORS liegen. Die Schnittstelle selbst kann trotzdem funktionieren; dann prüfen wir als Nächstes einen geeigneten öffentlichen Abrufweg.</p>
+    `;
+    resultBox.hidden = false;
+    setStatus(status, 'Fehler', 'error');
+  }
+}
+
+function resetSolarOutput(clearRaw = true) {
+  $('solarResult').hidden = true;
+  $('solarResult').innerHTML = '';
+  if (clearRaw) $('rawSolar').textContent = '–';
+}
+
+/* ---------------------------------------------------------
    Hilfsfunktionen / Events
 --------------------------------------------------------- */
 
@@ -1566,6 +1695,7 @@ $('noSuitableBuildingButton').addEventListener('click', continueWithoutBuildingG
 $('compareBuildingButton').addEventListener('click', compareBuildingGeometry);
 $('clearValidationButton').addEventListener('click', clearValidation);
 $('loadTerrainButton').addEventListener('click', loadTerrain);
+$('loadSolarButton').addEventListener('click', loadSolar);
 $('orthophotoScale').addEventListener('change', () => {
   if (buildingFeatures.length > 0) drawBuildingGeometry(buildingFeatures);
 });

@@ -1,37 +1,39 @@
-# Standortpass – Schnittstellentest 04
+# Standortpass – Schnittstellentest 05
 
-## Ziel
+Dieser Test baut auf Test 04 auf und verändert die bestehenden Tools weiterhin nicht.
 
-Test 04 schließt die gemeinsame Adress-/Gebäudebasis weiter ab.
+## Neu in Test 05
 
-Neu gegenüber Test 03:
+1. Quellenanzeige der TIRIS-Live-Adresse korrigiert (`tiris-live` wurde in Test 04 fälschlich als „BEV Fallback“ beschriftet).
+2. Orthofoto-Ausschnitt sichtbar wählbar; Standard ist ca. 1:500 bzw. 80 m Bodenbreite.
+3. Erster GeoLand/voibos-Schnittstellentest für Sonnenstand:
+   - WGS84 / EPSG:4326
+   - Beobachtungshöhe 2 m
+   - `Output=JSONDownload`
+   - Prüfung auf Horizontwerte (DTM/DSM), Datengrundlage, Befliegungsjahr und theoretische Sonnenscheindauer.
 
-1. **Flexible TIRIS-Live-Adresssuche**
-   - Groß-/Kleinschreibung egal
-   - Komma nicht erforderlich
-   - Reihenfolge von Straße/Gemeinde darf variieren
-   - serverseitige Eingrenzung über PLZ + Hausnummer
-   - clientseitiges Ranking über Straße/Gemeinde
-2. **Katastralgemeinde weiterhin direkt aus TIRIS Layer 39**
-3. **BEV weiterhin nur Vergleich/Fallback**
-4. **Gebäude nur bei direktem Polygon-Treffer automatisch wählen**
-5. **Orthofoto-Ausschnitt wählbar**
-   - ca. 1:250 = 40 m Bodenausschnitt
-   - ca. 1:500 = 80 m Bodenausschnitt (Standard)
-   - ca. 1:750 = 120 m Bodenausschnitt
+## Einbau
 
-Die Maßstabsangaben sind für eine spätere Druckbreite von 160 mm gedacht. Im Browser ist die physische Bildschirmdarstellung nicht maßstabsgetreu, aber der Bodenausschnitt bleibt definiert.
+Die vier Dateien in `tools/standortpass/` ersetzen:
 
-## Besonders testen
+- `index.html`
+- `schnittstellentest.css`
+- `schnittstellentest.js`
+- `README.md`
 
-Dieselbe Adresse bitte in mehreren Schreibweisen:
+`tools/klima-heizlast/` bleibt unverändert und wird weiterhin nur für BEV-Vergleich/Fallback und DGM-Funktion genutzt.
 
-- `Karwendelweg 9, 6123 Terfens`
-- `karwendelweg 9 6123 terfens`
-- `6123 TERFENS Karwendelweg 9`
-- `Hirschenkreuz 11A 6130 SCHWAZ`
-- `6130 Schwaz hirschenkreuz 11a`
+## Empfohlener Test
 
-Danach prüfen, ob ADRCD, Koordinate und KGNR identisch bleiben.
-
-Beim Orthofoto bitte 1:250 / 1:500 / 1:750 vergleichen. Standardziel für die spätere Kundenansicht ist vorerst **1:500**.
+1. `6020 bürgerstraße 1` über **TIRIS live suchen**.
+2. Prüfen, ob beim gemeinsamen Standort nun **TIRIS live** steht.
+3. Gebäude automatisch zuordnen; Orthofoto auf **ca. 1:500 · 80 m** belassen.
+4. **GeoLand Sonnenstand prüfen**.
+5. Bei Erfolg sind besonders interessant:
+   - `abfragestatus`
+   - `datengrundlage`
+   - `flugjahr`
+   - Anzahl Horizontwerte
+   - DTM/DSM-Werte bei 0°, 90°, 180°, 270°
+   - Sonnenscheindauer je Monat
+6. Bei Fehler bitte Fehlermeldung und Rohdatenblock „GeoLand Sonnenstand“ kopieren. Ein CORS-Fehler wäre ebenfalls ein verwertbares Testergebnis.

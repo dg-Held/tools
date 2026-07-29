@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 04 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 05 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=4">
+  <link rel="stylesheet" href="schnittstellentest.css?v=5">
 </head>
 <body>
 
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 04</h1>
+      <h1>Schnittstellentest 05</h1>
       <p class="test-lead">
-        TIRIS hat die Kernwerte bereits sauber geliefert. Phase 4 testet eine fehlertolerante Live-Adresssuche und einen definierten Orthofoto-Ausschnitt für die spätere Gebäudeprüfung.
+        Diesmal testen wir, ob TIRIS die gemeinsame Live-Adressbasis übernehmen kann – einschließlich Adresscode, Koordinate und Katastralgemeinde.
       </p>
       <p class="test-disclaimer">
-        Phase 4: flexible TIRIS Live-Adresse → KG-Zuordnung → Gebäude → Orthofoto mit wählbarem Ausschnitt → DGM. Der bisherige BEV-Bestand bleibt vorerst nur als Vergleich und Fallback erhalten.
+        Phase 5: TIRIS-Live-Adresse wird als gemeinsame Primärquelle geprüft; zusätzlich testen wir erstmals GeoLand/voibos für Sonnenbahn, Gelände- und Oberflächenhorizont. Der BEV-Bestand bleibt vorerst nur als Vergleich und Fallback erhalten.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -46,6 +46,7 @@
         <span><strong>Gebäude</strong> TIRIS FeatureServer</span>
         <span><strong>Bild</strong> TIRIS Orthofoto WMS</span>
         <span><strong>Höhe</strong> bestehendes TIRIS-DGM-Modul</span>
+        <span><strong>Solar</strong> GeoLand / voibos</span>
       </div>
     </section>
 
@@ -55,15 +56,15 @@
           <p class="eyebrow">1 · Gemeinsame Basis</p>
           <h2 id="live-address-title">TIRIS-Adresse live suchen</h2>
           <p>
-            Der wichtigste Test: Findet TIRIS dieselbe Adresse auch bei natürlicher Eingabe ohne starres Format? Server-seitig werden PLZ und Hausnummer eingegrenzt; Straße und Gemeinde werden anschließend aus den Treffern abgeglichen.
+            Der wichtigste Test: Kann eine Adresse ohne lokalen BEV-Index direkt aus TIRIS gefunden und in unser gemeinsames Standortformat übersetzt werden?
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="tirisLiveAddressStatus">nicht geprüft</span>
       </div>
 
       <label class="search-field">
-        <span>Adresse – Reihenfolge, Groß-/Kleinschreibung und Komma dürfen variieren</span>
-        <input id="tirisLiveAddressInput" type="search" autocomplete="off" placeholder="z. B. Karwendelweg 9 6123 Terfens oder 6123 Terfens Karwendelweg 9">
+        <span>Adresse – Reihenfolge, Groß-/Kleinschreibung und Komma sind egal</span>
+        <input id="tirisLiveAddressInput" type="search" autocomplete="off" placeholder="z. B. 6020 Bürgerstraße 1">
       </label>
       <div class="action-row address-action-row">
         <button class="primary-button" id="searchTirisLiveAddressButton" type="button">TIRIS live suchen</button>
@@ -184,7 +185,7 @@
             <img id="orthophotoImage" class="orthophoto-image" alt="TIRIS Orthofoto des Gebäudestandorts" hidden>
             <svg id="buildingSvg" viewBox="0 0 520 360" role="img" aria-label="Gefundene Gebäudegeometrien"></svg>
           </div>
-          <p class="geometry-note" id="orthophotoStatus">Orthofoto wird mit der Geometrie geladen. Die Maßstabsangabe ist eine Druckauslegung; im Browser wird derselbe Bodenausschnitt gezeigt.</p>
+          <p class="geometry-note" id="orthophotoStatus">Orthofoto wird mit der Geometrie geladen.</p>
         </div>
       </div>
 
@@ -272,6 +273,26 @@
       </div>
     </section>
 
+    <section class="container test-panel" aria-labelledby="solar-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">5 · Solar</p>
+          <h2 id="solar-title">GeoLand-Sonnenstand prüfen</h2>
+          <p>
+            Erster reiner Schnittstellentest für GeoLand/voibos. Wir fragen die gemeinsame Standortkoordinate in WGS84 ab und prüfen, ob Gelände- und Oberflächenhorizont sowie theoretische Sonnenscheindauer numerisch zurückkommen. Das eigene Diagramm folgt erst nach erfolgreichem Test.
+          </p>
+        </div>
+        <span class="status-chip status-chip--muted" id="solarStatus">Adresse fehlt</span>
+      </div>
+
+      <div class="action-row">
+        <button class="primary-button" id="loadSolarButton" type="button" disabled>GeoLand Sonnenstand prüfen</button>
+        <span class="action-note">Beobachtungshöhe: 2 m · Ausgabe: JSONDownload</span>
+      </div>
+
+      <div class="service-result" id="solarResult" hidden></div>
+    </section>
+
     <section class="container technical-panel">
       <details>
         <summary>Technische Testdaten und Rohantworten</summary>
@@ -286,6 +307,7 @@
           <div><h3>Gebäude</h3><pre id="rawBuildings">–</pre></div>
           <div><h3>Orthofoto</h3><pre id="rawOrthophoto">–</pre></div>
           <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
+          <div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
         </div>
       </details>
     </section>
@@ -310,6 +332,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=4"></script>
+  <script src="schnittstellentest.js?v=5"></script>
 </body>
 </html>

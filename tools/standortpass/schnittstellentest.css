@@ -868,3 +868,81 @@
   .geometry-heading-row { align-items: stretch; flex-direction: column; }
   .orthophoto-scale-field { min-width: 0; }
 }
+
+
+/* Test 05: GeoLand / Sonnenstand */
+.solar-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: var(--space-3);
+}
+
+.solar-summary-grid > div,
+.solar-month-grid > div {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--white);
+}
+
+.solar-summary-grid span,
+.solar-summary-grid strong,
+.solar-month-grid span,
+.solar-month-grid strong {
+  display: block;
+}
+
+.solar-summary-grid span,
+.solar-month-grid span {
+  margin-bottom: 0.15rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.solar-summary-grid strong,
+.solar-month-grid strong {
+  font-weight: 500;
+}
+
+.solar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: var(--space-3);
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin-bottom: var(--space-2);
+}
+
+.test-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.test-table th,
+.test-table td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.test-table th {
+  font-weight: 500;
+  color: var(--turquoise-dark);
+}
+
+@media (max-width: 720px) {
+  .solar-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .solar-month-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 470px) {
+  .solar-summary-grid,
+  .solar-month-grid { grid-template-columns: 1fr; }
+}
