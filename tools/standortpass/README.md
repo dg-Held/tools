@@ -1,56 +1,22 @@
-# Standortpass – Schnittstellentest 10
+# Standortpass – Schnittstellentest 11
 
-Test 10 lässt die bisher funktionierenden Module unverändert weiterlaufen und ergänzt **Hochwasser + Naturgefahren**.
+Test 11 baut auf Test 10 auf.
 
-## Umweltwärme – fachliche Einordnung
+Neu:
 
-Die Detaildaten bleiben bewusst reichhaltig, sollen im späteren Ausdruck aber verdichtet werden.
+1. HQ30/HQ100/HQ300 werden nicht mehr nur nach dem Namen des ArcGIS-Dienstes bewertet. Wenn das Feld `SZENARIO` vorhanden ist, wird explizit mit `SZENARIO=30`, `100` bzw. `300` gefiltert. Damit kann ein HQ300-Objekt nicht mehr als HQ100-Treffer erscheinen.
+2. Zusätzliche TIRIS-Naturgefahren werden für die Anzeige bereinigt: bereits über HQ abgedeckte Überflutungs-/Restrisikozonen werden nicht doppelt gezeigt; maßstabsabhängige Übersichtslayer werden zugunsten des Detail-Layers zurückgestellt; WLV-Planungsbereiche erscheinen getrennt von tatsächlichen Gefahrenzonen.
+3. Solar-Zusatztest: zwei offizielle/öffentliche WMS-Quellen werden nach Solar-/Dach-/Gebäude-Potenzial-Layern durchsucht. Nur ein tatsächlich per Capabilities bestätigter Layer wird als Kartenbild verwendet. Die ältere SOLAR-TIROL-Dachkartierung wird ausdrücklich nur als historische Orientierung behandelt.
+4. Neuer Block `Kultur & Schutzstatus`: öffentliche TIRIS-SPORT/KULTUR-Layer (Archäologie, Ensemble, Kunstkataster etc.) werden am Gebäude/Standort geprüft. Zusätzlich wird testweise die BDA-Denkmalliste Tirol 2026 direkt geladen und textuell nach der Adresse durchsucht. Kunstkataster/Ensemble sind keine automatische Bestätigung von Denkmalschutz; auch die BDA-Liste weist selbst darauf hin, nicht rechtsverbindlich zu sein.
 
-- **Erdwärmesonden**: bestehende Tiefensonden im Umfeld; Indiz, keine Eignungszusage.
-- **Bewilligungspflicht Tiefensonden**: rechtlicher Flächenhinweis; bei Treffer sehr relevant.
-- **Grundwasserentnahmen / -rückgaben**: zeigen bestehende Wassernutzungen. Nicht jede Entnahme ist thermisch und nicht jede Entnahme besitzt eine eigene Rückgabe.
-- **Grundwasser-Sonden / Beobachtung**: Grundwasser-Erkundungs-/Beobachtungspunkte, nicht automatisch Wärmepumpenanlagen.
-- **Schutz-/Schongebiete / Beschränkungen**: für Grundwasser- und Tiefensondennutzung besonders relevant.
-- **Grundwasser-Messstellen**: für vertiefte Planung interessant; im Kunden-Ausdruck nur bei konkretem Mehrwert.
+## Einbau
 
-## Neu: Hochwasser HQ30 / HQ100 / HQ300
+Die vier Dateien direkt nach `tools/standortpass/` kopieren und die Dateien aus Test 10 ersetzen.
 
-Direkte öffentliche BWV-FeatureServices:
+## Besonders prüfen
 
-- `Ueberflutungsflaechen_HQ30`
-- `Ueberflutungsflaechen_HQ100`
-- `Ueberflutungsflaechen_HQ300`
-
-Wenn ein TIRIS-Gebäude gewählt wurde, wird das **gesamte Gebäudepolygon** auf Schnitt mit der jeweiligen Überflutungsfläche geprüft. Ohne Gebäude wird der Standortpunkt verwendet.
-
-Wichtig: `kein Treffer` wird nur als **kein Treffer in den ausgewerteten Daten** formuliert, niemals als `sicher`.
-
-## Neu: weitere Naturgefahren
-
-Quelle:
-
-`Service_Public/ogd_naturgefahren/MapServer`
-
-Test 10 liest die aktuellen Layer dynamisch und prüft relevante polygonale Gefahren-, Hinweis- und Funktionsflächen, z. B. Wildbach, Lawine, Gefahrenzonen, Hinweisbereiche oder weitere Naturgefahren, soweit sie im öffentlichen Dienst vorhanden sind.
-
-Nur positive Treffer werden prominent angezeigt. Alle geprüften Layer bleiben in einem aufklappbaren technischen Bereich sichtbar.
-
-## Installation
-
-Die vier Dateien in `tools/standortpass/` ersetzen:
-
-- `index.html`
-- `schnittstellentest.css`
-- `schnittstellentest.js`
-- `README.md`
-
-`tools/klima-heizlast/` bleibt unverändert.
-
-## Testhinweise
-
-1. Adresse wählen.
-2. Gebäude automatisch zuordnen, wenn vorhanden.
-3. `Hochwasser & Naturgefahren prüfen`.
-4. Prüfen, ob HQ30/HQ100/HQ300 jeweils einen nachvollziehbaren Treffer/Kein-Treffer liefern.
-5. Positive Naturgefahren-Treffer und die Liste der geprüften Layer kopieren.
-6. Einen Standort ohne Gebäude testen: dort muss automatisch der Punkt-Fallback verwendet werden.
+- Bürgerstraße 1: HQ100 sollte nach der Szenario-Validierung **nicht** mehr allein wegen eines HQ300-Datensatzes anschlagen.
+- HQ300 sollte weiterhin den passenden Treffer liefern.
+- WLV `GZW Planungsbereich` sollte separat unter Planungs-/Hinweisbereiche erscheinen und nicht wie eine rote/gelbe Gefahrenzone wirken.
+- `Solarpotenzial-Karte prüfen`: bitte Ergebnis + gefundener Layer bzw. eventuelle CORS-/Capabilities-Meldung kopieren.
+- `Kultur & Denkmalschutz prüfen`: bitte BDA-Status und gefundene TIRIS-Layer kopieren.

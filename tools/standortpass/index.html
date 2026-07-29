@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 10 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 11 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=10">
+  <link rel="stylesheet" href="schnittstellentest.css?v=11">
 </head>
 <body>
 
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 10</h1>
+      <h1>Schnittstellentest 11</h1>
       <p class="test-lead">
         Umweltwärme bleibt als fachlich reiches Detailmodul erhalten. Neu prüfen wir Hochwasser und Naturgefahren direkt am gewählten Standort – bei vorhandenem Gebäude gegen das gesamte Gebäudepolygon.
       </p>
       <p class="test-disclaimer">
-        Phase 10: Adresse, KG, Gebäude, DGM, Orthofoto, Solar und Umweltwärme bleiben erhalten. Neu werden die amtlichen Überflutungsflächen HQ30/HQ100/HQ300 sowie die öffentlichen TIRIS-Naturgefahren-Layer getestet. Kein Treffer wird ausdrücklich nicht als Sicherheitsbestätigung interpretiert.
+        Phase 11: Hochwasser wird szenariogerecht validiert, Gefahrenzonen werden von Planungs-/Hinweisbereichen getrennt. Zusätzlich testen wir einen Solarpotenzial-Kartenausschnitt sowie Denkmalschutz und baukulturelle TIRIS-Hinweise.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -335,6 +335,21 @@
       </div>
 
       <div class="service-result" id="solarResult" hidden></div>
+
+      <div class="subtest-block">
+        <div class="subtest-heading">
+          <div>
+            <span class="mini-label">Zusatztest · TIRIS Solarkataster</span>
+            <h3>Dach-Solarpotenzial als Kartenausschnitt</h3>
+            <p>Wir suchen den öffentlichen WMS-Layer hinter der Gebäude-Potenzialdarstellung. Die historische Solarkartierung bleibt nur eine visuelle Orientierung; das GeoLand-Diagramm darüber ist unsere aktuelle Verschattungsanalyse.</p>
+          </div>
+          <span class="status-chip status-chip--muted" id="solarMapStatus">Adresse fehlt</span>
+        </div>
+        <div class="action-row">
+          <button class="secondary-button" id="testSolarMapButton" type="button" disabled>Solarpotenzial-Karte prüfen</button>
+        </div>
+        <div class="service-result" id="solarMapResult" hidden></div>
+      </div>
     </section>
 
     <section class="container test-panel" aria-labelledby="heat-title">
@@ -384,7 +399,7 @@
           <p class="eyebrow">8 · Standort & Risiken</p>
           <h2 id="hazards-title">Hochwasser & Naturgefahren</h2>
           <p>
-            Test 10 prüft die amtlichen Überflutungsflächen HQ30, HQ100 und HQ300 sowie die öffentlichen TIRIS-Naturgefahren-Layer. Wenn ein Gebäude gewählt ist, wird das gesamte Dachpolygon auf Überschneidungen geprüft; ohne Gebäude dient der Standortpunkt als Fallback.
+            Test 11 prüft HQ30, HQ100 und HQ300 zusätzlich gegen das Szenario-Feld der Quelldaten und trennt Gefahrenzonen von reinen Planungs-/Hinweisbereichen. Wenn ein Gebäude gewählt ist, wird das gesamte Dachpolygon auf Überschneidungen geprüft; ohne Gebäude dient der Standortpunkt als Fallback.
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="hazardStatus">Adresse fehlt</span>
@@ -396,6 +411,22 @@
       </div>
 
       <div class="service-result" id="hazardResult" hidden></div>
+    </section>
+
+    <section class="container test-panel" aria-labelledby="heritage-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">9 · Kultur & Schutzstatus</p>
+          <h2 id="heritage-title">Denkmalschutz & baukultureller Kontext</h2>
+          <p>Rechtlichen Denkmalschutz und TIRIS-Kontextdaten behandeln wir getrennt. Kunstkataster, Ensemblekartierung oder Archäologie sind wichtige Hinweise, aber nicht automatisch ein Nachweis, dass das Gebäude selbst unter Denkmalschutz steht.</p>
+        </div>
+        <span class="status-chip status-chip--muted" id="heritageStatus">Adresse fehlt</span>
+      </div>
+      <div class="action-row">
+        <button class="primary-button" id="testHeritageButton" type="button" disabled>Kultur & Denkmalschutz prüfen</button>
+        <span class="action-note">BDA-Denkmalliste + öffentliche TIRIS-Layer SPORT/KULTUR.</span>
+      </div>
+      <div class="service-result" id="heritageResult" hidden></div>
     </section>
 
     <section class="container technical-panel">
@@ -413,9 +444,11 @@
           <div><h3>Orthofoto</h3><pre id="rawOrthophoto">–</pre></div>
           <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
           <div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
+          <div><h3>TIRIS Solarpotenzial-WMS</h3><pre id="rawSolarMap">–</pre></div>
           <div><h3>TIRIS Wärmenetz-Suche</h3><pre id="rawHeatDiscovery">–</pre></div>
           <div><h3>TIRIS Umweltwärme / WASSER</h3><pre id="rawEnvironmentalHeat">–</pre></div>
           <div><h3>Hochwasser & Naturgefahren</h3><pre id="rawHazards">–</pre></div>
+          <div><h3>Kultur & Denkmalschutz</h3><pre id="rawHeritage">–</pre></div>
         </div>
       </details>
     </section>
@@ -440,6 +473,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=10"></script>
+  <script src="schnittstellentest.js?v=11"></script>
 </body>
 </html>

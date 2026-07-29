@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 10
+   STANDORTPASS – SCHNITTSTELLENTEST 11
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -78,15 +78,44 @@ const TIRIS_NATURAL_HAZARDS_URL =
   'Service_Public/ogd_naturgefahren/MapServer';
 
 const FLOOD_HQ_SERVICES = [
-  { key: 'HQ30', label: 'HQ30', url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ30/FeatureServer' },
-  { key: 'HQ100', label: 'HQ100', url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ100/FeatureServer' },
-  { key: 'HQ300', label: 'HQ300', url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ300/FeatureServer' },
+  { key: 'HQ30', label: 'HQ30', scenario: 30, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ30/FeatureServer' },
+  { key: 'HQ100', label: 'HQ100', scenario: 100, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ100/FeatureServer' },
+  { key: 'HQ300', label: 'HQ300', scenario: 300, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ300/FeatureServer' },
 ];
 
 const NATURAL_HAZARD_KEYWORDS = [
   'gefahrenzone', 'wildbach', 'lawine', 'mure', 'rutsch', 'stein',
   'hinweisbereich', 'funktionsbereich', 'überflut', 'ueberflut',
   'besondere gefährd', 'besondere gefaehrd'
+];
+
+const TIRIS_SPORT_URL =
+  'https://gis.tirol.gv.at/arcgis/rest/services/' +
+  'Service_Public/ogd_sport/MapServer';
+
+const HERITAGE_KEYWORDS = [
+  'archäolog', 'archaeolog', 'ensemble', 'kunstkataster', 'kulturgut', 'denkmal'
+];
+
+const BDA_DENKMALLISTE_PAGE =
+  'https://www.bda.gv.at/service/unterschutzstellung/denkmalverzeichnis/denkmalliste-gemaess-3-dmsg.html';
+
+// Test-URL für Tirol 2026. Im Produktivbetrieb wird der aktuelle Link jährlich automatisch
+// von der BDA-Seite ermittelt oder als kleine versionierte lokale Datei gespiegelt.
+const BDA_TYROL_CSV_2026 =
+  'https://www.bda.gv.at/dam/jcr%3A51eeca38-0b23-49f5-8eec-0880ff513471/~Tir._2026raw%2BID_4943POS.csv';
+
+const SOLAR_WMS_CANDIDATES = [
+  {
+    label: 'Land Tirol · Energiequellen WMS',
+    url: 'https://gis.tirol.gv.at/arcgis/services/INSPIRE/AT_0024_33_Energiequellen/MapServer/WMSServer',
+    historical: false,
+  },
+  {
+    label: 'SOLAR TIROL · historischer Eignungsflächen-WMS',
+    url: 'https://haleconnect.com/ows/services/org.892.7a0dbd38-05b0-485c-911c-a03ddbbf01d5_wms',
+    historical: true,
+  },
 ];
 
 const TIRIS_LIVE_ADDRESS_LAYERS = [
@@ -499,7 +528,7 @@ function buildKgQueryUrl(address) {
   };
   const params = new URLSearchParams({
     f: 'json',
-    where: '1=1',
+    where: options.where || '1=1',
     geometry: JSON.stringify(geometry),
     geometryType: 'esriGeometryPoint',
     inSR: '4326',
@@ -740,11 +769,15 @@ function selectAddress(record, provider = 'bev') {
   $('loadSolarButton').disabled = false;
   $('testEnvironmentalHeatButton').disabled = false;
   $('testHazardButton').disabled = false;
+  $('testSolarMapButton').disabled = false;
+  $('testHeritageButton').disabled = false;
   setStatus($('buildingStatus'), 'bereit');
   setStatus($('terrainStatus'), 'bereit');
   setStatus($('solarStatus'), 'bereit');
   setStatus($('environmentalHeatStatus'), 'bereit');
   setStatus($('hazardStatus'), 'bereit');
+  setStatus($('solarMapStatus'), 'bereit');
+  setStatus($('heritageStatus'), 'bereit');
 
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
@@ -752,6 +785,8 @@ function selectAddress(record, provider = 'bev') {
   resetSolarOutput();
   resetEnvironmentalHeatOutput();
   resetHazardOutput();
+  resetSolarMapOutput();
+  resetHeritageOutput();
 
   loadKatastralgemeinde(record);
   compareSelectedAddressWithBev(record);
@@ -777,11 +812,15 @@ function clearAddress() {
   $('loadSolarButton').disabled = true;
   $('testEnvironmentalHeatButton').disabled = true;
   $('testHazardButton').disabled = true;
+  $('testSolarMapButton').disabled = true;
+  $('testHeritageButton').disabled = true;
   setStatus($('buildingStatus'), 'Adresse fehlt');
   setStatus($('terrainStatus'), 'Adresse fehlt');
   setStatus($('solarStatus'), 'Adresse fehlt');
   setStatus($('environmentalHeatStatus'), 'Adresse fehlt');
   setStatus($('hazardStatus'), 'Adresse fehlt');
+  setStatus($('solarMapStatus'), 'Adresse fehlt');
+  setStatus($('heritageStatus'), 'Adresse fehlt');
   setStatus($('tirisLiveAddressStatus'), 'nicht geprüft');
   $('tirisParsedAddress').textContent = 'Noch keine Adresse zerlegt.';
   resetBuildingOutput();
@@ -790,6 +829,8 @@ function clearAddress() {
   resetSolarOutput();
   resetEnvironmentalHeatOutput();
   resetHazardOutput();
+  resetSolarMapOutput();
+  resetHeritageOutput();
 }
 
 /* ---------------------------------------------------------
@@ -2535,6 +2576,200 @@ function resetEnvironmentalHeatOutput(clearRaw = true) {
   if (clearRaw) $('rawEnvironmentalHeat').textContent = '–';
 }
 
+
+/* ---------------------------------------------------------
+   5b. TIRIS Solarpotenzial-Kartenausschnitt
+--------------------------------------------------------- */
+
+async function fetchTextUrl(url) {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.text();
+}
+
+function wmsLayersFromCapabilities(xmlText) {
+  const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
+  if (xml.querySelector('parsererror')) throw new Error('WMS-Capabilities konnten nicht gelesen werden');
+  return [...xml.querySelectorAll('Layer')].map((layer) => {
+    const directChild = (tag) => [...layer.children].find((child) => child.localName === tag)?.textContent?.trim() || '';
+    return { name: directChild('Name'), title: directChild('Title') };
+  }).filter((layer) => layer.name);
+}
+
+function solarLayerScore(layer) {
+  const text = normalizedDiscoveryText(`${layer.title} ${layer.name}`);
+  let score = 0;
+  if (text.includes('gebaude') || text.includes('dach')) score += 8;
+  if (text.includes('eignung')) score += 6;
+  if (text.includes('potential') || text.includes('potenzial')) score += 5;
+  if (text.includes('jahr')) score += 3;
+  if (text.includes('solar')) score += 2;
+  if (text.includes('strahlung')) score += 1;
+  return score;
+}
+
+function buildSolarWmsPreviewUrl(serviceUrl, layerName) {
+  const lon = selectedAddress.longitude;
+  const lat = selectedAddress.latitude;
+  const halfLon = 0.0017;
+  const halfLat = 0.0011;
+  const params = new URLSearchParams({
+    SERVICE: 'WMS', VERSION: '1.1.1', REQUEST: 'GetMap',
+    LAYERS: layerName, STYLES: '', SRS: 'EPSG:4326',
+    BBOX: `${lon-halfLon},${lat-halfLat},${lon+halfLon},${lat+halfLat}`,
+    WIDTH: '820', HEIGHT: '520', FORMAT: 'image/png', TRANSPARENT: 'FALSE',
+  });
+  return `${serviceUrl}?${params.toString()}`;
+}
+
+async function testSolarMap() {
+  if (!selectedAddress) return;
+  const status = $('solarMapStatus');
+  const box = $('solarMapResult');
+  setStatus(status, 'prüft …', 'working');
+  box.hidden = true;
+  const raw = { tested_at: new Date().toISOString(), services: [] };
+  let best = null;
+
+  for (const candidate of SOLAR_WMS_CANDIDATES) {
+    const capUrl = `${candidate.url}?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1`;
+    try {
+      const xmlText = await fetchTextUrl(capUrl);
+      const layers = wmsLayersFromCapabilities(xmlText)
+        .map((layer) => ({ ...layer, score: solarLayerScore(layer) }))
+        .filter((layer) => layer.score > 0)
+        .sort((a,b) => b.score-a.score);
+      raw.services.push({ ...candidate, capabilities_url: capUrl, matches: layers.slice(0, 25) });
+      if (layers[0] && (!best || layers[0].score > best.layer.score)) {
+        best = { service: candidate, layer: layers[0] };
+      }
+    } catch (error) {
+      raw.services.push({ ...candidate, capabilities_url: capUrl, error: error.message });
+    }
+  }
+
+  $('rawSolarMap').textContent = pretty(raw);
+  if (!best) {
+    box.innerHTML = `<h3>Solarpotenzial-Kartenquelle</h3><p>Kein Gebäude-/Dach-Potenzial-Layer konnte im Browser automatisch aus den WMS-Capabilities bestätigt werden. Die TIRIS-Ansicht bleibt verlinkbar; wir verwenden keinen geratenen Layernamen.</p>`;
+    box.hidden = false;
+    setStatus(status, 'Layer offen', 'muted');
+    return;
+  }
+
+  const previewUrl = buildSolarWmsPreviewUrl(best.service.url, best.layer.name);
+  const ageNote = best.service.historical
+    ? '<strong>Orientierung:</strong> historische SOLAR-TIROL-Dachkartierung; nicht als aktuelle Rechenbasis verwenden.'
+    : '<strong>Amtliche WMS-Darstellung:</strong> Datenstand des Dienstes siehe technische Quelle.';
+  box.innerHTML = `
+    <div class="environment-heading-row">
+      <div><h3>Solarpotenzial · Kartenausschnitt</h3><p>${ageNote}</p></div>
+      <span class="origin-label">${escapeHtml(best.service.label)}</span>
+    </div>
+    <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Solarpotenzial-Kartenausschnitt am Gebäudestandort">
+    <p><strong>Gefundener Layer:</strong> ${escapeHtml(best.layer.title || best.layer.name)}</p>
+    <details class="environment-source-details"><summary>Gefundene Solar-WMS-Layer</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
+  box.hidden = false;
+  setStatus(status, 'gefunden', 'success');
+}
+
+function resetSolarMapOutput(clearRaw = true) {
+  if ($('solarMapResult')) { $('solarMapResult').hidden = true; $('solarMapResult').innerHTML = ''; }
+  if (clearRaw && $('rawSolarMap')) $('rawSolarMap').textContent = '–';
+}
+
+/* ---------------------------------------------------------
+   9. Kultur & Schutzstatus
+--------------------------------------------------------- */
+
+function heritageCandidateLayers(service) {
+  const layers = Array.isArray(service?.layers) ? service.layers : [];
+  return layers
+    .filter((layer) => layer?.type === 'Feature Layer')
+    .map((layer) => ({ ...layer, path: buildLayerParentPath(layers, layer) }))
+    .filter((layer) => {
+      const text = normalizedDiscoveryText(`${layer.name} ${layer.path}`);
+      return HERITAGE_KEYWORDS.some((keyword) => text.includes(normalizedDiscoveryText(keyword)));
+    });
+}
+
+function bdaCandidateLines(csvText) {
+  const street = normalizedDiscoveryText(selectedAddress.street || '');
+  const house = normalizedDiscoveryText(selectedAddress.house_number || '');
+  const municipality = normalizedDiscoveryText(selectedAddress.municipality || '');
+  return csvText.split(/\r?\n/).filter((line) => {
+    const text = normalizedDiscoveryText(line);
+    return street && house && text.includes(street) && text.includes(house)
+      && (!municipality || text.includes(municipality));
+  }).slice(0, 10);
+}
+
+async function testHeritage() {
+  if (!selectedAddress) return;
+  const status = $('heritageStatus');
+  const box = $('heritageResult');
+  setStatus(status, 'prüft …', 'working');
+  box.hidden = true;
+  const raw = { tested_at: new Date().toISOString(), address: selectedAddress.label, bda: {}, tiris: [] };
+
+  try {
+    try {
+      const csv = await fetchTextUrl(BDA_TYROL_CSV_2026);
+      raw.bda = { source: BDA_TYROL_CSV_2026, candidates: bdaCandidateLines(csv) };
+    } catch (error) {
+      raw.bda = { source: BDA_TYROL_CSV_2026, error: error.message };
+    }
+
+    const service = await fetchJson(`${TIRIS_SPORT_URL}?f=pjson`);
+    const candidates = heritageCandidateLayers(service);
+    const reference = hazardReferenceGeometry();
+    for (const layer of candidates) {
+      const layerUrl = `${TIRIS_SPORT_URL}/${layer.id}`;
+      const queryUrl = buildHazardSpatialQueryUrl(layerUrl, reference, { returnGeometry: false, resultRecordCount: 25 });
+      try {
+        const response = await fetchJson(queryUrl);
+        const features = Array.isArray(response?.features) ? response.features : [];
+        raw.tiris.push({ id: layer.id, name: layer.name, path: layer.path, count: features.length, first_attributes: features[0]?.attributes ?? null, query_url: queryUrl });
+      } catch (error) {
+        raw.tiris.push({ id: layer.id, name: layer.name, path: layer.path, count: 0, error: error.message, query_url: queryUrl });
+      }
+    }
+
+    $('rawHeritage').textContent = pretty(raw);
+    const bdaHit = Array.isArray(raw.bda.candidates) && raw.bda.candidates.length > 0;
+    const tirisHits = raw.tiris.filter((item) => item.count > 0);
+    const tirisHtml = tirisHits.length
+      ? tirisHits.map((item) => `<article class="environment-card"><span>${escapeHtml(item.path)}</span><strong>${number0.format(item.count)} Treffer am ${reference.mode === 'building' ? 'Gebäude' : 'Standort'}</strong><small>${escapeHtml(hazardAttributeSummary(item.first_attributes) || 'Details siehe Rohdaten')}</small></article>`).join('')
+      : '<article class="environment-card"><span>TIRIS Kultur-Kontext</span><strong>kein Treffer in den ausgewerteten Layern</strong><small>Kunstkataster/Ensemble/Archäologie – keine Aussage zur rechtlichen Schutzstellung.</small></article>';
+
+    box.innerHTML = `
+      <div class="environment-heading-row"><div><h3>Kultur & Schutzstatus</h3><p>Die rechtliche Schutzstellung und dokumentarische TIRIS-Hinweise bleiben getrennt.</p></div><a class="external-action-link" href="${escapeHtml(BDA_DENKMALLISTE_PAGE)}" target="_blank" rel="noopener noreferrer">BDA-Denkmalliste öffnen ↗</a></div>
+      <div class="environment-grid">
+        <article class="environment-card ${bdaHit ? 'hazard-card--hit' : ''}">
+          <span>Bundesdenkmalamt · Denkmalliste Tirol 2026</span>
+          <strong>${raw.bda.error ? 'Browserabruf nicht möglich' : (bdaHit ? 'möglicher Adresstreffer – Detailprüfung erforderlich' : 'kein automatischer Adresstreffer gefunden')}</strong>
+          <small>${raw.bda.error ? 'Für die Produktivversion wäre ein kleiner jährlich aktualisierter lokaler Datensatz die robuste Alternative.' : 'Die veröffentlichte Denkmalliste ist laut BDA selbst nicht rechtsverbindlich.'}</small>
+          ${bdaHit ? `<details><summary>Trefferzeilen</summary><pre>${escapeHtml(raw.bda.candidates.join('\n'))}</pre></details>` : ''}
+        </article>
+      </div>
+      <h4 class="hazard-subheading">TIRIS · baukultureller Kontext</h4>
+      <div class="environment-grid">${tirisHtml}</div>
+      <details class="environment-source-details"><summary>Alle geprüften TIRIS-Kulturlayer</summary><ul>${raw.tiris.map((item) => `<li>Layer ${item.id} · ${escapeHtml(item.path)} · ${number0.format(item.count)} Treffer</li>`).join('') || '<li>Keine passenden Feature-Layer gefunden.</li>'}</ul></details>
+      <p class="geometry-note"><strong>Wichtig:</strong> Kunstkataster oder Ensemblekartierung bedeuten nicht automatisch Denkmalschutz. Bei einem BDA-Treffer bzw. konkretem Sanierungsvorhaben ist die Schutzstellung fachlich/rechtlich zu verifizieren.</p>`;
+    box.hidden = false;
+    setStatus(status, 'geprüft', 'success');
+  } catch (error) {
+    $('rawHeritage').textContent = pretty({ error: error.message, partial: raw });
+    box.innerHTML = `<h3>Kultur-/Denkmalschutz-Test fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p>`;
+    box.hidden = false;
+    setStatus(status, 'Fehler', 'error');
+  }
+}
+
+function resetHeritageOutput(clearRaw = true) {
+  if ($('heritageResult')) { $('heritageResult').hidden = true; $('heritageResult').innerHTML = ''; }
+  if (clearRaw && $('rawHeritage')) $('rawHeritage').textContent = '–';
+}
+
 /* ---------------------------------------------------------
    8. Hochwasser & Naturgefahren
 --------------------------------------------------------- */
@@ -2625,7 +2860,27 @@ async function queryFloodScenario(serviceDef, reference) {
   const layer = layers.find((item) => item?.geometryType === 'esriGeometryPolygon') || layers[0];
   if (!layer) throw new Error(`${serviceDef.key}: kein Feature-Layer gefunden`);
   const layerUrl = `${serviceDef.url}/${layer.id}`;
-  const queryUrl = buildHazardSpatialQueryUrl(layerUrl, reference, { returnGeometry: false });
+
+  // Die im März 2026 publizierten HQ-Dienste können technisch mehr als ein Szenario
+  // enthalten. Deshalb verlassen wir uns nicht auf den Dienstnamen, sondern validieren
+  // über das tatsächliche Feld SZENARIO.
+  let layerMetadata = null;
+  let scenarioFilter = '1=1';
+  try {
+    layerMetadata = await fetchJson(`${layerUrl}?f=pjson`);
+    const hasScenario = Array.isArray(layerMetadata?.fields)
+      && layerMetadata.fields.some((field) => field?.name === 'SZENARIO');
+    if (hasScenario && Number.isFinite(serviceDef.scenario)) {
+      scenarioFilter = `SZENARIO=${serviceDef.scenario}`;
+    }
+  } catch (_) {
+    // Fallback auf unfilterte Abfrage; die Rohdaten machen das transparent.
+  }
+
+  const queryUrl = buildHazardSpatialQueryUrl(layerUrl, reference, {
+    returnGeometry: false,
+    where: scenarioFilter,
+  });
   const response = await fetchJson(queryUrl);
   const features = Array.isArray(response?.features) ? response.features : [];
   return {
@@ -2634,8 +2889,10 @@ async function queryFloodScenario(serviceDef, reference) {
     layer_name: layer.name,
     metadata_url: metadataUrl,
     query_url: queryUrl,
+    scenario_filter: scenarioFilter,
     count: features.length,
     first_attributes: features[0]?.attributes ?? null,
+    layer_metadata: layerMetadata,
     response,
   };
 }
@@ -2671,6 +2928,34 @@ function naturalHazardHitsHtml(results, reference) {
       <small>${escapeHtml(hazardAttributeSummary(item.first_attributes) || 'Details siehe Rohdaten')}</small>
       <details><summary>Datenquelle</summary><p>TIRIS NATURGEFAHREN · Layer ${escapeHtml(item.id)} · ${escapeHtml(item.path)}</p></details>
     </article>`).join('');
+}
+
+
+function isFloodDuplicateHazard(item) {
+  const text = normalizedDiscoveryText(`${item.name} ${item.path}`);
+  return text.includes('uberflutungsflachen')
+    || text.includes('zonen mit gefahrdungen niedriger wahrscheinlichkeit');
+}
+
+function isPlanningHintHazard(item) {
+  const text = normalizedDiscoveryText(`${item.name} ${item.path}`);
+  return text.includes('planungsbereich') || text.includes('hinweisbereich');
+}
+
+function dedupeScaleVariantLayers(items) {
+  const result = [];
+  for (const item of items) {
+    const text = normalizedDiscoveryText(item.path).replace(/ ubersicht$/i, '');
+    const isOverview = normalizedDiscoveryText(item.name).includes('ubersicht');
+    const existingIndex = result.findIndex((candidate) =>
+      normalizedDiscoveryText(candidate.path).replace(/ ubersicht$/i, '') === text);
+    if (existingIndex < 0) {
+      result.push(item);
+    } else if (!isOverview && normalizedDiscoveryText(result[existingIndex].name).includes('ubersicht')) {
+      result[existingIndex] = item;
+    }
+  }
+  return result;
 }
 
 async function testHazards() {
@@ -2739,8 +3024,14 @@ async function testHazards() {
     const floodCards = floodResults.map((result) => result.error
       ? `<article class="environment-card"><span>${escapeHtml(result.label)}</span><strong>Abfrage fehlgeschlagen</strong><small>${escapeHtml(result.error)}</small></article>`
       : floodCardHtml(result, reference)).join('');
+    const displayHazards = dedupeScaleVariantLayers(hazardResults.filter((item) => !isFloodDuplicateHazard(item) && !isPlanningHintHazard(item)));
+    const planningHints = dedupeScaleVariantLayers(hazardResults.filter((item) => !isFloodDuplicateHazard(item) && isPlanningHintHazard(item)));
     const layerList = hazardResults.map((item) => `<li>TIRIS NATURGEFAHREN Layer ${escapeHtml(item.id)} · ${escapeHtml(item.path)} · ${number0.format(item.count)} Treffer${item.error ? ` · Fehler: ${escapeHtml(item.error)}` : ''}</li>`).join('');
 
+    raw.display_groups = {
+      additional_hazards: displayHazards.map((item) => ({ id: item.id, path: item.path, count: item.count })),
+      planning_hints: planningHints.map((item) => ({ id: item.id, path: item.path, count: item.count })),
+    };
     $('rawHazards').textContent = pretty(raw);
     resultBox.innerHTML = `
       <div class="environment-heading-row">
@@ -2752,8 +3043,10 @@ async function testHazards() {
       </div>
       <h4 class="hazard-subheading">Hochwasser · BWV-Überflutungsflächen</h4>
       <div class="environment-grid">${floodCards}</div>
-      <h4 class="hazard-subheading">Weitere Naturgefahren · TIRIS</h4>
-      <div class="environment-grid">${naturalHazardHitsHtml(hazardResults, reference)}</div>
+      <h4 class="hazard-subheading">Weitere Gefahrenzonen · TIRIS</h4>
+      <div class="environment-grid">${naturalHazardHitsHtml(displayHazards, reference)}</div>
+      <h4 class="hazard-subheading">Planungs- / Hinweisbereiche</h4>
+      <div class="environment-grid">${naturalHazardHitsHtml(planningHints, reference)}</div>
       <div class="environment-review-note">
         <strong>Prüfgeometrie:</strong>
         <span>${escapeHtml(reference.label)}. Mit vorhandenem Gebäude wird bewusst das gesamte Polygon geprüft, damit ein Randtreffer nicht durch einen unauffälligen Adresspunkt übersehen wird.</span>
@@ -2820,6 +3113,8 @@ $('loadSolarButton').addEventListener('click', loadSolar);
 $('discoverHeatButton').addEventListener('click', discoverHeatServices);
 $('testEnvironmentalHeatButton').addEventListener('click', testEnvironmentalHeat);
 $('testHazardButton').addEventListener('click', testHazards);
+$('testSolarMapButton').addEventListener('click', testSolarMap);
+$('testHeritageButton').addEventListener('click', testHeritage);
 $('solarObserverMode').addEventListener('change', () => {
   if (!$('solarChartCard').hidden || !$('solarResult').hidden) loadSolar();
 });
