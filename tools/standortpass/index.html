@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standortpass – Schnittstellentest | Tools für Energieberatung</title>
+  <meta name="description" content="Technische Testseite für gemeinsame Standortdaten, TIRIS-Gebäude und TIRIS-DGM.">
+
+  <!-- Gemeinsames Design der Website -->
+  <link rel="stylesheet" href="../../styles.css">
+  <!-- Nur für diese Testseite -->
+  <link rel="stylesheet" href="schnittstellentest.css?v=1">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../../index.html" class="circle-btn logo-circle" aria-label="Zur Startseite">
+        <img src="../../assets/svg/logo/logo_48.svg" alt="Tools für Energieberatung" width="74" height="74">
+      </a>
+
+      <nav aria-label="Hauptnavigation">
+        <ul class="nav-list">
+          <li><a class="circle-btn nav-circle" href="../../index.html" aria-label="Startseite"><img src="../../assets/svg/icons/icon-home-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle active" href="../../pages/tools.html" aria-label="Tools"><img src="../../assets/svg/icons/icon-tools-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle" href="../../pages/about.html" aria-label="Über mich"><img src="../../assets/svg/icons/icon-about-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle" href="../../pages/kontakt.html" aria-label="Kontakt"><img src="../../assets/svg/icons/icon-mail-48.svg" class="nav-icon" alt=""></a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="interface-test-page">
+    <section class="container test-intro">
+      <p class="eyebrow">Standortpass · Entwicklung</p>
+      <h1>Schnittstellentest</h1>
+      <p class="test-lead">
+        Erste technische Prüfung der gemeinsamen Standortbasis. Diese Seite ist bewusst noch kein fertiger Standortpass.
+      </p>
+      <p class="test-disclaimer">
+        Phase 1: bestehende BEV-Adresssuche → TIRIS-Gebäude → TIRIS-DGM.
+      </p>
+
+      <div class="data-source-strip" aria-label="Testquellen">
+        <span><strong>Adresse</strong> bestehendes BEV-Modul</span>
+        <span><strong>Gebäude</strong> TIRIS FeatureServer</span>
+        <span><strong>Höhe</strong> bestehendes TIRIS-DGM-Modul</span>
+      </div>
+    </section>
+
+    <section class="container test-panel" aria-labelledby="address-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">1 · Gemeinsame Basis</p>
+          <h2 id="address-title">Adresse auswählen</h2>
+          <p>Die Testseite greift direkt auf das bestehende Adressmodul von „Klima & Heizlast“ zu.</p>
+        </div>
+        <span class="status-chip" id="addressModuleStatus">lädt …</span>
+      </div>
+
+      <label class="search-field">
+        <span>PLZ, Gemeinde, Straße und Hausnummer</span>
+        <input id="addressSearchInput" type="search" autocomplete="off" placeholder="z. B. 6020 Adele-Obermayr-Straße 2" aria-controls="addressSuggestions" aria-expanded="false">
+      </label>
+      <div class="suggestions" id="addressSuggestions" role="listbox" hidden></div>
+      <p class="field-status" id="addressSearchStatus">Adressmodul wird initialisiert …</p>
+
+      <article class="selected-card" id="selectedAddressCard" hidden>
+        <div>
+          <span class="mini-label">Ausgewählter Standort</span>
+          <strong id="selectedAddressLabel">–</strong>
+          <small id="selectedAddressMeta">–</small>
+        </div>
+        <button class="quiet-button" id="clearAddressButton" type="button">Auswahl löschen</button>
+      </article>
+    </section>
+
+    <section class="container test-panel" aria-labelledby="basis-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">2 · TIRIS BASIS</p>
+          <h2 id="basis-title">Öffentlichen Basisdienst prüfen</h2>
+          <p>
+            Der Test lädt nur die Service-Metadaten und sucht darin nach Adress-Layern. So sehen wir direkt, ob Browserzugriff und CORS von GitHub Pages funktionieren.
+          </p>
+        </div>
+        <span class="status-chip status-chip--muted" id="basisStatus">nicht geprüft</span>
+      </div>
+
+      <div class="action-row">
+        <button class="secondary-button" id="testBasisButton" type="button">TIRIS BASIS prüfen</button>
+        <span class="action-note">Kein Massendownload – nur Servicebeschreibung.</span>
+      </div>
+
+      <div id="basisResult" class="service-result" hidden></div>
+    </section>
+
+    <section class="container test-panel" aria-labelledby="building-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">3 · Gebäude</p>
+          <h2 id="building-title">TIRIS-Gebäude suchen</h2>
+          <p>
+            Rund um die ausgewählte Gebäudekoordinate werden TIRIS-Dachpolygone geladen. Bei mehreren Treffern kann das passende Gebäude angeklickt werden.
+          </p>
+        </div>
+        <span class="status-chip status-chip--muted" id="buildingStatus">Adresse fehlt</span>
+      </div>
+
+      <div class="action-row">
+        <button class="primary-button" id="loadBuildingButton" type="button" disabled>Gebäude prüfen</button>
+        <label class="compact-field">
+          <span>Suchradius</span>
+          <select id="buildingRadius">
+            <option value="15">15 m</option>
+            <option value="30" selected>30 m</option>
+            <option value="50">50 m</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="building-layout" id="buildingResults" hidden>
+        <div>
+          <h3>Kandidaten</h3>
+          <div class="candidate-list" id="buildingCandidateList"></div>
+        </div>
+
+        <div>
+          <h3>Geometrie-Testansicht</h3>
+          <div class="geometry-stage" id="geometryStage">
+            <svg id="buildingSvg" viewBox="0 0 520 360" role="img" aria-label="Gefundene Gebäudegeometrien"></svg>
+          </div>
+          <p class="geometry-note">Nur Testdarstellung der Feature-Geometrien – noch keine fertige Karte.</p>
+        </div>
+      </div>
+
+      <article class="selected-building" id="selectedBuildingPanel" hidden>
+        <div class="selected-building-heading">
+          <div>
+            <span class="mini-label">Gewähltes Gebäude</span>
+            <h3 id="selectedBuildingTitle">–</h3>
+          </div>
+          <span class="origin-label">Amtlich · TIRIS</span>
+        </div>
+
+        <div class="metric-grid-test">
+          <div class="metric"><span>Dachprojektion roh</span><strong id="metricAreaRaw">–</strong><small>Shape__Area</small></div>
+          <div class="metric"><span>Dachprojektion Anzeige</span><strong id="metricAreaRounded">–</strong><small>automatisch auf 10 m²</small></div>
+          <div class="metric"><span>Umfang roh</span><strong id="metricLengthRaw">–</strong><small>Shape__Length</small></div>
+          <div class="metric"><span>Höhe Median</span><strong id="metricHeightMedian">–</strong><small>noch nicht als Fassadenhöhe freigegeben</small></div>
+          <div class="metric"><span>Höhe Maximum</span><strong id="metricHeightMax">–</strong><small>Vergleichswert</small></div>
+          <div class="metric"><span>Datenstand</span><strong id="metricStand">–</strong><small>TIRIS-Feld STAND</small></div>
+        </div>
+
+        <div class="derived-preview">
+          <div>
+            <span class="mini-label">Nur Testableitung</span>
+            <strong id="wallPreview">–</strong>
+          </div>
+          <p>
+            Brutto-Außenwand = Rohumfang × Medianhöhe, nur wenn die Medianhöhe plausibel ist. Diese Höhenlogik wird erst nach Gebäudevergleichen fachlich festgelegt.
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section class="container test-panel" aria-labelledby="terrain-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">4 · Höhenlage</p>
+          <h2 id="terrain-title">TIRIS-DGM prüfen</h2>
+          <p>
+            Hier wird bewusst dieselbe Höhenfunktion verwendet wie in „Klima & Heizlast V1.0“.
+          </p>
+        </div>
+        <span class="status-chip status-chip--muted" id="terrainStatus">Adresse fehlt</span>
+      </div>
+
+      <div class="action-row">
+        <button class="primary-button" id="loadTerrainButton" type="button" disabled>Geländehöhe prüfen</button>
+      </div>
+
+      <div class="terrain-result" id="terrainResult" hidden>
+        <div class="metric metric--large">
+          <span>Geländehöhe am Standort</span>
+          <strong id="terrainHeight">–</strong>
+          <small id="terrainMeta">–</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="container technical-panel">
+      <details>
+        <summary>Technische Testdaten und Rohantworten</summary>
+        <p>
+          Diese Ausgabe ist nur für die Entwicklung gedacht. Im fertigen Standortpass bleiben solche Informationen eingeklappt.
+        </p>
+        <div class="raw-grid">
+          <div><h3>Adresse</h3><pre id="rawAddress">–</pre></div>
+          <div><h3>TIRIS BASIS</h3><pre id="rawBasis">–</pre></div>
+          <div><h3>Gebäude</h3><pre id="rawBuildings">–</pre></div>
+          <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <p class="footer-name">Tools</p>
+        <p class="footer-note">Entwicklungstest · Standortpass Energie & Gebäude</p>
+      </div>
+      <nav class="footer-links" aria-label="Rechtliche Informationen">
+        <a href="../../pages/kontakt.html#impressum">Impressum</a>
+        <a href="../../pages/kontakt.html#datenschutz">Datenschutz</a>
+      </nav>
+      <p class="copyright">© <span id="year">2026</span></p>
+    </div>
+  </footer>
+
+  <!-- Bestehende Module aus Klima & Heizlast: keine Kopie, echte Wiederverwendung. -->
+  <script src="../klima-heizlast/address-provider-core.js"></script>
+  <script src="../klima-heizlast/address-provider-bev-local.js"></script>
+  <script src="../klima-heizlast/location-core.js"></script>
+
+  <script src="schnittstellentest.js?v=1"></script>
+</body>
+</html>
