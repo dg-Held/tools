@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 12 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 13 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 12</h1>
+      <h1>Schnittstellentest 13</h1>
       <p class="test-lead">
         Umweltwärme bleibt als fachlich reiches Detailmodul erhalten. Neu prüfen wir Hochwasser und Naturgefahren direkt am gewählten Standort – bei vorhandenem Gebäude gegen das gesamte Gebäudepolygon.
       </p>
       <p class="test-disclaimer">
-        Phase 11: Hochwasser wird szenariogerecht validiert, Gefahrenzonen werden von Planungs-/Hinweisbereichen getrennt. Zusätzlich testen wir einen Solarpotenzial-Kartenausschnitt sowie Denkmalschutz und baukulturelle TIRIS-Hinweise.
+        Phase 13: Hochwasser/Naturgefahren und Kulturstatus bleiben bestehen. Der Solar-Dachfokus wird geometrisch auf eine gemeinsame EPSG:31254-Kartenbox synchronisiert; zusätzlich prüfen wir den amtlichen Radon-Gebietsstatus über die bereits bekannte Gemeindekennziffer.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -341,7 +341,7 @@
           <div>
             <span class="mini-label">Zusatztest · Solar · Dachfokus</span>
             <h3>Orthofoto + Solarstrahlung am Dach</h3>
-            <p>Test 12 verwendet standardmäßig einen ca. 1:250-Ausschnitt. Das Orthofoto bleibt sichtbar; die öffentliche Jahresstrahlung wird nur innerhalb des bestätigten TIRIS-Gebäudepolygons eingeblendet. Zusätzlich führt ein Link direkt zur offiziellen tirisMaps-Ansicht „Solarpotenziale je Gebäude“.</p>
+            <p>Test 13 verwendet für den Solar-Dachfokus eine eigene ca. 1:250-Ansicht. Orthofoto, Solar-WMS und Gebäudekontur werden mit exakt derselben Bounding Box in EPSG:31254 geladen. Die normale Gebäudeübersicht weiter oben bleibt unabhängig davon bei ca. 1:500. Zusätzlich führt ein Link direkt zur offiziellen tirisMaps-Ansicht „Solarpotenziale je Gebäude“.</p>
           </div>
           <span class="status-chip status-chip--muted" id="solarMapStatus">Adresse fehlt</span>
         </div>
@@ -429,6 +429,22 @@
       <div class="service-result" id="heritageResult" hidden></div>
     </section>
 
+    <section class="container test-panel" aria-labelledby="radon-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">10 · Standort & Risiken</p>
+          <h2 id="radon-title">Radon · Gebietsstatus</h2>
+          <p>Die Gemeindekennziffer wird mit der Radonschutzverordnung abgeglichen. Für Tirol unterscheiden wir Radonvorsorgegebiet und zusätzlich ausgewiesenes Radonschutzgebiet. Die Zuordnung ist ein Standortindikator und keine Messung im Gebäude.</p>
+        </div>
+        <span class="status-chip status-chip--muted" id="radonStatus">Adresse fehlt</span>
+      </div>
+      <div class="action-row">
+        <button class="primary-button" id="testRadonButton" type="button" disabled>Radonstatus prüfen</button>
+        <span class="action-note">Amtliche Gemeindezuordnung über GKZ · Radonschutzverordnung Anlage 1.</span>
+      </div>
+      <div class="service-result" id="radonResult" hidden></div>
+    </section>
+
     <section class="container technical-panel">
       <details>
         <summary>Technische Testdaten und Rohantworten</summary>
@@ -449,6 +465,7 @@
           <div><h3>TIRIS Umweltwärme / WASSER</h3><pre id="rawEnvironmentalHeat">–</pre></div>
           <div><h3>Hochwasser & Naturgefahren</h3><pre id="rawHazards">–</pre></div>
           <div><h3>Kultur & Denkmalschutz</h3><pre id="rawHeritage">–</pre></div>
+          <div><h3>Radon</h3><pre id="rawRadon">–</pre></div>
         </div>
       </details>
     </section>
@@ -473,6 +490,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=12"></script>
+  <script src="schnittstellentest.js?v=13"></script>
 </body>
 </html>

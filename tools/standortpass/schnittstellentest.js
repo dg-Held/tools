@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 11
+   STANDORTPASS – SCHNITTSTELLENTEST 13
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -120,6 +120,17 @@ const SOLAR_WMS_CANDIDATES = [
     historical: true,
   },
 ];
+
+// Radonschutzverordnung Anlage 1 · Tirol. Alle Tiroler Gemeinden sind Radonvorsorgegebiet;
+// diese GKZ sind zusätzlich als Radonschutzgebiet festgelegt.
+const RADON_PROTECTION_TYROL_GKZ = new Set([
+  '70903','70808','70809','70605','70810','70812','70202','70813','70815',
+  '70208','70920','70211','70823','70214','70616','70825','70216','70218',
+  '70219','70220','70217','70221','70830','70223','70834','70836',
+]);
+
+const RADON_RIS_URL =
+  'https://ris.bka.gv.at/NormDokument.wxe?Abfrage=Bundesnormen&Anlage=1&Gesetzesnummer=20011323';
 
 const TIRIS_LIVE_ADDRESS_LAYERS = [
   { id: 19, kind: 'building', label: 'AGWR Gebäudeadresse' },
@@ -774,6 +785,7 @@ function selectAddress(record, provider = 'bev') {
   $('testHazardButton').disabled = false;
   $('testSolarMapButton').disabled = false;
   $('testHeritageButton').disabled = false;
+  $('testRadonButton').disabled = false;
   setStatus($('buildingStatus'), 'bereit');
   setStatus($('terrainStatus'), 'bereit');
   setStatus($('solarStatus'), 'bereit');
@@ -781,6 +793,7 @@ function selectAddress(record, provider = 'bev') {
   setStatus($('hazardStatus'), 'bereit');
   setStatus($('solarMapStatus'), 'bereit');
   setStatus($('heritageStatus'), 'bereit');
+  setStatus($('radonStatus'), 'bereit');
 
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
@@ -790,6 +803,7 @@ function selectAddress(record, provider = 'bev') {
   resetHazardOutput();
   resetSolarMapOutput();
   resetHeritageOutput();
+  resetRadonOutput();
 
   loadKatastralgemeinde(record);
   compareSelectedAddressWithBev(record);
@@ -817,6 +831,7 @@ function clearAddress() {
   $('testHazardButton').disabled = true;
   $('testSolarMapButton').disabled = true;
   $('testHeritageButton').disabled = true;
+  $('testRadonButton').disabled = true;
   setStatus($('buildingStatus'), 'Adresse fehlt');
   setStatus($('terrainStatus'), 'Adresse fehlt');
   setStatus($('solarStatus'), 'Adresse fehlt');
@@ -824,6 +839,7 @@ function clearAddress() {
   setStatus($('hazardStatus'), 'Adresse fehlt');
   setStatus($('solarMapStatus'), 'Adresse fehlt');
   setStatus($('heritageStatus'), 'Adresse fehlt');
+  setStatus($('radonStatus'), 'Adresse fehlt');
   setStatus($('tirisLiveAddressStatus'), 'nicht geprüft');
   $('tirisParsedAddress').textContent = 'Noch keine Adresse zerlegt.';
   resetBuildingOutput();
@@ -834,6 +850,7 @@ function clearAddress() {
   resetHazardOutput();
   resetSolarMapOutput();
   resetHeritageOutput();
+  resetRadonOutput();
 }
 
 /* ---------------------------------------------------------
@@ -2617,14 +2634,14 @@ function solarLayerScore(layer) {
   return score;
 }
 
-function buildSolarRasterWmsUrl(serviceUrl, layerName, bounds, transparent = true) {
+function buildSolarRasterWmsUrl(serviceUrl, layerName, bounds, transparent = true, srs = 'EPSG:31254') {
   const params = new URLSearchParams({
     SERVICE: 'WMS',
     VERSION: '1.1.1',
     REQUEST: 'GetMap',
     LAYERS: layerName,
     STYLES: '',
-    SRS: 'EPSG:4326',
+    SRS: srs,
     BBOX: `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}`,
     WIDTH: '820',
     HEIGHT: '520',
@@ -2634,14 +2651,14 @@ function buildSolarRasterWmsUrl(serviceUrl, layerName, bounds, transparent = tru
   return `${serviceUrl}?${params.toString()}`;
 }
 
-function buildSolarOrthophotoUrl(bounds) {
+function buildSolarOrthophotoUrl(bounds, srs = 'EPSG:31254') {
   const params = new URLSearchParams({
     SERVICE: 'WMS',
     VERSION: '1.1.1',
     REQUEST: 'GetMap',
     LAYERS: 'Image_Aktuell_RGB',
     STYLES: '',
-    SRS: 'EPSG:4326',
+    SRS: srs,
     BBOX: `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}`,
     WIDTH: '820',
     HEIGHT: '520',
@@ -2651,44 +2668,81 @@ function buildSolarOrthophotoUrl(bounds) {
   return `${TIRIS_ORTHOPHOTO_WMS_URL}?${params.toString()}`;
 }
 
-function solarPreviewGeometry() {
-  const aspect = 820 / 520;
+async function fetchSelectedBuildingProjectedFeature() {
   const feature = selectedBuildingFeature();
-  const points = feature ? geometryPoints(feature.geometry) : [];
-  let centerLat = selectedAddress.latitude;
-  let centerLon = selectedAddress.longitude;
-  let groundWidthM = 40; // ca. 1:250 bei 160 mm Druckbreite
+  const objectId = Number(feature?.attributes?.OBJECTID);
+  if (!Number.isFinite(objectId)) return null;
+
+  const params = new URLSearchParams({
+    f: 'json',
+    where: `OBJECTID=${objectId}`,
+    outFields: 'OBJECTID,GEB_HOEHE_MEDIAN,GEB_HOEHE_MAX,STAND,UPDATETIMESTAMP',
+    returnGeometry: 'true',
+    outSR: '31254',
+    returnZ: 'false',
+    returnM: 'false',
+    resultRecordCount: '1',
+  });
+  const url = `${TIRIS_BUILDING_QUERY_URL}?${params.toString()}`;
+  const payload = await fetchJson(url);
+  const projected = payload?.features?.[0] ?? null;
+  if (projected) projected.request_url = url;
+  return projected;
+}
+
+function projectedGeometryPoints(feature) {
+  const rings = Array.isArray(feature?.geometry?.rings) ? feature.geometry.rings : [];
+  return rings.flatMap((ring) => Array.isArray(ring) ? ring : [])
+    .filter((point) => Array.isArray(point) && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])))
+    .map((point) => [Number(point[0]), Number(point[1])]);
+}
+
+function solarPreviewGeometryProjected(feature, projectedPoint) {
+  const aspect = 820 / 520;
+  const points = projectedGeometryPoints(feature);
+  let centerX = Number(projectedPoint?.x);
+  let centerY = Number(projectedPoint?.y);
+  let groundWidthM = 40; // 40 m bei 160 mm Druckbreite = 1:250
 
   if (points.length) {
-    const xs = points.map((point) => Number(point[0]));
-    const ys = points.map((point) => Number(point[1]));
-    const minLon = Math.min(...xs);
-    const maxLon = Math.max(...xs);
-    const minLat = Math.min(...ys);
-    const maxLat = Math.max(...ys);
-    centerLon = (minLon + maxLon) / 2;
-    centerLat = (minLat + maxLat) / 2;
+    const xs = points.map((point) => point[0]);
+    const ys = points.map((point) => point[1]);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    centerX = (minX + maxX) / 2;
+    centerY = (minY + maxY) / 2;
 
-    const buildingWidthM = haversineMeters(centerLat, minLon, centerLat, maxLon);
-    const buildingHeightM = haversineMeters(minLat, centerLon, maxLat, centerLon);
+    const buildingWidthM = maxX - minX;
+    const buildingHeightM = maxY - minY;
     groundWidthM = Math.max(40, buildingWidthM * 1.45, buildingHeightM * aspect * 1.45);
   }
 
+  if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) return null;
+  const groundHeightM = groundWidthM / aspect;
   return {
     feature,
     points,
-    bounds: boundsAroundPoint(centerLat, centerLon, groundWidthM, aspect),
     groundWidthM,
+    groundHeightM,
     nominal250: groundWidthM <= 40.5,
+    srs: 'EPSG:31254',
+    bounds: {
+      minX: centerX - groundWidthM / 2,
+      maxX: centerX + groundWidthM / 2,
+      minY: centerY - groundHeightM / 2,
+      maxY: centerY + groundHeightM / 2,
+    },
   };
 }
 
-function solarBuildingPath(feature, bounds, width = 820, height = 520) {
+function solarBuildingPathProjected(feature, bounds, width = 820, height = 520) {
   const rings = Array.isArray(feature?.geometry?.rings) ? feature.geometry.rings : [];
   if (!rings.length) return '';
 
-  const x = (lon) => ((Number(lon) - bounds.minX) / (bounds.maxX - bounds.minX)) * width;
-  const y = (lat) => height - (((Number(lat) - bounds.minY) / (bounds.maxY - bounds.minY)) * height);
+  const x = (east) => ((Number(east) - bounds.minX) / (bounds.maxX - bounds.minX)) * width;
+  const y = (north) => height - (((Number(north) - bounds.minY) / (bounds.maxY - bounds.minY)) * height);
 
   return rings.map((ring) => {
     const valid = ring.filter((point) => Array.isArray(point) && point.length >= 2);
@@ -2743,14 +2797,23 @@ async function testSolarMap() {
     }
 
     const chosen = annual || best;
-    const preview = solarPreviewGeometry();
-    const buildingPath = preview.feature ? solarBuildingPath(preview.feature, preview.bounds) : '';
+    const [projectedBuilding, projectedPoint] = await Promise.all([
+      fetchSelectedBuildingProjectedFeature().catch(() => null),
+      fetchProjectedTirisAddressPoint(selectedAddress).catch(() => null),
+    ]);
+    const preview = solarPreviewGeometryProjected(projectedBuilding, projectedPoint);
+    if (!preview) throw new Error('Projektierte Standortgeometrie EPSG:31254 konnte nicht geladen werden.');
+    const buildingPath = preview.feature ? solarBuildingPathProjected(preview.feature, preview.bounds) : '';
     raw.preview = {
       mode: preview.feature ? 'building-clipped' : 'no-building',
+      srs: preview.srs,
       ground_width_m: preview.groundWidthM,
+      ground_height_m: preview.groundHeightM,
       nominal_scale: preview.nominal250 ? 'ca. 1:250' : 'automatisch erweitert, damit das Gebäude vollständig sichtbar bleibt',
-      bbox_wgs84: [preview.bounds.minX, preview.bounds.minY, preview.bounds.maxX, preview.bounds.maxY],
+      bbox_epsg31254: [preview.bounds.minX, preview.bounds.minY, preview.bounds.maxX, preview.bounds.maxY],
       building_objectid: preview.feature?.attributes?.OBJECTID ?? null,
+      projected_building_query: projectedBuilding?.request_url ?? null,
+      projected_address_query: projectedPoint?.request_url ?? null,
     };
 
     const tirisLink = `<a class="external-action-link" href="${escapeHtml(TIRIS_SOLAR_BUILDING_VIEW_URL)}" target="_blank" rel="noopener noreferrer">Solarpotenziale je Gebäude in TIRIS öffnen ↗</a>`;
@@ -2768,8 +2831,8 @@ async function testSolarMap() {
       return;
     }
 
-    const orthoUrl = buildSolarOrthophotoUrl(preview.bounds);
-    const solarUrl = buildSolarRasterWmsUrl(chosen.service.url, chosen.layer.name, preview.bounds, true);
+    const orthoUrl = buildSolarOrthophotoUrl(preview.bounds, preview.srs);
+    const solarUrl = buildSolarRasterWmsUrl(chosen.service.url, chosen.layer.name, preview.bounds, true, preview.srs);
     raw.preview.orthophoto_url = orthoUrl;
     raw.preview.solar_raster_url = solarUrl;
     raw.preview.solar_layer = chosen.layer;
@@ -2795,7 +2858,7 @@ async function testSolarMap() {
       <div class="environment-heading-row">
         <div>
           <h3>Solarpotenzial · Dachfokus</h3>
-          <p><strong>Testdarstellung:</strong> aktuelles Orthofoto plus Jahresstrahlung, begrenzt auf das bestätigte TIRIS-Gebäudepolygon.</p>
+          <p><strong>Testdarstellung:</strong> aktuelles Orthofoto plus Jahresstrahlung, beide mit exakt derselben 1:250-Bounding-Box in EPSG:31254; die Solarstrahlung wird auf das bestätigte TIRIS-Gebäudepolygon begrenzt.</p>
         </div>
         ${tirisLink}
       </div>
@@ -3273,6 +3336,70 @@ function resetHazardOutput(clearRaw = true) {
 }
 
 /* ---------------------------------------------------------
+   10. Radon · gesetzlicher Gebietsstatus
+--------------------------------------------------------- */
+
+function testRadon() {
+  if (!selectedAddress) return;
+  const status = $('radonStatus');
+  const box = $('radonResult');
+  setStatus(status, 'prüft …', 'working');
+
+  const gkz = String(selectedAddress.municipality_code ?? '').trim();
+  const isTyrol = /^70[1-9]/.test(gkz);
+  const isProtection = RADON_PROTECTION_TYROL_GKZ.has(gkz);
+  const isPrecaution = isTyrol;
+
+  const raw = {
+    tested_at: new Date().toISOString(),
+    address: selectedAddress.label,
+    municipality: selectedAddress.municipality,
+    municipality_code: gkz || null,
+    radonvorsorgegebiet: isPrecaution,
+    radonschutzgebiet: isProtection,
+    source: 'Radonschutzverordnung Anlage 1',
+    source_url: RADON_RIS_URL,
+  };
+  $('rawRadon').textContent = pretty(raw);
+
+  if (!gkz) {
+    box.innerHTML = '<h3>Radon</h3><p>Gemeindekennziffer fehlt – automatische Zuordnung derzeit nicht möglich.</p>';
+    box.hidden = false;
+    setStatus(status, 'GKZ fehlt', 'muted');
+    return;
+  }
+
+  box.innerHTML = `
+    <div class="environment-heading-row">
+      <div>
+        <h3>Radon · Gebietsstatus</h3>
+        <p>Amtliche Zuordnung über die Gemeindekennziffer. Sie sagt nichts über die tatsächliche Radonkonzentration in einem konkreten Gebäude aus.</p>
+      </div>
+      <a class="external-action-link" href="${escapeHtml(RADON_RIS_URL)}" target="_blank" rel="noopener noreferrer">Radonschutzverordnung öffnen ↗</a>
+    </div>
+    <div class="environment-grid">
+      <article class="environment-card ${isPrecaution ? 'environment-card--notice' : ''}">
+        <span>Radonvorsorgegebiet</span>
+        <strong>${isPrecaution ? 'ja' : 'nicht aus Tirol-Regel ableitbar'}</strong>
+        <small>${isPrecaution ? 'Alle Tiroler Gemeinden sind Radonvorsorgegebiet.' : 'Für den Standort wurde keine Tiroler GKZ erkannt.'}</small>
+      </article>
+      <article class="environment-card ${isProtection ? 'environment-card--notice' : ''}">
+        <span>Radonschutzgebiet</span>
+        <strong>${isProtection ? 'ja' : 'nein'}</strong>
+        <small>${escapeHtml(selectedAddress.municipality || 'Gemeinde')} · GKZ ${escapeHtml(gkz)}</small>
+      </article>
+    </div>
+    <p class="geometry-note"><strong>Beratungshinweis:</strong> Vorsorgegebiet bedeutet insbesondere, dass bei Neubauten Radonvorsorgemaßnahmen relevant sind. Ein Gebietsstatus ersetzt keine Messung der tatsächlichen Radonkonzentration im Gebäude.</p>`;
+  box.hidden = false;
+  setStatus(status, 'geprüft', 'success');
+}
+
+function resetRadonOutput(clearRaw = true) {
+  if ($('radonResult')) { $('radonResult').hidden = true; $('radonResult').innerHTML = ''; }
+  if (clearRaw && $('rawRadon')) $('rawRadon').textContent = '–';
+}
+
+/* ---------------------------------------------------------
    Hilfsfunktionen / Events
 --------------------------------------------------------- */
 
@@ -3314,6 +3441,7 @@ $('testEnvironmentalHeatButton').addEventListener('click', testEnvironmentalHeat
 $('testHazardButton').addEventListener('click', testHazards);
 $('testSolarMapButton').addEventListener('click', testSolarMap);
 $('testHeritageButton').addEventListener('click', testHeritage);
+$('testRadonButton').addEventListener('click', testRadon);
 $('solarObserverMode').addEventListener('change', () => {
   if (!$('solarChartCard').hidden || !$('solarResult').hidden) loadSolar();
 });
