@@ -1,22 +1,25 @@
-# Standortpass – Schnittstellentest 11
+# Standortpass – Schnittstellentest 12
 
-Test 11 baut auf Test 10 auf.
+Test 12 baut auf Test 11 auf und korrigiert drei Punkte aus dem Realtest.
 
 Neu:
 
-1. HQ30/HQ100/HQ300 werden nicht mehr nur nach dem Namen des ArcGIS-Dienstes bewertet. Wenn das Feld `SZENARIO` vorhanden ist, wird explizit mit `SZENARIO=30`, `100` bzw. `300` gefiltert. Damit kann ein HQ300-Objekt nicht mehr als HQ100-Treffer erscheinen.
-2. Zusätzliche TIRIS-Naturgefahren werden für die Anzeige bereinigt: bereits über HQ abgedeckte Überflutungs-/Restrisikozonen werden nicht doppelt gezeigt; maßstabsabhängige Übersichtslayer werden zugunsten des Detail-Layers zurückgestellt; WLV-Planungsbereiche erscheinen getrennt von tatsächlichen Gefahrenzonen.
-3. Solar-Zusatztest: zwei offizielle/öffentliche WMS-Quellen werden nach Solar-/Dach-/Gebäude-Potenzial-Layern durchsucht. Nur ein tatsächlich per Capabilities bestätigter Layer wird als Kartenbild verwendet. Die ältere SOLAR-TIROL-Dachkartierung wird ausdrücklich nur als historische Orientierung behandelt.
-4. Neuer Block `Kultur & Schutzstatus`: öffentliche TIRIS-SPORT/KULTUR-Layer (Archäologie, Ensemble, Kunstkataster etc.) werden am Gebäude/Standort geprüft. Zusätzlich wird testweise die BDA-Denkmalliste Tirol 2026 direkt geladen und textuell nach der Adresse durchsucht. Kunstkataster/Ensemble sind keine automatische Bestätigung von Denkmalschutz; auch die BDA-Liste weist selbst darauf hin, nicht rechtsverbindlich zu sein.
+1. **Hochwasser-Filter korrigiert:** Die räumliche ArcGIS-Abfrage übernimmt jetzt den übergebenen `where`-Filter wirklich. HQ30/HQ100/HQ300 werden zusätzlich über den codierten Wert `L_KATEGO` validiert (`1 = HQ30`, `2 = HQ100`, `3 = HQ300`). Damit darf ein Datensatz mit `L_KATEGO=3 / SZENARIO=300` nicht mehr als HQ100 erscheinen.
+2. **BDA-Adressprüfung exakt:** Straße und Hausnummer müssen jetzt exakt übereinstimmen. `Bürgerstraße 1` darf daher nicht mehr durch `Bürgerstraße 22`, `34` oder `36` als möglicher Denkmalschutz-Treffer markiert werden.
+3. **Solar-Dachfokus:** Die allgemeine Solar-Rasterkarte aus Test 11 war nicht die gewünschte tirisMaps-Gebäudepotenzialdarstellung. Test 12 kombiniert daher für die Vorschau das aktuelle TIRIS-Orthofoto mit der öffentlichen Jahressolarstrahlung und begrenzt diese auf das bestätigte TIRIS-Gebäudepolygon. Standardausschnitt ist ca. **1:250 / 40 m**; bei sehr großen Gebäuden wird automatisch erweitert.
+4. **Offizielle Gebäude-Potenzialansicht:** Zusätzlich gibt es einen direkten Link zur offiziellen tirisMaps-Ansicht `Solarpotenziale je Gebäude`. Die lokale Dachfokus-Vorschau wird ausdrücklich als abgeleitete Darstellung bezeichnet und nicht mit dem noch nicht eindeutig öffentlich identifizierten tirisMaps-Layer `Solarpotential pro Jahr – Gebäude` gleichgesetzt.
 
 ## Einbau
 
-Die vier Dateien direkt nach `tools/standortpass/` kopieren und die Dateien aus Test 10 ersetzen.
+Die vier Dateien direkt nach `tools/standortpass/` kopieren und die Dateien aus Test 11 ersetzen.
 
 ## Besonders prüfen
 
-- Bürgerstraße 1: HQ100 sollte nach der Szenario-Validierung **nicht** mehr allein wegen eines HQ300-Datensatzes anschlagen.
-- HQ300 sollte weiterhin den passenden Treffer liefern.
-- WLV `GZW Planungsbereich` sollte separat unter Planungs-/Hinweisbereiche erscheinen und nicht wie eine rote/gelbe Gefahrenzone wirken.
-- `Solarpotenzial-Karte prüfen`: bitte Ergebnis + gefundener Layer bzw. eventuelle CORS-/Capabilities-Meldung kopieren.
-- `Kultur & Denkmalschutz prüfen`: bitte BDA-Status und gefundene TIRIS-Layer kopieren.
+- **Bürgerstraße 1:** HQ30 = kein Treffer; HQ100 sollte nun keinen HQ300-Datensatz mehr übernehmen; HQ300 sollte weiterhin treffen.
+- **BDA:** Bürgerstraße 1 sollte keinen Treffer mehr nur wegen Bürgerstraße 22/34/36 erhalten.
+- **Solar:** Orthofoto sichtbar? Solarfarben nur im gewählten Gebäudepolygon? Ausschnitt ungefähr 1:250? Gebäude vollständig sichtbar?
+- **TIRIS-Solarlink:** Öffnet er direkt die offizielle Ansicht `Solarpotenziale je Gebäude`?
+
+## Fachlicher Hinweis Solar
+
+Die aktuelle öffentliche Dienstübersicht des Landes Tirol nennt den Energiequellen-WMS für Solarstrahlung und Sonnenscheindauer, weist aber den tirisMaps-Gebäudepotenzial-Layer nicht als eigenen öffentlichen WMS/REST-Layer aus. Bis dieser Dienst eindeutig geklärt ist, wird kein Layername geraten.

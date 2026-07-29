@@ -78,9 +78,9 @@ const TIRIS_NATURAL_HAZARDS_URL =
   'Service_Public/ogd_naturgefahren/MapServer';
 
 const FLOOD_HQ_SERVICES = [
-  { key: 'HQ30', label: 'HQ30', scenario: 30, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ30/FeatureServer' },
-  { key: 'HQ100', label: 'HQ100', scenario: 100, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ100/FeatureServer' },
-  { key: 'HQ300', label: 'HQ300', scenario: 300, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ300/FeatureServer' },
+  { key: 'HQ30', label: 'HQ30', scenario: 30, category: 1, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ30/FeatureServer' },
+  { key: 'HQ100', label: 'HQ100', scenario: 100, category: 2, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ100/FeatureServer' },
+  { key: 'HQ300', label: 'HQ300', scenario: 300, category: 3, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ300/FeatureServer' },
 ];
 
 const NATURAL_HAZARD_KEYWORDS = [
@@ -104,6 +104,9 @@ const BDA_DENKMALLISTE_PAGE =
 // von der BDA-Seite ermittelt oder als kleine versionierte lokale Datei gespiegelt.
 const BDA_TYROL_CSV_2026 =
   'https://www.bda.gv.at/dam/jcr%3A51eeca38-0b23-49f5-8eec-0880ff513471/~Tir._2026raw%2BID_4943POS.csv';
+
+const TIRIS_SOLAR_BUILDING_VIEW_URL =
+  'https://maps.tirol.gv.at/externalcall.jsp?client=core&group_id=TMAPS-Gast&language=de&project=tmap_master&stateID=cec56936-19bb-45f9-8491-a9581526158d&user=guest';
 
 const SOLAR_WMS_CANDIDATES = [
   {
@@ -528,7 +531,7 @@ function buildKgQueryUrl(address) {
   };
   const params = new URLSearchParams({
     f: 'json',
-    where: options.where || '1=1',
+    where: '1=1',
     geometry: JSON.stringify(geometry),
     geometryType: 'esriGeometryPoint',
     inSR: '4326',
@@ -2578,7 +2581,11 @@ function resetEnvironmentalHeatOutput(clearRaw = true) {
 
 
 /* ---------------------------------------------------------
-   5b. TIRIS Solarpotenzial-Kartenausschnitt
+   5b. Solarpotenzial – Dachfokus
+   Öffentliche Rasterquelle + bestätigtes TIRIS-Gebäudepolygon.
+   Wichtig: Diese Vorschau ist NICHT der interne tirisMaps-Layer
+   „Solarpotential pro Jahr – Gebäude“, solange dessen öffentlicher
+   Dienst nicht eindeutig identifiziert ist.
 --------------------------------------------------------- */
 
 async function fetchTextUrl(url) {
@@ -2599,27 +2606,97 @@ function wmsLayersFromCapabilities(xmlText) {
 function solarLayerScore(layer) {
   const text = normalizedDiscoveryText(`${layer.title} ${layer.name}`);
   let score = 0;
-  if (text.includes('gebaude') || text.includes('dach')) score += 8;
-  if (text.includes('eignung')) score += 6;
-  if (text.includes('potential') || text.includes('potenzial')) score += 5;
-  if (text.includes('jahr')) score += 3;
-  if (text.includes('solar')) score += 2;
-  if (text.includes('strahlung')) score += 1;
+  if (text.includes('gebaude') || text.includes('dach')) score += 10;
+  if (text.includes('eignung')) score += 8;
+  if (text.includes('potential') || text.includes('potenzial')) score += 7;
+  if (text.includes('jahressumme')) score += 7;
+  if (text.includes('jahr')) score += 4;
+  if (text.includes('solar')) score += 3;
+  if (text.includes('strahlung')) score += 2;
+  if (text.includes('sommerhalbjahr') || text.includes('winterhalbjahr')) score -= 1;
   return score;
 }
 
-function buildSolarWmsPreviewUrl(serviceUrl, layerName) {
-  const lon = selectedAddress.longitude;
-  const lat = selectedAddress.latitude;
-  const halfLon = 0.0017;
-  const halfLat = 0.0011;
+function buildSolarRasterWmsUrl(serviceUrl, layerName, bounds, transparent = true) {
   const params = new URLSearchParams({
-    SERVICE: 'WMS', VERSION: '1.1.1', REQUEST: 'GetMap',
-    LAYERS: layerName, STYLES: '', SRS: 'EPSG:4326',
-    BBOX: `${lon-halfLon},${lat-halfLat},${lon+halfLon},${lat+halfLat}`,
-    WIDTH: '820', HEIGHT: '520', FORMAT: 'image/png', TRANSPARENT: 'FALSE',
+    SERVICE: 'WMS',
+    VERSION: '1.1.1',
+    REQUEST: 'GetMap',
+    LAYERS: layerName,
+    STYLES: '',
+    SRS: 'EPSG:4326',
+    BBOX: `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}`,
+    WIDTH: '820',
+    HEIGHT: '520',
+    FORMAT: 'image/png',
+    TRANSPARENT: transparent ? 'TRUE' : 'FALSE',
   });
   return `${serviceUrl}?${params.toString()}`;
+}
+
+function buildSolarOrthophotoUrl(bounds) {
+  const params = new URLSearchParams({
+    SERVICE: 'WMS',
+    VERSION: '1.1.1',
+    REQUEST: 'GetMap',
+    LAYERS: 'Image_Aktuell_RGB',
+    STYLES: '',
+    SRS: 'EPSG:4326',
+    BBOX: `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}`,
+    WIDTH: '820',
+    HEIGHT: '520',
+    FORMAT: 'image/jpeg',
+    TRANSPARENT: 'FALSE',
+  });
+  return `${TIRIS_ORTHOPHOTO_WMS_URL}?${params.toString()}`;
+}
+
+function solarPreviewGeometry() {
+  const aspect = 820 / 520;
+  const feature = selectedBuildingFeature();
+  const points = feature ? geometryPoints(feature.geometry) : [];
+  let centerLat = selectedAddress.latitude;
+  let centerLon = selectedAddress.longitude;
+  let groundWidthM = 40; // ca. 1:250 bei 160 mm Druckbreite
+
+  if (points.length) {
+    const xs = points.map((point) => Number(point[0]));
+    const ys = points.map((point) => Number(point[1]));
+    const minLon = Math.min(...xs);
+    const maxLon = Math.max(...xs);
+    const minLat = Math.min(...ys);
+    const maxLat = Math.max(...ys);
+    centerLon = (minLon + maxLon) / 2;
+    centerLat = (minLat + maxLat) / 2;
+
+    const buildingWidthM = haversineMeters(centerLat, minLon, centerLat, maxLon);
+    const buildingHeightM = haversineMeters(minLat, centerLon, maxLat, centerLon);
+    groundWidthM = Math.max(40, buildingWidthM * 1.45, buildingHeightM * aspect * 1.45);
+  }
+
+  return {
+    feature,
+    points,
+    bounds: boundsAroundPoint(centerLat, centerLon, groundWidthM, aspect),
+    groundWidthM,
+    nominal250: groundWidthM <= 40.5,
+  };
+}
+
+function solarBuildingPath(feature, bounds, width = 820, height = 520) {
+  const rings = Array.isArray(feature?.geometry?.rings) ? feature.geometry.rings : [];
+  if (!rings.length) return '';
+
+  const x = (lon) => ((Number(lon) - bounds.minX) / (bounds.maxX - bounds.minX)) * width;
+  const y = (lat) => height - (((Number(lat) - bounds.minY) / (bounds.maxY - bounds.minY)) * height);
+
+  return rings.map((ring) => {
+    const valid = ring.filter((point) => Array.isArray(point) && point.length >= 2);
+    if (!valid.length) return '';
+    return valid.map((point, index) =>
+      `${index === 0 ? 'M' : 'L'} ${x(point[0]).toFixed(2)} ${y(point[1]).toFixed(2)}`
+    ).join(' ') + ' Z';
+  }).filter(Boolean).join(' ');
 }
 
 async function testSolarMap() {
@@ -2628,48 +2705,116 @@ async function testSolarMap() {
   const box = $('solarMapResult');
   setStatus(status, 'prüft …', 'working');
   box.hidden = true;
-  const raw = { tested_at: new Date().toISOString(), services: [] };
-  let best = null;
 
-  for (const candidate of SOLAR_WMS_CANDIDATES) {
-    const capUrl = `${candidate.url}?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1`;
-    try {
-      const xmlText = await fetchTextUrl(capUrl);
-      const layers = wmsLayersFromCapabilities(xmlText)
-        .map((layer) => ({ ...layer, score: solarLayerScore(layer) }))
-        .filter((layer) => layer.score > 0)
-        .sort((a,b) => b.score-a.score);
-      raw.services.push({ ...candidate, capabilities_url: capUrl, matches: layers.slice(0, 25) });
-      if (layers[0] && (!best || layers[0].score > best.layer.score)) {
-        best = { service: candidate, layer: layers[0] };
+  const raw = {
+    tested_at: new Date().toISOString(),
+    tiris_building_view_url: TIRIS_SOLAR_BUILDING_VIEW_URL,
+    services: [],
+  };
+
+  try {
+    let best = null;
+    let annual = null;
+
+    for (const candidate of SOLAR_WMS_CANDIDATES) {
+      const capUrl = `${candidate.url}?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1`;
+      try {
+        const xmlText = await fetchTextUrl(capUrl);
+        const layers = wmsLayersFromCapabilities(xmlText)
+          .map((layer) => ({ ...layer, score: solarLayerScore(layer) }))
+          .filter((layer) => layer.score > 0)
+          .sort((a, b) => b.score - a.score);
+
+        raw.services.push({ ...candidate, capabilities_url: capUrl, matches: layers.slice(0, 25) });
+
+        const annualHere = layers.find((layer) => {
+          const text = normalizedDiscoveryText(`${layer.title} ${layer.name}`);
+          return text.includes('jahressumme') && text.includes('image');
+        });
+        if (annualHere && !candidate.historical && !annual) {
+          annual = { service: candidate, layer: annualHere };
+        }
+        if (layers[0] && (!best || layers[0].score > best.layer.score)) {
+          best = { service: candidate, layer: layers[0] };
+        }
+      } catch (error) {
+        raw.services.push({ ...candidate, capabilities_url: capUrl, error: error.message });
       }
-    } catch (error) {
-      raw.services.push({ ...candidate, capabilities_url: capUrl, error: error.message });
     }
-  }
 
-  $('rawSolarMap').textContent = pretty(raw);
-  if (!best) {
-    box.innerHTML = `<h3>Solarpotenzial-Kartenquelle</h3><p>Kein Gebäude-/Dach-Potenzial-Layer konnte im Browser automatisch aus den WMS-Capabilities bestätigt werden. Die TIRIS-Ansicht bleibt verlinkbar; wir verwenden keinen geratenen Layernamen.</p>`;
+    const chosen = annual || best;
+    const preview = solarPreviewGeometry();
+    const buildingPath = preview.feature ? solarBuildingPath(preview.feature, preview.bounds) : '';
+    raw.preview = {
+      mode: preview.feature ? 'building-clipped' : 'no-building',
+      ground_width_m: preview.groundWidthM,
+      nominal_scale: preview.nominal250 ? 'ca. 1:250' : 'automatisch erweitert, damit das Gebäude vollständig sichtbar bleibt',
+      bbox_wgs84: [preview.bounds.minX, preview.bounds.minY, preview.bounds.maxX, preview.bounds.maxY],
+      building_objectid: preview.feature?.attributes?.OBJECTID ?? null,
+    };
+
+    const tirisLink = `<a class="external-action-link" href="${escapeHtml(TIRIS_SOLAR_BUILDING_VIEW_URL)}" target="_blank" rel="noopener noreferrer">Solarpotenziale je Gebäude in TIRIS öffnen ↗</a>`;
+
+    if (!chosen) {
+      $('rawSolarMap').textContent = pretty(raw);
+      box.innerHTML = `
+        <div class="environment-heading-row">
+          <div><h3>Solarpotenzial · Dachfokus</h3><p>Der gewünschte Gebäude-Layer konnte über die öffentlich geprüften WMS-Dienste nicht bestätigt werden.</p></div>
+          ${tirisLink}
+        </div>
+        <p>Die offizielle tirisMaps-Ansicht wird direkt verlinkt. Für den Standortpass verwenden wir keinen geratenen Layernamen.</p>`;
+      box.hidden = false;
+      setStatus(status, 'Gebäudelayer offen', 'muted');
+      return;
+    }
+
+    const orthoUrl = buildSolarOrthophotoUrl(preview.bounds);
+    const solarUrl = buildSolarRasterWmsUrl(chosen.service.url, chosen.layer.name, preview.bounds, true);
+    raw.preview.orthophoto_url = orthoUrl;
+    raw.preview.solar_raster_url = solarUrl;
+    raw.preview.solar_layer = chosen.layer;
+    $('rawSolarMap').textContent = pretty(raw);
+
+    const previewHtml = buildingPath
+      ? `
+        <div class="solar-roof-map" role="img" aria-label="Orthofoto mit auf den bestätigten Gebäudeumriss begrenzter Jahressolarstrahlung">
+          <svg viewBox="0 0 820 520" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="solar-building-clip">
+                <path d="${escapeHtml(buildingPath)}"></path>
+              </clipPath>
+            </defs>
+            <image href="${escapeHtml(orthoUrl)}" x="0" y="0" width="820" height="520" preserveAspectRatio="none"></image>
+            <image class="solar-roof-raster" href="${escapeHtml(solarUrl)}" x="0" y="0" width="820" height="520" preserveAspectRatio="none" clip-path="url(#solar-building-clip)"></image>
+            <path class="solar-roof-outline" d="${escapeHtml(buildingPath)}"></path>
+          </svg>
+        </div>`
+      : `<p class="geometry-note"><strong>Keine Gebäudegeometrie:</strong> Die Dachfokus-Vorschau wird nicht erzeugt; die offizielle TIRIS-Ansicht bleibt verfügbar.</p>`;
+
+    box.innerHTML = `
+      <div class="environment-heading-row">
+        <div>
+          <h3>Solarpotenzial · Dachfokus</h3>
+          <p><strong>Testdarstellung:</strong> aktuelles Orthofoto plus Jahresstrahlung, begrenzt auf das bestätigte TIRIS-Gebäudepolygon.</p>
+        </div>
+        ${tirisLink}
+      </div>
+      ${previewHtml}
+      <div class="solar-map-meta">
+        <span>${preview.nominal250 ? 'Ausschnitt ca. 1:250 · 40 m' : `Ausschnitt automatisch auf ca. ${number0.format(preview.groundWidthM)} m erweitert`}</span>
+        <span>Raster: ${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
+      </div>
+      <p class="geometry-note"><strong>Wichtig:</strong> Diese Vorschau ist eine von uns abgeleitete Kombination aus Orthofoto, öffentlicher Solarstrahlung und Gebäudeumriss. Sie ist <strong>nicht</strong> identisch mit dem tirisMaps-Thema „Solarpotential pro Jahr – Gebäude“. Für die echte Gebäude-Potenzialdarstellung nutzen wir derzeit den offiziellen TIRIS-Link, bis der dahinterliegende öffentliche Dienst eindeutig identifiziert ist.</p>
+      <details class="environment-source-details"><summary>Gefundene öffentliche Solar-WMS-Layer</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
+
     box.hidden = false;
-    setStatus(status, 'Layer offen', 'muted');
-    return;
+    setStatus(status, preview.feature ? 'Dachfokus bereit' : 'TIRIS-Link bereit', 'success');
+  } catch (error) {
+    $('rawSolarMap').textContent = pretty({ error: error.message, partial: raw });
+    box.innerHTML = `<h3>Solarpotential-Test fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p>`;
+    box.hidden = false;
+    setStatus(status, 'Fehler', 'error');
   }
-
-  const previewUrl = buildSolarWmsPreviewUrl(best.service.url, best.layer.name);
-  const ageNote = best.service.historical
-    ? '<strong>Orientierung:</strong> historische SOLAR-TIROL-Dachkartierung; nicht als aktuelle Rechenbasis verwenden.'
-    : '<strong>Amtliche WMS-Darstellung:</strong> Datenstand des Dienstes siehe technische Quelle.';
-  box.innerHTML = `
-    <div class="environment-heading-row">
-      <div><h3>Solarpotenzial · Kartenausschnitt</h3><p>${ageNote}</p></div>
-      <span class="origin-label">${escapeHtml(best.service.label)}</span>
-    </div>
-    <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Solarpotenzial-Kartenausschnitt am Gebäudestandort">
-    <p><strong>Gefundener Layer:</strong> ${escapeHtml(best.layer.title || best.layer.name)}</p>
-    <details class="environment-source-details"><summary>Gefundene Solar-WMS-Layer</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
-  box.hidden = false;
-  setStatus(status, 'gefunden', 'success');
 }
 
 function resetSolarMapOutput(clearRaw = true) {
@@ -2692,14 +2837,59 @@ function heritageCandidateLayers(service) {
     });
 }
 
+function normalizeAddressComparable(value) {
+  return normalizedDiscoveryText(value)
+    .replace(/[",.;:]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function splitSemicolonCsvLine(line) {
+  const fields = [];
+  let field = '';
+  let quoted = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    const next = line[i + 1];
+
+    if (char === '"' && quoted && next === '"') {
+      field += '"';
+      i += 1;
+      continue;
+    }
+    if (char === '"') {
+      quoted = !quoted;
+      continue;
+    }
+    if (char === ';' && !quoted) {
+      fields.push(field.trim());
+      field = '';
+      continue;
+    }
+    field += char;
+  }
+  fields.push(field.trim());
+  return fields;
+}
+
 function bdaCandidateLines(csvText) {
-  const street = normalizedDiscoveryText(selectedAddress.street || '');
-  const house = normalizedDiscoveryText(selectedAddress.house_number || '');
-  const municipality = normalizedDiscoveryText(selectedAddress.municipality || '');
+  const expectedStreetHouse = normalizeAddressComparable(
+    `${selectedAddress.street || ''} ${selectedAddress.house_number || ''}`
+  );
+  const expectedMunicipality = normalizeAddressComparable(selectedAddress.municipality || '');
+
   return csvText.split(/\r?\n/).filter((line) => {
-    const text = normalizedDiscoveryText(line);
-    return street && house && text.includes(street) && text.includes(house)
-      && (!municipality || text.includes(municipality));
+    if (!line.trim()) return false;
+    const fields = splitSemicolonCsvLine(line);
+    // BDA Tirol 2026: Adresse steht in Spalte 6 (Index 5), Gemeinde in Spalte 3 (Index 2).
+    const addressField = String(fields[5] || '');
+    const municipalityField = normalizeAddressComparable(fields[2] || '');
+    const streetHousePart = normalizeAddressComparable(addressField.split(',')[0] || '');
+
+    return expectedStreetHouse
+      && streetHousePart === expectedStreetHouse
+      && (!expectedMunicipality || municipalityField === expectedMunicipality);
   }).slice(0, 10);
 }
 
@@ -2746,7 +2936,7 @@ async function testHeritage() {
       <div class="environment-grid">
         <article class="environment-card ${bdaHit ? 'hazard-card--hit' : ''}">
           <span>Bundesdenkmalamt · Denkmalliste Tirol 2026</span>
-          <strong>${raw.bda.error ? 'Browserabruf nicht möglich' : (bdaHit ? 'möglicher Adresstreffer – Detailprüfung erforderlich' : 'kein automatischer Adresstreffer gefunden')}</strong>
+          <strong>${raw.bda.error ? 'Browserabruf nicht möglich' : (bdaHit ? 'exakter Adresstreffer – Schutzstatus prüfen' : 'kein exakter Adresstreffer gefunden')}</strong>
           <small>${raw.bda.error ? 'Für die Produktivversion wäre ein kleiner jährlich aktualisierter lokaler Datensatz die robuste Alternative.' : 'Die veröffentlichte Denkmalliste ist laut BDA selbst nicht rechtsverbindlich.'}</small>
           ${bdaHit ? `<details><summary>Trefferzeilen</summary><pre>${escapeHtml(raw.bda.candidates.join('\n'))}</pre></details>` : ''}
         </article>
@@ -2800,7 +2990,7 @@ function hazardReferenceGeometry() {
 function buildHazardSpatialQueryUrl(layerUrl, reference, options = {}) {
   const params = new URLSearchParams({
     f: 'json',
-    where: '1=1',
+    where: options.where || '1=1',
     geometry: JSON.stringify(reference.geometry),
     geometryType: reference.geometryType,
     inSR: '4326',
@@ -2861,35 +3051,44 @@ async function queryFloodScenario(serviceDef, reference) {
   if (!layer) throw new Error(`${serviceDef.key}: kein Feature-Layer gefunden`);
   const layerUrl = `${serviceDef.url}/${layer.id}`;
 
-  // Die im März 2026 publizierten HQ-Dienste können technisch mehr als ein Szenario
-  // enthalten. Deshalb verlassen wir uns nicht auf den Dienstnamen, sondern validieren
-  // über das tatsächliche Feld SZENARIO.
+  // Die HQ-Dienste verwenden den codierten Wert L_KATEGO für die fachliche
+  // Wahrscheinlichkeit: 1 = HQ30, 2 = HQ100, 3 = HQ300.
+  // Das ist robuster als nur auf den Dienstnamen oder das optionale Feld SZENARIO
+  // zu vertrauen. Test 11 hat gezeigt, dass im HQ100-Dienst am Beispielstandort
+  // auch ein HQ300-Datensatz geliefert werden kann, wenn ungefiltert abgefragt wird.
   let layerMetadata = null;
-  let scenarioFilter = '1=1';
+  let categoryFilter = '1=1';
   try {
     layerMetadata = await fetchJson(`${layerUrl}?f=pjson`);
-    const hasScenario = Array.isArray(layerMetadata?.fields)
-      && layerMetadata.fields.some((field) => field?.name === 'SZENARIO');
-    if (hasScenario && Number.isFinite(serviceDef.scenario)) {
-      scenarioFilter = `SZENARIO=${serviceDef.scenario}`;
+    const hasCategory = Array.isArray(layerMetadata?.fields)
+      && layerMetadata.fields.some((field) => field?.name === 'L_KATEGO');
+    if (hasCategory && Number.isFinite(serviceDef.category)) {
+      categoryFilter = `L_KATEGO=${serviceDef.category}`;
     }
   } catch (_) {
-    // Fallback auf unfilterte Abfrage; die Rohdaten machen das transparent.
+    // Fallback auf unfilterte Abfrage; anschließend wird zusätzlich clientseitig validiert.
   }
 
   const queryUrl = buildHazardSpatialQueryUrl(layerUrl, reference, {
     returnGeometry: false,
-    where: scenarioFilter,
+    where: categoryFilter,
   });
   const response = await fetchJson(queryUrl);
-  const features = Array.isArray(response?.features) ? response.features : [];
+  const returnedFeatures = Array.isArray(response?.features) ? response.features : [];
+  const features = Number.isFinite(serviceDef.category)
+    ? returnedFeatures.filter((feature) =>
+        Number(feature?.attributes?.L_KATEGO) === Number(serviceDef.category)
+      )
+    : returnedFeatures;
+
   return {
     ...serviceDef,
     layer_id: layer.id,
     layer_name: layer.name,
     metadata_url: metadataUrl,
     query_url: queryUrl,
-    scenario_filter: scenarioFilter,
+    category_filter: categoryFilter,
+    returned_count: returnedFeatures.length,
     count: features.length,
     first_attributes: features[0]?.attributes ?? null,
     layer_metadata: layerMetadata,
