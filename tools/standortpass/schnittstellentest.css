@@ -1470,3 +1470,19 @@
     align-self: flex-start;
   }
 }
+
+
+/* Test 10 · Hochwasser & Naturgefahren */
+.hazard-subheading {
+  margin: 1.25rem 0 0.7rem;
+  font-size: 1rem;
+}
+
+.hazard-card--hit {
+  border-color: rgba(179, 68, 108, 0.5);
+  box-shadow: inset 4px 0 0 var(--berry);
+}
+
+.hazard-card--hit > strong {
+  color: var(--berry-dark);
+}

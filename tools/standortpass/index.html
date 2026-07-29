@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 09 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 10 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=9">
+  <link rel="stylesheet" href="schnittstellentest.css?v=10">
 </head>
 <body>
 
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 09</h1>
+      <h1>Schnittstellentest 10</h1>
       <p class="test-lead">
-        Solar bleibt in der abgestimmten Darstellung bestehen. Test 09 verdichtet die Umweltwärme-Daten nun zu einer fachlich getrennten Beratungsansicht mit Detailinformationen und offiziellen Prüflinks.
+        Umweltwärme bleibt als fachlich reiches Detailmodul erhalten. Neu prüfen wir Hochwasser und Naturgefahren direkt am gewählten Standort – bei vorhandenem Gebäude gegen das gesamte Gebäudepolygon.
       </p>
       <p class="test-disclaimer">
-        Phase 9: TIRIS-Live-Adresse bleibt Primärquelle. Umweltwärme trennt nun bestehende Anlagen, rechtliche Flächenhinweise, Schutz-/Schongebiete und Messstellen. Relevante Treffer erhalten Entfernung, Attribute und – sofern vom Dienst geliefert – offizielle WIS-Detailberichte.
+        Phase 10: Adresse, KG, Gebäude, DGM, Orthofoto, Solar und Umweltwärme bleiben erhalten. Neu werden die amtlichen Überflutungsflächen HQ30/HQ100/HQ300 sowie die öffentlichen TIRIS-Naturgefahren-Layer getestet. Kein Treffer wird ausdrücklich nicht als Sicherheitsbestätigung interpretiert.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -49,6 +49,8 @@
         <span><strong>Solar</strong> GeoLand / voibos</span>
         <span><strong>Wärmenetz</strong> TIRIS-Dienstsuche</span>
         <span><strong>Umweltwärme</strong> TIRIS WASSER</span>
+        <span><strong>Hochwasser</strong> HQ30 / HQ100 / HQ300</span>
+        <span><strong>Naturgefahren</strong> TIRIS NATURGEFAHREN</span>
       </div>
     </section>
 
@@ -369,10 +371,31 @@
 
       <div class="action-row">
         <button class="primary-button" id="testEnvironmentalHeatButton" type="button" disabled>Umweltwärme-Daten prüfen</button>
-        <span class="action-note">500-m-Umkreis für Anlagen/Messstellen · Flächenhinweise direkt am Standort · mit TIRIS- und WIS-Links.</span>
+        <span class="action-note">500-m-Umkreis für Anlagen/Beobachtungspunkte · Flächenhinweise direkt am Standort · mit TIRIS- und WIS-Links.</span>
       </div>
 
       <div class="service-result" id="environmentalHeatResult" hidden></div>
+    </section>
+
+
+    <section class="container test-panel" aria-labelledby="hazards-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">8 · Standort & Risiken</p>
+          <h2 id="hazards-title">Hochwasser & Naturgefahren</h2>
+          <p>
+            Test 10 prüft die amtlichen Überflutungsflächen HQ30, HQ100 und HQ300 sowie die öffentlichen TIRIS-Naturgefahren-Layer. Wenn ein Gebäude gewählt ist, wird das gesamte Dachpolygon auf Überschneidungen geprüft; ohne Gebäude dient der Standortpunkt als Fallback.
+          </p>
+        </div>
+        <span class="status-chip status-chip--muted" id="hazardStatus">Adresse fehlt</span>
+      </div>
+
+      <div class="action-row">
+        <button class="primary-button" id="testHazardButton" type="button" disabled>Hochwasser & Naturgefahren prüfen</button>
+        <span class="action-note">Amtliche Standortindikation · kein Treffer bedeutet nicht „risikofrei“.</span>
+      </div>
+
+      <div class="service-result" id="hazardResult" hidden></div>
     </section>
 
     <section class="container technical-panel">
@@ -392,6 +415,7 @@
           <div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
           <div><h3>TIRIS Wärmenetz-Suche</h3><pre id="rawHeatDiscovery">–</pre></div>
           <div><h3>TIRIS Umweltwärme / WASSER</h3><pre id="rawEnvironmentalHeat">–</pre></div>
+          <div><h3>Hochwasser & Naturgefahren</h3><pre id="rawHazards">–</pre></div>
         </div>
       </details>
     </section>
@@ -416,6 +440,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=9"></script>
+  <script src="schnittstellentest.js?v=10"></script>
 </body>
 </html>

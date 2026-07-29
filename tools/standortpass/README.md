@@ -1,51 +1,39 @@
-# Standortpass – Schnittstellentest 09
+# Standortpass – Schnittstellentest 10
 
-Test 09 lässt Adresse, KG, Gebäude, Orthofoto, DGM und Solar unverändert weiterlaufen. Der Umweltwärmeblock wird fachlich und visuell von einem reinen Trefferzähler zu einer ersten Beratungsansicht weiterentwickelt.
+Test 10 lässt die bisher funktionierenden Module unverändert weiterlaufen und ergänzt **Hochwasser + Naturgefahren**.
 
-## Umweltwärme – Änderungen
+## Umweltwärme – fachliche Einordnung
 
-Quelle bleibt der öffentliche TIRIS-Dienst:
+Die Detaildaten bleiben bewusst reichhaltig, sollen im späteren Ausdruck aber verdichtet werden.
 
-`Service_Public/ogd_wasser/MapServer`
+- **Erdwärmesonden**: bestehende Tiefensonden im Umfeld; Indiz, keine Eignungszusage.
+- **Bewilligungspflicht Tiefensonden**: rechtlicher Flächenhinweis; bei Treffer sehr relevant.
+- **Grundwasserentnahmen / -rückgaben**: zeigen bestehende Wassernutzungen. Nicht jede Entnahme ist thermisch und nicht jede Entnahme besitzt eine eigene Rückgabe.
+- **Grundwasser-Sonden / Beobachtung**: Grundwasser-Erkundungs-/Beobachtungspunkte, nicht automatisch Wärmepumpenanlagen.
+- **Schutz-/Schongebiete / Beschränkungen**: für Grundwasser- und Tiefensondennutzung besonders relevant.
+- **Grundwasser-Messstellen**: für vertiefte Planung interessant; im Kunden-Ausdruck nur bei konkretem Mehrwert.
 
-### 1. Bestehende Anlagen und Flächenhinweise werden getrennt
+## Neu: Hochwasser HQ30 / HQ100 / HQ300
 
-Insbesondere wird `Bewilligungspflicht Erdwärmesonde` nicht mehr als vorhandene Erdwärmesonde gezählt.
+Direkte öffentliche BWV-FeatureServices:
 
-- `Erdwärmesonde`: bestehende/erfasste Anlagen im 500-m-Umkreis
-- `Bewilligungspflicht Erdwärmesonde`: direkter Flächentest am Standort
-- `Schutz - und Schongebiet`: direkter Flächentest am Standort
-- Grundwasserentnahmen, -rückgaben, -sonden: 500-m-Umkreis
-- Grundwasser-Messstellen: 500-m-Umkreis
+- `Ueberflutungsflaechen_HQ30`
+- `Ueberflutungsflaechen_HQ100`
+- `Ueberflutungsflaechen_HQ300`
 
-### 2. Maßstabsabhängige Doppel-Layer werden nicht doppelt gezählt
+Wenn ein TIRIS-Gebäude gewählt wurde, wird das **gesamte Gebäudepolygon** auf Schnitt mit der jeweiligen Überflutungsfläche geprüft. Ohne Gebäude wird der Standortpunkt verwendet.
 
-TIRIS kann dasselbe Thema in mehreren Layern für unterschiedliche Maßstabsbereiche führen, z. B. `Messort Grundwasser` und `Messort Grundwasser (1)`. Test 09 bevorzugt den Detail-Layer und zählt diese Darstellungsvarianten nicht mehr doppelt.
+Wichtig: `kein Treffer` wird nur als **kein Treffer in den ausgewerteten Daten** formuliert, niemals als `sicher`.
 
-### 3. Nächste relevante Objekte
+## Neu: weitere Naturgefahren
 
-Bei punktförmigen Treffern werden die drei nächsten Objekte angezeigt, soweit vorhanden mit:
+Quelle:
 
-- Entfernung
-- Name
-- Typ/Subtyp
-- Status
-- Kataster-Nr.
-- Datenstand
-- Wasserbuch-Report (`URL_WABU`)
-- Wasserinfo-Report (`URL_WAWI`)
+`Service_Public/ogd_naturgefahren/MapServer`
 
-Die Reportlinks stammen direkt aus den TIRIS-Attributen und werden nur angezeigt, wenn eine gültige HTTP(S)-URL vorhanden ist.
+Test 10 liest die aktuellen Layer dynamisch und prüft relevante polygonale Gefahren-, Hinweis- und Funktionsflächen, z. B. Wildbach, Lawine, Gefahrenzonen, Hinweisbereiche oder weitere Naturgefahren, soweit sie im öffentlichen Dienst vorhanden sind.
 
-### 4. Schutz-/Bewilligungsflächen
-
-Bei einem direkten Flächentreffer werden Name/Typ und vorhandene offizielle Detailberichte angezeigt. Damit ist statt `liegt in Gebiet` eine nachvollziehbarere Aussage möglich.
-
-### 5. Standort in tirisMaps öffnen
-
-Test 09 fragt die amtliche Adresskoordinate zusätzlich in EPSG:31254 ab und erzeugt daraus einen tirisMaps-Positionslink (Testmaßstab 1:2500, Orthofoto als Hintergrund).
-
-Wichtig: Der Positionslink übernimmt den Standort/Ausschnitt, aber die Wasser-Themen müssen in tirisMaps weiterhin manuell aktiviert werden. Der Test nennt deshalb direkt die relevanten Themenpfade.
+Nur positive Treffer werden prominent angezeigt. Alle geprüften Layer bleiben in einem aufklappbaren technischen Bereich sichtbar.
 
 ## Installation
 
@@ -58,14 +46,11 @@ Die vier Dateien in `tools/standortpass/` ersetzen:
 
 `tools/klima-heizlast/` bleibt unverändert.
 
-## Sinnvoller Test
+## Testhinweise
 
-Bürgerstraße 1, 6020 Innsbruck ist besonders geeignet. Erwartet wird gegenüber Test 08 unter anderem:
-
-- bestehende Erdwärmesonden: 0 statt bisher fälschlich 1
-- Bewilligungspflicht Tiefensonden: eigener Flächenhinweis
-- Grundwasser-Messstellen: keine doppelte Zählung der Maßstabs-Layer
-- nächste Grundwasserobjekte mit Namen/Entfernung
-- bei Anlagen vorhandene WIS-Detaillinks
-- Schutz-/Schongebiet mit Name/Typ
-- funktionierender Button `Standort in TIRIS öffnen`
+1. Adresse wählen.
+2. Gebäude automatisch zuordnen, wenn vorhanden.
+3. `Hochwasser & Naturgefahren prüfen`.
+4. Prüfen, ob HQ30/HQ100/HQ300 jeweils einen nachvollziehbaren Treffer/Kein-Treffer liefern.
+5. Positive Naturgefahren-Treffer und die Liste der geprüften Layer kopieren.
+6. Einen Standort ohne Gebäude testen: dort muss automatisch der Punkt-Fallback verwendet werden.

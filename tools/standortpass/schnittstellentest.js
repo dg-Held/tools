@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 09
+   STANDORTPASS – SCHNITTSTELLENTEST 10
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -15,6 +15,8 @@
    9) TIRIS WASSER: bestehende Anlagen, rechtliche Flächen, Schutzgebiete und Messstellen sauber trennen
    10) relevante WASSER-Treffer mit Entfernung, Attributen und vorhandenen WIS-Detaillinks ausgeben
    11) direkten tirisMaps-Standortlink aus der amtlichen Adresskoordinate in EPSG:31254 erzeugen
+   12) amtliche Überflutungsflächen HQ30/HQ100/HQ300 direkt am Gebäude/Standort prüfen
+   13) TIRIS NATURGEFAHREN dynamisch nach relevanten Gefahren-/Hinweisflächen prüfen
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -69,6 +71,23 @@ const ENVIRONMENTAL_HEAT_KEYWORDS = [
 ];
 
 const ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M = 500;
+
+
+const TIRIS_NATURAL_HAZARDS_URL =
+  'https://gis.tirol.gv.at/arcgis/rest/services/' +
+  'Service_Public/ogd_naturgefahren/MapServer';
+
+const FLOOD_HQ_SERVICES = [
+  { key: 'HQ30', label: 'HQ30', url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ30/FeatureServer' },
+  { key: 'HQ100', label: 'HQ100', url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ100/FeatureServer' },
+  { key: 'HQ300', label: 'HQ300', url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ300/FeatureServer' },
+];
+
+const NATURAL_HAZARD_KEYWORDS = [
+  'gefahrenzone', 'wildbach', 'lawine', 'mure', 'rutsch', 'stein',
+  'hinweisbereich', 'funktionsbereich', 'überflut', 'ueberflut',
+  'besondere gefährd', 'besondere gefaehrd'
+];
 
 const TIRIS_LIVE_ADDRESS_LAYERS = [
   { id: 19, kind: 'building', label: 'AGWR Gebäudeadresse' },
@@ -720,16 +739,19 @@ function selectAddress(record, provider = 'bev') {
   $('loadTerrainButton').disabled = false;
   $('loadSolarButton').disabled = false;
   $('testEnvironmentalHeatButton').disabled = false;
+  $('testHazardButton').disabled = false;
   setStatus($('buildingStatus'), 'bereit');
   setStatus($('terrainStatus'), 'bereit');
   setStatus($('solarStatus'), 'bereit');
   setStatus($('environmentalHeatStatus'), 'bereit');
+  setStatus($('hazardStatus'), 'bereit');
 
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
   resetTerrainOutput();
   resetSolarOutput();
   resetEnvironmentalHeatOutput();
+  resetHazardOutput();
 
   loadKatastralgemeinde(record);
   compareSelectedAddressWithBev(record);
@@ -754,10 +776,12 @@ function clearAddress() {
   $('loadTerrainButton').disabled = true;
   $('loadSolarButton').disabled = true;
   $('testEnvironmentalHeatButton').disabled = true;
+  $('testHazardButton').disabled = true;
   setStatus($('buildingStatus'), 'Adresse fehlt');
   setStatus($('terrainStatus'), 'Adresse fehlt');
   setStatus($('solarStatus'), 'Adresse fehlt');
   setStatus($('environmentalHeatStatus'), 'Adresse fehlt');
+  setStatus($('hazardStatus'), 'Adresse fehlt');
   setStatus($('tirisLiveAddressStatus'), 'nicht geprüft');
   $('tirisParsedAddress').textContent = 'Noch keine Adresse zerlegt.';
   resetBuildingOutput();
@@ -765,6 +789,7 @@ function clearAddress() {
   resetTerrainOutput();
   resetSolarOutput();
   resetEnvironmentalHeatOutput();
+  resetHazardOutput();
 }
 
 /* ---------------------------------------------------------
@@ -2071,7 +2096,7 @@ function environmentalHeatLayerKind(layer) {
   if (name.includes('erdwarmesonde') || name.includes('erdwaermesonde')) return 'Bestehende Erdwärmesonden';
   if (name.includes('grundwasserentnahme')) return 'Grundwasserentnahmen';
   if (name.includes('grundwasserruckgabe') || name.includes('grundwasserrueckgabe')) return 'Grundwasserrückgaben';
-  if (name.includes('grundwassersonde')) return 'Grundwassersonden';
+  if (name.includes('grundwassersonde')) return 'Grundwassersonden / Beobachtung';
   if (name.includes('schutz') || name.includes('schongebiet')) return 'Schutz-/Schongebiete';
   if (name.includes('messstelle - grundwasser') || name.includes('messort grundwasser')) return 'Grundwasser-Messstellen';
   return 'Weitere Wasserinformation';
@@ -2235,7 +2260,7 @@ function environmentalKindLabel(kind) {
     'Tiefensonden – rechtlicher Hinweis': 'Tiefensonden · rechtlicher Hinweis',
     'Grundwasserentnahmen': 'Grundwasserentnahmen',
     'Grundwasserrückgaben': 'Grundwasserrückgaben',
-    'Grundwassersonden': 'Grundwassersonden',
+    'Grundwassersonden / Beobachtung': 'Grundwasser-Sonden / Beobachtung',
     'Schutz-/Schongebiete': 'Schutz-/Schongebiet / Beschränkung',
     'Grundwasser-Messstellen': 'Messdaten',
   };
@@ -2460,7 +2485,7 @@ async function testEnvironmentalHeat() {
       'Tiefensonden – rechtlicher Hinweis',
       'Grundwasserentnahmen',
       'Grundwasserrückgaben',
-      'Grundwassersonden',
+      'Grundwassersonden / Beobachtung',
       'Schutz-/Schongebiete',
       'Grundwasser-Messstellen',
     ];
@@ -2492,7 +2517,7 @@ async function testEnvironmentalHeat() {
         <summary>Datenquellen & alle ausgewerteten TIRIS-Layer</summary>
         <ul>${layerSourceList}</ul>
       </details>
-      <p class="geometry-note">Anlagen und Grundwasser-Messstellen: ${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M} m Umkreis. Bewilligungspflicht sowie Schutz-/Schongebiete: direkter Flächentest am Standort. Bei maßstabsabhängigen Doppel-Layern wird nur der Detail-Layer ausgewertet.</p>
+      <p class="geometry-note">Anlagen, Grundwasser-Sonden und Messstellen: ${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M} m Umkreis. Bewilligungspflicht sowie Schutz-/Schongebiete: direkter Flächentest am Standort. Bei maßstabsabhängigen Doppel-Layern wird nur der Detail-Layer ausgewertet.</p>
     `;
     resultBox.hidden = false;
     setStatus(status, candidates.length ? 'geprüft' : 'keine Layer', candidates.length ? 'success' : 'muted');
@@ -2508,6 +2533,251 @@ function resetEnvironmentalHeatOutput(clearRaw = true) {
   $('environmentalHeatResult').hidden = true;
   $('environmentalHeatResult').innerHTML = '';
   if (clearRaw) $('rawEnvironmentalHeat').textContent = '–';
+}
+
+/* ---------------------------------------------------------
+   8. Hochwasser & Naturgefahren
+--------------------------------------------------------- */
+
+function hazardReferenceGeometry() {
+  const building = selectedBuildingFeature();
+  const rings = building?.geometry?.rings;
+  if (Array.isArray(rings) && rings.length > 0) {
+    return {
+      mode: 'building',
+      label: 'gesamtes TIRIS-Gebäudepolygon',
+      geometryType: 'esriGeometryPolygon',
+      geometry: { rings, spatialReference: { wkid: 4326 } },
+    };
+  }
+  return {
+    mode: 'point',
+    label: 'Standortpunkt (kein bestätigtes Gebäudepolygon)',
+    geometryType: 'esriGeometryPoint',
+    geometry: {
+      x: selectedAddress.longitude,
+      y: selectedAddress.latitude,
+      spatialReference: { wkid: 4326 },
+    },
+  };
+}
+
+function buildHazardSpatialQueryUrl(layerUrl, reference, options = {}) {
+  const params = new URLSearchParams({
+    f: 'json',
+    where: '1=1',
+    geometry: JSON.stringify(reference.geometry),
+    geometryType: reference.geometryType,
+    inSR: '4326',
+    spatialRel: 'esriSpatialRelIntersects',
+    outFields: options.outFields || '*',
+    returnGeometry: options.returnGeometry ? 'true' : 'false',
+    outSR: '4326',
+    returnZ: 'false',
+    returnM: 'false',
+    resultRecordCount: String(options.resultRecordCount || 100),
+  });
+  return `${layerUrl}/query?${params.toString()}`;
+}
+
+function naturalHazardCandidateLayers(service) {
+  const layers = Array.isArray(service?.layers) ? service.layers : [];
+  return layers
+    .filter((layer) => layer?.type === 'Feature Layer')
+    .filter((layer) => layer.geometryType === 'esriGeometryPolygon')
+    .map((layer) => ({ ...layer, path: buildLayerParentPath(layers, layer) }))
+    .filter((layer) => {
+      const text = normalizedDiscoveryText(`${layer.name} ${layer.path}`);
+      return NATURAL_HAZARD_KEYWORDS.some((keyword) => text.includes(normalizedDiscoveryText(keyword)));
+    });
+}
+
+function hazardAttributeSummary(attributes = {}) {
+  const preferredKeys = [
+    'ZONE', 'ZONENART', 'ZONENBEZ', 'GEFAHR', 'GEFAHRENART', 'ART', 'TYP',
+    'BEZEICHNUNG', 'NAME', 'WILDBACHZONE', 'PLANSTATUS', 'GEMEINDENAME',
+    'GEM_NAME', 'STAND', 'STATUS'
+  ];
+  const parts = [];
+  for (const key of preferredKeys) {
+    const value = attributes[key];
+    if (value === null || value === undefined || value === '') continue;
+    const formatted = /STAND|DATUM|UPDATE/i.test(key) && Number.isFinite(Number(value))
+      ? formatArcgisDate(value)
+      : String(value);
+    if (formatted && !parts.includes(formatted)) parts.push(formatted);
+    if (parts.length >= 4) break;
+  }
+  if (!parts.length) {
+    for (const [key, value] of Object.entries(attributes)) {
+      if (/OBJECTID|SHAPE/i.test(key) || value === null || value === undefined || value === '') continue;
+      parts.push(`${key}: ${String(value)}`);
+      if (parts.length >= 3) break;
+    }
+  }
+  return parts.join(' · ');
+}
+
+async function queryFloodScenario(serviceDef, reference) {
+  const metadataUrl = `${serviceDef.url}?f=pjson`;
+  const metadata = await fetchJson(metadataUrl);
+  const layers = Array.isArray(metadata?.layers) ? metadata.layers : [];
+  const layer = layers.find((item) => item?.geometryType === 'esriGeometryPolygon') || layers[0];
+  if (!layer) throw new Error(`${serviceDef.key}: kein Feature-Layer gefunden`);
+  const layerUrl = `${serviceDef.url}/${layer.id}`;
+  const queryUrl = buildHazardSpatialQueryUrl(layerUrl, reference, { returnGeometry: false });
+  const response = await fetchJson(queryUrl);
+  const features = Array.isArray(response?.features) ? response.features : [];
+  return {
+    ...serviceDef,
+    layer_id: layer.id,
+    layer_name: layer.name,
+    metadata_url: metadataUrl,
+    query_url: queryUrl,
+    count: features.length,
+    first_attributes: features[0]?.attributes ?? null,
+    response,
+  };
+}
+
+function floodCardHtml(result, reference) {
+  const hit = result.count > 0;
+  const subject = reference.mode === 'building' ? 'Gebäude' : 'Standortpunkt';
+  return `
+    <article class="environment-card ${hit ? 'hazard-card--hit' : ''}">
+      <span>Überflutungsfläche ${escapeHtml(result.label)}</span>
+      <strong>${hit
+        ? `${escapeHtml(subject)} schneidet die ausgewertete ${escapeHtml(result.label)}-Fläche`
+        : `kein Treffer in der ausgewerteten ${escapeHtml(result.label)}-Fläche`}</strong>
+      <small>${hit ? `${number0.format(result.count)} Flächentreffer` : 'kein Flächentreffer'} · ${escapeHtml(reference.label)}</small>
+      ${hit && result.first_attributes ? `<details><summary>Erster Treffer / Attribute</summary><p>${escapeHtml(hazardAttributeSummary(result.first_attributes) || 'Attribute vorhanden – siehe Rohdaten.')}</p></details>` : ''}
+    </article>`;
+}
+
+function naturalHazardHitsHtml(results, reference) {
+  const hits = results.filter((item) => item.count > 0);
+  if (!hits.length) {
+    return `
+      <article class="environment-card">
+        <span>Weitere Naturgefahren</span>
+        <strong>kein Treffer in den ausgewerteten TIRIS-Gefahrenflächen</strong>
+        <small>${escapeHtml(reference.label)} · keine Sicherheitsbestätigung</small>
+      </article>`;
+  }
+  return hits.map((item) => `
+    <article class="environment-card hazard-card--hit">
+      <span>${escapeHtml(item.path)}</span>
+      <strong>${number0.format(item.count)} Flächentreffer am ${reference.mode === 'building' ? 'Gebäude' : 'Standort'}</strong>
+      <small>${escapeHtml(hazardAttributeSummary(item.first_attributes) || 'Details siehe Rohdaten')}</small>
+      <details><summary>Datenquelle</summary><p>TIRIS NATURGEFAHREN · Layer ${escapeHtml(item.id)} · ${escapeHtml(item.path)}</p></details>
+    </article>`).join('');
+}
+
+async function testHazards() {
+  if (!selectedAddress) return;
+  const status = $('hazardStatus');
+  const resultBox = $('hazardResult');
+  setStatus(status, 'prüft …', 'working');
+  resultBox.hidden = true;
+  resultBox.innerHTML = '';
+
+  const reference = hazardReferenceGeometry();
+  const raw = {
+    tested_at: new Date().toISOString(),
+    address: { label: selectedAddress.label, latitude: selectedAddress.latitude, longitude: selectedAddress.longitude },
+    reference: { mode: reference.mode, label: reference.label, geometryType: reference.geometryType },
+    flood: [],
+    natural_hazards_service: TIRIS_NATURAL_HAZARDS_URL,
+    natural_hazard_layers: [],
+  };
+
+  try {
+    const floodResults = [];
+    for (const service of FLOOD_HQ_SERVICES) {
+      try {
+        const result = await queryFloodScenario(service, reference);
+        floodResults.push(result);
+        raw.flood.push(result);
+      } catch (error) {
+        const failed = { ...service, error: error.message, count: 0 };
+        floodResults.push(failed);
+        raw.flood.push(failed);
+      }
+    }
+
+    const service = await fetchJson(`${TIRIS_NATURAL_HAZARDS_URL}?f=pjson`);
+    raw.natural_hazards_metadata = service;
+    const candidates = naturalHazardCandidateLayers(service).slice(0, 24);
+    const hazardResults = [];
+
+    for (const layer of candidates) {
+      const layerUrl = `${TIRIS_NATURAL_HAZARDS_URL}/${layer.id}`;
+      const queryUrl = buildHazardSpatialQueryUrl(layerUrl, reference, { returnGeometry: false });
+      try {
+        const response = await fetchJson(queryUrl);
+        const features = Array.isArray(response?.features) ? response.features : [];
+        const item = {
+          id: layer.id,
+          name: layer.name,
+          path: layer.path,
+          count: features.length,
+          first_attributes: features[0]?.attributes ?? null,
+          query_url: queryUrl,
+          response,
+        };
+        hazardResults.push(item);
+        raw.natural_hazard_layers.push(item);
+      } catch (error) {
+        const item = { id: layer.id, name: layer.name, path: layer.path, count: 0, query_url: queryUrl, error: error.message };
+        hazardResults.push(item);
+        raw.natural_hazard_layers.push(item);
+      }
+    }
+
+    const projectedPoint = await fetchProjectedTirisAddressPoint(selectedAddress).catch(() => null);
+    const tirisMapUrl = buildTirisMapUrl(projectedPoint, 5000);
+    const floodCards = floodResults.map((result) => result.error
+      ? `<article class="environment-card"><span>${escapeHtml(result.label)}</span><strong>Abfrage fehlgeschlagen</strong><small>${escapeHtml(result.error)}</small></article>`
+      : floodCardHtml(result, reference)).join('');
+    const layerList = hazardResults.map((item) => `<li>TIRIS NATURGEFAHREN Layer ${escapeHtml(item.id)} · ${escapeHtml(item.path)} · ${number0.format(item.count)} Treffer${item.error ? ` · Fehler: ${escapeHtml(item.error)}` : ''}</li>`).join('');
+
+    $('rawHazards').textContent = pretty(raw);
+    resultBox.innerHTML = `
+      <div class="environment-heading-row">
+        <div>
+          <h3>Hochwasser & Naturgefahren · Standortindikationen</h3>
+          <p><strong>Wichtig:</strong> Die Abfrage zeigt Überschneidungen mit den ausgewerteten amtlichen Flächen. „Kein Treffer“ bedeutet nicht, dass ein Standort sicher oder vollständig gefahrenfrei ist.</p>
+        </div>
+        <a class="external-action-link" href="${escapeHtml(tirisMapUrl)}" target="_blank" rel="noopener noreferrer">Standort in TIRIS öffnen ↗</a>
+      </div>
+      <h4 class="hazard-subheading">Hochwasser · BWV-Überflutungsflächen</h4>
+      <div class="environment-grid">${floodCards}</div>
+      <h4 class="hazard-subheading">Weitere Naturgefahren · TIRIS</h4>
+      <div class="environment-grid">${naturalHazardHitsHtml(hazardResults, reference)}</div>
+      <div class="environment-review-note">
+        <strong>Prüfgeometrie:</strong>
+        <span>${escapeHtml(reference.label)}. Mit vorhandenem Gebäude wird bewusst das gesamte Polygon geprüft, damit ein Randtreffer nicht durch einen unauffälligen Adresspunkt übersehen wird.</span>
+      </div>
+      <details class="environment-source-details">
+        <summary>Alle geprüften Naturgefahren-Layer</summary>
+        <ul>${layerList || '<li>Keine passenden polygonalen Feature-Layer gefunden.</li>'}</ul>
+      </details>
+      <p class="geometry-note">HQ30, HQ100 und HQ300 werden separat aus den öffentlichen BWV-Überflutungsflächen geprüft. Weitere Gefahren-/Hinweisflächen werden dynamisch aus TIRIS NATURGEFAHREN abgefragt.</p>
+    `;
+    resultBox.hidden = false;
+    setStatus(status, 'geprüft', 'success');
+  } catch (error) {
+    $('rawHazards').textContent = pretty({ error: error.message, partial: raw });
+    resultBox.innerHTML = `<h3>Naturgefahren-Test fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p>`;
+    resultBox.hidden = false;
+    setStatus(status, 'Fehler', 'error');
+  }
+}
+
+function resetHazardOutput(clearRaw = true) {
+  $('hazardResult').hidden = true;
+  $('hazardResult').innerHTML = '';
+  if (clearRaw) $('rawHazards').textContent = '–';
 }
 
 /* ---------------------------------------------------------
@@ -2549,6 +2819,7 @@ $('loadTerrainButton').addEventListener('click', loadTerrain);
 $('loadSolarButton').addEventListener('click', loadSolar);
 $('discoverHeatButton').addEventListener('click', discoverHeatServices);
 $('testEnvironmentalHeatButton').addEventListener('click', testEnvironmentalHeat);
+$('testHazardButton').addEventListener('click', testHazards);
 $('solarObserverMode').addEventListener('change', () => {
   if (!$('solarChartCard').hidden || !$('solarResult').hidden) loadSolar();
 });
