@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 16 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 17 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 16</h1>
+      <h1>Schnittstellentest 17</h1>
       <p class="test-lead">
         Die bestätigten Standortmodule bleiben bestehen. Test 16 sucht jetzt gezielt nach den drei noch offenen TIRIS-Energiethemen: Wärmenetz-Gebiete, Wärmeerzeugungsanlagen und „Solarpotential pro Jahr – Gebäude“. Die exakten Themen- und Attributnamen aus tirisMaps dienen dabei als Fingerabdruck.
       </p>
       <p class="test-disclaimer">
-        Phase 16: Die robuste Solarstrahlungs-Karte wird auf ca. 125 m eingezoomt. Zusätzlich durchsucht ein manueller Tiefenscan den öffentlichen ArcGIS-Server des Landes nach den drei konkreten Energielayern und prüft gefundene Kandidaten direkt am gewählten Standort. Der Klimablock bleibt nur als dokumentierte Erkundung bestehen.
+        Phase 17: Die robuste Solarstrahlungs-Karte wird auf ca. 125 m eingezoomt. Zusätzlich durchsucht ein manueller Tiefenscan den öffentlichen ArcGIS-Server des Landes nach den drei konkreten Energielayern und prüft gefundene Kandidaten direkt am gewählten Standort. Der Klimablock bleibt nur als dokumentierte Erkundung bestehen.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -356,10 +356,10 @@
     <section class="container test-panel" aria-labelledby="heat-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">6 · Energie · gezielte Layer-Suche</p>
+          <p class="eyebrow">6 · Energie · WebOffice-Zugriff</p>
           <h2 id="heat-title">Wärmenetz &amp; Gebäude-Solarpotential</h2>
           <p>
-            Die exakten tirisMaps-Themen sind jetzt bekannt. Dieser Entwicklungstest durchsucht daher nicht mehr nur OGD-Dienste, sondern den öffentlichen ArcGIS-Server des Landes gezielt nach <strong>Wärmenetz-Gebiete</strong>, <strong>Wärmeerzeugungsanlagen</strong> und <strong>Solarpotential pro Jahr – Gebäude</strong> und vergleicht zusätzlich die Feldnamen mit den bereits beobachteten TIRIS-Attributen.
+            Die drei gesuchten tirisMaps-Themen sind nun intern eindeutig identifiziert. Test 17 prüft nicht mehr den ArcGIS-Servicebaum, sondern ausschließlich die dokumentierte <strong>WebOffice Service API (synservice)</strong>. Dabei werden bekannte interne IDs und Datencontainer nur als Kandidaten für eine öffentliche Abfrage getestet – ohne Session-ID und ohne private Cookies.
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="heatDiscoveryStatus">nicht geprüft</span>
@@ -367,25 +367,30 @@
 
       <div class="target-fingerprint-grid">
         <article class="mini-test-card">
-          <span class="mini-label">Ziel 1</span>
-          <strong>Wärmenetz-Gebiete</strong>
-          <small>Fingerabdruck: Typ · Versorgungsgebiet · Stand · Erfassungsmaßstab · Kontakt</small>
+          <span class="mini-label">Wärmenetz-Gebiete</span>
+          <strong>TOC 16274_1 · Query intern 16341</strong>
+          <small>Datencontainer: Wärmenetz-Gebiet · TYP · NAME · STAND · EMASST · URL_BIOWAERM</small>
         </article>
         <article class="mini-test-card">
-          <span class="mini-label">Ziel 2</span>
-          <strong>Wärmeerzeugungsanlagen</strong>
-          <small>Gesucht werden Layername und Felder zu Anlage, Betreiber bzw. Energieträger.</small>
+          <span class="mini-label">Wärmeerzeugungsanlagen</span>
+          <strong>TOC 16274_0 · Query intern 16632</strong>
+          <small>Datencontainer: Wärmeerzeugungsanlage · OBJEKT · ANLAGENNR · NAME · KONTAKT · Betreiberadresse · Stand</small>
         </article>
         <article class="mini-test-card">
-          <span class="mini-label">Ziel 3</span>
-          <strong>Solarpotential pro Jahr – Gebäude</strong>
-          <small>Fingerabdruck: Dachflächenklassen &lt;700 bis &gt;1500 kWh · Stand · Erfassungsmaßstab.</small>
+          <span class="mini-label">Solarpotential pro Jahr – Gebäude</span>
+          <strong>TOC 2976_1 · Query intern 3077</strong>
+          <small>Datencontainer: Solarpotenzial / Jahr (Gebäudeumriss) · sechs SOLYEAR-Flächenklassen · Stand · Erfassungsmaßstab</small>
         </article>
       </div>
 
+      <div class="environment-review-note">
+        <strong>Wichtig:</strong>
+        <span>Die TOC-/Query-IDs stammen aus der laufenden tirisMaps-WebOffice-Sitzung. Sie sind noch keine bestätigten öffentlichen API-IDs. Produktionsziel bleibt eine dokumentierte, sessionfreie Abfrage.</span>
+      </div>
+
       <div class="action-row">
-        <button class="primary-button" id="discoverHeatButton" type="button">Drei Energie-Layer gezielt suchen</button>
-        <span class="action-note">Manueller Entwicklungstest. Zuerst werden wahrscheinliche Dienste geprüft; nur wenn nötig folgt ein breiterer Scan des öffentlichen ArcGIS-Verzeichnisses.</span>
+        <button class="primary-button" id="discoverHeatButton" type="button">WebOffice Service API prüfen</button>
+        <span class="action-note">Prüft zuerst synservice/Projektzugriff und danach wenige gezielte Query-Kandidaten. Keine Session-ID, keine Cookies und kein automatisches Nachbauen von synserver.</span>
       </div>
 
       <div class="service-result" id="heatDiscoveryResult" hidden></div>

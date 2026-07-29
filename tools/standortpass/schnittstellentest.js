@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 16
+   STANDORTPASS – SCHNITTSTELLENTEST 17
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -18,7 +18,8 @@
    12) amtliche Überflutungsflächen HQ30/HQ100/HQ300 direkt am Gebäude/Standort prüfen
    13) TIRIS NATURGEFAHREN dynamisch nach relevanten Gefahren-/Hinweisflächen prüfen
    14) TIRIS KLIMAKARTEN INNTAL als optionale Beratungsinformation erkunden
-   15) gesamten öffentlichen TIRIS-ArcGIS-Server gezielt nach Wärmenetz-Gebieten, Wärmeerzeugungsanlagen und Gebäude-Solarpotential durchsuchen
+   15) WebOffice-interne IDs der drei Energiethemen dokumentieren
+   16) dokumentierte WebOffice Service API (synservice) sessionfrei auf öffentliche Abfragemöglichkeit prüfen
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -92,6 +93,45 @@ const ENERGY_LAYER_TARGETS = [
 
 const ENERGY_SCAN_SERVICE_TYPES = new Set(['MapServer', 'FeatureServer']);
 const ENERGY_SCAN_CONCURRENCY = 5;
+
+
+// Test 17: aus tirisMaps/Firefox-Netzwerkanalyse bestätigte WebOffice-Fingerprints.
+// Diese IDs sind interne Projekt-/Query-Kennungen und werden NICHT als öffentliche API behauptet.
+const TIRIS_WEBOFFICE_BASE_URL = 'https://maps.tirol.gv.at';
+const TIRIS_WEBOFFICE_PROJECT = 'tmap_master';
+
+const WEBOFFICE_ENERGY_TARGETS = [
+  {
+    id: 'heat_areas',
+    label: 'Wärmenetz-Gebiete',
+    toc_id: '16274_1',
+    internal_query_id: '16341',
+    datacontainer: 'Wärmenetz-Gebiet',
+    sample: { keyname: 'NAME', keyvalue: 'Wärmenetz Innsbruck' },
+    returnkeys: ['TYP', 'NAME', 'STAND', 'EMASST', 'URL_BIOWAERM'],
+    query_candidates: ['16341', 'Waermenetz-Gebiet', 'Wärmenetz-Gebiet'],
+  },
+  {
+    id: 'heat_plants',
+    label: 'Wärmeerzeugungsanlagen',
+    toc_id: '16274_0',
+    internal_query_id: '16632',
+    datacontainer: 'Wärmeerzeugungsanlage',
+    sample: { keyname: 'ANLAGENNR', keyvalue: '1985' },
+    returnkeys: ['OBJEKT', 'ANLAGENNR', 'NAME', 'KONTAKT', 'ADRESSE_BETREIBER', 'TELEFON_FESTNETZ', 'TELEFON_MOBIL', 'E_MAIL', 'ADRESSE_HEIZANLAGE', 'STAND', 'EMASST'],
+    query_candidates: ['16632', 'Waermeerzeugungsanlage', 'Wärmeerzeugungsanlage'],
+  },
+  {
+    id: 'solar_building',
+    label: 'Solarpotential pro Jahr – Gebäude',
+    toc_id: '2976_1',
+    internal_query_id: '3077',
+    datacontainer: 'Solarpotenzial / Jahr (Gebäudeumriss)',
+    sample: { keyname: 'OBJECTID', keyvalue: '360113' },
+    returnkeys: ['SOLYEAR_BIS_700', 'SOLYEAR_700_BIS_900', 'SOLYEAR_900_BIS_1100', 'SOLYEAR_1100_BIS_1300', 'SOLYEAR_1300_BIS_1500', 'SOLYEAR_1500_MEHR', 'STAND', 'EMASST'],
+    query_candidates: ['3077', 'Solarpotenzial_Jahr_Gebaeudeumriss', 'Solarpotenzial / Jahr (Gebäudeumriss)'],
+  },
+];
 
 const TIRIS_WATER_URL =
   'https://gis.tirol.gv.at/arcgis/rest/services/' +
@@ -2475,7 +2515,141 @@ function renderEnergyCandidate(candidate) {
   </article>`;
 }
 
+
+function buildWebOfficeSynserviceUrl(params = {}) {
+  const url = new URL(`${TIRIS_WEBOFFICE_BASE_URL}/synservice`);
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined || value === '') continue;
+    url.searchParams.set(key, String(value));
+  }
+  return url.toString();
+}
+
+function summarizeWebOfficePayload(payload) {
+  if (!payload || typeof payload !== 'object') return { kind: typeof payload, value: payload };
+  return {
+    keys: Object.keys(payload),
+    meta: payload.METAINFO ?? null,
+    project: payload.PROJECTINFO ?? null,
+    return: payload.RETURN ?? payload.return ?? null,
+    features: payload.FEATURES ?? null,
+    error: payload.ERROR ?? payload.error ?? null,
+    message: payload.message ?? payload.MESSAGE ?? null,
+    response_id: payload.response_id ?? null,
+  };
+}
+
+async function probeWebOfficeUrl(url) {
+  const started = performance.now();
+  try {
+    const payload = await fetchJson(url, 15000);
+    return {
+      ok: true,
+      duration_ms: Math.round(performance.now() - started),
+      url,
+      summary: summarizeWebOfficePayload(payload),
+      payload,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      duration_ms: Math.round(performance.now() - started),
+      url,
+      error: error.message,
+    };
+  }
+}
+
+function webOfficeProbeCard(target, attempts) {
+  const success = attempts.find((attempt) => attempt.ok && (
+    attempt.summary?.return ||
+    (attempt.summary?.features && Object.keys(attempt.summary.features).length) ||
+    (attempt.summary?.keys || []).some((key) => /result|feature|return/i.test(key))
+  ));
+  const reachable = attempts.some((attempt) => attempt.ok);
+  const state = success ? 'öffentliche Abfrage wahrscheinlich möglich' : reachable ? 'synservice antwortet, Query-ID noch nicht bestätigt' : 'Browserabruf fehlgeschlagen / CORS oder Dienstzugriff';
+  const stateClass = success ? 'environment-card--notice' : '';
+  const attemptRows = attempts.map((attempt) => {
+    const query = new URL(attempt.url).searchParams.get('query') || '–';
+    const note = attempt.ok
+      ? `Antwort: ${(attempt.summary?.keys || []).join(', ') || 'JSON'}${attempt.summary?.error ? ` · Fehlerobjekt: ${JSON.stringify(attempt.summary.error)}` : ''}`
+      : `Fehler: ${attempt.error}`;
+    return `<li><strong>query=${escapeHtml(query)}</strong><small>${escapeHtml(note)}</small><a class="external-action-link" href="${escapeHtml(attempt.url)}" target="_blank" rel="noopener noreferrer">direkt im Browser öffnen ↗</a></li>`;
+  }).join('');
+  return `
+    <article class="environment-card ${stateClass}">
+      <span>${escapeHtml(target.label)}</span>
+      <strong>${escapeHtml(state)}</strong>
+      <small>TOC ${escapeHtml(target.toc_id)} · interne Query ${escapeHtml(target.internal_query_id)} · ${escapeHtml(target.datacontainer)}</small>
+      <details class="environment-source-details"><summary>Getestete Query-Kandidaten</summary><ul>${attemptRows}</ul></details>
+    </article>`;
+}
+
 async function discoverEnergyLayersDeep() {
+  const status = $('heatDiscoveryStatus');
+  const box = $('heatDiscoveryResult');
+  const raw = $('rawHeatDiscovery');
+  setStatus(status, 'prüft synservice …', 'loading');
+  box.hidden = true;
+  box.innerHTML = '';
+
+  const report = {
+    tested_at: new Date().toISOString(),
+    endpoint: `${TIRIS_WEBOFFICE_BASE_URL}/synservice`,
+    project: TIRIS_WEBOFFICE_PROJECT,
+    note: 'Keine Session-ID/Cookies. Interne IDs werden nur als Kandidaten für dokumentierte synservice-Abfragen geprüft.',
+    base: null,
+    projectinfo: null,
+    targets: [],
+  };
+
+  const baseUrl = buildWebOfficeSynserviceUrl({ metainfo: 'true' });
+  const projectUrl = buildWebOfficeSynserviceUrl({ project: TIRIS_WEBOFFICE_PROJECT, projectinfo: 'true', width: 320, height: 200 });
+  report.base = await probeWebOfficeUrl(baseUrl);
+  report.projectinfo = await probeWebOfficeUrl(projectUrl);
+
+  for (const target of WEBOFFICE_ENERGY_TARGETS) {
+    const attempts = [];
+    for (const candidate of target.query_candidates) {
+      const url = buildWebOfficeSynserviceUrl({
+        project: TIRIS_WEBOFFICE_PROJECT,
+        query: candidate,
+        keyname: target.sample.keyname,
+        keyvalue: target.sample.keyvalue,
+        returnkey: target.returnkeys.join(';'),
+        width: 320,
+        height: 200,
+      });
+      attempts.push(await probeWebOfficeUrl(url));
+    }
+    report.targets.push({ target, attempts });
+  }
+
+  const baseOk = report.base.ok;
+  const projectOk = report.projectinfo.ok;
+  const cards = report.targets.map(({ target, attempts }) => webOfficeProbeCard(target, attempts)).join('');
+
+  box.innerHTML = `
+    <div class="environment-heading-row">
+      <div>
+        <h3>WebOffice Service API · sessionfreier Test</h3>
+        <p>${baseOk ? 'synservice ist aus dem Browser erreichbar.' : 'Der direkte Browserabruf von synservice ist fehlgeschlagen.'} ${projectOk ? 'Das Projekt tmap_master antwortet ebenfalls.' : 'projectinfo konnte nicht bestätigt werden.'}</p>
+      </div>
+      <a class="external-action-link" href="${escapeHtml(projectUrl)}" target="_blank" rel="noopener noreferrer">projectinfo direkt öffnen ↗</a>
+    </div>
+    <div class="environment-grid">${cards}</div>
+    <div class="environment-review-note">
+      <strong>Auswertung:</strong>
+      <span>Ein Fehler bei einem Kandidaten bedeutet nicht, dass die Daten nicht öffentlich nutzbar sind. Die dokumentierte Service API verlangt für Query-Aufrufe eine konfigurierte External Layer-ID und ein freigegebenes Suchfeld. Genau diese externe Kennung versuchen wir hier zu bestätigen.</span>
+    </div>`;
+  box.hidden = false;
+  raw.textContent = pretty(report);
+
+  const anyCandidateOk = report.targets.some(({ attempts }) => attempts.some((attempt) => attempt.ok));
+  setStatus(status, anyCandidateOk ? 'Antworten erhalten' : baseOk ? 'API erreichbar · Query offen' : 'Browserzugriff offen', anyCandidateOk ? 'success' : 'muted');
+}
+
+async function discoverEnergyLayersDeepLegacy() {
   const status = $('heatDiscoveryStatus');
   const resultBox = $('heatDiscoveryResult');
   setStatus(status, 'Servicebaum lädt …', 'working');

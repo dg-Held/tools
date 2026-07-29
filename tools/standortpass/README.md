@@ -1,4 +1,27 @@
-# Standortpass – Schnittstellentest 16
+# Standortpass – Schnittstellentest 17
+
+## Ziel dieses Tests
+
+Test 17 baut auf den bestätigten tirisMaps-Netzwerkdaten auf. Die drei offenen Energiethemen sind intern identifiziert:
+
+- Wärmenetz-Gebiete: TOC `16274_1`, interner Query-Knoten `16341`, Datencontainer `Wärmenetz-Gebiet`
+- Wärmeerzeugungsanlagen: TOC `16274_0`, interner Query-Knoten `16632`, Datencontainer `Wärmeerzeugungsanlage`
+- Solarpotential pro Jahr – Gebäude: TOC `2976_1`, interner Query-Knoten `3077`, Datencontainer `Solarpotenzial / Jahr (Gebäudeumriss)`
+
+Der Test prüft ausschließlich die dokumentierte WebOffice Service API `synservice` ohne Session-ID oder Cookies. Interne IDs und Datencontainernamen werden nur als mögliche External-Layer-IDs getestet.
+
+### Erwartung
+
+1. `synservice` / `projectinfo` sollte idealerweise öffentlich antworten.
+2. Wenn einer der Query-Kandidaten Daten liefert, können wir die öffentliche API direkt weiter untersuchen.
+3. Wenn nur `synservice` erreichbar ist, aber alle Queries scheitern, fehlt uns voraussichtlich nur die konfigurierte **External Layer-ID** bzw. das freigegebene Suchfeld – dann ist eine kurze, sehr konkrete Anfrage an TIRIS sinnvoll.
+
+### Datenschutz / Stabilität
+
+Der Test verwendet keine aus Firefox kopierten Session-IDs, keine Cookies und keine internen `synserver`-POSTs.
+
+---
+
 
 Test 16 baut auf dem bestätigten Stand von Test 15 auf.
 
