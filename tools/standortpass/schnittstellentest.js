@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 14
+   STANDORTPASS – SCHNITTSTELLENTEST 15
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -17,6 +17,7 @@
    11) direkten tirisMaps-Standortlink aus der amtlichen Adresskoordinate in EPSG:31254 erzeugen
    12) amtliche Überflutungsflächen HQ30/HQ100/HQ300 direkt am Gebäude/Standort prüfen
    13) TIRIS NATURGEFAHREN dynamisch nach relevanten Gefahren-/Hinweisflächen prüfen
+   14) TIRIS KLIMAKARTEN INNTAL als optionale Beratungsinformation erkunden
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -76,6 +77,16 @@ const ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M = 500;
 const TIRIS_NATURAL_HAZARDS_URL =
   'https://gis.tirol.gv.at/arcgis/rest/services/' +
   'Service_Public/ogd_naturgefahren/MapServer';
+
+const TIRIS_CLIMATE_INNTAL_URL =
+  'https://gis.tirol.gv.at/arcgis/rest/services/' +
+  'Service_Public/klims_map/MapServer';
+
+const CLIMATE_ANALYSIS_KEYWORDS = [
+  'klimaanalyse', 'klimakarte', 'planhinweis', 'pet', 'hitze', 'waerme', 'wärme',
+  'nacht', 'lufttemperatur', 'kaltluft', 'leitbahn', 'einwirk', 'produktion',
+  'belastung', 'thermisch', 'tag'
+];
 
 const FLOOD_HQ_SERVICES = [
   { key: 'HQ30', label: 'HQ30', scenario: 30, category: 1, url: 'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/arcgis/rest/services/Ueberflutungsflaechen_HQ30/FeatureServer' },
@@ -789,6 +800,7 @@ function selectAddress(record, provider = 'bev') {
   $('testSolarMapButton').disabled = false;
   $('testHeritageButton').disabled = false;
   $('testRadonButton').disabled = false;
+  $('testClimateAnalysisButton').disabled = false;
   setStatus($('buildingStatus'), 'bereit');
   setStatus($('terrainStatus'), 'bereit');
   setStatus($('solarStatus'), 'bereit');
@@ -797,6 +809,7 @@ function selectAddress(record, provider = 'bev') {
   setStatus($('solarMapStatus'), 'bereit');
   setStatus($('heritageStatus'), 'bereit');
   setStatus($('radonStatus'), 'bereit');
+  setStatus($('climateAnalysisStatus'), 'bereit');
 
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
@@ -807,6 +820,7 @@ function selectAddress(record, provider = 'bev') {
   resetSolarMapOutput();
   resetHeritageOutput();
   resetRadonOutput();
+  resetClimateAnalysisOutput();
 
   loadKatastralgemeinde(record);
   compareSelectedAddressWithBev(record);
@@ -835,6 +849,7 @@ function clearAddress() {
   $('testSolarMapButton').disabled = true;
   $('testHeritageButton').disabled = true;
   $('testRadonButton').disabled = true;
+  $('testClimateAnalysisButton').disabled = true;
   setStatus($('buildingStatus'), 'Adresse fehlt');
   setStatus($('terrainStatus'), 'Adresse fehlt');
   setStatus($('solarStatus'), 'Adresse fehlt');
@@ -843,6 +858,7 @@ function clearAddress() {
   setStatus($('solarMapStatus'), 'Adresse fehlt');
   setStatus($('heritageStatus'), 'Adresse fehlt');
   setStatus($('radonStatus'), 'Adresse fehlt');
+  setStatus($('climateAnalysisStatus'), 'Adresse fehlt');
   setStatus($('tirisLiveAddressStatus'), 'nicht geprüft');
   $('tirisParsedAddress').textContent = 'Noch keine Adresse zerlegt.';
   resetBuildingOutput();
@@ -854,6 +870,7 @@ function clearAddress() {
   resetSolarMapOutput();
   resetHeritageOutput();
   resetRadonOutput();
+  resetClimateAnalysisOutput();
 }
 
 /* ---------------------------------------------------------
@@ -2601,11 +2618,9 @@ function resetEnvironmentalHeatOutput(clearRaw = true) {
 
 
 /* ---------------------------------------------------------
-   5b. Solarpotenzial – Dachfokus
-   Öffentliche Rasterquelle + bestätigtes TIRIS-Gebäudepolygon.
-   Wichtig: Diese Vorschau ist NICHT der interne tirisMaps-Layer
-   „Solarpotential pro Jahr – Gebäude“, solange dessen öffentlicher
-   Dienst nicht eindeutig identifiziert ist.
+   5b. Solarstrahlung – robuste Zwischenlösung
+   Öffentliche Rasterquelle ohne künstliche Dach-Überlagerung.
+   Der echte tirisMaps-Gebäudepotenzial-Layer bleibt separat verlinkt.
 --------------------------------------------------------- */
 
 async function fetchTextUrl(url) {
@@ -2654,103 +2669,6 @@ function buildSolarRasterWmsUrl(serviceUrl, layerName, bounds, transparent = tru
   return `${serviceUrl}?${params.toString()}`;
 }
 
-function buildSolarOrthophotoUrl(bounds, srs = 'EPSG:31254') {
-  const params = new URLSearchParams({
-    SERVICE: 'WMS',
-    VERSION: '1.1.1',
-    REQUEST: 'GetMap',
-    LAYERS: 'Image_Aktuell_RGB',
-    STYLES: '',
-    SRS: srs,
-    BBOX: `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}`,
-    WIDTH: '820',
-    HEIGHT: '520',
-    FORMAT: 'image/jpeg',
-    TRANSPARENT: 'FALSE',
-  });
-  return `${TIRIS_ORTHOPHOTO_WMS_URL}?${params.toString()}`;
-}
-
-async function fetchSelectedBuildingProjectedFeature() {
-  const feature = selectedBuildingFeature();
-  const objectId = Number(feature?.attributes?.OBJECTID);
-  if (!Number.isFinite(objectId)) return null;
-
-  const params = new URLSearchParams({
-    f: 'json',
-    where: `OBJECTID=${objectId}`,
-    outFields: 'OBJECTID,GEB_HOEHE_MEDIAN,GEB_HOEHE_MAX,STAND,UPDATETIMESTAMP',
-    returnGeometry: 'true',
-    outSR: '31254',
-    returnZ: 'false',
-    returnM: 'false',
-    resultRecordCount: '1',
-  });
-  const url = `${TIRIS_BUILDING_QUERY_URL}?${params.toString()}`;
-  const payload = await fetchJson(url);
-  const projected = payload?.features?.[0] ?? null;
-  if (projected) projected.request_url = url;
-  return projected;
-}
-
-function projectedGeometryPoints(feature) {
-  const rings = Array.isArray(feature?.geometry?.rings) ? feature.geometry.rings : [];
-  return rings.flatMap((ring) => Array.isArray(ring) ? ring : [])
-    .filter((point) => Array.isArray(point) && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])))
-    .map((point) => [Number(point[0]), Number(point[1])]);
-}
-
-function solarPreviewGeometryWgs84(feature, address) {
-  const aspect = 820 / 520;
-  const points = geometryPoints(feature?.geometry);
-  let centerLatitude = Number(address?.latitude);
-  let centerLongitude = Number(address?.longitude);
-  let groundWidthM = 40; // eigener Solar-Ausschnitt: 40 m Breite ≈ 1:250 bei 160 mm Druckbreite
-
-  if (points.length) {
-    const lons = points.map((point) => Number(point[0]));
-    const lats = points.map((point) => Number(point[1]));
-    const minLon = Math.min(...lons);
-    const maxLon = Math.max(...lons);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    centerLongitude = (minLon + maxLon) / 2;
-    centerLatitude = (minLat + maxLat) / 2;
-
-    const buildingWidthM = haversineMeters(centerLatitude, minLon, centerLatitude, maxLon);
-    const buildingHeightM = haversineMeters(minLat, centerLongitude, maxLat, centerLongitude);
-    groundWidthM = Math.max(40, buildingWidthM * 1.45, buildingHeightM * aspect * 1.45);
-  }
-
-  if (!Number.isFinite(centerLatitude) || !Number.isFinite(centerLongitude)) return null;
-  const bounds = boundsAroundPoint(centerLatitude, centerLongitude, groundWidthM, aspect);
-  return {
-    feature,
-    points,
-    groundWidthM,
-    groundHeightM: bounds.groundHeightM,
-    nominal250: groundWidthM <= 40.5,
-    srs: 'EPSG:4326',
-    bounds,
-  };
-}
-
-function solarBuildingPathForBounds(feature, bounds, width = 820, height = 520) {
-  const rings = Array.isArray(feature?.geometry?.rings) ? feature.geometry.rings : [];
-  if (!rings.length) return '';
-
-  const x = (east) => ((Number(east) - bounds.minX) / (bounds.maxX - bounds.minX)) * width;
-  const y = (north) => height - (((Number(north) - bounds.minY) / (bounds.maxY - bounds.minY)) * height);
-
-  return rings.map((ring) => {
-    const valid = ring.filter((point) => Array.isArray(point) && point.length >= 2);
-    if (!valid.length) return '';
-    return valid.map((point, index) =>
-      `${index === 0 ? 'M' : 'L'} ${x(point[0]).toFixed(2)} ${y(point[1]).toFixed(2)}`
-    ).join(' ') + ' Z';
-  }).filter(Boolean).join(' ');
-}
-
 async function testSolarMap() {
   if (!selectedAddress) return;
   const status = $('solarMapStatus');
@@ -2760,6 +2678,8 @@ async function testSolarMap() {
 
   const raw = {
     tested_at: new Date().toISOString(),
+    mode: 'regional-raster-preview',
+    note: 'Test 15 verzichtet bewusst auf die fehlerhafte Dach-Überlagerung aus Test 12–14.',
     tiris_building_view_url: TIRIS_SOLAR_BUILDING_VIEW_URL,
     services: [],
   };
@@ -2795,84 +2715,73 @@ async function testSolarMap() {
     }
 
     const chosen = annual || best;
-    // Test 14: Für die Dachkarte verwenden wir bewusst dieselbe bereits bestätigte
-    // WGS84-Gebäudegeometrie wie in der 1:500-Übersicht. Orthofoto, Solar-WMS
-    // und SVG-Kontur erhalten exakt dieselbe BBOX und Pixelgröße.
-    const wgsBuilding = selectedBuildingFeature();
-    const preview = solarPreviewGeometryWgs84(wgsBuilding, selectedAddress);
-    if (!preview) throw new Error('Standortgeometrie für den Solar-Dachfokus konnte nicht gebildet werden.');
-    const buildingPath = preview.feature ? solarBuildingPathForBounds(preview.feature, preview.bounds) : '';
-    raw.preview = {
-      mode: preview.feature ? 'building-clipped' : 'no-building',
-      srs: preview.srs,
-      ground_width_m: preview.groundWidthM,
-      ground_height_m: preview.groundHeightM,
-      nominal_scale: preview.nominal250 ? 'ca. 1:250' : 'automatisch erweitert, damit das Gebäude vollständig sichtbar bleibt',
-      bbox_wgs84: [preview.bounds.minX, preview.bounds.minY, preview.bounds.maxX, preview.bounds.maxY],
-      image_size_px: [820, 520],
-      building_objectid: preview.feature?.attributes?.OBJECTID ?? null,
-      geometry_source: 'dieselbe bestätigte WGS84-TIRIS-Gebäudegeometrie wie in der Gebäudeübersicht',
-    };
-
     const tirisLink = `<a class="external-action-link" href="${escapeHtml(TIRIS_SOLAR_BUILDING_VIEW_URL)}" target="_blank" rel="noopener noreferrer">Solarpotenziale je Gebäude in TIRIS öffnen ↗</a>`;
 
     if (!chosen) {
       $('rawSolarMap').textContent = pretty(raw);
       box.innerHTML = `
         <div class="environment-heading-row">
-          <div><h3>Solarpotenzial · Dachfokus</h3><p>Der gewünschte Gebäude-Layer konnte über die öffentlich geprüften WMS-Dienste nicht bestätigt werden.</p></div>
+          <div><h3>Solarstrahlung im Standortumfeld</h3><p>Kein geeigneter öffentlicher Solar-WMS-Layer konnte automatisch bestätigt werden.</p></div>
           ${tirisLink}
         </div>
-        <p>Die offizielle tirisMaps-Ansicht wird direkt verlinkt. Für den Standortpass verwenden wir keinen geratenen Layernamen.</p>`;
+        <p>Die offizielle tirisMaps-Ansicht bleibt direkt verlinkt; wir verwenden keinen geratenen Layernamen.</p>`;
       box.hidden = false;
-      setStatus(status, 'Gebäudelayer offen', 'muted');
+      setStatus(status, 'Layer offen', 'muted');
       return;
     }
 
-    const orthoUrl = buildSolarOrthophotoUrl(preview.bounds, preview.srs);
-    const solarUrl = buildSolarRasterWmsUrl(chosen.service.url, chosen.layer.name, preview.bounds, true, preview.srs);
-    raw.preview.orthophoto_url = orthoUrl;
-    raw.preview.solar_raster_url = solarUrl;
-    raw.preview.solar_layer = chosen.layer;
+    // Bewusst wieder eine eigenständige Rasterkarte ohne Orthofoto-Überlagerung.
+    // Für das Standortumfeld verwenden wir einen ca. 250 m breiten Ausschnitt;
+    // das reine Orthofoto mit Gebäudeumriss bleibt separat in der Gebäudeübersicht.
+    const lon = Number(selectedAddress.longitude);
+    const lat = Number(selectedAddress.latitude);
+    const halfWidthM = 125;
+    const halfHeightM = halfWidthM * (520 / 820);
+    const latDelta = halfHeightM / 111320;
+    const lonMetersPerDegree = 111320 * Math.cos(lat * Math.PI / 180);
+    const lonDelta = halfWidthM / Math.max(1, lonMetersPerDegree);
+    const bounds = {
+      minX: lon - lonDelta,
+      minY: lat - latDelta,
+      maxX: lon + lonDelta,
+      maxY: lat + latDelta,
+    };
+    const previewUrl = buildSolarRasterWmsUrl(chosen.service.url, chosen.layer.name, bounds, false, 'EPSG:4326');
+    raw.preview = {
+      srs: 'EPSG:4326',
+      bbox: [bounds.minX, bounds.minY, bounds.maxX, bounds.maxY],
+      ground_width_m: 250,
+      image_size_px: [820, 520],
+      solar_layer: chosen.layer,
+      preview_url: previewUrl,
+    };
     $('rawSolarMap').textContent = pretty(raw);
 
-    const previewHtml = buildingPath
-      ? `
-        <div class="solar-roof-map" role="img" aria-label="Orthofoto mit auf den bestätigten Gebäudeumriss begrenzter Jahressolarstrahlung">
-          <svg viewBox="0 0 820 520" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <clipPath id="solar-building-clip">
-                <path d="${escapeHtml(buildingPath)}"></path>
-              </clipPath>
-            </defs>
-            <image href="${escapeHtml(orthoUrl)}" x="0" y="0" width="820" height="520" preserveAspectRatio="none"></image>
-            <image class="solar-roof-raster" href="${escapeHtml(solarUrl)}" x="0" y="0" width="820" height="520" preserveAspectRatio="none" clip-path="url(#solar-building-clip)"></image>
-            <path class="solar-roof-outline" d="${escapeHtml(buildingPath)}"></path>
-          </svg>
-        </div>`
-      : `<p class="geometry-note"><strong>Keine Gebäudegeometrie:</strong> Die Dachfokus-Vorschau wird nicht erzeugt; die offizielle TIRIS-Ansicht bleibt verfügbar.</p>`;
+    const ageNote = chosen.service.historical
+      ? '<strong>Orientierung:</strong> historische SOLAR-TIROL-Darstellung; nicht als aktuelle Rechenbasis verwenden.'
+      : '<strong>Amtliche Rasterdarstellung:</strong> zeigt die Solarstrahlung im Standortumfeld einschließlich Gelände.';
 
     box.innerHTML = `
       <div class="environment-heading-row">
         <div>
-          <h3>Solarpotenzial · Dachfokus</h3>
-          <p><strong>Testdarstellung:</strong> aktuelles Orthofoto plus Jahresstrahlung mit derselben WGS84-Bounding-Box und identischer Pixelgröße; die Solarstrahlung wird auf das bestätigte TIRIS-Gebäudepolygon begrenzt. Der Ausschnitt ist unabhängig von der 1:500-Gebäudeübersicht.</p>
+          <h3>Solarstrahlung im Standortumfeld</h3>
+          <p>${ageNote}</p>
         </div>
         ${tirisLink}
       </div>
-      ${previewHtml}
+      <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
       <div class="solar-map-meta">
-        <span>${preview.nominal250 ? 'Ausschnitt ca. 1:250 · 40 m' : `Ausschnitt automatisch auf ca. ${number0.format(preview.groundWidthM)} m erweitert`}</span>
+        <span>Ausschnitt ca. 250 m</span>
         <span>Raster: ${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
       </div>
-      <p class="geometry-note"><strong>Wichtig:</strong> Diese Vorschau ist eine von uns abgeleitete Kombination aus Orthofoto, öffentlicher Solarstrahlung und Gebäudeumriss. Sie ist <strong>nicht</strong> identisch mit dem tirisMaps-Thema „Solarpotential pro Jahr – Gebäude“. Für die echte Gebäude-Potenzialdarstellung nutzen wir derzeit den offiziellen TIRIS-Link, bis der dahinterliegende öffentliche Dienst eindeutig identifiziert ist.</p>
+      <p class="geometry-note"><strong>Zwischenlösung:</strong> Diese Karte zeigt bewusst Gelände und Umgebung. Das Orthofoto mit Gebäudeumriss ist bereits separat vorhanden. Die spezielle tirisMaps-Gebäudepotenzialkarte bleibt über den Link erreichbar, bis deren öffentlicher Einzellayer eindeutig identifiziert ist.</p>
       <details class="environment-source-details"><summary>Gefundene öffentliche Solar-WMS-Layer</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
 
     box.hidden = false;
-    setStatus(status, preview.feature ? 'Dachfokus bereit' : 'TIRIS-Link bereit', 'success');
+    setStatus(status, 'Raster bereit', 'success');
   } catch (error) {
     $('rawSolarMap').textContent = pretty({ error: error.message, partial: raw });
-    box.innerHTML = `<h3>Solarpotential-Test fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p>`;
+    box.innerHTML = `<h3>Solarstrahlungs-Test fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p>`;
     box.hidden = false;
     setStatus(status, 'Fehler', 'error');
   }
@@ -3403,6 +3312,216 @@ function resetRadonOutput(clearRaw = true) {
 }
 
 /* ---------------------------------------------------------
+   11. Sommerklima & Lokalklima – TIRIS KLIMAKARTEN INNTAL
+   Reiner Erkundungstest: noch keine feste Standortpass-Logik.
+--------------------------------------------------------- */
+
+const TIRIS_CLIMATE_PROJECT_URL =
+  'https://www.tirol.gv.at/landesentwicklung/nachhaltigkeits-und-klimakoordination/' +
+  'klimafitte-staedte-gemeinden-und-regionen-in-tirol/projekt-regionale-klimaanalyse-inntal/';
+
+function matchesClimateKeyword(value) {
+  const text = normalizedDiscoveryText(value);
+  return CLIMATE_ANALYSIS_KEYWORDS.some((keyword) =>
+    text.includes(normalizedDiscoveryText(keyword))
+  );
+}
+
+function climateTopicLabel(layer) {
+  const text = normalizedDiscoveryText(`${layer?.name || ''} ${layer?.path || ''}`);
+  if (text.includes('planhinweis')) return 'Planhinweise';
+  if (text.includes('kaltluft') || text.includes('leitbahn') || text.includes('einwirk') || text.includes('produktion')) {
+    return 'Kaltluft / nächtliche Durchlüftung';
+  }
+  if (text.includes('nacht') || text.includes('04 uhr') || text.includes('04:')) {
+    return 'Nächtliche Wärmebelastung';
+  }
+  if (text.includes('pet') || text.includes('hitze') || text.includes('warme') || text.includes('waerme') || text.includes('14 uhr') || text.includes('14:')) {
+    return 'Wärmebelastung am Tag';
+  }
+  return 'Weitere Klimaanalyse';
+}
+
+function climateCandidateLayers(service) {
+  const layers = Array.isArray(service?.layers) ? service.layers : [];
+  return layers
+    .filter((layer) => layer && layer.type !== 'Group Layer')
+    .map((layer) => ({
+      id: Number(layer.id),
+      name: layer.name || `Layer ${layer.id}`,
+      type: layer.type || null,
+      geometryType: layer.geometryType || null,
+      parentLayerId: layer.parentLayerId ?? -1,
+      minScale: layer.minScale ?? null,
+      maxScale: layer.maxScale ?? null,
+      path: buildLayerParentPath(layers, layer),
+    }))
+    .filter((layer) => matchesClimateKeyword(`${layer.name} ${layer.path}`))
+    .map((layer) => ({ ...layer, topic: climateTopicLabel(layer) }));
+}
+
+function buildClimateIdentifyUrl(layerIds) {
+  const lat = Number(selectedAddress?.latitude);
+  const lon = Number(selectedAddress?.longitude);
+  const halfWidthM = 300;
+  const halfHeightM = halfWidthM * (520 / 820);
+  const latDelta = halfHeightM / 111320;
+  const lonMetersPerDegree = 111320 * Math.cos(lat * Math.PI / 180);
+  const lonDelta = halfWidthM / Math.max(1, lonMetersPerDegree);
+
+  const params = new URLSearchParams({
+    f: 'json',
+    geometry: `${lon},${lat}`,
+    geometryType: 'esriGeometryPoint',
+    sr: '4326',
+    layers: `all:${layerIds.join(',')}`,
+    tolerance: '4',
+    mapExtent: `${lon-lonDelta},${lat-latDelta},${lon+lonDelta},${lat+latDelta}`,
+    imageDisplay: '820,520,96',
+    returnGeometry: 'false',
+  });
+  return `${TIRIS_CLIMATE_INNTAL_URL}/identify?${params.toString()}`;
+}
+
+function compactClimateAttributes(attributes) {
+  if (!attributes || typeof attributes !== 'object') return 'keine Attribute';
+  const entries = Object.entries(attributes)
+    .filter(([key, value]) => {
+      if (value === null || value === undefined || value === '') return false;
+      return !/objectid|shape|globalid|uuid|guid/i.test(key);
+    });
+
+  const preferred = entries.filter(([key]) =>
+    /name|bez|typ|klasse|kateg|bewert|hinweis|pet|temp|luft|wert|stufe|funktion|bedeut|plan/i.test(key)
+  );
+  const selected = (preferred.length ? preferred : entries).slice(0, 5);
+  if (!selected.length) return 'Details siehe Rohdaten';
+
+  return selected.map(([key, value]) => {
+    let shown = value;
+    if (typeof value === 'number' && value > 100000000000) shown = formatArcgisDate(value) || value;
+    return `${key}: ${shown}`;
+  }).join(' · ');
+}
+
+async function testClimateAnalysis() {
+  if (!selectedAddress) return;
+  const status = $('climateAnalysisStatus');
+  const box = $('climateAnalysisResult');
+  setStatus(status, 'prüft …', 'working');
+  box.hidden = true;
+
+  const raw = {
+    tested_at: new Date().toISOString(),
+    address: selectedAddress.label,
+    service_url: TIRIS_CLIMATE_INNTAL_URL,
+    project_url: TIRIS_CLIMATE_PROJECT_URL,
+    service: null,
+    candidates: [],
+    identify_url: null,
+    identify: null,
+  };
+
+  try {
+    const service = await fetchJson(`${TIRIS_CLIMATE_INNTAL_URL}?f=pjson`);
+    raw.service = service;
+    const candidates = climateCandidateLayers(service);
+    raw.candidates = candidates;
+
+    let identify = { results: [] };
+    if (candidates.length) {
+      const ids = [...new Set(candidates.map((layer) => layer.id).filter(Number.isFinite))];
+      const identifyUrl = buildClimateIdentifyUrl(ids);
+      raw.identify_url = identifyUrl;
+      identify = await fetchJson(identifyUrl);
+      raw.identify = identify;
+    }
+
+    $('rawClimateAnalysis').textContent = pretty(raw);
+
+    const results = Array.isArray(identify?.results) ? identify.results : [];
+    const candidateById = new Map(candidates.map((layer) => [Number(layer.id), layer]));
+    const grouped = new Map();
+
+    for (const layer of candidates) {
+      if (!grouped.has(layer.topic)) grouped.set(layer.topic, { layers: [], hits: [] });
+      grouped.get(layer.topic).layers.push(layer);
+    }
+    for (const result of results) {
+      const layer = candidateById.get(Number(result.layerId));
+      if (!layer) continue;
+      if (!grouped.has(layer.topic)) grouped.set(layer.topic, { layers: [layer], hits: [] });
+      grouped.get(layer.topic).hits.push(result);
+    }
+
+    const preferredOrder = [
+      'Wärmebelastung am Tag',
+      'Nächtliche Wärmebelastung',
+      'Kaltluft / nächtliche Durchlüftung',
+      'Planhinweise',
+      'Weitere Klimaanalyse',
+    ];
+
+    const cards = preferredOrder
+      .filter((topic) => grouped.has(topic))
+      .map((topic) => {
+        const group = grouped.get(topic);
+        const hit = group.hits[0];
+        const layerNames = group.layers.slice(0, 4).map((layer) => layer.name).join(' · ');
+        return `
+          <article class="environment-card ${group.hits.length ? 'environment-card--notice' : ''}">
+            <span>${escapeHtml(topic)}</span>
+            <strong>${group.hits.length ? `${number0.format(group.hits.length)} Information(en) am Standort` : 'Thema im Dienst vorhanden'}</strong>
+            <small>${hit ? escapeHtml(compactClimateAttributes(hit.attributes)) : escapeHtml(layerNames || 'Keine direkte Punktinformation zurückgegeben.')}</small>
+          </article>`;
+      }).join('');
+
+    const layerList = candidates.length
+      ? `<ul>${candidates.map((layer) => `<li><strong>Layer ${layer.id} · ${escapeHtml(layer.path)}</strong><small>${escapeHtml(layer.type || 'Layer')} · ${escapeHtml(layer.topic)}</small></li>`).join('')}</ul>`
+      : '<p>Im aktuellen Dienst wurden über die Suchbegriffe keine passenden Einzel-Layer gefunden.</p>';
+
+    const coverageText = results.length
+      ? 'Der Standort liefert direkte Informationen aus der regionalen Klimaanalyse.'
+      : 'Der Dienst wurde erreicht, am exakten Standort kam über die gefundenen Layer jedoch keine direkte Identify-Information zurück. Das kann außerhalb der Abdeckung liegen oder an der Darstellungsart einzelner Layer liegen.';
+
+    box.innerHTML = `
+      <div class="environment-heading-row">
+        <div>
+          <h3>Regionale Klimaanalyse · Erkundung</h3>
+          <p>${escapeHtml(coverageText)}</p>
+        </div>
+        <a class="external-action-link" href="${escapeHtml(TIRIS_CLIMATE_PROJECT_URL)}" target="_blank" rel="noopener noreferrer">Projekt Klimaanalyse Inntal öffnen ↗</a>
+      </div>
+      <div class="discovery-summary">
+        <div><span>relevante Layer gefunden</span><strong>${number0.format(candidates.length)}</strong></div>
+        <div><span>Identify-Treffer am Standort</span><strong>${number0.format(results.length)}</strong></div>
+      </div>
+      <div class="environment-grid">${cards || '<p>Noch keine passenden Klimathemen gefunden.</p>'}</div>
+      <div class="environment-review-note">
+        <strong>Noch keine Standortpass-Entscheidung:</strong>
+        <span>Wir prüfen hier nur, ob Wärmebelastung, Nachtklima, Kaltluft und Planhinweise eine sinnvolle schnelle Vorinformation liefern. Heiße Tage, Tropennächte und detaillierte Klimadiagramme bleiben vorerst dem Klimablatt vorbehalten.</span>
+      </div>
+      <details class="environment-source-details"><summary>Gefundene TIRIS-Klimakarten-Layer</summary>${layerList}</details>`;
+
+    box.hidden = false;
+    setStatus(status, candidates.length ? 'erkundet' : 'keine Layer', candidates.length ? 'success' : 'muted');
+  } catch (error) {
+    $('rawClimateAnalysis').textContent = pretty({ error: error.message, partial: raw });
+    box.innerHTML = `<h3>Klimakarten-Test fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p>`;
+    box.hidden = false;
+    setStatus(status, 'Fehler', 'error');
+  }
+}
+
+function resetClimateAnalysisOutput(clearRaw = true) {
+  if ($('climateAnalysisResult')) {
+    $('climateAnalysisResult').hidden = true;
+    $('climateAnalysisResult').innerHTML = '';
+  }
+  if (clearRaw && $('rawClimateAnalysis')) $('rawClimateAnalysis').textContent = '–';
+}
+
+/* ---------------------------------------------------------
    Hilfsfunktionen / Events
 --------------------------------------------------------- */
 
@@ -3445,6 +3564,7 @@ $('testHazardButton').addEventListener('click', testHazards);
 $('testSolarMapButton').addEventListener('click', testSolarMap);
 $('testHeritageButton').addEventListener('click', testHeritage);
 $('testRadonButton').addEventListener('click', testRadon);
+$('testClimateAnalysisButton').addEventListener('click', testClimateAnalysis);
 $('solarObserverMode').addEventListener('change', () => {
   if (!$('solarChartCard').hidden || !$('solarResult').hidden) loadSolar();
 });

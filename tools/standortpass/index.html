@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 14 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 15 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=11">
+  <link rel="stylesheet" href="schnittstellentest.css?v=15">
 </head>
 <body>
 
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 14</h1>
+      <h1>Schnittstellentest 15</h1>
       <p class="test-lead">
-        Umweltwärme bleibt als fachlich reiches Detailmodul erhalten. Neu prüfen wir Hochwasser und Naturgefahren direkt am gewählten Standort – bei vorhandenem Gebäude gegen das gesamte Gebäudepolygon.
+        Die bisher bestätigten Standortmodule bleiben bestehen. Test 15 nimmt den problematischen Solar-Dachfokus bewusst wieder heraus und prüft stattdessen, welche Inhalte der regionalen Klimaanalyse Inntal für eine Energieberatung wirklich zusätzlichen Nutzen bringen.
       </p>
       <p class="test-disclaimer">
-        Phase 14: Hochwasser/Naturgefahren, Kulturstatus und Radon bleiben bestehen. Der Solar-Dachfokus verwendet nun dieselbe bereits bestätigte WGS84-Geometrie wie die Gebäudeübersicht, aber mit einem eigenen ca. 1:250-Ausschnitt. Zusätzlich erhält Radon einen direkten Link zum Energie-Tirol-Infoblatt mit der praktischen Bedeutung und Maßnahmen.
+        Phase 15: Solar zeigt vorerst wieder die amtliche flächige Jahresstrahlung im Standortumfeld; das separate Orthofoto bleibt in der Gebäudeübersicht. Sommerklima und Nachtkühlung werden noch nicht in den Standortpass übernommen, sondern zunächst als eigener Erkundungsblock aus TIRIS KLIMAKARTEN INNTAL ausgewertet.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -51,6 +51,7 @@
         <span><strong>Umweltwärme</strong> TIRIS WASSER</span>
         <span><strong>Hochwasser</strong> HQ30 / HQ100 / HQ300</span>
         <span><strong>Naturgefahren</strong> TIRIS NATURGEFAHREN</span>
+        <span><strong>Lokalklima</strong> TIRIS KLIMAKARTEN INNTAL</span>
       </div>
     </section>
 
@@ -339,14 +340,14 @@
       <div class="subtest-block">
         <div class="subtest-heading">
           <div>
-            <span class="mini-label">Zusatztest · Solar · Dachfokus</span>
-            <h3>Orthofoto + Solarstrahlung am Dach</h3>
-            <p>Test 14 verwendet für den Solar-Dachfokus eine eigene ca. 1:250-Ansicht. Orthofoto, Solar-WMS und Gebäudekontur verwenden dafür dieselbe WGS84-Bounding-Box und dieselbe Bildgröße. Die normale Gebäudeübersicht weiter oben bleibt unabhängig davon bei ca. 1:500. Zusätzlich führt ein Link direkt zur offiziellen tirisMaps-Ansicht „Solarpotenziale je Gebäude“.</p>
+            <span class="mini-label">Zusatzdarstellung · Solar</span>
+            <h3>Solarstrahlung im Standortumfeld</h3>
+            <p>Bis der echte tirisMaps-Gebäudelayer „Solarpotential pro Jahr – Gebäude“ technisch eindeutig verfügbar ist, verwenden wir wieder die robuste amtliche Rasterdarstellung. Sie zeigt bewusst auch Gelände und Umgebung; das reine Orthofoto mit Gebäudeumriss bleibt separat in der Gebäudeübersicht.</p>
           </div>
           <span class="status-chip status-chip--muted" id="solarMapStatus">Adresse fehlt</span>
         </div>
         <div class="action-row">
-          <button class="secondary-button" id="testSolarMapButton" type="button" disabled>Solarpotenzial-Karte prüfen</button>
+          <button class="secondary-button" id="testSolarMapButton" type="button" disabled>Solarstrahlung-Karte prüfen</button>
         </div>
         <div class="service-result" id="solarMapResult" hidden></div>
       </div>
@@ -445,6 +446,23 @@
       <div class="service-result" id="radonResult" hidden></div>
     </section>
 
+
+    <section class="container test-panel" aria-labelledby="climate-analysis-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">11 · Zusatzprüfung</p>
+          <h2 id="climate-analysis-title">Sommerklima &amp; Lokalklima · Erkundung</h2>
+          <p>Dieser Block ist bewusst noch keine feste Standortpass-Ausgabe. Wir prüfen, welche amtlichen Inhalte der regionalen Klimaanalyse Inntal am Standort verfügbar sind und ob daraus ein echter Mehrwert für die Vorberatung entsteht. Detailkennwerte zu heißen Tagen und Nächten gehören voraussichtlich eher ins spätere Klimablatt.</p>
+        </div>
+        <span class="status-chip status-chip--muted" id="climateAnalysisStatus">Adresse fehlt</span>
+      </div>
+      <div class="action-row">
+        <button class="primary-button" id="testClimateAnalysisButton" type="button" disabled>Klimakarten Inntal prüfen</button>
+        <span class="action-note">TIRIS KLIMAKARTEN INNTAL · Tag/Nacht · Wärmebelastung · Kaltluft · Planhinweise.</span>
+      </div>
+      <div class="service-result" id="climateAnalysisResult" hidden></div>
+    </section>
+
     <section class="container technical-panel">
       <details>
         <summary>Technische Testdaten und Rohantworten</summary>
@@ -466,6 +484,7 @@
           <div><h3>Hochwasser & Naturgefahren</h3><pre id="rawHazards">–</pre></div>
           <div><h3>Kultur & Denkmalschutz</h3><pre id="rawHeritage">–</pre></div>
           <div><h3>Radon</h3><pre id="rawRadon">–</pre></div>
+          <div><h3>TIRIS Klimakarten Inntal</h3><pre id="rawClimateAnalysis">–</pre></div>
         </div>
       </details>
     </section>
@@ -490,6 +509,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=13"></script>
+  <script src="schnittstellentest.js?v=15"></script>
 </body>
 </html>

@@ -1,35 +1,38 @@
-# Standortpass – Schnittstellentest 14
+# Standortpass – Schnittstellentest 15
 
-Test 14 baut auf dem bestätigten Stand von Test 13 auf.
+Test 15 baut auf dem bestätigten Stand von Test 14 auf.
 
 Neu:
 
-1. **Solar-Dachfokus neu synchronisiert:** Die Gebäudeübersicht bleibt bei ca. **1:500 / 80 m**. Der Solarblock bleibt unabhängig davon bei ca. **1:250 / 40 m**, verwendet nun aber bewusst dieselbe bereits bestätigte **WGS84-Gebäudegeometrie** wie die Gebäudeübersicht. Orthofoto, Solar-WMS und Gebäudekontur erhalten exakt dieselbe WGS84-Bounding-Box und dieselbe Pixelgröße (820 × 520). Damit wird die zusätzliche Projektionskette aus Test 13 vermieden.
-2. **Große Gebäude:** Wenn 40 m nicht reichen, wächst nur der Solar-Ausschnitt automatisch, damit das bestätigte Gebäude vollständig sichtbar bleibt. Die 1:500-Gebäudeübersicht bleibt davon unberührt.
-3. **Radon-Infoblatt ergänzt:** Neben der Radonschutzverordnung gibt es nun den zweiten Link **„Infoblatt Radon in Gebäuden“** auf die aktuelle Energie-Tirol-Adresse: `https://www.energieagentur.tirol/uploads/tx_bh/608/infoblatt_radon_web_nov_2020.pdf`.
-4. **Radon-Rohdaten:** Die technische Ausgabe dokumentiert zusätzlich die Informationsquelle zum praktischen Umgang mit Radon.
+1. **Solar-Dachfokus vorerst entfernt:** Die nicht deckungsgleiche Überlagerung aus Orthofoto + Solar-Raster wird nicht weiter künstlich angepasst. Stattdessen zeigt der Zusatzblock wieder eine robuste amtliche Solarstrahlungs-Rasterkarte für das Standortumfeld. Wenn vorhanden, wird bevorzugt `Image Jahressumme` verwendet. Das reine Orthofoto mit TIRIS-Gebäudeumriss bleibt unverändert in der Gebäudeübersicht bei ca. 1:500.
+2. **TIRIS-Gebäudesolarpotenzial bleibt verlinkt:** Der direkte Link auf „Solarpotenziale je Gebäude“ bleibt erhalten, bis der öffentliche Einzellayer eindeutig identifiziert ist.
+3. **Sommerklima & Lokalklima – Erkundung:** Neuer Testblock gegen `Service_Public/klims_map/MapServer`. Relevante Layer zu Wärmebelastung am Tag, Nachtklima, Kaltluft und Planhinweisen werden dynamisch gesucht und am Standort per ArcGIS-Identify geprüft.
+4. **Noch keine Aufnahme ins Standortpass-Ergebnis:** Der Klimablock ist bewusst nur ein Erkundungstest. Heiße Tage, Tropennächte, sommerliche Nachttemperaturen und Klimadiagramme bleiben vorerst dem späteren Klimablatt vorbehalten.
+5. **Radon:** Der bestätigte zweite Link auf das Energie-Tirol-Infoblatt bleibt erhalten.
 
 ## Einbau
 
-Die vier Dateien direkt nach `tools/standortpass/` kopieren und die Dateien aus Test 13 ersetzen.
+Die vier Dateien direkt nach `tools/standortpass/` kopieren und die Dateien aus Test 14 ersetzen.
 
 ## Besonders prüfen
 
 ### Solar
-- Gebäudeübersicht weiter oben weiterhin **1:500**.
-- Solar-Dachfokus **ca. 1:250 / 40 m** bzw. automatische Erweiterung bei großem Gebäude.
-- Gebäudekontur muss auf dem Orthofoto deckungsgleich sein.
-- Solarbild und Orthofoto müssen denselben Ausschnitt verwenden.
-- Der Solarblock ist bewusst unabhängig vom Maßstab der Gebäudeübersicht.
+- Die Zusatzkarte zeigt wieder Solarstrahlung im gesamten Standortumfeld, nicht nur auf dem Dach.
+- Das separate Orthofoto in der Gebäudeübersicht bleibt unverändert.
+- Idealerweise wird `Image Jahressumme` als Raster gemeldet.
+- Der Link „Solarpotenziale je Gebäude in TIRIS öffnen“ bleibt funktionsfähig.
 
-### Radon
-- Beide Links öffnen: **Radonschutzverordnung** und **Infoblatt Radon in Gebäuden**.
-- `Bürgerstraße 1, 6020 Innsbruck` bleibt **Radonvorsorgegebiet = ja**, **Radonschutzgebiet = nein**.
+### Sommerklima & Lokalklima
+Nach Adressauswahl ganz unten `Klimakarten Inntal prüfen` anklicken.
 
-## Fachlicher Hinweis Solar
+Bitte insbesondere zurückmelden:
+- Anzahl `relevante Layer gefunden`
+- Anzahl `Identify-Treffer am Standort`
+- die vier Kartenblöcke für Tag / Nacht / Kaltluft / Planhinweise
+- sowie bei Bedarf den Rohdatenblock `TIRIS Klimakarten Inntal`.
 
-Die Dachfokus-Vorschau kombiniert weiterhin Orthofoto, öffentliche Solarstrahlung und bestätigten Gebäudeumriss. Sie ist noch nicht der interne tirisMaps-Layer „Solarpotential pro Jahr – Gebäude“.
+Ziel ist noch nicht, diese Angaben sofort in den Standortpass aufzunehmen. Wir wollen zuerst beurteilen, ob sie für die schnelle Vorberatung einen eigenständigen Mehrwert gegenüber dem späteren Klimablatt liefern.
 
-## Fachlicher Hinweis Radon
+## Fachliche Einordnung
 
-Der Gebietsstatus ist ein amtlicher Standortindikator. Er sagt nicht aus, welche Radonkonzentration tatsächlich in einem konkreten Gebäude vorliegt und ersetzt keine Messung. Das Energie-Tirol-Infoblatt erläutert Radon, Neubau-/Sanierungshinweise und weiterführende Informationen.
+Die regionale Klimaanalyse Inntal ist besonders für Wärmebelastung am Tag und in der Nacht sowie für Kaltluftprozesse interessant. Ein einzelner Standortindikator kann als Vorinformation nützlich sein; detaillierte sommerliche Klimakennwerte gehören methodisch eher in ein eigenes Klimablatt.
