@@ -1,14 +1,15 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 02
+   STANDORTPASS – SCHNITTSTELLENTEST 03
 
-   Testet bewusst nur:
-   1) bestehendes BEV-Adressmodul
-   2) TIRIS BASIS + ausgewählte Adress-Layer
-   3) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
-   4) Vergleich gegen bekannte Gebäudeabmessungen
-   5) bestehende TIRIS-DGM-Höhenfunktion
+   Testet bewusst:
+   1) TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
+   2) TIRIS Katastralgemeinde aus der Standortkoordinate
+   3) bestehenden BEV-Bestand nur als Vergleich/Fallback
+   4) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
+   5) TIRIS Orthofoto als visuelle Kontrolle
+   6) bestehende TIRIS-DGM-Höhenfunktion
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -29,6 +30,18 @@ const TIRIS_ADDRESS_TEST_LAYERS = [
   { id: 22, label: 'AGWR Grundstücksadressen · Adresse gr 5000' },
 ];
 
+const TIRIS_KG_LAYER_ID = 39;
+
+const TIRIS_ORTHOPHOTO_WMS_URL =
+  'https://gis.tirol.gv.at/arcgis/services/' +
+  'Service_Public/orthofoto/MapServer/WMSServer';
+
+const TIRIS_LIVE_ADDRESS_LAYERS = [
+  { id: 19, kind: 'building', label: 'AGWR Gebäudeadresse' },
+  { id: 22, kind: 'address', label: 'AGWR Grundstücksadresse' },
+  { id: 13, kind: 'address', label: 'TIRIS Adresse' },
+];
+
 const BUILDING_FIELDS = [
   'OBJECTID',
   'GEMNR',
@@ -47,6 +60,8 @@ let selectedAddress = null;
 let buildingFeatures = [];
 let selectedBuildingId = null;
 let addressSearchTimer = null;
+let selectedKgResult = null;
+let selectedAddressProvider = null;
 
 const number0 = new Intl.NumberFormat('de-AT', {
   maximumFractionDigits: 0,
@@ -143,7 +158,385 @@ async function fetchJson(url, timeoutMs = 18000) {
 }
 
 /* ---------------------------------------------------------
-   1. Bestehendes BEV-Adressmodul
+   1. TIRIS Live-Adresse + gemeinsames Standortformat
+--------------------------------------------------------- */
+
+function normalizeText(value) {
+  return String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('de-AT')
+    .replace(/\s+/g, ' ');
+}
+
+function sqlLiteral(value) {
+  return String(value ?? '').replaceAll("'", "''");
+}
+
+function dateToIso(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const numeric = Number(value);
+  const date = Number.isFinite(numeric) ? new Date(numeric) : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 10);
+}
+
+function parseSimpleAustrianAddress(input) {
+  const text = String(input ?? '')
+    .trim()
+    .replace(/\s*,\s*/g, ', ')
+    .replace(/\s+/g, ' ');
+
+  const postalMatch = text.match(/\b(\d{4})\b/);
+  if (!postalMatch) {
+    return { ok: false, message: 'Keine vierstellige PLZ erkannt.' };
+  }
+
+  const postalCode = postalMatch[1];
+  const postalIndex = postalMatch.index ?? 0;
+  const beforePostal = text
+    .slice(0, postalIndex)
+    .replace(/[;,\s]+$/, '')
+    .trim();
+  const afterPostal = text
+    .slice(postalIndex + postalCode.length)
+    .replace(/^[;,\s]+/, '')
+    .trim();
+
+  const houseMatch = beforePostal.match(/(?:^|\s)(\d+[A-Za-z]?(?:[\/-][A-Za-z0-9]+)?)$/);
+  if (!houseMatch) {
+    return {
+      ok: false,
+      message: 'Hausnummer nicht erkannt. Testformat: Straße Hausnummer, PLZ Gemeinde.',
+    };
+  }
+
+  const houseNumber = houseMatch[1];
+  const street = beforePostal.slice(0, beforePostal.length - houseMatch[0].length).trim();
+
+  if (!street) {
+    return { ok: false, message: 'Straßenname fehlt.' };
+  }
+
+  return {
+    ok: true,
+    street,
+    house_number: houseNumber,
+    postal_code: postalCode,
+    municipality: afterPostal || null,
+  };
+}
+
+function liveLayerFields(layerId) {
+  if (layerId === 13) {
+    return {
+      street: 'SNAME',
+      house: 'HNR',
+      postal: 'PLZ',
+      municipality: 'GEMNAME',
+    };
+  }
+  return {
+    street: 'STRASSENNAME',
+    house: 'HNR_ADR_ZUSAMMEN',
+    postal: 'PLZ',
+    municipality: 'GEMEINDENAME',
+  };
+}
+
+function buildTirisLiveAddressQueryUrl(layerId, parsed, strictMunicipality = true) {
+  const fields = liveLayerFields(layerId);
+  const clauses = [
+    `${fields.postal}='${sqlLiteral(parsed.postal_code)}'`,
+    `${fields.street}='${sqlLiteral(parsed.street)}'`,
+    `${fields.house}='${sqlLiteral(parsed.house_number)}'`,
+  ];
+
+  if (strictMunicipality && parsed.municipality) {
+    clauses.push(`${fields.municipality}='${sqlLiteral(parsed.municipality)}'`);
+  }
+
+  const params = new URLSearchParams({
+    f: 'json',
+    where: clauses.join(' AND '),
+    outFields: '*',
+    returnGeometry: 'true',
+    outSR: '4326',
+    returnZ: 'false',
+    returnM: 'false',
+    resultRecordCount: '20',
+  });
+
+  return `${TIRIS_BASIS_URL}/${layerId}/query?${params.toString()}`;
+}
+
+function normalizeTirisAddressFeature(feature, layer) {
+  const attrs = feature?.attributes ?? {};
+  const geometry = feature?.geometry ?? {};
+  const isLayer13 = layer.id === 13;
+
+  const street = isLayer13 ? attrs.SNAME : attrs.STRASSENNAME;
+  const house = isLayer13 ? attrs.HNR : attrs.HNR_ADR_ZUSAMMEN;
+  const municipality = isLayer13 ? attrs.GEMNAME : attrs.GEMEINDENAME;
+  const municipalityCode = isLayer13 ? attrs.GEMOESTAT : attrs.GEMOESTAT;
+  const subcode = attrs.SUBCD ?? null;
+  const addressCode = attrs.ADRCD ?? null;
+  const latitude = finiteNumber(geometry.y);
+  const longitude = finiteNumber(geometry.x);
+
+  if (latitude === null || longitude === null) return null;
+
+  return {
+    id: `tiris-${addressCode ?? attrs.OBJECTID ?? 'address'}-${subcode ?? '0'}`,
+    label: `${street ?? '–'} ${house ?? ''}, ${attrs.PLZ ?? ''} ${municipality ?? ''}`.replace(/\s+/g, ' ').trim(),
+    street: street ?? '',
+    house_number: String(house ?? ''),
+    postal_code: String(attrs.PLZ ?? ''),
+    municipality: municipality ?? '',
+    delivery_locality: municipality ?? '',
+    municipality_code: municipalityCode ? String(municipalityCode) : null,
+    locality: isLayer13 ? (attrs.ORTSTEIL ?? null) : (attrs.BEZ_ORTSTEIL ?? null),
+    latitude,
+    longitude,
+    address_latitude: latitude,
+    address_longitude: longitude,
+    building: layer.kind === 'building'
+      ? { latitude, longitude, subcode, object_number: null, property: null }
+      : null,
+    cadastral_municipality_number: null,
+    cadastral_municipality_numbers: [],
+    source: 'Land Tirol / TIRIS',
+    source_id: addressCode ? String(addressCode) : String(attrs.OBJECTID ?? ''),
+    address_code: addressCode ? String(addressCode) : null,
+    subcode: subcode ? String(subcode) : null,
+    coordinate_kind: layer.kind,
+    dataset_date: dateToIso(attrs.STAND),
+    updated_at: dateToIso(attrs.UPDATETIMESTAMP),
+    license: 'OGD Land Tirol',
+    is_demo: false,
+    tiris_layer_id: layer.id,
+    tiris_layer_label: layer.label,
+    raw_attributes: attrs,
+  };
+}
+
+async function searchTirisLiveAddress() {
+  const input = $('tirisLiveAddressInput');
+  const resultBox = $('tirisLiveAddressResults');
+  const status = $('tirisLiveAddressStatus');
+  const parsed = parseSimpleAustrianAddress(input.value);
+
+  if (!parsed.ok) {
+    $('tirisParsedAddress').textContent = parsed.message;
+    resultBox.hidden = true;
+    setStatus(status, 'Eingabe prüfen', 'error');
+    return;
+  }
+
+  $('tirisParsedAddress').textContent =
+    `${parsed.street} · HNr. ${parsed.house_number} · ${parsed.postal_code}` +
+    `${parsed.municipality ? ` · ${parsed.municipality}` : ''}`;
+  setStatus(status, 'sucht …', 'working');
+  resultBox.hidden = true;
+  resultBox.innerHTML = '';
+
+  const attempts = [];
+  const normalized = [];
+
+  try {
+    for (const layer of TIRIS_LIVE_ADDRESS_LAYERS) {
+      let url = buildTirisLiveAddressQueryUrl(layer.id, parsed, true);
+      let payload = await fetchJson(url);
+      attempts.push({ layer, strict_municipality: true, request_url: url, response: payload });
+
+      let features = Array.isArray(payload.features) ? payload.features : [];
+
+      // Gemeindenamen können Schreibvarianten enthalten. Bei null Treffern
+      // wird einmal ohne Gemeindeklausel gesucht; PLZ+Straße+Hausnummer bleiben exakt.
+      if (features.length === 0 && parsed.municipality) {
+        url = buildTirisLiveAddressQueryUrl(layer.id, parsed, false);
+        payload = await fetchJson(url);
+        attempts.push({ layer, strict_municipality: false, request_url: url, response: payload });
+        features = Array.isArray(payload.features) ? payload.features : [];
+      }
+
+      features.forEach((feature) => {
+        const item = normalizeTirisAddressFeature(feature, layer);
+        if (item) normalized.push({ item, feature, layer });
+      });
+
+      // Gebäudeadressen sind für unsere Zwecke der bevorzugte Treffer.
+      if (normalized.length > 0 && layer.id === 19) break;
+    }
+
+    $('rawTirisLiveAddress').textContent = pretty({ parsed, attempts, normalized });
+
+    const deduped = [];
+    const keys = new Set();
+    normalized.forEach((entry) => {
+      const key = `${entry.item.address_code ?? ''}|${entry.item.subcode ?? ''}|${entry.item.latitude.toFixed(7)}|${entry.item.longitude.toFixed(7)}`;
+      if (!keys.has(key)) {
+        keys.add(key);
+        deduped.push(entry);
+      }
+    });
+
+    if (deduped.length === 0) {
+      setStatus(status, 'kein Treffer', 'error');
+      resultBox.innerHTML = `
+        <div class="no-live-result">
+          <strong>Keine passende TIRIS-Adresse gefunden.</strong>
+          <small>Der BEV-Fallback darunter bleibt verfügbar. Bitte Rohantwort kontrollieren.</small>
+        </div>
+      `;
+      resultBox.hidden = false;
+      return;
+    }
+
+    resultBox.innerHTML = '';
+    deduped.forEach(({ item, layer }) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'suggestion-button';
+      button.innerHTML = `
+        <strong>${escapeHtml(item.label)}</strong>
+        <small>${escapeHtml(layer.label)} · ADRCD ${escapeHtml(item.address_code ?? '–')} · ${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)}</small>
+      `;
+      button.addEventListener('click', () => selectAddress(item, 'tiris'));
+      resultBox.appendChild(button);
+    });
+
+    resultBox.hidden = false;
+    setStatus(status, deduped.length === 1 ? '1 Treffer' : `${deduped.length} Treffer`, 'success');
+
+    if (deduped.length === 1) {
+      selectAddress(deduped[0].item, 'tiris');
+    }
+  } catch (error) {
+    $('rawTirisLiveAddress').textContent = pretty({ parsed, attempts, error: error.message });
+    resultBox.innerHTML = `<p class="field-status">Live-Suche fehlgeschlagen: ${escapeHtml(error.message)}</p>`;
+    resultBox.hidden = false;
+    setStatus(status, 'Fehler', 'error');
+  }
+}
+
+function buildKgQueryUrl(address) {
+  const geometry = {
+    x: address.longitude,
+    y: address.latitude,
+    spatialReference: { wkid: 4326 },
+  };
+  const params = new URLSearchParams({
+    f: 'json',
+    where: '1=1',
+    geometry: JSON.stringify(geometry),
+    geometryType: 'esriGeometryPoint',
+    inSR: '4326',
+    spatialRel: 'esriSpatialRelIntersects',
+    outFields: '*',
+    returnGeometry: 'false',
+  });
+  return `${TIRIS_BASIS_URL}/${TIRIS_KG_LAYER_ID}/query?${params.toString()}`;
+}
+
+async function loadKatastralgemeinde(address) {
+  $('liveAddressChecks').hidden = false;
+  $('kgResult').textContent = 'wird geprüft …';
+  selectedKgResult = null;
+
+  try {
+    const metadataUrl = `${TIRIS_BASIS_URL}/${TIRIS_KG_LAYER_ID}?f=pjson`;
+    const queryUrl = buildKgQueryUrl(address);
+    const [metadata, query] = await Promise.all([
+      fetchJson(metadataUrl),
+      fetchJson(queryUrl),
+    ]);
+
+    const features = Array.isArray(query.features) ? query.features : [];
+    const attrs = features[0]?.attributes ?? null;
+    const fields = Array.isArray(metadata.fields) ? metadata.fields.map((field) => field.name) : [];
+
+    selectedKgResult = { metadata_url: metadataUrl, metadata, query_url: queryUrl, query };
+    $('rawKg').textContent = pretty(selectedKgResult);
+
+    if (!attrs) {
+      $('kgResult').innerHTML = '<strong>Kein KG-Treffer</strong><small>Rohdaten prüfen.</small>';
+      return;
+    }
+
+    const likelyNumberKey = Object.keys(attrs).find((key) => /^(KGNR|KG_NR|KGNUMMER|KAT.*NR)$/i.test(key));
+    const likelyNameKey = Object.keys(attrs).find((key) => /^(KGNAME|KG_NAME|KAT.*NAME|NAME)$/i.test(key));
+    const likelyNumber = likelyNumberKey ? attrs[likelyNumberKey] : null;
+    const likelyName = likelyNameKey ? attrs[likelyNameKey] : null;
+
+    if (likelyNumber !== null && likelyNumber !== undefined) {
+      address.cadastral_municipality_number = String(likelyNumber);
+      address.cadastral_municipality_numbers = [String(likelyNumber)];
+      $('rawAddress').textContent = pretty(address);
+    }
+
+    $('kgResult').innerHTML = `
+      <strong>${escapeHtml(likelyName ?? 'KG-Polygon getroffen')}</strong>
+      <small>${likelyNumberKey ? `${escapeHtml(likelyNumberKey)} = ${escapeHtml(likelyNumber)}` : 'KG-Nummer noch nicht automatisch erkannt'}</small>
+      <small>Felder: ${escapeHtml(fields.join(', '))}</small>
+    `;
+  } catch (error) {
+    $('rawKg').textContent = pretty({ error: error.message });
+    $('kgResult').innerHTML = `<strong>KG-Abfrage fehlgeschlagen</strong><small>${escapeHtml(error.message)}</small>`;
+  }
+}
+
+async function compareSelectedAddressWithBev(address) {
+  $('liveAddressChecks').hidden = false;
+
+  if (!addressRegistry) {
+    $('bevComparisonResult').innerHTML = '<strong>BEV noch nicht bereit</strong><small>Vergleich wird nach Initialisierung möglich.</small>';
+    return;
+  }
+
+  try {
+    const result = await addressRegistry.search(address.label, { limit: 12 });
+    const records = result.results ?? [];
+    const match = records.find((record) =>
+      address.address_code && String(record.source_id) === String(address.address_code)
+    ) ?? records.find((record) =>
+      normalizeText(record.street) === normalizeText(address.street) &&
+      normalizeText(record.house_number) === normalizeText(address.house_number) &&
+      String(record.postal_code) === String(address.postal_code)
+    );
+
+    if (!match) {
+      $('rawBevComparison').textContent = pretty({ query: address.label, results: records });
+      $('bevComparisonResult').innerHTML = '<strong>Kein eindeutiger BEV-Vergleich</strong><small>Live-Adresse kann trotzdem verwendet werden.</small>';
+      return;
+    }
+
+    const distance = haversineMeters(
+      address.latitude,
+      address.longitude,
+      match.latitude,
+      match.longitude
+    );
+
+    const comparison = {
+      tiris: address,
+      bev: match,
+      same_address_code: String(match.source_id) === String(address.address_code),
+      coordinate_difference_m: distance,
+    };
+    $('rawBevComparison').textContent = pretty(comparison);
+    $('bevComparisonResult').innerHTML = `
+      <strong>${comparison.same_address_code ? 'ADRCD identisch ✓' : 'Adresscode abweichend'}</strong>
+      <small>TIRIS ${escapeHtml(address.address_code ?? '–')} · BEV ${escapeHtml(match.source_id ?? '–')}</small>
+      <small>Koordinatendifferenz ca. ${number1.format(distance)} m</small>
+    `;
+  } catch (error) {
+    $('rawBevComparison').textContent = pretty({ error: error.message });
+    $('bevComparisonResult').innerHTML = `<strong>BEV-Vergleich fehlgeschlagen</strong><small>${escapeHtml(error.message)}</small>`;
+  }
+}
+
+/* ---------------------------------------------------------
+   1d. Bestehendes BEV-Adressmodul – nur Fallback/Vergleich
 --------------------------------------------------------- */
 
 async function initAddressModule() {
@@ -167,9 +560,13 @@ async function initAddressModule() {
     await addressRegistry.init();
     const info = addressRegistry.info();
 
-    setStatus(status, 'BEV bereit', 'success');
+    setStatus(status, 'BEV Fallback bereit', 'success');
     $('addressSearchStatus').textContent =
-      `${number0.format(info.address_count)} Adressen · Stand ${info.dataset_date ?? '–'}`;
+      `${number0.format(info.address_count)} Adressen · Stand ${info.dataset_date ?? '–'} · nur Fallback/Vergleich`;
+
+    if (selectedAddress && selectedAddressProvider === 'tiris') {
+      compareSelectedAddressWithBev(selectedAddress);
+    }
   } catch (error) {
     setStatus(status, 'Adressmodul Fehler', 'error');
     $('addressSearchStatus').textContent = error.message;
@@ -217,7 +614,7 @@ async function runAddressSearch() {
         <small>${escapeHtml(coordinateInfo)} · ${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)}</small>
       `;
 
-      button.addEventListener('click', () => selectAddress(record));
+      button.addEventListener('click', () => selectAddress(record, 'bev'));
       suggestions.appendChild(button);
     });
 
@@ -230,21 +627,32 @@ async function runAddressSearch() {
   }
 }
 
-function selectAddress(record) {
+function selectAddress(record, provider = 'bev') {
   selectedAddress = record;
+  selectedAddressProvider = provider;
   buildingFeatures = [];
   selectedBuildingId = null;
 
-  $('addressSearchInput').value = record.label;
-  $('addressSuggestions').hidden = true;
-  $('addressSearchInput').setAttribute('aria-expanded', 'false');
+  if (provider === 'bev') {
+    $('addressSearchInput').value = record.label;
+    $('addressSuggestions').hidden = true;
+    $('addressSearchInput').setAttribute('aria-expanded', 'false');
+  } else {
+    $('tirisLiveAddressInput').value = record.label;
+    $('tirisLiveAddressResults').hidden = true;
+  }
+
+  const sourceLabel = provider === 'tiris' ? 'TIRIS live' : 'BEV Fallback';
+  const stand = record.dataset_date ? ` · Stand ${record.dataset_date}` : '';
+  const updated = record.updated_at ? ` · aktualisiert ${record.updated_at}` : '';
 
   $('selectedAddressLabel').textContent = record.label;
   $('selectedAddressMeta').textContent =
     `${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)} · ` +
-    `${record.coordinate_kind === 'building' ? 'Gebäudekoordinate' : 'Zugangskoordinate'} · ` +
-    `BEV ${record.dataset_date ?? '–'}`;
+    `${record.coordinate_kind === 'building' ? 'Gebäudekoordinate' : 'Adress-/Zugangskoordinate'} · ` +
+    `${sourceLabel}${stand}${updated}`;
   $('selectedAddressCard').hidden = false;
+  $('liveAddressChecks').hidden = false;
 
   $('rawAddress').textContent = pretty(record);
 
@@ -258,19 +666,32 @@ function selectAddress(record) {
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
   resetTerrainOutput();
+
+  loadKatastralgemeinde(record);
+  compareSelectedAddressWithBev(record);
 }
 
 function clearAddress() {
   selectedAddress = null;
+  selectedAddressProvider = null;
+  selectedKgResult = null;
   $('addressSearchInput').value = '';
+  $('tirisLiveAddressInput').value = '';
   $('selectedAddressCard').hidden = true;
+  $('liveAddressChecks').hidden = true;
+  $('tirisLiveAddressResults').hidden = true;
   $('rawAddress').textContent = '–';
+  $('rawTirisLiveAddress').textContent = '–';
+  $('rawKg').textContent = '–';
+  $('rawBevComparison').textContent = '–';
   $('loadBuildingButton').disabled = true;
   $('loadBuildingAreaButton').disabled = true;
   $('testTirisAddressLayersButton').disabled = true;
   $('loadTerrainButton').disabled = true;
   setStatus($('buildingStatus'), 'Adresse fehlt');
   setStatus($('terrainStatus'), 'Adresse fehlt');
+  setStatus($('tirisLiveAddressStatus'), 'nicht geprüft');
+  $('tirisParsedAddress').textContent = 'Noch keine Adresse zerlegt.';
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
   resetTerrainOutput();
@@ -469,12 +890,13 @@ function prepareBuildingFeatures(features) {
     .sort((a, b) => a._distance - b._distance);
 }
 
-function showBuildingFeatures(features, matchText) {
+function showBuildingFeatures(features, matchText, options = {}) {
   buildingFeatures = prepareBuildingFeatures(features);
   renderBuildingCandidates();
   drawBuildingGeometry(buildingFeatures);
   $('buildingResults').hidden = false;
   $('buildingMatchInfo').textContent = matchText;
+  $('noSuitableBuildingButton').hidden = !options.allowNoBuilding;
 
   setStatus(
     $('buildingStatus'),
@@ -482,7 +904,7 @@ function showBuildingFeatures(features, matchText) {
     'success'
   );
 
-  if (buildingFeatures.length === 1) {
+  if (buildingFeatures.length === 1 && options.autoSelectSingle !== false) {
     selectBuilding(buildingFeatures[0].attributes?.OBJECTID);
   }
 }
@@ -504,7 +926,7 @@ async function loadBuildings() {
       $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
       showBuildingFeatures(
         exact.features,
-        'Eindeutiger Treffer: Die BEV-Gebäudekoordinate liegt direkt im TIRIS-Dachpolygon.'
+        'Eindeutiger Treffer: Der gewählte Adress-/Gebäudepunkt liegt direkt im TIRIS-Dachpolygon.'
       );
       return;
     }
@@ -525,7 +947,8 @@ async function loadBuildings() {
       $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
       showBuildingFeatures(
         fallback15.features,
-        `Kein direkter Polygon-Treffer. ${fallback15.features.length} Kandidat(en) innerhalb 15 m – bitte prüfen.`
+        `Kein direkter Polygon-Treffer. ${fallback15.features.length} Kandidat(en) innerhalb 15 m – bitte prüfen.`,
+        { autoSelectSingle: false, allowNoBuilding: true }
       );
       return;
     }
@@ -539,19 +962,21 @@ async function loadBuildings() {
         $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
         showBuildingFeatures(
           fallbackMax.features,
-          `Kein Treffer bis 15 m. ${fallbackMax.features.length} Kandidat(en) innerhalb ${maxRadius} m – bitte prüfen.`
+          `Kein Treffer bis 15 m. ${fallbackMax.features.length} Kandidat(en) innerhalb ${maxRadius} m – bitte prüfen.`,
+          { autoSelectSingle: false, allowNoBuilding: true }
         );
         return;
       }
     }
 
     $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
-    setStatus(status, 'kein Treffer', 'error');
+    setStatus(status, 'keine Geometrie', 'muted');
     $('buildingResults').hidden = false;
     $('buildingCandidateList').innerHTML =
-      '<p class="field-status">Kein Gebäude gefunden. Umgebung größer laden oder Koordinate prüfen.</p>';
+      '<p class="field-status">Kein geeignetes Dachpolygon gefunden. Die Standortprüfung läuft trotzdem weiter.</p>';
     drawBuildingGeometry([]);
-    $('buildingMatchInfo').textContent = 'Keine automatische Zuordnung möglich.';
+    $('buildingMatchInfo').textContent = 'Keine Gebäudegeometrie verfügbar – kein Blocker für die übrigen Standortmodule.';
+    $('noBuildingNote').hidden = false;
   } catch (error) {
     $('rawBuildings').textContent = pretty({ error: error.message, attempts });
     setStatus(status, 'Fehler', 'error');
@@ -574,17 +999,19 @@ async function loadBuildingArea() {
     $('rawBuildings').textContent = pretty({ mode: 'manual_area', attempts: [attempt] });
 
     if (attempt.features.length === 0) {
-      setStatus(status, 'kein Treffer', 'error');
+      setStatus(status, 'keine Geometrie', 'muted');
       $('buildingResults').hidden = false;
       $('buildingCandidateList').innerHTML =
-        `<p class="field-status">Im Umkreis von ${radius} m wurde kein Gebäude gefunden.</p>`;
+        `<p class="field-status">Im Umkreis von ${radius} m wurde kein Gebäude gefunden. Standortmodule bleiben nutzbar.</p>`;
       drawBuildingGeometry([]);
+      $('noBuildingNote').hidden = false;
       return;
     }
 
     showBuildingFeatures(
       attempt.features,
-      `Manuelle Umkreissuche: ${attempt.features.length} Gebäude innerhalb ${radius} m.`
+      `Manuelle Umkreissuche: ${attempt.features.length} Gebäude innerhalb ${radius} m.`,
+      { autoSelectSingle: false, allowNoBuilding: true }
     );
   } catch (error) {
     $('rawBuildings').textContent = pretty({ error: error.message });
@@ -641,6 +1068,7 @@ function selectBuilding(objectId) {
 }
 
 function showSelectedBuilding(feature) {
+  $('noBuildingNote').hidden = true;
   const attrs = feature.attributes ?? {};
   const area = finiteNumber(attrs.Shape__Area);
   const length = finiteNumber(attrs.Shape__Length);
@@ -666,7 +1094,7 @@ function showSelectedBuilding(feature) {
   if (length !== null && plausibleMedian) {
     const wallRaw = length * medianHeight;
     $('wallPreview').textContent =
-      `Brutto-Außenwand testweise ca. ${number0.format(roundTo(wallRaw, 10))} m²`;
+      `Brutto-Außenwand orientierend ca. ${number0.format(roundTo(wallRaw, 10))} m²`;
   } else {
     $('wallPreview').textContent =
       'Keine Testableitung – Medianhöhe derzeit nicht plausibel/verfügbar.';
@@ -681,9 +1109,15 @@ function resetBuildingOutput(clearRaw = true) {
   $('buildingResults').hidden = true;
   $('selectedBuildingPanel').hidden = true;
   $('buildingCandidateList').innerHTML = '';
+  $('noSuitableBuildingButton').hidden = true;
   $('buildingSvg').innerHTML = '';
   $('buildingComparisonResult').hidden = true;
-  $('buildingMatchInfo').textContent = 'Zuerst wird geprüft, ob die BEV-Gebäudekoordinate direkt in einem TIRIS-Dachpolygon liegt.';
+  $('noBuildingNote').hidden = true;
+  $('orthophotoImage').hidden = true;
+  $('orthophotoImage').removeAttribute('src');
+  $('orthophotoStatus').textContent = 'Orthofoto wird mit der Geometrie geladen.';
+  $('rawOrthophoto').textContent = '–';
+  $('buildingMatchInfo').textContent = 'Zuerst wird geprüft, ob der gewählte Adress-/Gebäudepunkt direkt in einem TIRIS-Dachpolygon liegt.';
   if (clearRaw) $('rawBuildings').textContent = '–';
 }
 
@@ -726,6 +1160,48 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
   return 2 * earth * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function buildOrthophotoWmsUrl(minX, minY, maxX, maxY) {
+  const params = new URLSearchParams({
+    SERVICE: 'WMS',
+    VERSION: '1.1.1',
+    REQUEST: 'GetMap',
+    LAYERS: 'Image_Aktuell_RGB',
+    STYLES: '',
+    SRS: 'EPSG:4326',
+    BBOX: `${minX},${minY},${maxX},${maxY}`,
+    WIDTH: '1040',
+    HEIGHT: '720',
+    FORMAT: 'image/jpeg',
+    TRANSPARENT: 'false',
+  });
+  return `${TIRIS_ORTHOPHOTO_WMS_URL}?${params.toString()}`;
+}
+
+function loadOrthophotoForBounds(minX, minY, maxX, maxY) {
+  const image = $('orthophotoImage');
+  const status = $('orthophotoStatus');
+  const url = buildOrthophotoWmsUrl(minX, minY, maxX, maxY);
+
+  $('rawOrthophoto').textContent = pretty({
+    service: 'TIRIS Orthofoto WMS',
+    layer: 'Image_Aktuell_RGB',
+    bbox_wgs84: [minX, minY, maxX, maxY],
+    request_url: url,
+  });
+
+  image.hidden = true;
+  status.textContent = 'Orthofoto wird geladen …';
+  image.onload = () => {
+    image.hidden = false;
+    status.textContent = 'TIRIS Orthofoto geladen · Polygon und Adresspunkt liegen darüber.';
+  };
+  image.onerror = () => {
+    image.hidden = true;
+    status.textContent = 'Orthofoto konnte nicht geladen werden – bitte Roh-URL / WMS prüfen.';
+  };
+  image.src = url;
+}
+
 function drawBuildingGeometry(features) {
   const svg = $('buildingSvg');
   svg.innerHTML = '';
@@ -760,6 +1236,8 @@ function drawBuildingGeometry(features) {
   maxX += xPad;
   minY -= yPad;
   maxY += yPad;
+
+  loadOrthophotoForBounds(minX, minY, maxX, maxY);
 
   const width = 520;
   const height = 360;
@@ -847,17 +1325,11 @@ function compareBuildingGeometry() {
   const knownPerimeter = readOptionalNumber('knownPerimeter');
   const knownHeight = readOptionalNumber('knownHeight');
   const knownWallArea = readOptionalNumber('knownWallArea');
-  const knownOverhang = readOptionalNumber('knownOverhang');
 
   const wallTest = roofPerimeter !== null && medianHeight !== null
     ? roofPerimeter * medianHeight
     : null;
 
-  // Rechteck-Näherung: Bei gleichmäßigem Überstand d wächst der Umfang um ca. 8*d.
-  const perimeterDerivedOverhang =
-    roofPerimeter !== null && knownPerimeter !== null && roofPerimeter > knownPerimeter
-      ? (roofPerimeter - knownPerimeter) / 8
-      : null;
 
   const results = [
     {
@@ -896,15 +1368,6 @@ function compareBuildingGeometry() {
         ? `${formatArea(wallTest)} gegenüber ${formatArea(knownWallArea, 0)}`
         : 'Vergleichswert fehlt',
     },
-    {
-      label: 'Überstand aus Umfangsdifferenz',
-      value: perimeterDerivedOverhang !== null
-        ? `ca. ${number1.format(perimeterDerivedOverhang)} m`
-        : '–',
-      note: knownOverhang !== null && perimeterDerivedOverhang !== null
-        ? `bekannt grob ca. ${number1.format(knownOverhang)} m · nur Rechteck-Näherung (ΔUmfang ÷ 8)`
-        : 'nur bei ungefähr rechteckigem Gebäude sinnvoll',
-    },
   ];
 
   $('buildingComparisonResult').innerHTML = `
@@ -922,10 +1385,33 @@ function compareBuildingGeometry() {
 }
 
 function clearValidation() {
-  ['knownFootprint', 'knownPerimeter', 'knownHeight', 'knownWallArea', 'knownOverhang']
+  ['knownFootprint', 'knownPerimeter', 'knownHeight', 'knownWallArea']
     .forEach((id) => { $(id).value = ''; });
   $('buildingComparisonResult').hidden = true;
   $('buildingComparisonResult').innerHTML = '';
+}
+
+function continueWithoutBuildingGeometry() {
+  selectedBuildingId = null;
+  document.querySelectorAll('.candidate-button').forEach((button) => {
+    button.classList.remove('is-selected');
+  });
+  document.querySelectorAll('.building-shape').forEach((shape) => {
+    shape.classList.remove('is-selected');
+  });
+  $('selectedBuildingPanel').hidden = true;
+  $('noBuildingNote').hidden = false;
+  setStatus($('buildingStatus'), 'keine Geometrie', 'muted');
+  $('buildingMatchInfo').textContent = 'Bewusst ohne Gebäudepolygon fortfahren. Die übrigen Standortmodule bleiben verfügbar.';
+}
+
+function editSelectedBuilding() {
+  if (!selectedAddress) return;
+  const radiusSelect = $('buildingRadius');
+  if (Number(radiusSelect.value) < 30) radiusSelect.value = '30';
+  loadBuildingArea().then(() => {
+    $('buildingResults').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 }
 
 /* ---------------------------------------------------------
@@ -982,6 +1468,14 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+$('tirisLiveAddressInput').addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    searchTirisLiveAddress();
+  }
+});
+$('searchTirisLiveAddressButton').addEventListener('click', searchTirisLiveAddress);
+
 $('addressSearchInput').addEventListener('input', () => {
   window.clearTimeout(addressSearchTimer);
   addressSearchTimer = window.setTimeout(runAddressSearch, 180);
@@ -992,6 +1486,8 @@ $('testBasisButton').addEventListener('click', testBasisService);
 $('testTirisAddressLayersButton').addEventListener('click', testTirisAddressLayers);
 $('loadBuildingButton').addEventListener('click', loadBuildings);
 $('loadBuildingAreaButton').addEventListener('click', loadBuildingArea);
+$('changeBuildingButton').addEventListener('click', editSelectedBuilding);
+$('noSuitableBuildingButton').addEventListener('click', continueWithoutBuildingGeometry);
 $('compareBuildingButton').addEventListener('click', compareBuildingGeometry);
 $('clearValidationButton').addEventListener('click', clearValidation);
 $('loadTerrainButton').addEventListener('click', loadTerrain);
