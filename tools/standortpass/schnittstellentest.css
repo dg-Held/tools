@@ -852,3 +852,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Test 04: Orthofoto-Ausschnitt */
+.geometry-heading-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.geometry-heading-row h3 { margin-bottom: 0; }
+.orthophoto-scale-field { min-width: 165px; }
+@media (max-width: 680px) {
+  .geometry-heading-row { align-items: stretch; flex-direction: column; }
+  .orthophoto-scale-field { min-width: 0; }
+}

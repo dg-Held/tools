@@ -1,10 +1,10 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 03
+   STANDORTPASS – SCHNITTSTELLENTEST 04
 
    Testet bewusst:
-   1) TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
+   1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
    2) TIRIS Katastralgemeinde aus der Standortkoordinate
    3) bestehenden BEV-Bestand nur als Vergleich/Fallback
    4) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
@@ -180,50 +180,80 @@ function dateToIso(value) {
   return date.toISOString().slice(0, 10);
 }
 
-function parseSimpleAustrianAddress(input) {
-  const text = String(input ?? '')
-    .trim()
-    .replace(/\s*,\s*/g, ', ')
-    .replace(/\s+/g, ' ');
+function normalizeSearchText(value) {
+  return normalizeText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9äöüß/-]+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
+function searchTokens(value) {
+  return normalizeSearchText(value)
+    .split(' ')
+    .filter(Boolean);
+}
+
+function extractTirisSearchKeys(input) {
+  const text = String(input ?? '').trim();
   const postalMatch = text.match(/\b(\d{4})\b/);
+
   if (!postalMatch) {
-    return { ok: false, message: 'Keine vierstellige PLZ erkannt.' };
-  }
-
-  const postalCode = postalMatch[1];
-  const postalIndex = postalMatch.index ?? 0;
-  const beforePostal = text
-    .slice(0, postalIndex)
-    .replace(/[;,\s]+$/, '')
-    .trim();
-  const afterPostal = text
-    .slice(postalIndex + postalCode.length)
-    .replace(/^[;,\s]+/, '')
-    .trim();
-
-  const houseMatch = beforePostal.match(/(?:^|\s)(\d+[A-Za-z]?(?:[\/-][A-Za-z0-9]+)?)$/);
-  if (!houseMatch) {
     return {
       ok: false,
-      message: 'Hausnummer nicht erkannt. Testformat: Straße Hausnummer, PLZ Gemeinde.',
+      message: 'Bitte eine vierstellige PLZ mit angeben. Reihenfolge, Groß-/Kleinschreibung und Komma sind egal.',
     };
   }
 
-  const houseNumber = houseMatch[1];
-  const street = beforePostal.slice(0, beforePostal.length - houseMatch[0].length).trim();
+  const postalCode = postalMatch[1];
+  const rawTokens = text
+    .replace(/[;,]+/g, ' ')
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
 
-  if (!street) {
-    return { ok: false, message: 'Straßenname fehlt.' };
+  const housePattern = /^\d+[A-Za-z]?(?:[\/-][A-Za-z0-9]+)?$/;
+  const houseCandidates = [...new Set(
+    rawTokens
+      .filter((token) => token !== postalCode && housePattern.test(token))
+      .flatMap((token) => [token, token.toLocaleLowerCase('de-AT'), token.toLocaleUpperCase('de-AT')])
+  )];
+
+  if (houseCandidates.length === 0) {
+    return {
+      ok: false,
+      message: 'Keine Hausnummer erkannt. Beispiel: Karwendelweg 9 6123 Terfens.',
+    };
   }
 
   return {
     ok: true,
-    street,
-    house_number: houseNumber,
+    original: text,
     postal_code: postalCode,
-    municipality: afterPostal || null,
+    house_candidates: houseCandidates,
+    normalized: normalizeSearchText(text),
+    tokens: searchTokens(text),
   };
+}
+
+function scoreTirisAddressCandidate(item, search) {
+  const candidate = normalizeSearchText(
+    `${item.street ?? ''} ${item.house_number ?? ''} ${item.postal_code ?? ''} ${item.municipality ?? ''} ${item.locality ?? ''}`
+  );
+  const candidateTokens = new Set(searchTokens(candidate));
+  let matched = 0;
+
+  search.tokens.forEach((token) => {
+    if (candidateTokens.has(token)) matched += 1;
+  });
+
+  const coverage = search.tokens.length > 0 ? matched / search.tokens.length : 0;
+  const exactBonus = candidate === search.normalized ? 2 : 0;
+  const streetBonus = item.street && search.normalized.includes(normalizeSearchText(item.street)) ? 1 : 0;
+  const municipalityBonus = item.municipality && search.normalized.includes(normalizeSearchText(item.municipality)) ? 0.5 : 0;
+
+  return coverage * 10 + exactBonus + streetBonus + municipalityBonus;
 }
 
 function liveLayerFields(layerId) {
@@ -243,17 +273,15 @@ function liveLayerFields(layerId) {
   };
 }
 
-function buildTirisLiveAddressQueryUrl(layerId, parsed, strictMunicipality = true) {
+function buildTirisLiveAddressQueryUrl(layerId, search) {
   const fields = liveLayerFields(layerId);
+  const houseClauses = search.house_candidates.map(
+    (house) => `${fields.house}='${sqlLiteral(house)}'`
+  );
   const clauses = [
-    `${fields.postal}='${sqlLiteral(parsed.postal_code)}'`,
-    `${fields.street}='${sqlLiteral(parsed.street)}'`,
-    `${fields.house}='${sqlLiteral(parsed.house_number)}'`,
+    `${fields.postal}='${sqlLiteral(search.postal_code)}'`,
+    `(${houseClauses.join(' OR ')})`,
   ];
-
-  if (strictMunicipality && parsed.municipality) {
-    clauses.push(`${fields.municipality}='${sqlLiteral(parsed.municipality)}'`);
-  }
 
   const params = new URLSearchParams({
     f: 'json',
@@ -263,7 +291,7 @@ function buildTirisLiveAddressQueryUrl(layerId, parsed, strictMunicipality = tru
     outSR: '4326',
     returnZ: 'false',
     returnM: 'false',
-    resultRecordCount: '20',
+    resultRecordCount: '2000',
   });
 
   return `${TIRIS_BASIS_URL}/${layerId}/query?${params.toString()}`;
@@ -322,100 +350,91 @@ function normalizeTirisAddressFeature(feature, layer) {
 async function searchTirisLiveAddress() {
   const input = $('tirisLiveAddressInput');
   const resultBox = $('tirisLiveAddressResults');
-  const status = $('tirisLiveAddressStatus');
-  const parsed = parseSimpleAustrianAddress(input.value);
+  const search = extractTirisSearchKeys(input.value);
 
-  if (!parsed.ok) {
-    $('tirisParsedAddress').textContent = parsed.message;
+  if (!search.ok) {
+    $('tirisParsedAddress').textContent = search.message;
+    setStatus($('tirisLiveAddressStatus'), 'Eingabe prüfen', 'error');
     resultBox.hidden = true;
-    setStatus(status, 'Eingabe prüfen', 'error');
     return;
   }
 
   $('tirisParsedAddress').textContent =
-    `${parsed.street} · HNr. ${parsed.house_number} · ${parsed.postal_code}` +
-    `${parsed.municipality ? ` · ${parsed.municipality}` : ''}`;
-  setStatus(status, 'sucht …', 'working');
+    `Erkannt: PLZ ${search.postal_code} · Hausnummer ${search.house_candidates[0]} · Straße/Gemeinde werden aus den TIRIS-Treffern abgeglichen.`;
+  setStatus($('tirisLiveAddressStatus'), 'sucht …', 'working');
   resultBox.hidden = true;
   resultBox.innerHTML = '';
 
   const attempts = [];
-  const normalized = [];
+  const collected = [];
 
   try {
     for (const layer of TIRIS_LIVE_ADDRESS_LAYERS) {
-      let url = buildTirisLiveAddressQueryUrl(layer.id, parsed, true);
-      let payload = await fetchJson(url);
-      attempts.push({ layer, strict_municipality: true, request_url: url, response: payload });
+      const url = buildTirisLiveAddressQueryUrl(layer.id, search);
+      const payload = await fetchJson(url);
+      const features = Array.isArray(payload?.features) ? payload.features : [];
 
-      let features = Array.isArray(payload.features) ? payload.features : [];
-
-      // Gemeindenamen können Schreibvarianten enthalten. Bei null Treffern
-      // wird einmal ohne Gemeindeklausel gesucht; PLZ+Straße+Hausnummer bleiben exakt.
-      if (features.length === 0 && parsed.municipality) {
-        url = buildTirisLiveAddressQueryUrl(layer.id, parsed, false);
-        payload = await fetchJson(url);
-        attempts.push({ layer, strict_municipality: false, request_url: url, response: payload });
-        features = Array.isArray(payload.features) ? payload.features : [];
-      }
+      attempts.push({ layer, url, count: features.length, response: payload });
 
       features.forEach((feature) => {
         const item = normalizeTirisAddressFeature(feature, layer);
-        if (item) normalized.push({ item, feature, layer });
+        if (!item) return;
+        collected.push({ item, layer, feature, score: scoreTirisAddressCandidate(item, search) });
       });
 
-      // Gebäudeadressen sind für unsere Zwecke der bevorzugte Treffer.
-      if (normalized.length > 0 && layer.id === 19) break;
+      if (layer.kind === 'building' && collected.some((entry) => entry.score >= 8)) break;
     }
 
-    $('rawTirisLiveAddress').textContent = pretty({ parsed, attempts, normalized });
-
-    const deduped = [];
-    const keys = new Set();
-    normalized.forEach((entry) => {
-      const key = `${entry.item.address_code ?? ''}|${entry.item.subcode ?? ''}|${entry.item.latitude.toFixed(7)}|${entry.item.longitude.toFixed(7)}`;
-      if (!keys.has(key)) {
-        keys.add(key);
-        deduped.push(entry);
-      }
+    const deduped = new Map();
+    collected.forEach((entry) => {
+      const item = entry.item;
+      const key = `${item.address_code ?? ''}|${item.subcode ?? ''}|${item.latitude.toFixed(7)}|${item.longitude.toFixed(7)}`;
+      const previous = deduped.get(key);
+      if (!previous || entry.score > previous.score) deduped.set(key, entry);
     });
 
-    if (deduped.length === 0) {
-      setStatus(status, 'kein Treffer', 'error');
-      resultBox.innerHTML = `
-        <div class="no-live-result">
-          <strong>Keine passende TIRIS-Adresse gefunden.</strong>
-          <small>Der BEV-Fallback darunter bleibt verfügbar. Bitte Rohantwort kontrollieren.</small>
-        </div>
-      `;
+    const ranked = [...deduped.values()]
+      .sort((a, b) => b.score - a.score || a.item.label.localeCompare(b.item.label, 'de'));
+
+    $('rawTirisLiveAddress').textContent = pretty({ search, attempts, ranked });
+
+    if (ranked.length === 0) {
+      setStatus($('tirisLiveAddressStatus'), 'kein Treffer', 'error');
+      resultBox.innerHTML = '<p class="empty-result">Keine passende TIRIS-Adresse gefunden. Der BEV-Fallback bleibt unten verfügbar.</p>';
       resultBox.hidden = false;
       return;
     }
 
-    resultBox.innerHTML = '';
-    deduped.forEach(({ item, layer }) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'suggestion-button';
-      button.innerHTML = `
+    const bestScore = ranked[0].score;
+    const visible = ranked
+      .filter((entry) => entry.score >= Math.max(3, bestScore - 3))
+      .slice(0, 12);
+
+    resultBox.innerHTML = visible.map(({ item, layer, score }, index) => `
+      <button class="suggestion-item" type="button" data-tiris-result-index="${index}">
         <strong>${escapeHtml(item.label)}</strong>
-        <small>${escapeHtml(layer.label)} · ADRCD ${escapeHtml(item.address_code ?? '–')} · ${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)}</small>
-      `;
-      button.addEventListener('click', () => selectAddress(item, 'tiris'));
-      resultBox.appendChild(button);
+        <small>${escapeHtml(layer.label)} · ADRCD ${escapeHtml(item.address_code ?? '–')} · Trefferrang ${number1.format(score)}</small>
+      </button>
+    `).join('');
+
+    resultBox.hidden = false;
+    setStatus(
+      $('tirisLiveAddressStatus'),
+      visible.length === 1 ? '1 guter Treffer' : `${visible.length} passende Treffer`,
+      'success'
+    );
+
+    resultBox.querySelectorAll('[data-tiris-result-index]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const entry = visible[Number(button.dataset.tirisResultIndex)];
+        if (entry) selectAddress(entry.item, 'tiris-live');
+      });
     });
-
-    resultBox.hidden = false;
-    setStatus(status, deduped.length === 1 ? '1 Treffer' : `${deduped.length} Treffer`, 'success');
-
-    if (deduped.length === 1) {
-      selectAddress(deduped[0].item, 'tiris');
-    }
   } catch (error) {
-    $('rawTirisLiveAddress').textContent = pretty({ parsed, attempts, error: error.message });
-    resultBox.innerHTML = `<p class="field-status">Live-Suche fehlgeschlagen: ${escapeHtml(error.message)}</p>`;
+    setStatus($('tirisLiveAddressStatus'), 'Fehler', 'error');
+    resultBox.innerHTML = `<p class="empty-result">TIRIS-Live-Suche fehlgeschlagen: ${escapeHtml(error.message)}. Der lokale BEV-Fallback bleibt verfügbar.</p>`;
     resultBox.hidden = false;
-    setStatus(status, 'Fehler', 'error');
+    $('rawTirisLiveAddress').textContent = pretty({ search, attempts, error: error.message });
   }
 }
 
@@ -1160,6 +1179,58 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
   return 2 * earth * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+const MAP_VIEW_PRESETS = {
+  '250': { label: 'ca. 1:250', groundWidthM: 40 },
+  '500': { label: 'ca. 1:500', groundWidthM: 80 },
+  '750': { label: 'ca. 1:750', groundWidthM: 120 },
+};
+
+function mapViewPreset() {
+  return MAP_VIEW_PRESETS[$('orthophotoScale')?.value] ?? MAP_VIEW_PRESETS['500'];
+}
+
+function boundsAroundPoint(latitude, longitude, groundWidthM, aspect = 520 / 360) {
+  const latRad = (latitude * Math.PI) / 180;
+  const metersPerDegLat = 111320;
+  const metersPerDegLon = Math.max(111320 * Math.cos(latRad), 1);
+  const groundHeightM = groundWidthM / aspect;
+  const halfLon = (groundWidthM / 2) / metersPerDegLon;
+  const halfLat = (groundHeightM / 2) / metersPerDegLat;
+
+  return {
+    minX: longitude - halfLon,
+    maxX: longitude + halfLon,
+    minY: latitude - halfLat,
+    maxY: latitude + halfLat,
+    groundWidthM,
+    groundHeightM,
+  };
+}
+
+function expandBoundsToInclude(bounds, points, marginFactor = 1.08) {
+  if (!points.length) return bounds;
+
+  let { minX, minY, maxX, maxY } = bounds;
+  points.forEach(([x, y]) => {
+    minX = Math.min(minX, Number(x));
+    maxX = Math.max(maxX, Number(x));
+    minY = Math.min(minY, Number(y));
+    maxY = Math.max(maxY, Number(y));
+  });
+
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const halfX = ((maxX - minX) / 2) * marginFactor;
+  const halfY = ((maxY - minY) / 2) * marginFactor;
+  return {
+    ...bounds,
+    minX: centerX - halfX,
+    maxX: centerX + halfX,
+    minY: centerY - halfY,
+    maxY: centerY + halfY,
+  };
+}
+
 function buildOrthophotoWmsUrl(minX, minY, maxX, maxY) {
   const params = new URLSearchParams({
     SERVICE: 'WMS',
@@ -1177,7 +1248,7 @@ function buildOrthophotoWmsUrl(minX, minY, maxX, maxY) {
   return `${TIRIS_ORTHOPHOTO_WMS_URL}?${params.toString()}`;
 }
 
-function loadOrthophotoForBounds(minX, minY, maxX, maxY) {
+function loadOrthophotoForBounds(minX, minY, maxX, maxY, viewInfo = {}) {
   const image = $('orthophotoImage');
   const status = $('orthophotoStatus');
   const url = buildOrthophotoWmsUrl(minX, minY, maxX, maxY);
@@ -1186,6 +1257,7 @@ function loadOrthophotoForBounds(minX, minY, maxX, maxY) {
     service: 'TIRIS Orthofoto WMS',
     layer: 'Image_Aktuell_RGB',
     bbox_wgs84: [minX, minY, maxX, maxY],
+    view: viewInfo,
     request_url: url,
   });
 
@@ -1193,7 +1265,8 @@ function loadOrthophotoForBounds(minX, minY, maxX, maxY) {
   status.textContent = 'Orthofoto wird geladen …';
   image.onload = () => {
     image.hidden = false;
-    status.textContent = 'TIRIS Orthofoto geladen · Polygon und Adresspunkt liegen darüber.';
+    const preset = mapViewPreset();
+    status.textContent = `TIRIS Orthofoto geladen · Ausschnitt ${preset.label} ausgelegt (${number0.format(preset.groundWidthM)} m Breite) · Browserdarstellung selbst nicht maßstabsgetreu.`;
   };
   image.onerror = () => {
     image.hidden = true;
@@ -1223,21 +1296,23 @@ function drawBuildingGeometry(features) {
     return;
   }
 
-  const xs = allPoints.map((point) => Number(point[0]));
-  const ys = allPoints.map((point) => Number(point[1]));
-  let minX = Math.min(...xs);
-  let maxX = Math.max(...xs);
-  let minY = Math.min(...ys);
-  let maxY = Math.max(...ys);
+  const preset = mapViewPreset();
+  const centerLatitude = selectedAddress?.latitude ?? Number(allPoints[0][1]);
+  const centerLongitude = selectedAddress?.longitude ?? Number(allPoints[0][0]);
+  let bounds = boundsAroundPoint(
+    centerLatitude,
+    centerLongitude,
+    preset.groundWidthM,
+    520 / 360
+  );
+  bounds = expandBoundsToInclude(bounds, allPoints, 1.06);
 
-  const xPad = Math.max((maxX - minX) * 0.18, 0.00008);
-  const yPad = Math.max((maxY - minY) * 0.18, 0.00006);
-  minX -= xPad;
-  maxX += xPad;
-  minY -= yPad;
-  maxY += yPad;
-
-  loadOrthophotoForBounds(minX, minY, maxX, maxY);
+  const { minX, minY, maxX, maxY } = bounds;
+  loadOrthophotoForBounds(minX, minY, maxX, maxY, {
+    preset: preset.label,
+    requested_ground_width_m: preset.groundWidthM,
+    requested_ground_height_m: preset.groundWidthM / (520 / 360),
+  });
 
   const width = 520;
   const height = 360;
@@ -1491,6 +1566,9 @@ $('noSuitableBuildingButton').addEventListener('click', continueWithoutBuildingG
 $('compareBuildingButton').addEventListener('click', compareBuildingGeometry);
 $('clearValidationButton').addEventListener('click', clearValidation);
 $('loadTerrainButton').addEventListener('click', loadTerrain);
+$('orthophotoScale').addEventListener('change', () => {
+  if (buildingFeatures.length > 0) drawBuildingGeometry(buildingFeatures);
+});
 
 $('year').textContent = String(new Date().getFullYear());
 
