@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 13 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 14 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 13</h1>
+      <h1>Schnittstellentest 14</h1>
       <p class="test-lead">
         Umweltwärme bleibt als fachlich reiches Detailmodul erhalten. Neu prüfen wir Hochwasser und Naturgefahren direkt am gewählten Standort – bei vorhandenem Gebäude gegen das gesamte Gebäudepolygon.
       </p>
       <p class="test-disclaimer">
-        Phase 13: Hochwasser/Naturgefahren und Kulturstatus bleiben bestehen. Der Solar-Dachfokus wird geometrisch auf eine gemeinsame EPSG:31254-Kartenbox synchronisiert; zusätzlich prüfen wir den amtlichen Radon-Gebietsstatus über die bereits bekannte Gemeindekennziffer.
+        Phase 14: Hochwasser/Naturgefahren, Kulturstatus und Radon bleiben bestehen. Der Solar-Dachfokus verwendet nun dieselbe bereits bestätigte WGS84-Geometrie wie die Gebäudeübersicht, aber mit einem eigenen ca. 1:250-Ausschnitt. Zusätzlich erhält Radon einen direkten Link zum Energie-Tirol-Infoblatt mit der praktischen Bedeutung und Maßnahmen.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -341,7 +341,7 @@
           <div>
             <span class="mini-label">Zusatztest · Solar · Dachfokus</span>
             <h3>Orthofoto + Solarstrahlung am Dach</h3>
-            <p>Test 13 verwendet für den Solar-Dachfokus eine eigene ca. 1:250-Ansicht. Orthofoto, Solar-WMS und Gebäudekontur werden mit exakt derselben Bounding Box in EPSG:31254 geladen. Die normale Gebäudeübersicht weiter oben bleibt unabhängig davon bei ca. 1:500. Zusätzlich führt ein Link direkt zur offiziellen tirisMaps-Ansicht „Solarpotenziale je Gebäude“.</p>
+            <p>Test 14 verwendet für den Solar-Dachfokus eine eigene ca. 1:250-Ansicht. Orthofoto, Solar-WMS und Gebäudekontur verwenden dafür dieselbe WGS84-Bounding-Box und dieselbe Bildgröße. Die normale Gebäudeübersicht weiter oben bleibt unabhängig davon bei ca. 1:500. Zusätzlich führt ein Link direkt zur offiziellen tirisMaps-Ansicht „Solarpotenziale je Gebäude“.</p>
           </div>
           <span class="status-chip status-chip--muted" id="solarMapStatus">Adresse fehlt</span>
         </div>

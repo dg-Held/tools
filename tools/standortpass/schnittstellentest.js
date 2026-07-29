@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 13
+   STANDORTPASS – SCHNITTSTELLENTEST 14
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -131,6 +131,9 @@ const RADON_PROTECTION_TYROL_GKZ = new Set([
 
 const RADON_RIS_URL =
   'https://ris.bka.gv.at/NormDokument.wxe?Abfrage=Bundesnormen&Anlage=1&Gesetzesnummer=20011323';
+
+const RADON_INFO_ENERGIE_TIROL_URL =
+  'https://www.energieagentur.tirol/uploads/tx_bh/608/infoblatt_radon_web_nov_2020.pdf';
 
 const TIRIS_LIVE_ADDRESS_LAYERS = [
   { id: 19, kind: 'building', label: 'AGWR Gebäudeadresse' },
@@ -2697,47 +2700,42 @@ function projectedGeometryPoints(feature) {
     .map((point) => [Number(point[0]), Number(point[1])]);
 }
 
-function solarPreviewGeometryProjected(feature, projectedPoint) {
+function solarPreviewGeometryWgs84(feature, address) {
   const aspect = 820 / 520;
-  const points = projectedGeometryPoints(feature);
-  let centerX = Number(projectedPoint?.x);
-  let centerY = Number(projectedPoint?.y);
-  let groundWidthM = 40; // 40 m bei 160 mm Druckbreite = 1:250
+  const points = geometryPoints(feature?.geometry);
+  let centerLatitude = Number(address?.latitude);
+  let centerLongitude = Number(address?.longitude);
+  let groundWidthM = 40; // eigener Solar-Ausschnitt: 40 m Breite ≈ 1:250 bei 160 mm Druckbreite
 
   if (points.length) {
-    const xs = points.map((point) => point[0]);
-    const ys = points.map((point) => point[1]);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    centerX = (minX + maxX) / 2;
-    centerY = (minY + maxY) / 2;
+    const lons = points.map((point) => Number(point[0]));
+    const lats = points.map((point) => Number(point[1]));
+    const minLon = Math.min(...lons);
+    const maxLon = Math.max(...lons);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    centerLongitude = (minLon + maxLon) / 2;
+    centerLatitude = (minLat + maxLat) / 2;
 
-    const buildingWidthM = maxX - minX;
-    const buildingHeightM = maxY - minY;
+    const buildingWidthM = haversineMeters(centerLatitude, minLon, centerLatitude, maxLon);
+    const buildingHeightM = haversineMeters(minLat, centerLongitude, maxLat, centerLongitude);
     groundWidthM = Math.max(40, buildingWidthM * 1.45, buildingHeightM * aspect * 1.45);
   }
 
-  if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) return null;
-  const groundHeightM = groundWidthM / aspect;
+  if (!Number.isFinite(centerLatitude) || !Number.isFinite(centerLongitude)) return null;
+  const bounds = boundsAroundPoint(centerLatitude, centerLongitude, groundWidthM, aspect);
   return {
     feature,
     points,
     groundWidthM,
-    groundHeightM,
+    groundHeightM: bounds.groundHeightM,
     nominal250: groundWidthM <= 40.5,
-    srs: 'EPSG:31254',
-    bounds: {
-      minX: centerX - groundWidthM / 2,
-      maxX: centerX + groundWidthM / 2,
-      minY: centerY - groundHeightM / 2,
-      maxY: centerY + groundHeightM / 2,
-    },
+    srs: 'EPSG:4326',
+    bounds,
   };
 }
 
-function solarBuildingPathProjected(feature, bounds, width = 820, height = 520) {
+function solarBuildingPathForBounds(feature, bounds, width = 820, height = 520) {
   const rings = Array.isArray(feature?.geometry?.rings) ? feature.geometry.rings : [];
   if (!rings.length) return '';
 
@@ -2797,23 +2795,23 @@ async function testSolarMap() {
     }
 
     const chosen = annual || best;
-    const [projectedBuilding, projectedPoint] = await Promise.all([
-      fetchSelectedBuildingProjectedFeature().catch(() => null),
-      fetchProjectedTirisAddressPoint(selectedAddress).catch(() => null),
-    ]);
-    const preview = solarPreviewGeometryProjected(projectedBuilding, projectedPoint);
-    if (!preview) throw new Error('Projektierte Standortgeometrie EPSG:31254 konnte nicht geladen werden.');
-    const buildingPath = preview.feature ? solarBuildingPathProjected(preview.feature, preview.bounds) : '';
+    // Test 14: Für die Dachkarte verwenden wir bewusst dieselbe bereits bestätigte
+    // WGS84-Gebäudegeometrie wie in der 1:500-Übersicht. Orthofoto, Solar-WMS
+    // und SVG-Kontur erhalten exakt dieselbe BBOX und Pixelgröße.
+    const wgsBuilding = selectedBuildingFeature();
+    const preview = solarPreviewGeometryWgs84(wgsBuilding, selectedAddress);
+    if (!preview) throw new Error('Standortgeometrie für den Solar-Dachfokus konnte nicht gebildet werden.');
+    const buildingPath = preview.feature ? solarBuildingPathForBounds(preview.feature, preview.bounds) : '';
     raw.preview = {
       mode: preview.feature ? 'building-clipped' : 'no-building',
       srs: preview.srs,
       ground_width_m: preview.groundWidthM,
       ground_height_m: preview.groundHeightM,
       nominal_scale: preview.nominal250 ? 'ca. 1:250' : 'automatisch erweitert, damit das Gebäude vollständig sichtbar bleibt',
-      bbox_epsg31254: [preview.bounds.minX, preview.bounds.minY, preview.bounds.maxX, preview.bounds.maxY],
+      bbox_wgs84: [preview.bounds.minX, preview.bounds.minY, preview.bounds.maxX, preview.bounds.maxY],
+      image_size_px: [820, 520],
       building_objectid: preview.feature?.attributes?.OBJECTID ?? null,
-      projected_building_query: projectedBuilding?.request_url ?? null,
-      projected_address_query: projectedPoint?.request_url ?? null,
+      geometry_source: 'dieselbe bestätigte WGS84-TIRIS-Gebäudegeometrie wie in der Gebäudeübersicht',
     };
 
     const tirisLink = `<a class="external-action-link" href="${escapeHtml(TIRIS_SOLAR_BUILDING_VIEW_URL)}" target="_blank" rel="noopener noreferrer">Solarpotenziale je Gebäude in TIRIS öffnen ↗</a>`;
@@ -2858,7 +2856,7 @@ async function testSolarMap() {
       <div class="environment-heading-row">
         <div>
           <h3>Solarpotenzial · Dachfokus</h3>
-          <p><strong>Testdarstellung:</strong> aktuelles Orthofoto plus Jahresstrahlung, beide mit exakt derselben 1:250-Bounding-Box in EPSG:31254; die Solarstrahlung wird auf das bestätigte TIRIS-Gebäudepolygon begrenzt.</p>
+          <p><strong>Testdarstellung:</strong> aktuelles Orthofoto plus Jahresstrahlung mit derselben WGS84-Bounding-Box und identischer Pixelgröße; die Solarstrahlung wird auf das bestätigte TIRIS-Gebäudepolygon begrenzt. Der Ausschnitt ist unabhängig von der 1:500-Gebäudeübersicht.</p>
         </div>
         ${tirisLink}
       </div>
@@ -3359,6 +3357,8 @@ function testRadon() {
     radonschutzgebiet: isProtection,
     source: 'Radonschutzverordnung Anlage 1',
     source_url: RADON_RIS_URL,
+    info_source: 'Energie Tirol · Infoblatt Radon in Gebäuden · November 2020',
+    info_url: RADON_INFO_ENERGIE_TIROL_URL,
   };
   $('rawRadon').textContent = pretty(raw);
 
@@ -3375,7 +3375,10 @@ function testRadon() {
         <h3>Radon · Gebietsstatus</h3>
         <p>Amtliche Zuordnung über die Gemeindekennziffer. Sie sagt nichts über die tatsächliche Radonkonzentration in einem konkreten Gebäude aus.</p>
       </div>
-      <a class="external-action-link" href="${escapeHtml(RADON_RIS_URL)}" target="_blank" rel="noopener noreferrer">Radonschutzverordnung öffnen ↗</a>
+      <div class="environment-action-links">
+        <a class="external-action-link" href="${escapeHtml(RADON_RIS_URL)}" target="_blank" rel="noopener noreferrer">Radonschutzverordnung öffnen ↗</a>
+        <a class="external-action-link" href="${escapeHtml(RADON_INFO_ENERGIE_TIROL_URL)}" target="_blank" rel="noopener noreferrer">Infoblatt Radon in Gebäuden ↗</a>
+      </div>
     </div>
     <div class="environment-grid">
       <article class="environment-card ${isPrecaution ? 'environment-card--notice' : ''}">

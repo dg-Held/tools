@@ -1555,3 +1555,19 @@
   border-radius: 999px;
   background: rgba(52, 171, 159, 0.08);
 }
+
+
+/* Test 14 · mehrere Quellenlinks in einer Ergebnisüberschrift */
+.environment-action-links {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+@media (max-width: 680px) {
+  .environment-action-links {
+    justify-content: flex-start;
+  }
+}
