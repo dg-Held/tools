@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 06
+   STANDORTPASS – SCHNITTSTELLENTEST 07
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -10,7 +10,8 @@
    4) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
    5) TIRIS Orthofoto als visuelle Kontrolle
    6) bestehende TIRIS-DGM-Höhenfunktion
-   7) GeoLand/voibos Sonnenstand + eigenes SVG aus DTM/DSM und Sonnenbahnen
+   7) GeoLand/voibos Sonnenstand + nutzerfreundliches SVG aus DTM/DSM und Sonnenbahnen
+   8) öffentliche TIRIS-Dienste auf Wärmenetz-/Versorgungslayer prüfen
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -38,6 +39,20 @@ const TIRIS_ORTHOPHOTO_WMS_URL =
   'Service_Public/orthofoto/MapServer/WMSServer';
 
 const GEOLAND_SUN_URL = 'https://voibos.rechenraum.com/voibos/voibos';
+
+
+const TIRIS_PUBLIC_FOLDER_URL =
+  'https://gis.tirol.gv.at/arcgis/rest/services/Service_Public';
+
+const TIRIS_HEAT_DISCOVERY_SERVICES = [
+  { label: 'INFRASTRUKTUR', url: `${TIRIS_PUBLIC_FOLDER_URL}/ogd_infrastruktur/MapServer` },
+  { label: 'RAUMORDNUNG', url: `${TIRIS_PUBLIC_FOLDER_URL}/ogd_raumordnung/MapServer` },
+];
+
+const HEAT_KEYWORDS = [
+  'wärme', 'waerme', 'fernwärme', 'fernwaerme', 'nahwärme', 'nahwaerme',
+  'anergie', 'heiz', 'energie', 'versorgung', 'biomasse',
+];
 
 const TIRIS_LIVE_ADDRESS_LAYERS = [
   { id: 19, kind: 'building', label: 'AGWR Gebäudeadresse' },
@@ -658,6 +673,7 @@ function selectAddress(record, provider = 'bev') {
   selectedAddressProvider = provider;
   buildingFeatures = [];
   selectedBuildingId = null;
+  if ($('solarObserverMode')) $('solarObserverMode').value = 'auto';
 
   if (!isTirisProvider(provider)) {
     $('addressSearchInput').value = record.label;
@@ -1081,6 +1097,7 @@ function selectBuilding(objectId) {
   if (!feature) return;
 
   selectedBuildingId = feature.attributes?.OBJECTID;
+  if ($('solarObserverMode')) $('solarObserverMode').value = 'auto';
 
   document.querySelectorAll('.candidate-button').forEach((button) => {
     button.classList.toggle(
@@ -1483,6 +1500,7 @@ function clearValidation() {
 
 function continueWithoutBuildingGeometry() {
   selectedBuildingId = null;
+  if ($('solarObserverMode')) $('solarObserverMode').value = 'auto';
   document.querySelectorAll('.candidate-button').forEach((button) => {
     button.classList.remove('is-selected');
   });
@@ -1679,11 +1697,24 @@ function areaBetweenHorizonsPath(horizon, lowerKey, upperKey, project) {
   return `${upper} ${lower} Z`;
 }
 
+function visualSolarHorizon(horizon) {
+  let clampedCount = 0;
+  const visual = horizon.map((entry) => {
+    const dtm = numericSolarValue(entry?.hoehenwinkelDTM);
+    const dsm = numericSolarValue(entry?.hoehenwinkelDSM);
+    if (dtm === null || dsm === null || dsm >= dtm) return { ...entry, hoehenwinkelDSM_plot: dsm };
+    clampedCount += 1;
+    return { ...entry, hoehenwinkelDSM_plot: dtm };
+  });
+  return { visual, clampedCount };
+}
+
 function drawSolarChart(payload, observerInfo) {
   const svg = $('solarChart');
   const horizon = Array.isArray(payload?.horizont)
     ? [...payload.horizont].sort((a, b) => Number(a.azimuth) - Number(b.azimuth))
     : [];
+  const { visual: visualHorizon, clampedCount } = visualSolarHorizon(horizon);
 
   svg.innerHTML = '';
   if (horizon.length === 0) {
@@ -1704,13 +1735,13 @@ function drawSolarChart(payload, observerInfo) {
 
   const valueKeys = [
     'hoehenwinkelDTM',
-    'hoehenwinkelDSM',
+    'hoehenwinkelDSM_plot',
     'hoehenwinkelSommersonnwende',
     'hoehenwinkelAbfragedatum',
     'hoehenwinkelWintersonnwende',
   ];
   const values = [];
-  horizon.forEach((entry) => {
+  visualHorizon.forEach((entry) => {
     valueKeys.forEach((key) => {
       const value = numericSolarValue(entry?.[key]);
       if (value !== null && value >= 0) values.push(value);
@@ -1755,10 +1786,10 @@ function drawSolarChart(payload, observerInfo) {
   });
   svg.appendChild(grid);
 
-  appendSvgPath(svg, areaUnderHorizonPath(horizon, 'hoehenwinkelDTM', project), 'solar-area solar-area--dtm');
-  appendSvgPath(svg, areaBetweenHorizonsPath(horizon, 'hoehenwinkelDTM', 'hoehenwinkelDSM', project), 'solar-area solar-area--dsm');
-  appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelDTM', project), 'solar-horizon-line solar-horizon-line--dtm');
-  appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelDSM', project), 'solar-horizon-line solar-horizon-line--dsm');
+  appendSvgPath(svg, areaUnderHorizonPath(visualHorizon, 'hoehenwinkelDTM', project), 'solar-area solar-area--dtm');
+  appendSvgPath(svg, areaBetweenHorizonsPath(visualHorizon, 'hoehenwinkelDTM', 'hoehenwinkelDSM_plot', project), 'solar-area solar-area--dsm');
+  appendSvgPath(svg, linePathFromHorizon(visualHorizon, 'hoehenwinkelDTM', project), 'solar-horizon-line solar-horizon-line--dtm');
+  appendSvgPath(svg, linePathFromHorizon(visualHorizon, 'hoehenwinkelDSM_plot', project), 'solar-horizon-line solar-horizon-line--dsm');
 
   appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelSommersonnwende', project, 0), 'solar-sun-path solar-sun-path--summer');
   appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelAbfragedatum', project, 0), 'solar-sun-path solar-sun-path--equinox');
@@ -1773,8 +1804,10 @@ function drawSolarChart(payload, observerInfo) {
   $('solarChartHeight').textContent = observerInfo.source;
   $('solarChartNote').textContent =
     `${payload?.datengrundlage ?? 'GeoLand'} · Befliegungsjahr ${payload?.flugjahr ?? '–'} · ` +
-    `DTM = Gelände; DSM = Oberfläche inkl. naher Gebäude/Vegetation. ` +
-    `Die mittlere Sonnenbahn basiert auf dem GeoLand-Abfragedatum 20. März und dient als Frühling-/Herbst-Referenz.`;
+    `DTM/DGM = Gelände; DSM/DOM = Oberfläche inklusive Bebauung und Vegetation. ` +
+    `Türkis dargestellt wird nur die zusätzliche Abschattung über dem Gelände. ` +
+    `Frühling/Herbst basiert auf dem GeoLand-Abfragedatum 20. März.` +
+    (clampedCount ? ` ${clampedCount} minimale DSM<DTM-Abweichung(en) wurden ausschließlich für die Grafik auf DTM begrenzt.` : '');
   $('solarChartCard').hidden = false;
 }
 
@@ -1856,7 +1889,7 @@ async function loadSolar() {
         <summary>Technische Horizont-Stichprobe</summary>
         <div class="table-scroll">
           <table class="test-table">
-            <thead><tr><th>Azimut</th><th>Gelände DTM</th><th>Oberfläche DSM</th><th>Distanz DTM</th><th>Distanz DSM</th></tr></thead>
+            <thead><tr><th>Azimut</th><th>Gelände DTM/DGM</th><th>Oberfläche DSM/DOM</th><th>Distanz Gelände</th><th>Distanz Oberfläche</th></tr></thead>
             <tbody>${sampleRows || '<tr><td colspan="5">Keine Horizontwerte gefunden.</td></tr>'}</tbody>
           </table>
         </div>
@@ -1884,6 +1917,115 @@ function resetSolarOutput(clearRaw = true) {
   $('solarChartCard').hidden = true;
   $('solarChart').innerHTML = '';
   if (clearRaw) $('rawSolar').textContent = '–';
+}
+
+/* ---------------------------------------------------------
+   6. Wärmeversorgung – öffentliche TIRIS-Dienste entdecken
+--------------------------------------------------------- */
+
+function normalizedDiscoveryText(value) {
+  return String(value ?? '')
+    .toLocaleLowerCase('de-AT')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replaceAll('ß', 'ss');
+}
+
+function matchesHeatKeyword(value) {
+  const text = normalizedDiscoveryText(value);
+  return HEAT_KEYWORDS.some((keyword) => text.includes(normalizedDiscoveryText(keyword)));
+}
+
+function candidateLayersFromService(payload) {
+  return (Array.isArray(payload?.layers) ? payload.layers : [])
+    .filter((layer) => matchesHeatKeyword(layer?.name))
+    .map((layer) => ({
+      id: layer.id,
+      name: layer.name,
+      type: layer.type ?? null,
+      parentLayerId: layer.parentLayerId ?? null,
+      subLayerIds: layer.subLayerIds ?? null,
+      geometryType: layer.geometryType ?? null,
+    }));
+}
+
+async function discoverHeatServices() {
+  const status = $('heatDiscoveryStatus');
+  const resultBox = $('heatDiscoveryResult');
+  setStatus(status, 'sucht …', 'working');
+  resultBox.hidden = true;
+  resultBox.innerHTML = '';
+
+  const raw = {
+    tested_at: new Date().toISOString(),
+    public_folder: null,
+    known_services: [],
+  };
+
+  try {
+    let folderPayload = null;
+    try {
+      folderPayload = await fetchJson(`${TIRIS_PUBLIC_FOLDER_URL}?f=pjson`);
+      raw.public_folder = folderPayload;
+    } catch (error) {
+      raw.public_folder = { error: error.message };
+    }
+
+    const folderMatches = (Array.isArray(folderPayload?.services) ? folderPayload.services : [])
+      .filter((service) => matchesHeatKeyword(service?.name))
+      .map((service) => ({ name: service.name, type: service.type }));
+
+    for (const service of TIRIS_HEAT_DISCOVERY_SERVICES) {
+      try {
+        const payload = await fetchJson(`${service.url}?f=pjson`);
+        raw.known_services.push({ label: service.label, url: service.url, response: payload });
+      } catch (error) {
+        raw.known_services.push({ label: service.label, url: service.url, error: error.message });
+      }
+    }
+
+    const serviceCards = raw.known_services.map((entry) => {
+      if (entry.error) {
+        return `<article class="discovery-card"><h3>${escapeHtml(entry.label)}</h3><p class="discovery-error">${escapeHtml(entry.error)}</p></article>`;
+      }
+      const matches = candidateLayersFromService(entry.response);
+      const list = matches.length
+        ? `<ul>${matches.map((layer) => `<li><strong>ID ${escapeHtml(layer.id)} · ${escapeHtml(layer.name)}</strong><small>${escapeHtml(layer.type ?? 'Layer')} ${layer.geometryType ? `· ${escapeHtml(layer.geometryType)}` : ''}</small></li>`).join('')}</ul>`
+        : '<p>Kein Layername mit Wärme-/Energie-/Versorgungsbezug gefunden.</p>';
+      return `<article class="discovery-card"><h3>${escapeHtml(entry.label)}</h3>${list}</article>`;
+    }).join('');
+
+    $('rawHeatDiscovery').textContent = pretty(raw);
+
+    resultBox.innerHTML = `
+      <h3>Ergebnis der Dienstsuche</h3>
+      <p>Dieser Schritt entdeckt nur mögliche öffentliche Datenquellen. Ein Treffer ist noch kein fachlich bestätigter Wärmenetz-Layer.</p>
+      <div class="discovery-summary">
+        <div><span>Service_Public Treffer</span><strong>${number0.format(folderMatches.length)}</strong></div>
+        <div><span>OGD-Dienste geprüft</span><strong>${number0.format(TIRIS_HEAT_DISCOVERY_SERVICES.length)}</strong></div>
+      </div>
+      ${folderMatches.length ? `
+        <article class="discovery-card">
+          <h3>Service_Public · passende Dienstnamen</h3>
+          <ul>${folderMatches.map((service) => `<li><strong>${escapeHtml(service.name)}</strong><small>${escapeHtml(service.type ?? '')}</small></li>`).join('')}</ul>
+        </article>` : `
+        <article class="discovery-card">
+          <h3>Service_Public</h3>
+          <p>Kein Dienstname mit eindeutigem Wärme-/Energiebezug gefunden. Das schließt einen Wärmenetz-Layer innerhalb eines anders benannten Dienstes nicht aus.</p>
+        </article>`}
+      <div class="discovery-grid">${serviceCards}</div>
+      <p class="geometry-note">Bitte bei einem Treffer die Layernamen sowie den Rohdatenblock „TIRIS Wärmenetz-Suche“ kopieren. Dann bauen wir im nächsten Schritt die echte Punkt-/Anschlussgebietsabfrage.</p>
+    `;
+    resultBox.hidden = false;
+
+    const layerMatchCount = raw.known_services.reduce((sum, entry) => sum + (entry.response ? candidateLayersFromService(entry.response).length : 0), 0);
+    setStatus(status, folderMatches.length || layerMatchCount ? 'Kandidaten gefunden' : 'geprüft', folderMatches.length || layerMatchCount ? 'success' : 'muted');
+  } catch (error) {
+    $('rawHeatDiscovery').textContent = pretty({ error: error.message, partial: raw });
+    resultBox.innerHTML = `<h3>Dienstsuche fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p>`;
+    resultBox.hidden = false;
+    setStatus(status, 'Fehler', 'error');
+  }
 }
 
 /* ---------------------------------------------------------
@@ -1923,6 +2065,7 @@ $('compareBuildingButton').addEventListener('click', compareBuildingGeometry);
 $('clearValidationButton').addEventListener('click', clearValidation);
 $('loadTerrainButton').addEventListener('click', loadTerrain);
 $('loadSolarButton').addEventListener('click', loadSolar);
+$('discoverHeatButton').addEventListener('click', discoverHeatServices);
 $('solarObserverMode').addEventListener('change', () => {
   if (!$('solarChartCard').hidden || !$('solarResult').hidden) loadSolar();
 });

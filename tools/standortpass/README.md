@@ -1,48 +1,48 @@
-# Standortpass – Schnittstellentest 06
+# Standortpass – Schnittstellentest 07
 
-Dieser Test baut auf Test 05 auf und verändert die bestehenden Tools weiterhin nicht.
+## Ziel
 
-## Neu in Test 06
+Test 07 macht aus dem erfolgreichen Solar-Prototypen eine verständlichere Beratungsdarstellung und startet parallel die Suche nach einer öffentlichen TIRIS-Schnittstelle für den Wärmenetzkataster.
 
-1. Die erfolgreiche TIRIS-Live-Adresse bleibt Primärquelle; BEV bleibt nur Vergleich/Fallback.
-2. Orthofoto bleibt standardmäßig auf ca. 1:500 / 80 m Bodenbreite.
-3. GeoLand/voibos wird nun mit einem festen Referenzdatum `03-20-12:00` abgefragt. Dadurch kann die zurückgegebene Sonnenbahn als Frühling-/Herbst-Referenz zusammen mit Sommer- und Wintersonnenwende dargestellt werden.
-4. Aus allen 360 Horizontwerten wird ein eigenes SVG gezeichnet:
-   - Geländehorizont DTM
-   - Oberflächenhorizont DSM
-   - Sonnenbahn Sommer
-   - Sonnenbahn Frühling/Herbst
-   - Sonnenbahn Winter
-5. Bezugshöhe für Solar ist testweise wählbar:
-   - **Dachniveau automatisch**: bei gewähltem Gebäude wird `GEB_HOEHE_MEDIAN` verwendet.
-   - **2 m über Gelände**: für Vergleich bzw. Standorte ohne Gebäude.
-6. Die technischen Rohdaten bleiben vollständig einklappbar.
+## Änderungen gegenüber Test 06
 
-## Einbau
+1. **Solar-Bezugshöhe**
+   - Mit gewähltem Gebäude: TIRIS `GEB_HOEHE_MEDIAN` ist der Standard.
+   - Ohne Gebäude oder ohne plausiblen Höhenwert: automatisch 2 m über Gelände.
+   - Die 2-m-Ansicht bleibt bei Gebäuden nur als eingeklappter Detailvergleich verfügbar.
 
-Die vier Dateien in `tools/standortpass/` ersetzen:
+2. **DTM / DSM nutzerfreundlicher**
+   - DTM = Digital Terrain Model = DGM / digitales Geländemodell.
+   - DSM = Digital Surface Model = DOM / digitales Oberflächenmodell.
+   - Darstellung: Grau = Gelände / Geländeverschattung.
+   - Türkis = nur die zusätzliche Verschattung zwischen DTM und DSM, typischerweise Gebäude und Vegetation.
+   - Die vollständigen DTM- und DSM-Horizontlinien werden weiterhin gezeichnet.
+   - Minimale numerische Fälle `DSM < DTM` werden nur für die Grafik auf DTM begrenzt; Rohdaten bleiben unverändert.
 
-- `index.html`
-- `schnittstellentest.css`
-- `schnittstellentest.js`
-- `README.md`
+3. **Sonnenbahnen**
+   - Sommer, Frühling/Herbst und Winter bleiben in dieser Reihenfolge übereinander.
+   - Verschattungsfarben sind nun klar von den Sonnenbahnfarben getrennt.
 
-`tools/klima-heizlast/` bleibt unverändert und wird weiterhin nur für BEV-Vergleich/Fallback und DGM-Funktion genutzt.
+4. **Wärmeversorgung – Discovery**
+   - Neuer Abschnitt `6 · Wärmeversorgung`.
+   - Prüft den öffentlichen ArcGIS-Ordner `Service_Public`.
+   - Prüft zusätzlich die bekannten Dienste `ogd_infrastruktur` und `ogd_raumordnung`.
+   - Sucht nach Layer-/Dienstnamen mit Wärme-, Energie- oder Versorgungsbezug.
+   - Noch keine Anschlussgebiets-Bewertung: zuerst muss der richtige öffentliche Layer eindeutig identifiziert werden.
 
-## Empfohlener Test
+## Test
 
-1. Adresse über **TIRIS live suchen**.
-2. Gebäude automatisch zuordnen.
-3. Orthofoto bei **ca. 1:500 · 80 m** kontrollieren.
-4. Im Solarbereich **Dachniveau automatisch** belassen und **Solarprofil laden**.
-5. Prüfen, ob das SVG plausibel aussieht:
-   - N / O / S / W richtig angeordnet,
-   - Sommerbahn am höchsten,
-   - Winterbahn am niedrigsten,
-   - DTM und DSM als getrennte Horizonte sichtbar.
-6. Danach testweise auf **2 m über Gelände** umstellen. Bei dichter Bebauung sollte sich vor allem der DSM-Horizont merklich verändern.
-7. Bei Auffälligkeiten bitte den Solarbereich und den Rohdatenblock „GeoLand Sonnenstand“ kopieren.
+1. Seite wie bisher über GitHub Pages öffnen.
+2. Adresse wählen und Gebäude automatisch zuordnen.
+3. Solarprofil laden. Standard muss bei vorhandenem Gebäude die Medianhöhe verwenden.
+4. Prüfen, ob die Grafik intuitiv lesbar ist:
+   - graue Fläche = Gelände,
+   - transparente türkise Zusatzfläche = Gebäude / Vegetation,
+   - Sonnenbahnen klar davon getrennt.
+5. Optional `Detailvergleich: Bezugshöhe ändern` öffnen und 2 m testen.
+6. Im Abschnitt Wärmeversorgung `TIRIS-Wärmedienste suchen` drücken.
+7. Bei Treffern bitte die sichtbaren Layernamen sowie den Rohdatenblock `TIRIS Wärmenetz-Suche` kopieren.
 
-## Noch keine endgültige Fachlogik
+## Hinweis zu „Fernverschattung“
 
-Die automatische Verwendung der TIRIS-Medianhöhe als Solar-Bezugshöhe ist in Test 06 bewusst eine Prüfannahme. Erst der Vergleich mehrerer Gebäude entscheidet, ob sie für die endgültige Standortpass-Ausgabe verwendet wird.
+Der Begriff ist für Privatpersonen anschaulich, fachlich ist DTM aber der **Geländehorizont**. Auch ein naher Hang kann Teil davon sein. Deshalb verwenden wir in Erklärungen bevorzugt `Gelände / Fernverschattung`, technisch bleibt `DTM/DGM`.

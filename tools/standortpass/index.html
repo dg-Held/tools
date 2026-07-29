@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 06 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 07 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
@@ -31,7 +31,7 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 06</h1>
+      <h1>Schnittstellentest 07</h1>
       <p class="test-lead">
         Die gemeinsame Adressbasis funktioniert. Jetzt prüfen wir die erste echte Standortgrafik: ein eigenes Sonnenbahn- und Horizontdiagramm aus GeoLand/voibos-Daten.
       </p>
@@ -47,6 +47,7 @@
         <span><strong>Bild</strong> TIRIS Orthofoto WMS</span>
         <span><strong>Höhe</strong> bestehendes TIRIS-DGM-Modul</span>
         <span><strong>Solar</strong> GeoLand / voibos</span>
+        <span><strong>Wärme</strong> TIRIS-Dienstsuche</span>
       </div>
     </section>
 
@@ -287,15 +288,22 @@
 
       <div class="solar-control-row">
         <button class="primary-button" id="loadSolarButton" type="button" disabled>Solarprofil laden</button>
-        <label class="compact-field solar-height-field">
-          <span>Bezugshöhe</span>
-          <select id="solarObserverMode">
-            <option value="auto" selected>Dachniveau automatisch</option>
-            <option value="ground">2 m über Gelände</option>
-          </select>
-        </label>
-        <span class="action-note" id="solarHeightHint">Mit Gebäude: TIRIS-Medianhöhe · ohne Gebäude: 2 m.</span>
+        <span class="action-note" id="solarHeightHint"><strong>Standard:</strong> mit Gebäude TIRIS-Medianhöhe · ohne Gebäude 2 m.</span>
       </div>
+
+      <details class="solar-detail-controls">
+        <summary>Detailvergleich: Bezugshöhe ändern</summary>
+        <div class="solar-detail-controls__inner">
+          <label class="compact-field solar-height-field">
+            <span>Bezugshöhe</span>
+            <select id="solarObserverMode">
+              <option value="auto" selected>Standard automatisch</option>
+              <option value="ground">Vergleich: 2 m über Gelände</option>
+            </select>
+          </label>
+          <p>Die 2-m-Ansicht ist bei vorhandener Gebäudegeometrie nur ein technischer Vergleich. Ohne Gebäude bleibt 2 m der automatische Fallback.</p>
+        </div>
+      </details>
 
       <div class="solar-chart-card" id="solarChartCard" hidden>
         <div class="solar-chart-heading">
@@ -309,16 +317,41 @@
         <svg id="solarChart" class="solar-chart" viewBox="0 0 820 430" role="img" aria-label="Sonnenbahn- und Horizontdiagramm"></svg>
 
         <div class="solar-legend" aria-label="Legende">
-          <span><i class="legend-swatch legend-swatch--dtm"></i>Geländehorizont DTM</span>
-          <span><i class="legend-swatch legend-swatch--dsm"></i>Oberflächenhorizont DSM</span>
+          <span><i class="legend-swatch legend-swatch--dtm"></i>Gelände / Fernverschattung</span>
+          <span><i class="legend-swatch legend-swatch--dsm"></i>Gebäude / Vegetation</span>
           <span><i class="legend-line legend-line--summer"></i>Sommer</span>
           <span><i class="legend-line legend-line--equinox"></i>Frühling / Herbst</span>
           <span><i class="legend-line legend-line--winter"></i>Winter</span>
         </div>
+        <p class="geometry-note solar-user-note"><strong>Lesart:</strong> Grau zeigt die Geländeabschattung. Türkis zeigt nur die zusätzliche Abschattung oberhalb des Geländehorizonts – typischerweise durch Gebäude und Vegetation.</p>
+        <details class="solar-term-details">
+          <summary>Was bedeuten DTM und DSM?</summary>
+          <p><strong>DTM – Digital Terrain Model</strong> entspricht dem digitalen Geländemodell (DGM): Gelände ohne Gebäude und Vegetation. <strong>DSM – Digital Surface Model</strong> entspricht dem digitalen Oberflächenmodell (DOM): Gelände inklusive darauf befindlicher Objekte. Die Grafik zeigt deshalb die Differenz zwischen beiden als zusätzliche Verschattung.</p>
+        </details>
         <p class="geometry-note" id="solarChartNote">–</p>
       </div>
 
       <div class="service-result" id="solarResult" hidden></div>
+    </section>
+
+    <section class="container test-panel" aria-labelledby="heat-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">6 · Wärmeversorgung</p>
+          <h2 id="heat-title">Wärmenetz-Schnittstelle entdecken</h2>
+          <p>
+            Der Wärmenetzkataster in tirisMaps zeigt Anschlussgebiete, Betreiber und Energieträger. In diesem Schritt suchen wir zunächst systematisch nach einem öffentlich abfragbaren Layer, bevor wir eine Standortbewertung programmieren.
+          </p>
+        </div>
+        <span class="status-chip status-chip--muted" id="heatDiscoveryStatus">nicht geprüft</span>
+      </div>
+
+      <div class="action-row">
+        <button class="primary-button" id="discoverHeatButton" type="button">TIRIS-Wärmedienste suchen</button>
+        <span class="action-note">Prüft Service_Public sowie die bekannten OGD-Dienste Infrastruktur und Raumordnung.</span>
+      </div>
+
+      <div class="service-result" id="heatDiscoveryResult" hidden></div>
     </section>
 
     <section class="container technical-panel">
@@ -336,6 +369,7 @@
           <div><h3>Orthofoto</h3><pre id="rawOrthophoto">–</pre></div>
           <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
           <div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
+          <div><h3>TIRIS Wärmenetz-Suche</h3><pre id="rawHeatDiscovery">–</pre></div>
         </div>
       </details>
     </section>
@@ -360,6 +394,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=6"></script>
+  <script src="schnittstellentest.js?v=7"></script>
 </body>
 </html>
