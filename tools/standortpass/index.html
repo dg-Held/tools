@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 08 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 09 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=8">
+  <link rel="stylesheet" href="schnittstellentest.css?v=9">
 </head>
 <body>
 
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 08</h1>
+      <h1>Schnittstellentest 09</h1>
       <p class="test-lead">
-        Solar wird farblich feinjustiert. Parallel prüfen wir den nächsten Standortblock: Umweltwärme-relevante TIRIS-Wasserinformationen rund um die gewählte Adresse.
+        Solar bleibt in der abgestimmten Darstellung bestehen. Test 09 verdichtet die Umweltwärme-Daten nun zu einer fachlich getrennten Beratungsansicht mit Detailinformationen und offiziellen Prüflinks.
       </p>
       <p class="test-disclaimer">
-        Phase 8: TIRIS-Live-Adresse bleibt Primärquelle. Solar nutzt weiterhin GeoLand/voibos; neu werden Erdwärmesonden, Grundwassernutzungen, Grundwasser-Messstellen und Schutz-/Schongebiete aus dem öffentlichen TIRIS-WASSER-Dienst getestet. Der BEV-Bestand bleibt nur als Vergleich und Fallback erhalten.
+        Phase 9: TIRIS-Live-Adresse bleibt Primärquelle. Umweltwärme trennt nun bestehende Anlagen, rechtliche Flächenhinweise, Schutz-/Schongebiete und Messstellen. Relevante Treffer erhalten Entfernung, Attribute und – sofern vom Dienst geliefert – offizielle WIS-Detailberichte.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -361,7 +361,7 @@
           <p class="eyebrow">7 · Umweltwärme</p>
           <h2 id="environmental-heat-title">Wasser & Untergrund – Standortinformationen</h2>
           <p>
-            Der öffentliche TIRIS-Dienst WASSER enthält unter anderem Erdwärmesonden, Grundwassernutzungen, Grundwasser-Messstellen sowie Schutz- und Schongebiete. Wir prüfen diese Informationen bewusst nur als Standortkontext – nicht als Eignungsnachweis für eine Wärmepumpe.
+            Der öffentliche TIRIS-Dienst WASSER liefert Standortinformationen zu Erdwärme, Grundwassernutzung, Messstellen und wasserrechtlichen Flächen. Test 09 trennt bestehende Anlagen, rechtliche Hinweise und Schutzgebiete fachlich sauber und zeigt bei relevanten Treffern die nächsten Objekte samt verfügbaren Detailberichten.
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="environmentalHeatStatus">Adresse fehlt</span>
@@ -369,7 +369,7 @@
 
       <div class="action-row">
         <button class="primary-button" id="testEnvironmentalHeatButton" type="button" disabled>Umweltwärme-Daten prüfen</button>
-        <span class="action-note">Test: nahe Sonden/Nutzungen/Messstellen im 500-m-Umkreis; Schutz-/Schongebiete direkt am Standort.</span>
+        <span class="action-note">500-m-Umkreis für Anlagen/Messstellen · Flächenhinweise direkt am Standort · mit TIRIS- und WIS-Links.</span>
       </div>
 
       <div class="service-result" id="environmentalHeatResult" hidden></div>
@@ -416,6 +416,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=8"></script>
+  <script src="schnittstellentest.js?v=9"></script>
 </body>
 </html>

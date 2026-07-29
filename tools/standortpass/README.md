@@ -1,59 +1,51 @@
-# Standortpass – Schnittstellentest 08
+# Standortpass – Schnittstellentest 09
 
-Test 08 lässt die inzwischen stabile Basis unverändert und arbeitet an zwei Punkten parallel weiter:
+Test 09 lässt Adresse, KG, Gebäude, Orthofoto, DGM und Solar unverändert weiterlaufen. Der Umweltwärmeblock wird fachlich und visuell von einem reinen Trefferzähler zu einer ersten Beratungsansicht weiterentwickelt.
 
-1. Solar-Darstellung farblich an das gemeinsame Designsystem anpassen.
-2. Umweltwärme-relevante Standortinformationen aus dem öffentlichen TIRIS-WASSER-Dienst testen.
+## Umweltwärme – Änderungen
 
-## Solar – Feinjustierung
-
-Die Horizontdarstellung bleibt unverändert:
-
-- Gelände / Fernverschattung: Grau
-- zusätzliche Verschattung durch Gebäude / Vegetation: Türkis
-
-Die Sonnenbahnen verwenden nun die Berry-Farbfamilie:
-
-- Sommer: `#b3446c`
-- Frühling / Herbst: `#f1dae2`
-- Winter: `#6f2a43`
-
-Da Berry Light auf hellem Hintergrund sehr hell ist, erhält die mittlere Sonnenbahn eine dezente dunklere Unterkontur. Der eigentliche Farbwert bleibt `#f1dae2`.
-
-Die automatische Bezugshöhe bleibt:
-
-- mit erkanntem Gebäude: TIRIS `GEB_HOEHE_MEDIAN`
-- ohne geeignete Gebäudehöhe: 2 m über Gelände
-
-Die 2-m-Ansicht bleibt bei vorhandener Gebäudegeometrie nur im Detailvergleich verfügbar.
-
-## Wärmenetz
-
-Der Wärmenetzkataster ist in tirisMaps unter Energie vorhanden. In den bisher geprüften öffentlichen OGD-REST-Diensten wurde jedoch kein eindeutig passender Anschlussgebiets-Layer gefunden.
-
-Der bisherige Discovery-Test bleibt erhalten. Bis eine öffentliche Schnittstelle bestätigt ist, wird daraus keine automatische fachliche Aussage zur Fernwärmeverfügbarkeit erzeugt.
-
-## Umweltwärme – neuer Test
-
-Quelle:
+Quelle bleibt der öffentliche TIRIS-Dienst:
 
 `Service_Public/ogd_wasser/MapServer`
 
-Der Test liest die Servicebeschreibung live und sucht dynamisch nach passenden Feature-Layern, insbesondere:
+### 1. Bestehende Anlagen und Flächenhinweise werden getrennt
 
-- Erdwärmesonden
-- Grundwasserentnahmen
-- Grundwasserrückgaben
-- Grundwassersonden
-- Grundwasser-Messstellen
-- Schutz- und Schongebiete
+Insbesondere wird `Bewilligungspflicht Erdwärmesonde` nicht mehr als vorhandene Erdwärmesonde gezählt.
 
-Danach werden nur kleine standortbezogene Abfragen durchgeführt:
+- `Erdwärmesonde`: bestehende/erfasste Anlagen im 500-m-Umkreis
+- `Bewilligungspflicht Erdwärmesonde`: direkter Flächentest am Standort
+- `Schutz - und Schongebiet`: direkter Flächentest am Standort
+- Grundwasserentnahmen, -rückgaben, -sonden: 500-m-Umkreis
+- Grundwasser-Messstellen: 500-m-Umkreis
 
-- Punkt-/Anlageninformationen: 500 m Testumkreis
-- Schutz-/Schongebiete: direkter Punkt-in-Polygon-Test am Standort
+### 2. Maßstabsabhängige Doppel-Layer werden nicht doppelt gezählt
 
-Wichtig: Diese Ergebnisse sind **keine Eignungsbewertung** für Erdsonden- oder Grundwasser-Wärmepumpen. Vorhandene Anlagen oder Nutzungen im Umfeld beweisen keine technische oder rechtliche Eignung des eigenen Grundstücks.
+TIRIS kann dasselbe Thema in mehreren Layern für unterschiedliche Maßstabsbereiche führen, z. B. `Messort Grundwasser` und `Messort Grundwasser (1)`. Test 09 bevorzugt den Detail-Layer und zählt diese Darstellungsvarianten nicht mehr doppelt.
+
+### 3. Nächste relevante Objekte
+
+Bei punktförmigen Treffern werden die drei nächsten Objekte angezeigt, soweit vorhanden mit:
+
+- Entfernung
+- Name
+- Typ/Subtyp
+- Status
+- Kataster-Nr.
+- Datenstand
+- Wasserbuch-Report (`URL_WABU`)
+- Wasserinfo-Report (`URL_WAWI`)
+
+Die Reportlinks stammen direkt aus den TIRIS-Attributen und werden nur angezeigt, wenn eine gültige HTTP(S)-URL vorhanden ist.
+
+### 4. Schutz-/Bewilligungsflächen
+
+Bei einem direkten Flächentreffer werden Name/Typ und vorhandene offizielle Detailberichte angezeigt. Damit ist statt `liegt in Gebiet` eine nachvollziehbarere Aussage möglich.
+
+### 5. Standort in tirisMaps öffnen
+
+Test 09 fragt die amtliche Adresskoordinate zusätzlich in EPSG:31254 ab und erzeugt daraus einen tirisMaps-Positionslink (Testmaßstab 1:2500, Orthofoto als Hintergrund).
+
+Wichtig: Der Positionslink übernimmt den Standort/Ausschnitt, aber die Wasser-Themen müssen in tirisMaps weiterhin manuell aktiviert werden. Der Test nennt deshalb direkt die relevanten Themenpfade.
 
 ## Installation
 
@@ -66,8 +58,14 @@ Die vier Dateien in `tools/standortpass/` ersetzen:
 
 `tools/klima-heizlast/` bleibt unverändert.
 
-## Sinnvolle Testadresse
+## Sinnvoller Test
 
-Bürgerstraße 1, 6020 Innsbruck ist weiterhin gut geeignet, weil dort Adresse, KG, Gebäude, Orthofoto, DGM, Solar und die Wärmenetz-Situation bereits bekannt bzw. kontrollierbar sind.
+Bürgerstraße 1, 6020 Innsbruck ist besonders geeignet. Erwartet wird gegenüber Test 08 unter anderem:
 
-Für Umweltwärme ist zusätzlich eine Adresse außerhalb dichter Innenstadtlage interessant, um zu sehen, welche Sonden-, Grundwasser- und Schutzgebietsdaten TIRIS im Umfeld liefert.
+- bestehende Erdwärmesonden: 0 statt bisher fälschlich 1
+- Bewilligungspflicht Tiefensonden: eigener Flächenhinweis
+- Grundwasser-Messstellen: keine doppelte Zählung der Maßstabs-Layer
+- nächste Grundwasserobjekte mit Namen/Entfernung
+- bei Anlagen vorhandene WIS-Detaillinks
+- Schutz-/Schongebiet mit Name/Typ
+- funktionierender Button `Standort in TIRIS öffnen`

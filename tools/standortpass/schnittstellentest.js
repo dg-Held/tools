@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 08
+   STANDORTPASS – SCHNITTSTELLENTEST 09
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -12,7 +12,9 @@
    6) bestehende TIRIS-DGM-Höhenfunktion
    7) GeoLand/voibos Sonnenstand + nutzerfreundliches SVG aus DTM/DSM und Sonnenbahnen
    8) öffentliche TIRIS-Dienste auf Wärmenetz-/Versorgungslayer prüfen
-   9) TIRIS WASSER: Umweltwärme-relevante Standortinformationen dynamisch entdecken und punktbezogen testen
+   9) TIRIS WASSER: bestehende Anlagen, rechtliche Flächen, Schutzgebiete und Messstellen sauber trennen
+   10) relevante WASSER-Treffer mit Entfernung, Attributen und vorhandenen WIS-Detaillinks ausgeben
+   11) direkten tirisMaps-Standortlink aus der amtlichen Adresskoordinate in EPSG:31254 erzeugen
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -2062,7 +2064,11 @@ function matchesEnvironmentalHeatKeyword(value) {
 
 function environmentalHeatLayerKind(layer) {
   const name = normalizedDiscoveryText(layer?.name);
-  if (name.includes('erdwarmesonde') || name.includes('erdwaermesonde')) return 'Erdwärmesonden';
+
+  if (name.includes('bewilligungspflicht') && (name.includes('erdwarmesonde') || name.includes('erdwaermesonde'))) {
+    return 'Tiefensonden – rechtlicher Hinweis';
+  }
+  if (name.includes('erdwarmesonde') || name.includes('erdwaermesonde')) return 'Bestehende Erdwärmesonden';
   if (name.includes('grundwasserentnahme')) return 'Grundwasserentnahmen';
   if (name.includes('grundwasserruckgabe') || name.includes('grundwasserrueckgabe')) return 'Grundwasserrückgaben';
   if (name.includes('grundwassersonde')) return 'Grundwassersonden';
@@ -2086,9 +2092,15 @@ function buildLayerParentPath(layers, layer) {
   return parts.join(' › ');
 }
 
+function canonicalEnvironmentalLayerName(value) {
+  return normalizedDiscoveryText(value)
+    .replace(/\s*\(\d+\)\s*$/, '')
+    .trim();
+}
+
 function environmentalHeatCandidateLayers(payload) {
   const layers = Array.isArray(payload?.layers) ? payload.layers : [];
-  return layers
+  const candidates = layers
     .filter((layer) => layer?.type === 'Feature Layer')
     .filter((layer) => matchesEnvironmentalHeatKeyword(layer?.name))
     .map((layer) => ({
@@ -2096,6 +2108,21 @@ function environmentalHeatCandidateLayers(payload) {
       path: buildLayerParentPath(layers, layer),
       kind: environmentalHeatLayerKind(layer),
     }));
+
+  // TIRIS verwendet bei einzelnen Themen mehrere maßstabsabhängige
+  // Darstellungs-Layer derselben Daten. Für unsere Analyse soll das
+  // physische Objekt nur einmal gezählt werden. Bevorzugt wird der
+  // Detail-Layer, der bis zum größten Bildschirmmaßstab sichtbar ist.
+  const bestByKey = new Map();
+  candidates.forEach((layer) => {
+    const key = `${layer.kind}|${canonicalEnvironmentalLayerName(layer.name)}`;
+    const existing = bestByKey.get(key);
+    const layerDetailScore = Number(layer.maxScale) === 90 ? 10 : 0;
+    const existingDetailScore = Number(existing?.maxScale) === 90 ? 10 : 0;
+    if (!existing || layerDetailScore > existingDetailScore) bestByKey.set(key, layer);
+  });
+
+  return [...bestByKey.values()];
 }
 
 function buildPointQueryUrl(baseUrl, layer, address, distanceM) {
@@ -2132,11 +2159,58 @@ function pointFeatureDistanceM(address, feature) {
   return haversineMeters(address.latitude, address.longitude, y, x);
 }
 
+function formatArcgisDate(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  const date = new Date(number);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat('de-AT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+}
+
+function safeExternalUrl(value) {
+  if (!value) return null;
+  try {
+    const url = new URL(String(value));
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function environmentalFeatureRecord(layer, feature) {
+  const attrs = feature?.attributes ?? {};
+  return {
+    layer_id: layer.id,
+    layer_name: layer.name,
+    kind: layer.kind,
+    name: attrs.ANL_NAME ?? attrs.NAME ?? attrs.BEZEICHNUNG ?? attrs.OBJEKT ?? `Objekt ${attrs.OBJECTID ?? ''}`.trim(),
+    type: attrs.ANL_SUBTYPE ?? attrs.ANL_TYPE ?? attrs.TYP ?? null,
+    status: attrs.ANL_BEARBEITSTAT ?? attrs.STATUS ?? null,
+    kataster_nr: attrs.ANL_WGEV_NR ?? null,
+    postzahl: attrs.POSTZAHL ?? null,
+    stand: formatArcgisDate(attrs.STAND),
+    distance_m: pointFeatureDistanceM(selectedAddress, feature),
+    report_wabu: safeExternalUrl(attrs.URL_WABU),
+    report_wawi: safeExternalUrl(attrs.URL_WAWI),
+    object_id: attrs.OBJECTID ?? null,
+    raw_attributes: attrs,
+  };
+}
+
 function summarizeEnvironmentalLayer(layer, response) {
   const features = Array.isArray(response?.features) ? response.features : [];
-  const pointDistances = features
-    .map((feature) => pointFeatureDistanceM(selectedAddress, feature))
-    .filter((value) => Number.isFinite(value));
+  const records = features.map((feature) => environmentalFeatureRecord(layer, feature));
+  records.sort((a, b) => {
+    if (Number.isFinite(a.distance_m) && Number.isFinite(b.distance_m)) return a.distance_m - b.distance_m;
+    if (Number.isFinite(a.distance_m)) return -1;
+    if (Number.isFinite(b.distance_m)) return 1;
+    return String(a.name).localeCompare(String(b.name), 'de');
+  });
+  const pointDistances = records.map((record) => record.distance_m).filter((value) => Number.isFinite(value));
   const nearest = pointDistances.length ? Math.min(...pointDistances) : null;
   return {
     id: layer.id,
@@ -2144,10 +2218,160 @@ function summarizeEnvironmentalLayer(layer, response) {
     path: layer.path,
     kind: layer.kind,
     geometryType: layer.geometryType ?? null,
-    count: features.length,
+    count: records.length,
     nearest_m: nearest,
+    records,
     first_attributes: features[0]?.attributes ?? null,
   };
+}
+
+function environmentalKindIsDirectArea(kind) {
+  return kind === 'Schutz-/Schongebiete' || kind === 'Tiefensonden – rechtlicher Hinweis';
+}
+
+function environmentalKindLabel(kind) {
+  const labels = {
+    'Bestehende Erdwärmesonden': 'Erdsonden',
+    'Tiefensonden – rechtlicher Hinweis': 'Tiefensonden · rechtlicher Hinweis',
+    'Grundwasserentnahmen': 'Grundwasserentnahmen',
+    'Grundwasserrückgaben': 'Grundwasserrückgaben',
+    'Grundwassersonden': 'Grundwassersonden',
+    'Schutz-/Schongebiete': 'Schutz-/Schongebiet / Beschränkung',
+    'Grundwasser-Messstellen': 'Messdaten',
+  };
+  return labels[kind] ?? kind;
+}
+
+function environmentalHeadline(kind, total) {
+  if (kind === 'Tiefensonden – rechtlicher Hinweis') {
+    return total > 0
+      ? 'Standort liegt in einem Gebiet mit Bewilligungspflicht'
+      : 'kein entsprechender Flächenhinweis am Standort';
+  }
+  if (kind === 'Schutz-/Schongebiete') {
+    return total > 0
+      ? 'Standort liegt in einer ausgewiesenen wasserrechtlichen Fläche'
+      : 'kein direkter Flächentreffer am Standort';
+  }
+  if (kind === 'Bestehende Erdwärmesonden') {
+    return total > 0
+      ? `${number0.format(total)} erfasste Sonde${total === 1 ? '' : 'n'} im Umkreis`
+      : `keine erfasste bestehende Sonde im ${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M}-m-Umkreis`;
+  }
+  return `${number0.format(total)} Treffer im ${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M}-m-Umkreis`;
+}
+
+function environmentalRecordLinks(record) {
+  const links = [];
+  if (record.report_wabu) links.push(`<a href="${escapeHtml(record.report_wabu)}" target="_blank" rel="noopener noreferrer">Wasserbuch-Report ↗</a>`);
+  if (record.report_wawi) links.push(`<a href="${escapeHtml(record.report_wawi)}" target="_blank" rel="noopener noreferrer">Wasserinfo-Report ↗</a>`);
+  return links.join('');
+}
+
+function environmentalRecordHtml(record, directArea = false) {
+  const meta = [
+    Number.isFinite(record.distance_m) && !directArea ? `ca. ${number0.format(record.distance_m)} m` : null,
+    record.type,
+    record.status,
+    record.kataster_nr ? `Kataster ${record.kataster_nr}` : null,
+    record.stand ? `Stand ${record.stand}` : null,
+  ].filter(Boolean);
+  const links = environmentalRecordLinks(record);
+  return `
+    <li class="environment-object">
+      <strong>${escapeHtml(record.name || 'TIRIS-Objekt')}</strong>
+      ${meta.length ? `<span>${meta.map(escapeHtml).join(' · ')}</span>` : ''}
+      ${links ? `<div class="environment-object-links">${links}</div>` : ''}
+    </li>`;
+}
+
+function environmentalCardHtml(kind, items) {
+  const total = items.reduce((sum, item) => sum + item.count, 0);
+  const directArea = environmentalKindIsDirectArea(kind);
+  const allRecords = items.flatMap((item) => item.records ?? []);
+  allRecords.sort((a, b) => {
+    if (Number.isFinite(a.distance_m) && Number.isFinite(b.distance_m)) return a.distance_m - b.distance_m;
+    if (Number.isFinite(a.distance_m)) return -1;
+    if (Number.isFinite(b.distance_m)) return 1;
+    return String(a.name).localeCompare(String(b.name), 'de');
+  });
+  const nearest = allRecords.map((record) => record.distance_m).filter(Number.isFinite)[0] ?? null;
+  const visibleRecords = directArea ? allRecords.slice(0, 3) : allRecords.slice(0, 3);
+  const note = directArea
+    ? 'direkter Punkt-in-Polygon-Test am Standort'
+    : nearest !== null
+      ? `nächster Treffer ca. ${number0.format(nearest)} m entfernt`
+      : `${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M} m Umkreis`;
+
+  return `
+    <article class="environment-card ${directArea && total > 0 ? 'environment-card--notice' : ''}">
+      <span>${escapeHtml(environmentalKindLabel(kind))}</span>
+      <strong>${escapeHtml(environmentalHeadline(kind, total))}</strong>
+      <small>${escapeHtml(note)}</small>
+      ${visibleRecords.length ? `
+        <ul class="environment-object-list">
+          ${visibleRecords.map((record) => environmentalRecordHtml(record, directArea)).join('')}
+        </ul>` : ''}
+      <details>
+        <summary>Datenquelle / geprüfte Layer</summary>
+        <ul>${items.map((item) => `<li>ID ${escapeHtml(item.id)} · ${escapeHtml(item.path)} · ${number0.format(item.count)} Treffer</li>`).join('')}</ul>
+      </details>
+    </article>`;
+}
+
+function buildProjectedAddressQueryUrl(layerId, address) {
+  const addressCode = address.address_code ?? address.source_id ?? null;
+  if (!addressCode) return null;
+  const clauses = [`ADRCD='${sqlLiteral(addressCode)}'`];
+  if (address.subcode) clauses.push(`SUBCD='${sqlLiteral(address.subcode)}'`);
+  const params = new URLSearchParams({
+    f: 'json',
+    where: clauses.join(' AND '),
+    outFields: 'ADRCD,SUBCD',
+    returnGeometry: 'true',
+    outSR: '31254',
+    returnZ: 'false',
+    returnM: 'false',
+    resultRecordCount: '5',
+  });
+  return `${TIRIS_BASIS_URL}/${layerId}/query?${params.toString()}`;
+}
+
+async function fetchProjectedTirisAddressPoint(address) {
+  const preferred = Number(address.tiris_layer_id);
+  const layerIds = [...new Set([preferred, 19, 22, 13].filter((value) => Number.isFinite(value) && value > 0))];
+  for (const layerId of layerIds) {
+    const url = buildProjectedAddressQueryUrl(layerId, address);
+    if (!url) continue;
+    try {
+      const payload = await fetchJson(url);
+      const feature = payload?.features?.[0];
+      const x = finiteNumber(feature?.geometry?.x);
+      const y = finiteNumber(feature?.geometry?.y);
+      if (x !== null && y !== null) return { x, y, layer_id: layerId, request_url: url };
+    } catch {
+      // nächster Layer
+    }
+  }
+  return null;
+}
+
+function buildTirisMapUrl(projectedPoint, scale = 2500) {
+  if (!projectedPoint) return 'https://maps.tirol.gv.at/externalcall.jsp?user=guest&project=tmap_master&client=auto';
+  const params = new URLSearchParams({
+    project: 'tmap_master',
+    x: String(projectedPoint.x),
+    y: String(projectedPoint.y),
+    scale: String(scale),
+    rotation: '0',
+    view: 'Start',
+    basemapview: 'orthofoto_labeling',
+    user: 'guest',
+    group_id: 'TMAPS-Gast',
+    client: 'core',
+    language: 'de',
+  });
+  return `https://maps.tirol.gv.at/externalcall.jsp?${params.toString()}`;
 }
 
 async function testEnvironmentalHeat() {
@@ -2165,20 +2389,33 @@ async function testEnvironmentalHeat() {
       label: selectedAddress.label,
       latitude: selectedAddress.latitude,
       longitude: selectedAddress.longitude,
+      address_code: selectedAddress.address_code ?? selectedAddress.source_id ?? null,
+      subcode: selectedAddress.subcode ?? null,
     },
     service_url: TIRIS_WATER_URL,
     service: null,
+    tiris_map: null,
     layers: [],
   };
 
   try {
-    const service = await fetchJson(`${TIRIS_WATER_URL}?f=pjson`);
+    const [service, projectedPoint] = await Promise.all([
+      fetchJson(`${TIRIS_WATER_URL}?f=pjson`),
+      fetchProjectedTirisAddressPoint(selectedAddress),
+    ]);
     raw.service = service;
+    raw.tiris_map = {
+      projected_point: projectedPoint,
+      url: buildTirisMapUrl(projectedPoint, 2500),
+      scale: 2500,
+      note: 'Position/Ausschnitt können übernommen werden; die Themenschaltung muss in tirisMaps weiterhin manuell aktiviert werden.',
+    };
+
     const candidates = environmentalHeatCandidateLayers(service);
 
     for (const layer of candidates.slice(0, 14)) {
-      const isProtection = layer.kind === 'Schutz-/Schongebiete';
-      const distanceM = isProtection ? 0 : ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M;
+      const directArea = environmentalKindIsDirectArea(layer.kind) && layer.geometryType === 'esriGeometryPolygon';
+      const distanceM = directArea ? 0 : ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M;
       const queryUrl = buildPointQueryUrl(TIRIS_WATER_URL, layer, selectedAddress, distanceM);
       try {
         const response = await fetchJson(queryUrl);
@@ -2190,7 +2427,7 @@ async function testEnvironmentalHeat() {
             kind: layer.kind,
             geometryType: layer.geometryType ?? null,
           },
-          query: isProtection ? 'Standort liegt im Gebiet?' : `Umkreis ${distanceM} m`,
+          query: directArea ? 'direkter Standorttest' : `Umkreis ${distanceM} m`,
           query_url: queryUrl,
           response,
           summary: summarizeEnvironmentalLayer(layer, response),
@@ -2204,56 +2441,58 @@ async function testEnvironmentalHeat() {
             kind: layer.kind,
             geometryType: layer.geometryType ?? null,
           },
-          query: isProtection ? 'Standort liegt im Gebiet?' : `Umkreis ${distanceM} m`,
+          query: directArea ? 'direkter Standorttest' : `Umkreis ${distanceM} m`,
           query_url: queryUrl,
           error: error.message,
         });
       }
     }
 
-    const summaries = raw.layers
-      .filter((entry) => entry.summary)
-      .map((entry) => entry.summary);
-
+    const summaries = raw.layers.filter((entry) => entry.summary).map((entry) => entry.summary);
     const grouped = new Map();
     summaries.forEach((item) => {
       if (!grouped.has(item.kind)) grouped.set(item.kind, []);
       grouped.get(item.kind).push(item);
     });
 
-    const cards = [...grouped.entries()].map(([kind, items]) => {
-      const total = items.reduce((sum, item) => sum + item.count, 0);
-      const nearestValues = items
-        .map((item) => item.nearest_m)
-        .filter((value) => Number.isFinite(value));
-      const nearest = nearestValues.length ? Math.min(...nearestValues) : null;
-      const directArea = kind === 'Schutz-/Schongebiete';
-      const headline = directArea
-        ? (total > 0 ? 'Standort liegt in ausgewiesenem Gebiet' : 'kein direkter Flächentreffer')
-        : `${number0.format(total)} Treffer im Testumkreis`;
-      const note = nearest !== null
-        ? `nächster Punkt ca. ${number0.format(nearest)} m entfernt`
-        : directArea
-          ? 'Punkt-in-Polygon-Abfrage'
-          : `${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M} m Umkreis`;
-      return `
-        <article class="environment-card">
-          <span>${escapeHtml(kind)}</span>
-          <strong>${escapeHtml(headline)}</strong>
-          <small>${escapeHtml(note)}</small>
-          <details>
-            <summary>geprüfte Layer</summary>
-            <ul>${items.map((item) => `<li>ID ${escapeHtml(item.id)} · ${escapeHtml(item.path)} · ${number0.format(item.count)} Treffer</li>`).join('')}</ul>
-          </details>
-        </article>`;
-    }).join('');
+    const preferredOrder = [
+      'Bestehende Erdwärmesonden',
+      'Tiefensonden – rechtlicher Hinweis',
+      'Grundwasserentnahmen',
+      'Grundwasserrückgaben',
+      'Grundwassersonden',
+      'Schutz-/Schongebiete',
+      'Grundwasser-Messstellen',
+    ];
+    const cards = preferredOrder
+      .filter((kind) => grouped.has(kind))
+      .map((kind) => environmentalCardHtml(kind, grouped.get(kind)))
+      .join('');
+
+    const tirisMapUrl = raw.tiris_map.url;
+    const layerSourceList = summaries.map((item) =>
+      `<li><strong>${escapeHtml(environmentalKindLabel(item.kind))}</strong> · TIRIS WASSER Layer ${escapeHtml(item.id)} · ${escapeHtml(item.path)}</li>`
+    ).join('');
 
     $('rawEnvironmentalHeat').textContent = pretty(raw);
     resultBox.innerHTML = `
-      <h3>Umweltwärme · Standortinformationen</h3>
-      <p><strong>Keine Eignungsbewertung:</strong> Die Treffer zeigen nur öffentlich verfügbare Standortinformationen und bestehende/erfasste Nutzungen im Umfeld.</p>
+      <div class="environment-heading-row">
+        <div>
+          <h3>Umweltwärme · Standortinformationen</h3>
+          <p><strong>Keine Eignungsbewertung:</strong> Die Daten zeigen bestehende/erfasste Nutzungen, Messstellen und rechtliche Standortinformationen. Sie ersetzen keine technische, hydrogeologische oder wasserrechtliche Prüfung.</p>
+        </div>
+        <a class="external-action-link" href="${escapeHtml(tirisMapUrl)}" target="_blank" rel="noopener noreferrer">Standort in TIRIS öffnen ↗</a>
+      </div>
       <div class="environment-grid">${cards || '<p>Keine passenden Feature-Layer im WASSER-Dienst gefunden.</p>'}</div>
-      <p class="geometry-note">Bei Sonden, Entnahmen, Rückgaben und Messstellen wird testweise ein Umkreis von ${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M} m geprüft. Schutz-/Schongebiete werden direkt am Standort abgefragt.</p>
+      <div class="environment-review-note">
+        <strong>Für die visuelle Kontrolle in tirisMaps:</strong>
+        <span>WASSER → Hydrogeologie → Erdwärmesonde sowie WASSER → Wasserversorgung / Grundwassernutzung. Der Positionslink öffnet den Standort; die Themen müssen in tirisMaps derzeit noch manuell aktiviert werden.</span>
+      </div>
+      <details class="environment-source-details">
+        <summary>Datenquellen & alle ausgewerteten TIRIS-Layer</summary>
+        <ul>${layerSourceList}</ul>
+      </details>
+      <p class="geometry-note">Anlagen und Grundwasser-Messstellen: ${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M} m Umkreis. Bewilligungspflicht sowie Schutz-/Schongebiete: direkter Flächentest am Standort. Bei maßstabsabhängigen Doppel-Layern wird nur der Detail-Layer ausgewertet.</p>
     `;
     resultBox.hidden = false;
     setStatus(status, candidates.length ? 'geprüft' : 'keine Layer', candidates.length ? 'success' : 'muted');
