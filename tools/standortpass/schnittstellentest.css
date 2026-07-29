@@ -1,5 +1,5 @@
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 01
+   STANDORTPASS – SCHNITTSTELLENTEST 02
    Ergänzt nur das bestehende Website-Design.
 ========================================================= */
 
@@ -517,6 +517,170 @@
 
 @media (max-width: 470px) {
   .metric-grid-test {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   PHASE 2 – Adresslayer + Geometrievergleich
+========================================================= */
+
+.subtest-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--line);
+}
+
+.subtest-block h3,
+.validation-heading h3 {
+  margin-bottom: 0.35rem;
+  font-size: 1.08rem;
+}
+
+.subtest-block p {
+  max-width: 590px;
+  margin-bottom: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.validation-block {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--line);
+}
+
+.validation-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.validation-input-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: var(--space-2) 0;
+}
+
+.validation-input-grid label {
+  position: relative;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.validation-input-grid label > span {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.validation-input-grid input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.55rem 2.6rem 0.55rem 0.7rem;
+  border: 1px solid rgba(12, 39, 36, 0.22);
+  border-radius: var(--radius-small);
+  font: inherit;
+  color: var(--text-dark);
+  background: var(--white);
+}
+
+.validation-input-grid input:focus {
+  border-color: var(--turquoise);
+  outline: 3px solid var(--turquoise-light);
+  outline-offset: 1px;
+}
+
+.validation-input-grid label > small {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 0.62rem;
+  color: var(--text-muted);
+}
+
+.comparison-result {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--berry-soft);
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.comparison-item {
+  padding: 0.7rem;
+  border-radius: var(--radius-small);
+  background: rgba(255,255,255,0.68);
+}
+
+.comparison-item span,
+.comparison-item strong,
+.comparison-item small {
+  display: block;
+}
+
+.comparison-item span {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.comparison-item strong {
+  margin-top: 0.15rem;
+  color: var(--berry-dark);
+}
+
+.comparison-item small {
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+}
+
+.layer-test-card {
+  margin-top: 0.7rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--white);
+}
+
+.layer-test-card h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.layer-fields {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .subtest-block,
+  .validation-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .validation-input-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 470px) {
+  .validation-input-grid,
+  .comparison-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,13 +1,14 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 01
+   STANDORTPASS – SCHNITTSTELLENTEST 02
 
    Testet bewusst nur:
    1) bestehendes BEV-Adressmodul
-   2) TIRIS BASIS Service-Metadaten
-   3) TIRIS Gebäude FeatureServer
-   4) bestehende TIRIS-DGM-Höhenfunktion
+   2) TIRIS BASIS + ausgewählte Adress-Layer
+   3) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
+   4) Vergleich gegen bekannte Gebäudeabmessungen
+   5) bestehende TIRIS-DGM-Höhenfunktion
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -21,6 +22,12 @@ const TIRIS_BASIS_URL =
 const TIRIS_BUILDING_QUERY_URL =
   'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/' +
   'arcgis/rest/services/Gebaeude/FeatureServer/0/query';
+
+const TIRIS_ADDRESS_TEST_LAYERS = [
+  { id: 13, label: 'Adressen · NS ADR_PT' },
+  { id: 19, label: 'AGWR Gebäudeadressen · Gebäude gr 5000' },
+  { id: 22, label: 'AGWR Grundstücksadressen · Adresse gr 5000' },
+];
 
 const BUILDING_FIELDS = [
   'OBJECTID',
@@ -242,11 +249,14 @@ function selectAddress(record) {
   $('rawAddress').textContent = pretty(record);
 
   $('loadBuildingButton').disabled = false;
+  $('loadBuildingAreaButton').disabled = false;
+  $('testTirisAddressLayersButton').disabled = false;
   $('loadTerrainButton').disabled = false;
   setStatus($('buildingStatus'), 'bereit');
   setStatus($('terrainStatus'), 'bereit');
 
   resetBuildingOutput();
+  resetTirisAddressLayerOutput();
   resetTerrainOutput();
 }
 
@@ -256,10 +266,13 @@ function clearAddress() {
   $('selectedAddressCard').hidden = true;
   $('rawAddress').textContent = '–';
   $('loadBuildingButton').disabled = true;
+  $('loadBuildingAreaButton').disabled = true;
+  $('testTirisAddressLayersButton').disabled = true;
   $('loadTerrainButton').disabled = true;
   setStatus($('buildingStatus'), 'Adresse fehlt');
   setStatus($('terrainStatus'), 'Adresse fehlt');
   resetBuildingOutput();
+  resetTirisAddressLayerOutput();
   resetTerrainOutput();
 }
 
@@ -310,10 +323,10 @@ async function testBasisService() {
 }
 
 /* ---------------------------------------------------------
-   3. TIRIS Gebäude FeatureServer
+   2b. TIRIS Adress-Layer: Felder + Standortabfrage
 --------------------------------------------------------- */
 
-function buildBuildingQueryUrl(address, radiusM) {
+function buildTirisPointQueryUrl(layerId, address, radiusM = 30) {
   const geometry = {
     x: address.longitude,
     y: address.latitude,
@@ -329,6 +342,98 @@ function buildBuildingQueryUrl(address, radiusM) {
     spatialRel: 'esriSpatialRelIntersects',
     distance: String(radiusM),
     units: 'esriSRUnit_Meter',
+    outFields: '*',
+    returnGeometry: 'true',
+    outSR: '4326',
+    returnZ: 'false',
+    returnM: 'false',
+  });
+
+  return `${TIRIS_BASIS_URL}/${layerId}/query?${params.toString()}`;
+}
+
+async function testTirisAddressLayers() {
+  if (!selectedAddress) return;
+
+  const resultBox = $('tirisAddressLayerResult');
+  resultBox.hidden = false;
+  resultBox.innerHTML = '<p class="field-status">Adress-Layer werden geprüft …</p>';
+
+  const allResults = [];
+  const cards = [];
+
+  for (const layer of TIRIS_ADDRESS_TEST_LAYERS) {
+    try {
+      const metadataUrl = `${TIRIS_BASIS_URL}/${layer.id}?f=pjson`;
+      const metadata = await fetchJson(metadataUrl);
+      const queryUrl = buildTirisPointQueryUrl(layer.id, selectedAddress, 30);
+      const query = await fetchJson(queryUrl);
+
+      const fields = Array.isArray(metadata.fields)
+        ? metadata.fields.map((field) => field.name)
+        : [];
+      const features = Array.isArray(query.features) ? query.features : [];
+      const firstAttrs = features[0]?.attributes ?? null;
+
+      allResults.push({
+        layer,
+        metadata_url: metadataUrl,
+        metadata,
+        query_url: queryUrl,
+        query,
+      });
+
+      cards.push(`
+        <div class="layer-test-card">
+          <h4>ID ${layer.id} · ${escapeHtml(metadata.name || layer.label)}</h4>
+          <p><strong>${features.length}</strong> Treffer innerhalb 30 m · Query ${metadata.capabilities?.includes('Query') || query ? 'möglich' : 'unklar'}</p>
+          <p class="layer-fields"><strong>Felder:</strong> ${escapeHtml(fields.join(', ') || 'keine Feldliste geliefert')}</p>
+          <p class="layer-fields"><strong>Erster Treffer:</strong> ${escapeHtml(firstAttrs ? JSON.stringify(firstAttrs) : '–')}</p>
+        </div>
+      `);
+    } catch (error) {
+      allResults.push({ layer, error: error.message });
+      cards.push(`
+        <div class="layer-test-card">
+          <h4>ID ${layer.id} · ${escapeHtml(layer.label)}</h4>
+          <p class="field-status">Fehler: ${escapeHtml(error.message)}</p>
+        </div>
+      `);
+    }
+  }
+
+  $('rawTirisAddresses').textContent = pretty(allResults);
+  resultBox.innerHTML = `
+    <h3>TIRIS-Adresslayer am gewählten Standort</h3>
+    <p>Entscheidend sind jetzt die Feldnamen und ob eine eindeutige Adresse/Adresskennung enthalten ist.</p>
+    ${cards.join('')}
+  `;
+}
+
+function resetTirisAddressLayerOutput() {
+  $('tirisAddressLayerResult').hidden = true;
+  $('tirisAddressLayerResult').innerHTML = '';
+  $('rawTirisAddresses').textContent = '–';
+}
+
+/* ---------------------------------------------------------
+   3. TIRIS Gebäude FeatureServer
+--------------------------------------------------------- */
+
+function buildBuildingQueryUrl(address, radiusM = null) {
+  const geometry = {
+    x: address.longitude,
+    y: address.latitude,
+    spatialReference: { wkid: 4326 },
+  };
+
+  const params = new URLSearchParams({
+    f: 'json',
+    where: '1=1',
+    geometry: JSON.stringify(geometry),
+    geometryType: 'esriGeometryPoint',
+    inSR: '4326',
+    spatialRel: 'esriSpatialRelIntersects',
     outFields: BUILDING_FIELDS,
     returnGeometry: 'true',
     outSR: '4326',
@@ -336,60 +441,154 @@ function buildBuildingQueryUrl(address, radiusM) {
     returnM: 'false',
   });
 
+  if (radiusM !== null && Number(radiusM) > 0) {
+    params.set('distance', String(radiusM));
+    params.set('units', 'esriSRUnit_Meter');
+  }
+
   return `${TIRIS_BUILDING_QUERY_URL}?${params.toString()}`;
+}
+
+async function fetchBuildingsAtRadius(radiusM = null) {
+  const url = buildBuildingQueryUrl(selectedAddress, radiusM);
+  const payload = await fetchJson(url);
+  return {
+    radius_m: radiusM,
+    request_url: url,
+    response: payload,
+    features: Array.isArray(payload.features) ? payload.features : [],
+  };
+}
+
+function prepareBuildingFeatures(features) {
+  return features
+    .map((feature) => ({
+      ...feature,
+      _distance: approximateFeatureDistance(feature, selectedAddress),
+    }))
+    .sort((a, b) => a._distance - b._distance);
+}
+
+function showBuildingFeatures(features, matchText) {
+  buildingFeatures = prepareBuildingFeatures(features);
+  renderBuildingCandidates();
+  drawBuildingGeometry(buildingFeatures);
+  $('buildingResults').hidden = false;
+  $('buildingMatchInfo').textContent = matchText;
+
+  setStatus(
+    $('buildingStatus'),
+    buildingFeatures.length === 1 ? '1 Gebäude' : `${buildingFeatures.length} Gebäude`,
+    'success'
+  );
+
+  if (buildingFeatures.length === 1) {
+    selectBuilding(buildingFeatures[0].attributes?.OBJECTID);
+  }
 }
 
 async function loadBuildings() {
   if (!selectedAddress) return;
 
   const status = $('buildingStatus');
-  const radius = Number($('buildingRadius').value) || 30;
-
-  setStatus(status, 'lädt …', 'working');
+  setStatus(status, 'ordnet zu …', 'working');
   resetBuildingOutput(false);
 
+  const attempts = [];
+
   try {
-    const url = buildBuildingQueryUrl(selectedAddress, radius);
-    const payload = await fetchJson(url);
-    $('rawBuildings').textContent = pretty({ request_url: url, response: payload });
+    const exact = await fetchBuildingsAtRadius(null);
+    attempts.push(exact);
 
-    buildingFeatures = Array.isArray(payload.features) ? payload.features : [];
-
-    if (buildingFeatures.length === 0) {
-      setStatus(status, 'kein Treffer', 'error');
-      $('buildingResults').hidden = false;
-      $('buildingCandidateList').innerHTML =
-        '<p class="field-status">Im gewählten Radius wurde kein Gebäude geliefert. Radius erhöhen oder Koordinate prüfen.</p>';
-      drawBuildingGeometry([]);
+    if (exact.features.length === 1) {
+      $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
+      showBuildingFeatures(
+        exact.features,
+        'Eindeutiger Treffer: Die BEV-Gebäudekoordinate liegt direkt im TIRIS-Dachpolygon.'
+      );
       return;
     }
 
-    buildingFeatures = buildingFeatures
-      .map((feature) => ({
-        ...feature,
-        _distance: approximateFeatureDistance(feature, selectedAddress),
-      }))
-      .sort((a, b) => a._distance - b._distance);
-
-    renderBuildingCandidates();
-    drawBuildingGeometry(buildingFeatures);
-    $('buildingResults').hidden = false;
-
-    setStatus(
-      status,
-      buildingFeatures.length === 1 ? '1 Gebäude' : `${buildingFeatures.length} Gebäude`,
-      'success'
-    );
-
-    if (buildingFeatures.length === 1) {
-      selectBuilding(buildingFeatures[0].attributes?.OBJECTID);
+    if (exact.features.length > 1) {
+      $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
+      showBuildingFeatures(
+        exact.features,
+        'Mehrere Polygone schneiden die BEV-Gebäudekoordinate. Bitte das passende Gebäude anklicken.'
+      );
+      return;
     }
+
+    const fallback15 = await fetchBuildingsAtRadius(15);
+    attempts.push(fallback15);
+
+    if (fallback15.features.length > 0) {
+      $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
+      showBuildingFeatures(
+        fallback15.features,
+        `Kein direkter Polygon-Treffer. ${fallback15.features.length} Kandidat(en) innerhalb 15 m – bitte prüfen.`
+      );
+      return;
+    }
+
+    const maxRadius = Number($('buildingRadius').value) || 30;
+    if (maxRadius > 15) {
+      const fallbackMax = await fetchBuildingsAtRadius(maxRadius);
+      attempts.push(fallbackMax);
+
+      if (fallbackMax.features.length > 0) {
+        $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
+        showBuildingFeatures(
+          fallbackMax.features,
+          `Kein Treffer bis 15 m. ${fallbackMax.features.length} Kandidat(en) innerhalb ${maxRadius} m – bitte prüfen.`
+        );
+        return;
+      }
+    }
+
+    $('rawBuildings').textContent = pretty({ mode: 'automatic', attempts });
+    setStatus(status, 'kein Treffer', 'error');
+    $('buildingResults').hidden = false;
+    $('buildingCandidateList').innerHTML =
+      '<p class="field-status">Kein Gebäude gefunden. Umgebung größer laden oder Koordinate prüfen.</p>';
+    drawBuildingGeometry([]);
+    $('buildingMatchInfo').textContent = 'Keine automatische Zuordnung möglich.';
   } catch (error) {
-    $('rawBuildings').textContent = pretty({ error: error.message });
+    $('rawBuildings').textContent = pretty({ error: error.message, attempts });
     setStatus(status, 'Fehler', 'error');
     $('buildingResults').hidden = false;
     $('buildingCandidateList').innerHTML =
       `<p class="field-status">Gebäudeabruf fehlgeschlagen: ${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function loadBuildingArea() {
+  if (!selectedAddress) return;
+
+  const status = $('buildingStatus');
+  const radius = Number($('buildingRadius').value) || 30;
+  setStatus(status, 'lädt Umgebung …', 'working');
+  resetBuildingOutput(false);
+
+  try {
+    const attempt = await fetchBuildingsAtRadius(radius);
+    $('rawBuildings').textContent = pretty({ mode: 'manual_area', attempts: [attempt] });
+
+    if (attempt.features.length === 0) {
+      setStatus(status, 'kein Treffer', 'error');
+      $('buildingResults').hidden = false;
+      $('buildingCandidateList').innerHTML =
+        `<p class="field-status">Im Umkreis von ${radius} m wurde kein Gebäude gefunden.</p>`;
+      drawBuildingGeometry([]);
+      return;
+    }
+
+    showBuildingFeatures(
+      attempt.features,
+      `Manuelle Umkreissuche: ${attempt.features.length} Gebäude innerhalb ${radius} m.`
+    );
+  } catch (error) {
+    $('rawBuildings').textContent = pretty({ error: error.message });
+    setStatus(status, 'Fehler', 'error');
   }
 }
 
@@ -459,6 +658,7 @@ function showSelectedBuilding(feature) {
   $('metricHeightMedian').textContent = formatLength(medianHeight, 1);
   $('metricHeightMax').textContent = formatLength(maxHeight, 1);
   $('metricStand').textContent = formatDate(attrs.STAND);
+  $('metricUpdated').textContent = formatDate(attrs.UPDATETIMESTAMP);
 
   const plausibleMedian =
     medianHeight !== null && medianHeight >= 2.5 && medianHeight <= 60;
@@ -482,6 +682,8 @@ function resetBuildingOutput(clearRaw = true) {
   $('selectedBuildingPanel').hidden = true;
   $('buildingCandidateList').innerHTML = '';
   $('buildingSvg').innerHTML = '';
+  $('buildingComparisonResult').hidden = true;
+  $('buildingMatchInfo').textContent = 'Zuerst wird geprüft, ob die BEV-Gebäudekoordinate direkt in einem TIRIS-Dachpolygon liegt.';
   if (clearRaw) $('rawBuildings').textContent = '–';
 }
 
@@ -603,6 +805,130 @@ function drawBuildingGeometry(features) {
 }
 
 /* ---------------------------------------------------------
+   3b. Vergleich gegen bekannte Gebäudeabmessungen
+--------------------------------------------------------- */
+
+function selectedBuildingFeature() {
+  return buildingFeatures.find(
+    (item) => String(item.attributes?.OBJECTID) === String(selectedBuildingId)
+  ) ?? null;
+}
+
+function percentDifference(actual, reference) {
+  if (!Number.isFinite(actual) || !Number.isFinite(reference) || reference === 0) {
+    return null;
+  }
+  return ((actual / reference) - 1) * 100;
+}
+
+function formatPercent(value) {
+  if (!Number.isFinite(value)) return '–';
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${number1.format(value)} %`;
+}
+
+function readOptionalNumber(id) {
+  const raw = String($(id).value ?? '').trim().replace(',', '.');
+  if (raw === '') return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function compareBuildingGeometry() {
+  const feature = selectedBuildingFeature();
+  if (!feature) return;
+
+  const attrs = feature.attributes ?? {};
+  const roofArea = finiteNumber(attrs.Shape__Area);
+  const roofPerimeter = finiteNumber(attrs.Shape__Length);
+  const medianHeight = finiteNumber(attrs.GEB_HOEHE_MEDIAN);
+
+  const knownFootprint = readOptionalNumber('knownFootprint');
+  const knownPerimeter = readOptionalNumber('knownPerimeter');
+  const knownHeight = readOptionalNumber('knownHeight');
+  const knownWallArea = readOptionalNumber('knownWallArea');
+  const knownOverhang = readOptionalNumber('knownOverhang');
+
+  const wallTest = roofPerimeter !== null && medianHeight !== null
+    ? roofPerimeter * medianHeight
+    : null;
+
+  // Rechteck-Näherung: Bei gleichmäßigem Überstand d wächst der Umfang um ca. 8*d.
+  const perimeterDerivedOverhang =
+    roofPerimeter !== null && knownPerimeter !== null && roofPerimeter > knownPerimeter
+      ? (roofPerimeter - knownPerimeter) / 8
+      : null;
+
+  const results = [
+    {
+      label: 'Dachprojektion vs. EG-/Grundfläche',
+      value: roofArea !== null && knownFootprint !== null
+        ? formatPercent(percentDifference(roofArea, knownFootprint))
+        : '–',
+      note: roofArea !== null && knownFootprint !== null
+        ? `${formatArea(roofArea)} gegenüber ${formatArea(knownFootprint, 0)}`
+        : 'Vergleichswert fehlt',
+    },
+    {
+      label: 'Dachumfang vs. Fassadenumfang',
+      value: roofPerimeter !== null && knownPerimeter !== null
+        ? formatPercent(percentDifference(roofPerimeter, knownPerimeter))
+        : '–',
+      note: roofPerimeter !== null && knownPerimeter !== null
+        ? `${formatLength(roofPerimeter)} gegenüber ${formatLength(knownPerimeter, 0)}`
+        : 'Vergleichswert fehlt',
+    },
+    {
+      label: 'Medianhöhe vs. bekannte Höhe',
+      value: medianHeight !== null && knownHeight !== null
+        ? formatPercent(percentDifference(medianHeight, knownHeight))
+        : '–',
+      note: medianHeight !== null && knownHeight !== null
+        ? `${formatLength(medianHeight)} gegenüber ${formatLength(knownHeight, 1)}`
+        : 'Vergleichswert fehlt',
+    },
+    {
+      label: 'Test-Außenwand vs. bekannte Außenwand',
+      value: wallTest !== null && knownWallArea !== null
+        ? formatPercent(percentDifference(wallTest, knownWallArea))
+        : '–',
+      note: wallTest !== null && knownWallArea !== null
+        ? `${formatArea(wallTest)} gegenüber ${formatArea(knownWallArea, 0)}`
+        : 'Vergleichswert fehlt',
+    },
+    {
+      label: 'Überstand aus Umfangsdifferenz',
+      value: perimeterDerivedOverhang !== null
+        ? `ca. ${number1.format(perimeterDerivedOverhang)} m`
+        : '–',
+      note: knownOverhang !== null && perimeterDerivedOverhang !== null
+        ? `bekannt grob ca. ${number1.format(knownOverhang)} m · nur Rechteck-Näherung (ΔUmfang ÷ 8)`
+        : 'nur bei ungefähr rechteckigem Gebäude sinnvoll',
+    },
+  ];
+
+  $('buildingComparisonResult').innerHTML = `
+    <div class="comparison-grid">
+      ${results.map((item) => `
+        <div class="comparison-item">
+          <span>${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.value)}</strong>
+          <small>${escapeHtml(item.note)}</small>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  $('buildingComparisonResult').hidden = false;
+}
+
+function clearValidation() {
+  ['knownFootprint', 'knownPerimeter', 'knownHeight', 'knownWallArea', 'knownOverhang']
+    .forEach((id) => { $(id).value = ''; });
+  $('buildingComparisonResult').hidden = true;
+  $('buildingComparisonResult').innerHTML = '';
+}
+
+/* ---------------------------------------------------------
    4. Bestehendes TIRIS-DGM-Modul
 --------------------------------------------------------- */
 
@@ -663,7 +989,11 @@ $('addressSearchInput').addEventListener('input', () => {
 
 $('clearAddressButton').addEventListener('click', clearAddress);
 $('testBasisButton').addEventListener('click', testBasisService);
+$('testTirisAddressLayersButton').addEventListener('click', testTirisAddressLayers);
 $('loadBuildingButton').addEventListener('click', loadBuildings);
+$('loadBuildingAreaButton').addEventListener('click', loadBuildingArea);
+$('compareBuildingButton').addEventListener('click', compareBuildingGeometry);
+$('clearValidationButton').addEventListener('click', clearValidation);
 $('loadTerrainButton').addEventListener('click', loadTerrain);
 
 $('year').textContent = String(new Date().getFullYear());

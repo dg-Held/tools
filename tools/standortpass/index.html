@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest | Tools für Energieberatung</title>
-  <meta name="description" content="Technische Testseite für gemeinsame Standortdaten, TIRIS-Gebäude und TIRIS-DGM.">
+  <title>Standortpass – Schnittstellentest 02 | Tools für Energieberatung</title>
+  <meta name="description" content="Technische Testseite für gemeinsame Standortdaten, TIRIS-Adressen, TIRIS-Gebäude und TIRIS-DGM.">
 
   <!-- Gemeinsames Design der Website -->
   <link rel="stylesheet" href="../../styles.css">
   <!-- Nur für diese Testseite -->
-  <link rel="stylesheet" href="schnittstellentest.css?v=1">
+  <link rel="stylesheet" href="schnittstellentest.css?v=2">
 </head>
 <body>
 
@@ -33,16 +33,17 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest</h1>
+      <h1>Schnittstellentest 02</h1>
       <p class="test-lead">
         Erste technische Prüfung der gemeinsamen Standortbasis. Diese Seite ist bewusst noch kein fertiger Standortpass.
       </p>
       <p class="test-disclaimer">
-        Phase 1: bestehende BEV-Adresssuche → TIRIS-Gebäude → TIRIS-DGM.
+        Phase 2: TIRIS-Adresslayer → automatische Gebäudezuordnung → Geometrievergleich → TIRIS-DGM.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
         <span><strong>Adresse</strong> bestehendes BEV-Modul</span>
+        <span><strong>TIRIS-Adresse</strong> ogd_basis</span>
         <span><strong>Gebäude</strong> TIRIS FeatureServer</span>
         <span><strong>Höhe</strong> bestehendes TIRIS-DGM-Modul</span>
       </div>
@@ -93,6 +94,18 @@
       </div>
 
       <div id="basisResult" class="service-result" hidden></div>
+
+      <div class="subtest-block">
+        <div>
+          <span class="mini-label">2b · Adress-Layer</span>
+          <h3>Felder und Standortabfrage testen</h3>
+          <p>
+            Für die drei interessanten Punktlayer werden Metadaten und Treffer rund um die ausgewählte BEV-Gebäudekoordinate abgefragt. Damit sehen wir, ob TIRIS später als Live-Adressquelle geeignet ist.
+          </p>
+        </div>
+        <button class="secondary-button" id="testTirisAddressLayersButton" type="button" disabled>TIRIS-Adresslayer prüfen</button>
+      </div>
+      <div id="tirisAddressLayerResult" class="service-result" hidden></div>
     </section>
 
     <section class="container test-panel" aria-labelledby="building-title">
@@ -108,9 +121,10 @@
       </div>
 
       <div class="action-row">
-        <button class="primary-button" id="loadBuildingButton" type="button" disabled>Gebäude prüfen</button>
+        <button class="primary-button" id="loadBuildingButton" type="button" disabled>Gebäude automatisch zuordnen</button>
+        <button class="quiet-button" id="loadBuildingAreaButton" type="button" disabled>Umgebung laden</button>
         <label class="compact-field">
-          <span>Suchradius</span>
+          <span>Umkreis</span>
           <select id="buildingRadius">
             <option value="15">15 m</option>
             <option value="30" selected>30 m</option>
@@ -118,6 +132,7 @@
           </select>
         </label>
       </div>
+      <p class="field-status" id="buildingMatchInfo">Zuerst wird geprüft, ob die BEV-Gebäudekoordinate direkt in einem TIRIS-Dachpolygon liegt.</p>
 
       <div class="building-layout" id="buildingResults" hidden>
         <div>
@@ -149,7 +164,8 @@
           <div class="metric"><span>Umfang roh</span><strong id="metricLengthRaw">–</strong><small>Shape__Length</small></div>
           <div class="metric"><span>Höhe Median</span><strong id="metricHeightMedian">–</strong><small>noch nicht als Fassadenhöhe freigegeben</small></div>
           <div class="metric"><span>Höhe Maximum</span><strong id="metricHeightMax">–</strong><small>Vergleichswert</small></div>
-          <div class="metric"><span>Datenstand</span><strong id="metricStand">–</strong><small>TIRIS-Feld STAND</small></div>
+          <div class="metric"><span>Datenstand Objekt</span><strong id="metricStand">–</strong><small>TIRIS-Feld STAND</small></div>
+          <div class="metric"><span>Datensatz aktualisiert</span><strong id="metricUpdated">–</strong><small>UPDATETIMESTAMP · nicht mit Erfassungsstand verwechseln</small></div>
         </div>
 
         <div class="derived-preview">
@@ -160,6 +176,27 @@
           <p>
             Brutto-Außenwand = Rohumfang × Medianhöhe, nur wenn die Medianhöhe plausibel ist. Diese Höhenlogik wird erst nach Gebäudevergleichen fachlich festgelegt.
           </p>
+        </div>
+
+        <div class="validation-block">
+          <div class="validation-heading">
+            <div>
+              <span class="mini-label">Vergleich mit bekanntem Gebäude</span>
+              <h3>Geometrie validieren</h3>
+            </div>
+            <button class="quiet-button" id="clearValidationButton" type="button">Werte leeren</button>
+          </div>
+          <p class="field-status">Optional für unsere Testgebäude. Diese Angaben gehören nicht zum späteren Kundenformular.</p>
+
+          <div class="validation-input-grid">
+            <label><span>Grund-/EG-Fläche</span><input id="knownFootprint" type="number" min="0" step="1" placeholder="z. B. 205"><small>m²</small></label>
+            <label><span>Fassadenumfang</span><input id="knownPerimeter" type="number" min="0" step="1" placeholder="z. B. 58"><small>m</small></label>
+            <label><span>mittlere Gebäudehöhe</span><input id="knownHeight" type="number" min="0" step="0.5" placeholder="z. B. 9,5"><small>m</small></label>
+            <label><span>Außenwand brutto</span><input id="knownWallArea" type="number" min="0" step="1" placeholder="z. B. 550"><small>m²</small></label>
+            <label><span>Dachüberstand grob</span><input id="knownOverhang" type="number" min="0" step="0.1" placeholder="z. B. 1,4"><small>m</small></label>
+          </div>
+          <button class="secondary-button" id="compareBuildingButton" type="button">Vergleich berechnen</button>
+          <div id="buildingComparisonResult" class="comparison-result" hidden></div>
         </div>
       </article>
     </section>
@@ -198,6 +235,7 @@
         <div class="raw-grid">
           <div><h3>Adresse</h3><pre id="rawAddress">–</pre></div>
           <div><h3>TIRIS BASIS</h3><pre id="rawBasis">–</pre></div>
+          <div><h3>TIRIS Adress-Layer</h3><pre id="rawTirisAddresses">–</pre></div>
           <div><h3>Gebäude</h3><pre id="rawBuildings">–</pre></div>
           <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
         </div>
@@ -224,6 +262,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=1"></script>
+  <script src="schnittstellentest.js?v=2"></script>
 </body>
 </html>
