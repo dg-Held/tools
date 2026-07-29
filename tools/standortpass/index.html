@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 07 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 08 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=6">
+  <link rel="stylesheet" href="schnittstellentest.css?v=8">
 </head>
 <body>
 
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 07</h1>
+      <h1>Schnittstellentest 08</h1>
       <p class="test-lead">
-        Die gemeinsame Adressbasis funktioniert. Jetzt prüfen wir die erste echte Standortgrafik: ein eigenes Sonnenbahn- und Horizontdiagramm aus GeoLand/voibos-Daten.
+        Solar wird farblich feinjustiert. Parallel prüfen wir den nächsten Standortblock: Umweltwärme-relevante TIRIS-Wasserinformationen rund um die gewählte Adresse.
       </p>
       <p class="test-disclaimer">
-        Phase 6: TIRIS-Live-Adresse bleibt Primärquelle. GeoLand/voibos liefert nun die numerische Grundlage für ein eigenes SVG mit Gelände-, Oberflächenhorizont und drei Sonnenbahnen. Der BEV-Bestand bleibt vorerst nur als Vergleich und Fallback erhalten.
+        Phase 8: TIRIS-Live-Adresse bleibt Primärquelle. Solar nutzt weiterhin GeoLand/voibos; neu werden Erdwärmesonden, Grundwassernutzungen, Grundwasser-Messstellen und Schutz-/Schongebiete aus dem öffentlichen TIRIS-WASSER-Dienst getestet. Der BEV-Bestand bleibt nur als Vergleich und Fallback erhalten.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -47,7 +47,8 @@
         <span><strong>Bild</strong> TIRIS Orthofoto WMS</span>
         <span><strong>Höhe</strong> bestehendes TIRIS-DGM-Modul</span>
         <span><strong>Solar</strong> GeoLand / voibos</span>
-        <span><strong>Wärme</strong> TIRIS-Dienstsuche</span>
+        <span><strong>Wärmenetz</strong> TIRIS-Dienstsuche</span>
+        <span><strong>Umweltwärme</strong> TIRIS WASSER</span>
       </div>
     </section>
 
@@ -340,7 +341,7 @@
           <p class="eyebrow">6 · Wärmeversorgung</p>
           <h2 id="heat-title">Wärmenetz-Schnittstelle entdecken</h2>
           <p>
-            Der Wärmenetzkataster in tirisMaps zeigt Anschlussgebiete, Betreiber und Energieträger. In diesem Schritt suchen wir zunächst systematisch nach einem öffentlich abfragbaren Layer, bevor wir eine Standortbewertung programmieren.
+            Der Wärmenetzkataster in tirisMaps zeigt Anschlussgebiete, Betreiber und Energieträger. Im öffentlichen OGD-REST-Angebot haben wir bisher jedoch keinen eindeutig passenden Wärmenetz-Layer gefunden. Die Dienstsuche bleibt zur Dokumentation erhalten.
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="heatDiscoveryStatus">nicht geprüft</span>
@@ -348,10 +349,30 @@
 
       <div class="action-row">
         <button class="primary-button" id="discoverHeatButton" type="button">TIRIS-Wärmedienste suchen</button>
-        <span class="action-note">Prüft Service_Public sowie die bekannten OGD-Dienste Infrastruktur und Raumordnung.</span>
+        <span class="action-note">Kontrolltest der öffentlich sichtbaren Dienste; noch keine fachliche Wärmenetzbewertung.</span>
       </div>
 
       <div class="service-result" id="heatDiscoveryResult" hidden></div>
+    </section>
+
+    <section class="container test-panel" aria-labelledby="environmental-heat-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">7 · Umweltwärme</p>
+          <h2 id="environmental-heat-title">Wasser & Untergrund – Standortinformationen</h2>
+          <p>
+            Der öffentliche TIRIS-Dienst WASSER enthält unter anderem Erdwärmesonden, Grundwassernutzungen, Grundwasser-Messstellen sowie Schutz- und Schongebiete. Wir prüfen diese Informationen bewusst nur als Standortkontext – nicht als Eignungsnachweis für eine Wärmepumpe.
+          </p>
+        </div>
+        <span class="status-chip status-chip--muted" id="environmentalHeatStatus">Adresse fehlt</span>
+      </div>
+
+      <div class="action-row">
+        <button class="primary-button" id="testEnvironmentalHeatButton" type="button" disabled>Umweltwärme-Daten prüfen</button>
+        <span class="action-note">Test: nahe Sonden/Nutzungen/Messstellen im 500-m-Umkreis; Schutz-/Schongebiete direkt am Standort.</span>
+      </div>
+
+      <div class="service-result" id="environmentalHeatResult" hidden></div>
     </section>
 
     <section class="container technical-panel">
@@ -370,6 +391,7 @@
           <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
           <div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
           <div><h3>TIRIS Wärmenetz-Suche</h3><pre id="rawHeatDiscovery">–</pre></div>
+          <div><h3>TIRIS Umweltwärme / WASSER</h3><pre id="rawEnvironmentalHeat">–</pre></div>
         </div>
       </details>
     </section>
@@ -394,6 +416,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=7"></script>
+  <script src="schnittstellentest.js?v=8"></script>
 </body>
 </html>

@@ -1053,16 +1053,23 @@
 }
 
 .solar-sun-path--summer {
-  stroke: var(--berry);
+  stroke: #b3446c;
+}
+
+.solar-sun-path--equinox-outline {
+  stroke: rgba(111, 42, 67, 0.52);
+  stroke-width: 5.2;
+  stroke-dasharray: 8 5;
 }
 
 .solar-sun-path--equinox {
-  stroke: #c8872c;
+  stroke: #f1dae2;
+  stroke-width: 3.4;
   stroke-dasharray: 8 5;
 }
 
 .solar-sun-path--winter {
-  stroke: #5f73a5;
+  stroke: #6f2a43;
   stroke-dasharray: 4 5;
 }
 
@@ -1114,9 +1121,9 @@
   border-top: 2px solid currentColor;
 }
 
-.legend-line--summer { color: var(--berry); }
-.legend-line--equinox { color: #c8872c; border-top-style: dashed; }
-.legend-line--winter { color: #5f73a5; border-top-style: dashed; }
+.legend-line--summer { color: #b3446c; }
+.legend-line--equinox { color: #f1dae2; border-top-style: dashed; filter: drop-shadow(0 0 0.6px #6f2a43); }
+.legend-line--winter { color: #6f2a43; border-top-style: dashed; }
 
 .solar-test-details {
   margin-top: var(--space-2);
@@ -1152,7 +1159,7 @@
 
 
 /* =========================================================
-   TEST 07 – Solar-Feinschliff + Wärmenetz-Discovery
+   TEST 08 – Solarfarben + Umweltwärme
 ========================================================= */
 .solar-detail-controls {
   margin: -0.25rem 0 var(--space-3);
@@ -1260,6 +1267,68 @@
 @media (max-width: 680px) {
   .discovery-summary,
   .discovery-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Umweltwärme – Test 08 */
+.environment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.environment-card {
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-medium);
+  background: var(--page-background);
+}
+
+.environment-card > span,
+.environment-card > strong,
+.environment-card > small {
+  display: block;
+}
+
+.environment-card > span {
+  margin-bottom: 0.25rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--turquoise-dark);
+}
+
+.environment-card > strong {
+  color: var(--text-dark);
+}
+
+.environment-card > small {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+}
+
+.environment-card details {
+  margin-top: 0.65rem;
+}
+
+.environment-card summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.environment-card ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 660px) {
+  .environment-grid {
     grid-template-columns: 1fr;
   }
 }

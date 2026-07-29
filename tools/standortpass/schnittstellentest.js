@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 07
+   STANDORTPASS – SCHNITTSTELLENTEST 08
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -12,6 +12,7 @@
    6) bestehende TIRIS-DGM-Höhenfunktion
    7) GeoLand/voibos Sonnenstand + nutzerfreundliches SVG aus DTM/DSM und Sonnenbahnen
    8) öffentliche TIRIS-Dienste auf Wärmenetz-/Versorgungslayer prüfen
+   9) TIRIS WASSER: Umweltwärme-relevante Standortinformationen dynamisch entdecken und punktbezogen testen
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -53,6 +54,19 @@ const HEAT_KEYWORDS = [
   'wärme', 'waerme', 'fernwärme', 'fernwaerme', 'nahwärme', 'nahwaerme',
   'anergie', 'heiz', 'energie', 'versorgung', 'biomasse',
 ];
+
+const TIRIS_WATER_URL =
+  'https://gis.tirol.gv.at/arcgis/rest/services/' +
+  'Service_Public/ogd_wasser/MapServer';
+
+const ENVIRONMENTAL_HEAT_KEYWORDS = [
+  'erdwärmesonde', 'erdwaermesonde',
+  'grundwasserentnahme', 'grundwasserrückgabe', 'grundwasserrueckgabe',
+  'grundwassersonde', 'schutz', 'schongebiet',
+  'messstelle - grundwasser', 'messort grundwasser',
+];
+
+const ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M = 500;
 
 const TIRIS_LIVE_ADDRESS_LAYERS = [
   { id: 19, kind: 'building', label: 'AGWR Gebäudeadresse' },
@@ -703,14 +717,17 @@ function selectAddress(record, provider = 'bev') {
   $('testTirisAddressLayersButton').disabled = false;
   $('loadTerrainButton').disabled = false;
   $('loadSolarButton').disabled = false;
+  $('testEnvironmentalHeatButton').disabled = false;
   setStatus($('buildingStatus'), 'bereit');
   setStatus($('terrainStatus'), 'bereit');
   setStatus($('solarStatus'), 'bereit');
+  setStatus($('environmentalHeatStatus'), 'bereit');
 
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
   resetTerrainOutput();
   resetSolarOutput();
+  resetEnvironmentalHeatOutput();
 
   loadKatastralgemeinde(record);
   compareSelectedAddressWithBev(record);
@@ -734,15 +751,18 @@ function clearAddress() {
   $('testTirisAddressLayersButton').disabled = true;
   $('loadTerrainButton').disabled = true;
   $('loadSolarButton').disabled = true;
+  $('testEnvironmentalHeatButton').disabled = true;
   setStatus($('buildingStatus'), 'Adresse fehlt');
   setStatus($('terrainStatus'), 'Adresse fehlt');
   setStatus($('solarStatus'), 'Adresse fehlt');
+  setStatus($('environmentalHeatStatus'), 'Adresse fehlt');
   setStatus($('tirisLiveAddressStatus'), 'nicht geprüft');
   $('tirisParsedAddress').textContent = 'Noch keine Adresse zerlegt.';
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
   resetTerrainOutput();
   resetSolarOutput();
+  resetEnvironmentalHeatOutput();
 }
 
 /* ---------------------------------------------------------
@@ -1792,6 +1812,7 @@ function drawSolarChart(payload, observerInfo) {
   appendSvgPath(svg, linePathFromHorizon(visualHorizon, 'hoehenwinkelDSM_plot', project), 'solar-horizon-line solar-horizon-line--dsm');
 
   appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelSommersonnwende', project, 0), 'solar-sun-path solar-sun-path--summer');
+  appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelAbfragedatum', project, 0), 'solar-sun-path solar-sun-path--equinox-outline');
   appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelAbfragedatum', project, 0), 'solar-sun-path solar-sun-path--equinox');
   appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelWintersonnwende', project, 0), 'solar-sun-path solar-sun-path--winter');
 
@@ -2029,6 +2050,228 @@ async function discoverHeatServices() {
 }
 
 /* ---------------------------------------------------------
+   7. Umweltwärme – TIRIS WASSER dynamisch prüfen
+--------------------------------------------------------- */
+
+function matchesEnvironmentalHeatKeyword(value) {
+  const text = normalizedDiscoveryText(value);
+  return ENVIRONMENTAL_HEAT_KEYWORDS.some((keyword) =>
+    text.includes(normalizedDiscoveryText(keyword))
+  );
+}
+
+function environmentalHeatLayerKind(layer) {
+  const name = normalizedDiscoveryText(layer?.name);
+  if (name.includes('erdwarmesonde') || name.includes('erdwaermesonde')) return 'Erdwärmesonden';
+  if (name.includes('grundwasserentnahme')) return 'Grundwasserentnahmen';
+  if (name.includes('grundwasserruckgabe') || name.includes('grundwasserrueckgabe')) return 'Grundwasserrückgaben';
+  if (name.includes('grundwassersonde')) return 'Grundwassersonden';
+  if (name.includes('schutz') || name.includes('schongebiet')) return 'Schutz-/Schongebiete';
+  if (name.includes('messstelle - grundwasser') || name.includes('messort grundwasser')) return 'Grundwasser-Messstellen';
+  return 'Weitere Wasserinformation';
+}
+
+function buildLayerParentPath(layers, layer) {
+  const byId = new Map(layers.map((item) => [Number(item.id), item]));
+  const parts = [layer.name];
+  let parentId = Number(layer.parentLayerId);
+  const visited = new Set();
+  while (Number.isFinite(parentId) && parentId >= 0 && !visited.has(parentId)) {
+    visited.add(parentId);
+    const parent = byId.get(parentId);
+    if (!parent) break;
+    parts.unshift(parent.name);
+    parentId = Number(parent.parentLayerId);
+  }
+  return parts.join(' › ');
+}
+
+function environmentalHeatCandidateLayers(payload) {
+  const layers = Array.isArray(payload?.layers) ? payload.layers : [];
+  return layers
+    .filter((layer) => layer?.type === 'Feature Layer')
+    .filter((layer) => matchesEnvironmentalHeatKeyword(layer?.name))
+    .map((layer) => ({
+      ...layer,
+      path: buildLayerParentPath(layers, layer),
+      kind: environmentalHeatLayerKind(layer),
+    }));
+}
+
+function buildPointQueryUrl(baseUrl, layer, address, distanceM) {
+  const point = {
+    x: address.longitude,
+    y: address.latitude,
+    spatialReference: { wkid: 4326 },
+  };
+  const params = new URLSearchParams({
+    f: 'json',
+    where: '1=1',
+    geometry: JSON.stringify(point),
+    geometryType: 'esriGeometryPoint',
+    inSR: '4326',
+    spatialRel: 'esriSpatialRelIntersects',
+    outFields: '*',
+    returnGeometry: 'true',
+    outSR: '4326',
+    returnZ: 'false',
+    returnM: 'false',
+    resultRecordCount: '100',
+  });
+  if (distanceM > 0) {
+    params.set('distance', String(distanceM));
+    params.set('units', 'esriSRUnit_Meter');
+  }
+  return `${baseUrl}/${layer.id}/query?${params.toString()}`;
+}
+
+function pointFeatureDistanceM(address, feature) {
+  const x = finiteNumber(feature?.geometry?.x);
+  const y = finiteNumber(feature?.geometry?.y);
+  if (x === null || y === null) return null;
+  return haversineMeters(address.latitude, address.longitude, y, x);
+}
+
+function summarizeEnvironmentalLayer(layer, response) {
+  const features = Array.isArray(response?.features) ? response.features : [];
+  const pointDistances = features
+    .map((feature) => pointFeatureDistanceM(selectedAddress, feature))
+    .filter((value) => Number.isFinite(value));
+  const nearest = pointDistances.length ? Math.min(...pointDistances) : null;
+  return {
+    id: layer.id,
+    name: layer.name,
+    path: layer.path,
+    kind: layer.kind,
+    geometryType: layer.geometryType ?? null,
+    count: features.length,
+    nearest_m: nearest,
+    first_attributes: features[0]?.attributes ?? null,
+  };
+}
+
+async function testEnvironmentalHeat() {
+  if (!selectedAddress) return;
+
+  const status = $('environmentalHeatStatus');
+  const resultBox = $('environmentalHeatResult');
+  setStatus(status, 'prüft …', 'working');
+  resultBox.hidden = true;
+  resultBox.innerHTML = '';
+
+  const raw = {
+    tested_at: new Date().toISOString(),
+    address: {
+      label: selectedAddress.label,
+      latitude: selectedAddress.latitude,
+      longitude: selectedAddress.longitude,
+    },
+    service_url: TIRIS_WATER_URL,
+    service: null,
+    layers: [],
+  };
+
+  try {
+    const service = await fetchJson(`${TIRIS_WATER_URL}?f=pjson`);
+    raw.service = service;
+    const candidates = environmentalHeatCandidateLayers(service);
+
+    for (const layer of candidates.slice(0, 14)) {
+      const isProtection = layer.kind === 'Schutz-/Schongebiete';
+      const distanceM = isProtection ? 0 : ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M;
+      const queryUrl = buildPointQueryUrl(TIRIS_WATER_URL, layer, selectedAddress, distanceM);
+      try {
+        const response = await fetchJson(queryUrl);
+        raw.layers.push({
+          layer: {
+            id: layer.id,
+            name: layer.name,
+            path: layer.path,
+            kind: layer.kind,
+            geometryType: layer.geometryType ?? null,
+          },
+          query: isProtection ? 'Standort liegt im Gebiet?' : `Umkreis ${distanceM} m`,
+          query_url: queryUrl,
+          response,
+          summary: summarizeEnvironmentalLayer(layer, response),
+        });
+      } catch (error) {
+        raw.layers.push({
+          layer: {
+            id: layer.id,
+            name: layer.name,
+            path: layer.path,
+            kind: layer.kind,
+            geometryType: layer.geometryType ?? null,
+          },
+          query: isProtection ? 'Standort liegt im Gebiet?' : `Umkreis ${distanceM} m`,
+          query_url: queryUrl,
+          error: error.message,
+        });
+      }
+    }
+
+    const summaries = raw.layers
+      .filter((entry) => entry.summary)
+      .map((entry) => entry.summary);
+
+    const grouped = new Map();
+    summaries.forEach((item) => {
+      if (!grouped.has(item.kind)) grouped.set(item.kind, []);
+      grouped.get(item.kind).push(item);
+    });
+
+    const cards = [...grouped.entries()].map(([kind, items]) => {
+      const total = items.reduce((sum, item) => sum + item.count, 0);
+      const nearestValues = items
+        .map((item) => item.nearest_m)
+        .filter((value) => Number.isFinite(value));
+      const nearest = nearestValues.length ? Math.min(...nearestValues) : null;
+      const directArea = kind === 'Schutz-/Schongebiete';
+      const headline = directArea
+        ? (total > 0 ? 'Standort liegt in ausgewiesenem Gebiet' : 'kein direkter Flächentreffer')
+        : `${number0.format(total)} Treffer im Testumkreis`;
+      const note = nearest !== null
+        ? `nächster Punkt ca. ${number0.format(nearest)} m entfernt`
+        : directArea
+          ? 'Punkt-in-Polygon-Abfrage'
+          : `${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M} m Umkreis`;
+      return `
+        <article class="environment-card">
+          <span>${escapeHtml(kind)}</span>
+          <strong>${escapeHtml(headline)}</strong>
+          <small>${escapeHtml(note)}</small>
+          <details>
+            <summary>geprüfte Layer</summary>
+            <ul>${items.map((item) => `<li>ID ${escapeHtml(item.id)} · ${escapeHtml(item.path)} · ${number0.format(item.count)} Treffer</li>`).join('')}</ul>
+          </details>
+        </article>`;
+    }).join('');
+
+    $('rawEnvironmentalHeat').textContent = pretty(raw);
+    resultBox.innerHTML = `
+      <h3>Umweltwärme · Standortinformationen</h3>
+      <p><strong>Keine Eignungsbewertung:</strong> Die Treffer zeigen nur öffentlich verfügbare Standortinformationen und bestehende/erfasste Nutzungen im Umfeld.</p>
+      <div class="environment-grid">${cards || '<p>Keine passenden Feature-Layer im WASSER-Dienst gefunden.</p>'}</div>
+      <p class="geometry-note">Bei Sonden, Entnahmen, Rückgaben und Messstellen wird testweise ein Umkreis von ${ENVIRONMENTAL_HEAT_NEARBY_RADIUS_M} m geprüft. Schutz-/Schongebiete werden direkt am Standort abgefragt.</p>
+    `;
+    resultBox.hidden = false;
+    setStatus(status, candidates.length ? 'geprüft' : 'keine Layer', candidates.length ? 'success' : 'muted');
+  } catch (error) {
+    $('rawEnvironmentalHeat').textContent = pretty({ error: error.message, partial: raw });
+    resultBox.innerHTML = `<h3>Umweltwärme-Test fehlgeschlagen</h3><p>${escapeHtml(error.message)}</p>`;
+    resultBox.hidden = false;
+    setStatus(status, 'Fehler', 'error');
+  }
+}
+
+function resetEnvironmentalHeatOutput(clearRaw = true) {
+  $('environmentalHeatResult').hidden = true;
+  $('environmentalHeatResult').innerHTML = '';
+  if (clearRaw) $('rawEnvironmentalHeat').textContent = '–';
+}
+
+/* ---------------------------------------------------------
    Hilfsfunktionen / Events
 --------------------------------------------------------- */
 
@@ -2066,6 +2309,7 @@ $('clearValidationButton').addEventListener('click', clearValidation);
 $('loadTerrainButton').addEventListener('click', loadTerrain);
 $('loadSolarButton').addEventListener('click', loadSolar);
 $('discoverHeatButton').addEventListener('click', discoverHeatServices);
+$('testEnvironmentalHeatButton').addEventListener('click', testEnvironmentalHeat);
 $('solarObserverMode').addEventListener('change', () => {
   if (!$('solarChartCard').hidden || !$('solarResult').hidden) loadSolar();
 });

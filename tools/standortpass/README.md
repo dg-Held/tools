@@ -1,48 +1,73 @@
-# Standortpass – Schnittstellentest 07
+# Standortpass – Schnittstellentest 08
 
-## Ziel
+Test 08 lässt die inzwischen stabile Basis unverändert und arbeitet an zwei Punkten parallel weiter:
 
-Test 07 macht aus dem erfolgreichen Solar-Prototypen eine verständlichere Beratungsdarstellung und startet parallel die Suche nach einer öffentlichen TIRIS-Schnittstelle für den Wärmenetzkataster.
+1. Solar-Darstellung farblich an das gemeinsame Designsystem anpassen.
+2. Umweltwärme-relevante Standortinformationen aus dem öffentlichen TIRIS-WASSER-Dienst testen.
 
-## Änderungen gegenüber Test 06
+## Solar – Feinjustierung
 
-1. **Solar-Bezugshöhe**
-   - Mit gewähltem Gebäude: TIRIS `GEB_HOEHE_MEDIAN` ist der Standard.
-   - Ohne Gebäude oder ohne plausiblen Höhenwert: automatisch 2 m über Gelände.
-   - Die 2-m-Ansicht bleibt bei Gebäuden nur als eingeklappter Detailvergleich verfügbar.
+Die Horizontdarstellung bleibt unverändert:
 
-2. **DTM / DSM nutzerfreundlicher**
-   - DTM = Digital Terrain Model = DGM / digitales Geländemodell.
-   - DSM = Digital Surface Model = DOM / digitales Oberflächenmodell.
-   - Darstellung: Grau = Gelände / Geländeverschattung.
-   - Türkis = nur die zusätzliche Verschattung zwischen DTM und DSM, typischerweise Gebäude und Vegetation.
-   - Die vollständigen DTM- und DSM-Horizontlinien werden weiterhin gezeichnet.
-   - Minimale numerische Fälle `DSM < DTM` werden nur für die Grafik auf DTM begrenzt; Rohdaten bleiben unverändert.
+- Gelände / Fernverschattung: Grau
+- zusätzliche Verschattung durch Gebäude / Vegetation: Türkis
 
-3. **Sonnenbahnen**
-   - Sommer, Frühling/Herbst und Winter bleiben in dieser Reihenfolge übereinander.
-   - Verschattungsfarben sind nun klar von den Sonnenbahnfarben getrennt.
+Die Sonnenbahnen verwenden nun die Berry-Farbfamilie:
 
-4. **Wärmeversorgung – Discovery**
-   - Neuer Abschnitt `6 · Wärmeversorgung`.
-   - Prüft den öffentlichen ArcGIS-Ordner `Service_Public`.
-   - Prüft zusätzlich die bekannten Dienste `ogd_infrastruktur` und `ogd_raumordnung`.
-   - Sucht nach Layer-/Dienstnamen mit Wärme-, Energie- oder Versorgungsbezug.
-   - Noch keine Anschlussgebiets-Bewertung: zuerst muss der richtige öffentliche Layer eindeutig identifiziert werden.
+- Sommer: `#b3446c`
+- Frühling / Herbst: `#f1dae2`
+- Winter: `#6f2a43`
 
-## Test
+Da Berry Light auf hellem Hintergrund sehr hell ist, erhält die mittlere Sonnenbahn eine dezente dunklere Unterkontur. Der eigentliche Farbwert bleibt `#f1dae2`.
 
-1. Seite wie bisher über GitHub Pages öffnen.
-2. Adresse wählen und Gebäude automatisch zuordnen.
-3. Solarprofil laden. Standard muss bei vorhandenem Gebäude die Medianhöhe verwenden.
-4. Prüfen, ob die Grafik intuitiv lesbar ist:
-   - graue Fläche = Gelände,
-   - transparente türkise Zusatzfläche = Gebäude / Vegetation,
-   - Sonnenbahnen klar davon getrennt.
-5. Optional `Detailvergleich: Bezugshöhe ändern` öffnen und 2 m testen.
-6. Im Abschnitt Wärmeversorgung `TIRIS-Wärmedienste suchen` drücken.
-7. Bei Treffern bitte die sichtbaren Layernamen sowie den Rohdatenblock `TIRIS Wärmenetz-Suche` kopieren.
+Die automatische Bezugshöhe bleibt:
 
-## Hinweis zu „Fernverschattung“
+- mit erkanntem Gebäude: TIRIS `GEB_HOEHE_MEDIAN`
+- ohne geeignete Gebäudehöhe: 2 m über Gelände
 
-Der Begriff ist für Privatpersonen anschaulich, fachlich ist DTM aber der **Geländehorizont**. Auch ein naher Hang kann Teil davon sein. Deshalb verwenden wir in Erklärungen bevorzugt `Gelände / Fernverschattung`, technisch bleibt `DTM/DGM`.
+Die 2-m-Ansicht bleibt bei vorhandener Gebäudegeometrie nur im Detailvergleich verfügbar.
+
+## Wärmenetz
+
+Der Wärmenetzkataster ist in tirisMaps unter Energie vorhanden. In den bisher geprüften öffentlichen OGD-REST-Diensten wurde jedoch kein eindeutig passender Anschlussgebiets-Layer gefunden.
+
+Der bisherige Discovery-Test bleibt erhalten. Bis eine öffentliche Schnittstelle bestätigt ist, wird daraus keine automatische fachliche Aussage zur Fernwärmeverfügbarkeit erzeugt.
+
+## Umweltwärme – neuer Test
+
+Quelle:
+
+`Service_Public/ogd_wasser/MapServer`
+
+Der Test liest die Servicebeschreibung live und sucht dynamisch nach passenden Feature-Layern, insbesondere:
+
+- Erdwärmesonden
+- Grundwasserentnahmen
+- Grundwasserrückgaben
+- Grundwassersonden
+- Grundwasser-Messstellen
+- Schutz- und Schongebiete
+
+Danach werden nur kleine standortbezogene Abfragen durchgeführt:
+
+- Punkt-/Anlageninformationen: 500 m Testumkreis
+- Schutz-/Schongebiete: direkter Punkt-in-Polygon-Test am Standort
+
+Wichtig: Diese Ergebnisse sind **keine Eignungsbewertung** für Erdsonden- oder Grundwasser-Wärmepumpen. Vorhandene Anlagen oder Nutzungen im Umfeld beweisen keine technische oder rechtliche Eignung des eigenen Grundstücks.
+
+## Installation
+
+Die vier Dateien in `tools/standortpass/` ersetzen:
+
+- `index.html`
+- `schnittstellentest.css`
+- `schnittstellentest.js`
+- `README.md`
+
+`tools/klima-heizlast/` bleibt unverändert.
+
+## Sinnvolle Testadresse
+
+Bürgerstraße 1, 6020 Innsbruck ist weiterhin gut geeignet, weil dort Adresse, KG, Gebäude, Orthofoto, DGM, Solar und die Wärmenetz-Situation bereits bekannt bzw. kontrollierbar sind.
+
+Für Umweltwärme ist zusätzlich eine Adresse außerhalb dichter Innenstadtlage interessant, um zu sehen, welche Sonden-, Grundwasser- und Schutzgebietsdaten TIRIS im Umfeld liefert.
