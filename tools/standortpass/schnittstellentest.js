@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 05
+   STANDORTPASS – SCHNITTSTELLENTEST 06
 
    Testet bewusst:
    1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
@@ -10,7 +10,7 @@
    4) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
    5) TIRIS Orthofoto als visuelle Kontrolle
    6) bestehende TIRIS-DGM-Höhenfunktion
-   7) GeoLand/voibos Sonnenstand als Rohdaten-Schnittstellentest
+   7) GeoLand/voibos Sonnenstand + eigenes SVG aus DTM/DSM und Sonnenbahnen
 
    Noch KEINE freigegebene Standortpass-Berechnungslogik.
 ========================================================= */
@@ -1097,6 +1097,8 @@ function selectBuilding(objectId) {
   });
 
   showSelectedBuilding(feature);
+  resetSolarOutput();
+  if (selectedAddress) setStatus($('solarStatus'), 'bereit');
 }
 
 function showSelectedBuilding(feature) {
@@ -1491,7 +1493,10 @@ function continueWithoutBuildingGeometry() {
   $('noBuildingNote').hidden = false;
   setStatus($('buildingStatus'), 'keine Geometrie', 'muted');
   $('buildingMatchInfo').textContent = 'Bewusst ohne Gebäudepolygon fortfahren. Die übrigen Standortmodule bleiben verfügbar.';
+  resetSolarOutput();
+  if (selectedAddress) setStatus($('solarStatus'), 'bereit');
 }
+
 
 function editSelectedBuilding() {
   if (!selectedAddress) return;
@@ -1544,15 +1549,39 @@ function resetTerrainOutput(clearRaw = true) {
 }
 
 /* ---------------------------------------------------------
-   5. GeoLand / voibos Sonnenstand
+   5. GeoLand / voibos Sonnenstand + eigenes SVG
 --------------------------------------------------------- */
 
-function buildGeoLandSunUrl(address) {
+function selectedBuildingFeature() {
+  return buildingFeatures.find(
+    (feature) => String(feature.attributes?.OBJECTID) === String(selectedBuildingId)
+  ) ?? null;
+}
+
+function solarObserverHeight() {
+  if ($('solarObserverMode')?.value === 'ground') {
+    return { height: 2, source: '2 m über Gelände' };
+  }
+
+  const feature = selectedBuildingFeature();
+  const medianHeight = finiteNumber(feature?.attributes?.GEB_HOEHE_MEDIAN);
+  if (medianHeight !== null && medianHeight >= 2.5 && medianHeight <= 60) {
+    return {
+      height: medianHeight,
+      source: `Dachniveau orientierend · TIRIS-Medianhöhe ${number1.format(medianHeight)} m`,
+    };
+  }
+
+  return { height: 2, source: 'kein Gebäude/Höhenwert · 2 m über Gelände' };
+}
+
+function buildGeoLandSunUrl(address, observerHeight) {
   const params = new URLSearchParams({
     name: 'sonnengang',
     Koordinate: `${address.longitude},${address.latitude}`,
     CRS: '4326',
-    H: '2',
+    Datum: '03-20-12:00',
+    H: String(observerHeight),
     Output: 'JSONDownload',
   });
 
@@ -1564,6 +1593,191 @@ function formatSunHours(value) {
   return String(value);
 }
 
+function numericSolarValue(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function svgEl(name, attributes = {}, text = null) {
+  const element = document.createElementNS('http://www.w3.org/2000/svg', name);
+  Object.entries(attributes).forEach(([key, value]) => {
+    element.setAttribute(key, String(value));
+  });
+  if (text !== null) element.textContent = String(text);
+  return element;
+}
+
+function appendSvgPath(svg, d, className) {
+  if (!d) return;
+  svg.appendChild(svgEl('path', { d, class: className }));
+}
+
+function linePathFromHorizon(horizon, valueKey, project, minimum = 0) {
+  const parts = [];
+  let drawing = false;
+
+  horizon.forEach((entry) => {
+    const azimuth = numericSolarValue(entry?.azimuth);
+    const value = numericSolarValue(entry?.[valueKey]);
+    if (azimuth === null || value === null || value < minimum) {
+      drawing = false;
+      return;
+    }
+
+    const [x, y] = project(azimuth, value);
+    parts.push(`${drawing ? 'L' : 'M'} ${x.toFixed(2)} ${y.toFixed(2)}`);
+    drawing = true;
+  });
+
+  return parts.join(' ');
+}
+
+function areaUnderHorizonPath(horizon, valueKey, project) {
+  const valid = horizon
+    .map((entry) => ({
+      azimuth: numericSolarValue(entry?.azimuth),
+      value: numericSolarValue(entry?.[valueKey]),
+    }))
+    .filter((item) => item.azimuth !== null && item.value !== null);
+
+  if (valid.length < 2) return '';
+  const first = valid[0];
+  const last = valid[valid.length - 1];
+  const [x0, y0] = project(first.azimuth, 0);
+  const [x1, y1] = project(last.azimuth, 0);
+  const top = valid.map((item, index) => {
+    const [x, y] = project(item.azimuth, Math.max(0, item.value));
+    return `${index === 0 ? 'L' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+  }).join(' ');
+
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} ${top} L ${x1.toFixed(2)} ${y1.toFixed(2)} Z`;
+}
+
+function areaBetweenHorizonsPath(horizon, lowerKey, upperKey, project) {
+  const valid = horizon
+    .map((entry) => {
+      const azimuth = numericSolarValue(entry?.azimuth);
+      const lower = numericSolarValue(entry?.[lowerKey]);
+      const upper = numericSolarValue(entry?.[upperKey]);
+      if (azimuth === null || lower === null || upper === null) return null;
+      return { azimuth, lower: Math.max(0, lower), upper: Math.max(0, upper) };
+    })
+    .filter(Boolean);
+
+  if (valid.length < 2) return '';
+
+  const upper = valid.map((item, index) => {
+    const [x, y] = project(item.azimuth, Math.max(item.lower, item.upper));
+    return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+  }).join(' ');
+
+  const lower = [...valid].reverse().map((item) => {
+    const [x, y] = project(item.azimuth, item.lower);
+    return `L ${x.toFixed(2)} ${y.toFixed(2)}`;
+  }).join(' ');
+
+  return `${upper} ${lower} Z`;
+}
+
+function drawSolarChart(payload, observerInfo) {
+  const svg = $('solarChart');
+  const horizon = Array.isArray(payload?.horizont)
+    ? [...payload.horizont].sort((a, b) => Number(a.azimuth) - Number(b.azimuth))
+    : [];
+
+  svg.innerHTML = '';
+  if (horizon.length === 0) {
+    svg.appendChild(svgEl('text', {
+      x: 410,
+      y: 215,
+      'text-anchor': 'middle',
+      class: 'solar-chart-empty',
+    }, 'Keine Horizontdaten verfügbar'));
+    return;
+  }
+
+  const width = 820;
+  const height = 430;
+  const margin = { left: 52, right: 18, top: 20, bottom: 48 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+
+  const valueKeys = [
+    'hoehenwinkelDTM',
+    'hoehenwinkelDSM',
+    'hoehenwinkelSommersonnwende',
+    'hoehenwinkelAbfragedatum',
+    'hoehenwinkelWintersonnwende',
+  ];
+  const values = [];
+  horizon.forEach((entry) => {
+    valueKeys.forEach((key) => {
+      const value = numericSolarValue(entry?.[key]);
+      if (value !== null && value >= 0) values.push(value);
+    });
+  });
+
+  const maxValue = values.length ? Math.max(...values) : 60;
+  const yMax = Math.min(90, Math.max(60, Math.ceil((maxValue + 3) / 10) * 10));
+
+  const project = (azimuth, elevation) => {
+    const x = margin.left + (azimuth / 360) * plotWidth;
+    const y = margin.top + plotHeight - (Math.max(0, Math.min(yMax, elevation)) / yMax) * plotHeight;
+    return [x, y];
+  };
+
+  const grid = svgEl('g', { class: 'solar-grid' });
+  for (let elevation = 0; elevation <= yMax; elevation += 10) {
+    const [x0, y] = project(0, elevation);
+    const [x1] = project(360, elevation);
+    grid.appendChild(svgEl('line', { x1: x0, y1: y, x2: x1, y2: y }));
+    grid.appendChild(svgEl('text', {
+      x: margin.left - 10,
+      y: y + 4,
+      'text-anchor': 'end',
+    }, `${elevation}°`));
+  }
+
+  const directions = [
+    [0, 'N'], [45, 'NO'], [90, 'O'], [135, 'SO'], [180, 'S'],
+    [225, 'SW'], [270, 'W'], [315, 'NW'], [360, 'N'],
+  ];
+  directions.forEach(([azimuth, label]) => {
+    const [x, y0] = project(azimuth, 0);
+    const [, yTop] = project(azimuth, yMax);
+    grid.appendChild(svgEl('line', { x1: x, y1: yTop, x2: x, y2: y0, class: 'solar-grid-vertical' }));
+    grid.appendChild(svgEl('text', {
+      x,
+      y: height - 18,
+      'text-anchor': 'middle',
+      class: 'solar-direction-label',
+    }, label));
+  });
+  svg.appendChild(grid);
+
+  appendSvgPath(svg, areaUnderHorizonPath(horizon, 'hoehenwinkelDTM', project), 'solar-area solar-area--dtm');
+  appendSvgPath(svg, areaBetweenHorizonsPath(horizon, 'hoehenwinkelDTM', 'hoehenwinkelDSM', project), 'solar-area solar-area--dsm');
+  appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelDTM', project), 'solar-horizon-line solar-horizon-line--dtm');
+  appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelDSM', project), 'solar-horizon-line solar-horizon-line--dsm');
+
+  appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelSommersonnwende', project, 0), 'solar-sun-path solar-sun-path--summer');
+  appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelAbfragedatum', project, 0), 'solar-sun-path solar-sun-path--equinox');
+  appendSvgPath(svg, linePathFromHorizon(horizon, 'hoehenwinkelWintersonnwende', project, 0), 'solar-sun-path solar-sun-path--winter');
+
+  const axis = svgEl('g', { class: 'solar-axis' });
+  const [xLeft, yBase] = project(0, 0);
+  const [xRight] = project(360, 0);
+  axis.appendChild(svgEl('line', { x1: xLeft, y1: yBase, x2: xRight, y2: yBase }));
+  svg.appendChild(axis);
+
+  $('solarChartHeight').textContent = observerInfo.source;
+  $('solarChartNote').textContent =
+    `${payload?.datengrundlage ?? 'GeoLand'} · Befliegungsjahr ${payload?.flugjahr ?? '–'} · ` +
+    `DTM = Gelände; DSM = Oberfläche inkl. naher Gebäude/Vegetation. ` +
+    `Die mittlere Sonnenbahn basiert auf dem GeoLand-Abfragedatum 20. März und dient als Frühling-/Herbst-Referenz.`;
+  $('solarChartCard').hidden = false;
+}
+
 async function loadSolar() {
   if (!selectedAddress) return;
 
@@ -1572,7 +1786,8 @@ async function loadSolar() {
   setStatus(status, 'lädt …', 'working');
   resetSolarOutput(false);
 
-  const url = buildGeoLandSunUrl(selectedAddress);
+  const observerInfo = solarObserverHeight();
+  const url = buildGeoLandSunUrl(selectedAddress, observerInfo.height);
 
   try {
     const response = await fetch(url, {
@@ -1599,7 +1814,14 @@ async function loadSolar() {
     const monthly = payload?.['sonnenstunden pro tag im monatsmittel'] ?? {};
     const sample = horizon.filter((entry) => [0, 90, 180, 270].includes(Number(entry?.azimuth)));
 
-    $('rawSolar').textContent = pretty({ request_url: url, response: payload });
+    $('rawSolar').textContent = pretty({
+      request_url: url,
+      observer: observerInfo,
+      equinox_reference: '03-20-12:00',
+      response: payload,
+    });
+
+    drawSolarChart(payload, observerInfo);
 
     const monthRows = [
       ['Jänner', monthly.januar],
@@ -1622,31 +1844,34 @@ async function loadSolar() {
     resultBox.innerHTML = `
       <div class="solar-summary-grid">
         <div><span>Status</span><strong>${escapeHtml(payload?.abfragestatus ?? '–')}</strong></div>
+        <div><span>Bezugshöhe</span><strong>${number1.format(observerInfo.height)} m</strong></div>
         <div><span>Abfragehöhe</span><strong>${escapeHtml(payload?.abfragehoehe ?? '–')}</strong></div>
         <div><span>Datengrundlage</span><strong>${escapeHtml(payload?.datengrundlage ?? '–')}</strong></div>
         <div><span>Befliegungsjahr</span><strong>${escapeHtml(payload?.flugjahr ?? '–')}</strong></div>
         <div><span>Horizontwerte</span><strong>${number0.format(horizon.length)}</strong></div>
-        <div><span>Serviceversion</span><strong>${escapeHtml(payload?.voibos ?? '–')}</strong></div>
       </div>
       <h3>Theoretische Sonnenscheindauer · Auswahl</h3>
       <div class="solar-month-grid">${monthRows}</div>
-      <h3>Horizont-Stichprobe</h3>
-      <div class="table-scroll">
-        <table class="test-table">
-          <thead><tr><th>Azimut</th><th>Gelände DTM</th><th>Oberfläche DSM</th><th>Distanz DTM</th><th>Distanz DSM</th></tr></thead>
-          <tbody>${sampleRows || '<tr><td colspan="5">Keine Horizontwerte gefunden.</td></tr>'}</tbody>
-        </table>
-      </div>
-      <p class="geometry-note">Wenn dieser Test funktioniert, zeichnen wir im nächsten Schritt aus allen Horizontwerten unser eigenes SVG mit Sonnenbahnen, Gelände- und Oberflächenhorizont.</p>
+      <details class="solar-test-details">
+        <summary>Technische Horizont-Stichprobe</summary>
+        <div class="table-scroll">
+          <table class="test-table">
+            <thead><tr><th>Azimut</th><th>Gelände DTM</th><th>Oberfläche DSM</th><th>Distanz DTM</th><th>Distanz DSM</th></tr></thead>
+            <tbody>${sampleRows || '<tr><td colspan="5">Keine Horizontwerte gefunden.</td></tr>'}</tbody>
+          </table>
+        </div>
+        <p class="geometry-note">Serviceversion: ${escapeHtml(payload?.voibos ?? '–')}</p>
+      </details>
     `;
     resultBox.hidden = false;
     setStatus(status, payload?.abfragestatus === 'erfolgreich' ? 'erfolgreich' : 'Antwort erhalten', 'success');
   } catch (error) {
     $('rawSolar').textContent = pretty({ request_url: url, error: error.message });
+    $('solarChartCard').hidden = true;
     resultBox.innerHTML = `
       <h3>Direkter Browserabruf fehlgeschlagen</h3>
       <p>${escapeHtml(error.message)}</p>
-      <p class="geometry-note">Das kann insbesondere an CORS liegen. Die Schnittstelle selbst kann trotzdem funktionieren; dann prüfen wir als Nächstes einen geeigneten öffentlichen Abrufweg.</p>
+      <p class="geometry-note">Die übrigen Standortmodule bleiben davon unabhängig nutzbar.</p>
     `;
     resultBox.hidden = false;
     setStatus(status, 'Fehler', 'error');
@@ -1656,6 +1881,8 @@ async function loadSolar() {
 function resetSolarOutput(clearRaw = true) {
   $('solarResult').hidden = true;
   $('solarResult').innerHTML = '';
+  $('solarChartCard').hidden = true;
+  $('solarChart').innerHTML = '';
   if (clearRaw) $('rawSolar').textContent = '–';
 }
 
@@ -1696,6 +1923,9 @@ $('compareBuildingButton').addEventListener('click', compareBuildingGeometry);
 $('clearValidationButton').addEventListener('click', clearValidation);
 $('loadTerrainButton').addEventListener('click', loadTerrain);
 $('loadSolarButton').addEventListener('click', loadSolar);
+$('solarObserverMode').addEventListener('change', () => {
+  if (!$('solarChartCard').hidden || !$('solarResult').hidden) loadSolar();
+});
 $('orthophotoScale').addEventListener('change', () => {
   if (buildingFeatures.length > 0) drawBuildingGeometry(buildingFeatures);
 });

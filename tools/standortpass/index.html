@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 05 | Tools für Energieberatung</title>
+  <title>Standortpass – Schnittstellentest 06 | Tools für Energieberatung</title>
   <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=5">
+  <link rel="stylesheet" href="schnittstellentest.css?v=6">
 </head>
 <body>
 
@@ -31,12 +31,12 @@
   <main class="interface-test-page">
     <section class="container test-intro">
       <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 05</h1>
+      <h1>Schnittstellentest 06</h1>
       <p class="test-lead">
-        Diesmal testen wir, ob TIRIS die gemeinsame Live-Adressbasis übernehmen kann – einschließlich Adresscode, Koordinate und Katastralgemeinde.
+        Die gemeinsame Adressbasis funktioniert. Jetzt prüfen wir die erste echte Standortgrafik: ein eigenes Sonnenbahn- und Horizontdiagramm aus GeoLand/voibos-Daten.
       </p>
       <p class="test-disclaimer">
-        Phase 5: TIRIS-Live-Adresse wird als gemeinsame Primärquelle geprüft; zusätzlich testen wir erstmals GeoLand/voibos für Sonnenbahn, Gelände- und Oberflächenhorizont. Der BEV-Bestand bleibt vorerst nur als Vergleich und Fallback erhalten.
+        Phase 6: TIRIS-Live-Adresse bleibt Primärquelle. GeoLand/voibos liefert nun die numerische Grundlage für ein eigenes SVG mit Gelände-, Oberflächenhorizont und drei Sonnenbahnen. Der BEV-Bestand bleibt vorerst nur als Vergleich und Fallback erhalten.
       </p>
 
       <div class="data-source-strip" aria-label="Testquellen">
@@ -277,17 +277,45 @@
       <div class="panel-heading">
         <div>
           <p class="eyebrow">5 · Solar</p>
-          <h2 id="solar-title">GeoLand-Sonnenstand prüfen</h2>
+          <h2 id="solar-title">Sonnenbahn & Verschattung</h2>
           <p>
-            Erster reiner Schnittstellentest für GeoLand/voibos. Wir fragen die gemeinsame Standortkoordinate in WGS84 ab und prüfen, ob Gelände- und Oberflächenhorizont sowie theoretische Sonnenscheindauer numerisch zurückkommen. Das eigene Diagramm folgt erst nach erfolgreichem Test.
+            GeoLand/voibos liefert 360 Horizontwerte. Daraus zeichnen wir erstmals selbst ein SVG mit Geländehorizont, Oberflächenhorizont und Sonnenbahnen für Sommer, Frühling/Herbst und Winter.
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="solarStatus">Adresse fehlt</span>
       </div>
 
-      <div class="action-row">
-        <button class="primary-button" id="loadSolarButton" type="button" disabled>GeoLand Sonnenstand prüfen</button>
-        <span class="action-note">Beobachtungshöhe: 2 m · Ausgabe: JSONDownload</span>
+      <div class="solar-control-row">
+        <button class="primary-button" id="loadSolarButton" type="button" disabled>Solarprofil laden</button>
+        <label class="compact-field solar-height-field">
+          <span>Bezugshöhe</span>
+          <select id="solarObserverMode">
+            <option value="auto" selected>Dachniveau automatisch</option>
+            <option value="ground">2 m über Gelände</option>
+          </select>
+        </label>
+        <span class="action-note" id="solarHeightHint">Mit Gebäude: TIRIS-Medianhöhe · ohne Gebäude: 2 m.</span>
+      </div>
+
+      <div class="solar-chart-card" id="solarChartCard" hidden>
+        <div class="solar-chart-heading">
+          <div>
+            <span class="mini-label">Eigene Darstellung · GeoLand-Daten</span>
+            <h3>Sonnenbahnen und Horizont</h3>
+          </div>
+          <span class="origin-label" id="solarChartHeight">–</span>
+        </div>
+
+        <svg id="solarChart" class="solar-chart" viewBox="0 0 820 430" role="img" aria-label="Sonnenbahn- und Horizontdiagramm"></svg>
+
+        <div class="solar-legend" aria-label="Legende">
+          <span><i class="legend-swatch legend-swatch--dtm"></i>Geländehorizont DTM</span>
+          <span><i class="legend-swatch legend-swatch--dsm"></i>Oberflächenhorizont DSM</span>
+          <span><i class="legend-line legend-line--summer"></i>Sommer</span>
+          <span><i class="legend-line legend-line--equinox"></i>Frühling / Herbst</span>
+          <span><i class="legend-line legend-line--winter"></i>Winter</span>
+        </div>
+        <p class="geometry-note" id="solarChartNote">–</p>
       </div>
 
       <div class="service-result" id="solarResult" hidden></div>
@@ -332,6 +360,6 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=5"></script>
+  <script src="schnittstellentest.js?v=6"></script>
 </body>
 </html>
