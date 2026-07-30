@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass – Schnittstellentest 17 | Tools für Energieberatung</title>
-  <meta name="description" content="Technische Testseite für TIRIS-Live-Adresse, Katastralgemeinde, Gebäude, Orthofoto und TIRIS-DGM.">
+  <title>Standortpass Energie & Gebäude | Tools für Energieberatung</title>
+  <meta name="description" content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="schnittstellentest.css?v=16">
+  <link rel="stylesheet" href="standortpass.css?v=1">
 </head>
 <body>
 
@@ -28,40 +28,48 @@
     </div>
   </header>
 
-  <main class="interface-test-page">
-    <section class="container test-intro">
-      <p class="eyebrow">Standortpass · Entwicklung</p>
-      <h1>Schnittstellentest 17</h1>
+  <main class="standortpass-page">
+    <section class="container test-intro report-title-block">
+      <p class="eyebrow">Beratungsvorbereitung · Tirol</p>
+      <h1>Standortpass Energie &amp; Gebäude</h1>
       <p class="test-lead">
-        Die bestätigten Standortmodule bleiben bestehen. Test 16 sucht jetzt gezielt nach den drei noch offenen TIRIS-Energiethemen: Wärmenetz-Gebiete, Wärmeerzeugungsanlagen und „Solarpotential pro Jahr – Gebäude“. Die exakten Themen- und Attributnamen aus tirisMaps dienen dabei als Fingerabdruck.
+        Amtliche Standortinformationen, bewusst überschlägige Gebäudeableitungen und klare Prüfhilfen in einer gemeinsamen Projektbasis.
       </p>
       <p class="test-disclaimer">
-        Phase 17: Die robuste Solarstrahlungs-Karte wird auf ca. 125 m eingezoomt. Zusätzlich durchsucht ein manueller Tiefenscan den öffentlichen ArcGIS-Server des Landes nach den drei konkreten Energielayern und prüft gefundene Kandidaten direkt am gewählten Standort. Der Klimablock bleibt nur als dokumentierte Erkundung bestehen.
+        Der Standortpass ersetzt keine Detailplanung. Amtliche Daten, Ableitungen und manuelle Angaben bleiben unterscheidbar; automatische Gebäudegrößen sind Orientierungswerte und können später korrigiert werden.
       </p>
+    </section>
 
-      <div class="data-source-strip" aria-label="Testquellen">
-        <span><strong>Adresse primär</strong> TIRIS ogd_basis</span>
-        <span><strong>Fallback</strong> bestehendes BEV-Modul</span>
-        <span><strong>KG</strong> TIRIS Katastralgemeinden</span>
-        <span><strong>Gebäude</strong> TIRIS FeatureServer</span>
-        <span><strong>Bild</strong> TIRIS Orthofoto WMS</span>
-        <span><strong>Höhe</strong> bestehendes TIRIS-DGM-Modul</span>
-        <span><strong>Solar</strong> GeoLand / voibos</span>
-        <span><strong>Energie</strong> TIRIS ArcGIS-Tiefenscan</span>
-        <span><strong>Umweltwärme</strong> TIRIS WASSER</span>
-        <span><strong>Hochwasser</strong> HQ30 / HQ100 / HQ300</span>
-        <span><strong>Naturgefahren</strong> TIRIS NATURGEFAHREN</span>
-        <span><strong>Lokalklima</strong> TIRIS KLIMAKARTEN INNTAL</span>
+    <section class="container project-header-card" aria-label="Gemeinsame Projektkopfzeile">
+      <div class="project-header-row project-header-row--top">
+        <label class="project-title-field"><span>Projekttitel</span><input id="projectTitle" type="text" placeholder="z. B. Energieberatung Musterhaus"></label>
+        <label class="project-id-field"><span>Projekt-ID</span><input id="projectId" type="text" placeholder="optional"></label>
       </div>
+      <div class="project-header-row">
+        <div class="project-address-field"><span>Adresse</span><strong id="projectAddress">Noch kein Standort gewählt</strong></div>
+        <div class="project-date-field"><span>Datum / Ausdruck</span><strong id="projectPrintDate">–</strong></div>
+      </div>
+      <div class="project-actions no-print">
+        <button class="secondary-button" id="printReportButton" type="button">Drucken / PDF</button>
+        <button class="quiet-button" id="exportProjectButton" type="button">Projekt exportieren</button>
+        <button class="quiet-button" id="importProjectButton" type="button">Projekt importieren</button>
+        <button class="quiet-button quiet-button--danger" id="resetProjectButton" type="button">Projekt zurücksetzen</button>
+        <input id="importProjectInput" type="file" accept="application/json,.json" hidden>
+      </div>
+    </section>
+
+    <section class="container overview-panel" aria-labelledby="overview-title">
+      <div class="panel-heading"><div><p class="eyebrow">Projektübersicht</p><h2 id="overview-title">Prüfstatus</h2><p>Die Übersicht aktualisiert sich während der Standortprüfung automatisch.</p></div></div>
+      <div class="project-overview-grid" id="projectOverviewGrid"></div>
     </section>
 
     <section class="container test-panel" aria-labelledby="live-address-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">1 · Gemeinsame Basis</p>
-          <h2 id="live-address-title">TIRIS-Adresse live suchen</h2>
+          <p class="eyebrow">1 · Projektstandort</p>
+          <h2 id="live-address-title">Standort auswählen</h2>
           <p>
-            Der wichtigste Test: Kann eine Adresse ohne lokalen BEV-Index direkt aus TIRIS gefunden und in unser gemeinsames Standortformat übersetzt werden?
+            Adresse suchen und als gemeinsame Projektadresse übernehmen.
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="tirisLiveAddressStatus">nicht geprüft</span>
@@ -120,11 +128,11 @@
       </details>
     </section>
 
-    <section class="container test-panel" aria-labelledby="basis-title">
+    <section class="container test-panel dev-only" aria-labelledby="basis-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">2 · TIRIS BASIS</p>
-          <h2 id="basis-title">Dienst und Adress-Layer kontrollieren</h2>
+          <p class="eyebrow">Technische Datenkontrolle</p>
+          <h2 id="basis-title">TIRIS-Dienste kontrollieren</h2>
           <p>
             Die bisherigen Metadaten- und Umkreistests bleiben erhalten. So sehen wir, ob sich Layer, Felder oder Browserzugriff verändern.
           </p>
@@ -144,7 +152,7 @@
     <section class="container test-panel" aria-labelledby="building-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">3 · Gebäude</p>
+          <p class="eyebrow">2 · Gebäude</p>
           <h2 id="building-title">Gebäude automatisch zuordnen</h2>
           <p>
             Zuerst wird der Adresspunkt direkt gegen die TIRIS-Dachpolygone geprüft. Nur bei fehlendem oder mehrdeutigem Treffer wird die Umgebung geladen.
@@ -281,7 +289,7 @@
     <section class="container test-panel" aria-labelledby="solar-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">5 · Solar</p>
+          <p class="eyebrow">4 · Solar</p>
           <h2 id="solar-title">Sonnenbahn & Verschattung</h2>
           <p>
             GeoLand/voibos liefert 360 Horizontwerte. Daraus zeichnen wir erstmals selbst ein SVG mit Geländehorizont, Oberflächenhorizont und Sonnenbahnen für Sommer, Frühling/Herbst und Winter.
@@ -353,10 +361,10 @@
       </div>
     </section>
 
-    <section class="container test-panel" aria-labelledby="heat-title">
+    <section class="container test-panel dev-only" aria-labelledby="heat-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">6 · Energie · WebOffice-Zugriff</p>
+          <p class="eyebrow">5 · Wärmeversorgung · WebOffice-Zugriff</p>
           <h2 id="heat-title">Wärmenetz &amp; Gebäude-Solarpotential</h2>
           <p>
             Die drei gesuchten tirisMaps-Themen sind nun intern eindeutig identifiziert. Test 17 prüft nicht mehr den ArcGIS-Servicebaum, sondern ausschließlich die dokumentierte <strong>WebOffice Service API (synservice)</strong>. Dabei werden bekannte interne IDs und Datencontainer nur als Kandidaten für eine öffentliche Abfrage getestet – ohne Session-ID und ohne private Cookies.
@@ -396,10 +404,15 @@
       <div class="service-result" id="heatDiscoveryResult" hidden></div>
     </section>
 
+    <section class="container test-panel" aria-labelledby="heat-v1-title">
+      <div class="panel-heading"><div><p class="eyebrow">5 · Wärmeversorgung</p><h2 id="heat-v1-title">Wärmenetz</h2><p>Die TIRIS-Daten sind identifiziert; ein stabiler öffentlicher Datenzugang ist beim Land Tirol angefragt.</p></div><span class="status-chip status-chip--muted">manueller Check</span></div>
+      <div class="manual-check-card"><div><strong>Automatische Prüfung derzeit nicht verfügbar</strong><p>Bis zur Klärung der Schnittstelle wird das Wärmenetz direkt in tirisMaps kontrolliert.</p></div><a class="external-action-link" href="https://maps.tirol.gv.at/" target="_blank" rel="noopener noreferrer">Wärmenetz in TIRIS prüfen ↗</a></div>
+    </section>
+
     <section class="container test-panel" aria-labelledby="environmental-heat-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">7 · Umweltwärme</p>
+          <p class="eyebrow">6 · Umweltwärme</p>
           <h2 id="environmental-heat-title">Wasser & Untergrund – Standortinformationen</h2>
           <p>
             Der öffentliche TIRIS-Dienst WASSER liefert Standortinformationen zu Erdwärme, Grundwassernutzung, Messstellen und wasserrechtlichen Flächen. Test 09 trennt bestehende Anlagen, rechtliche Hinweise und Schutzgebiete fachlich sauber und zeigt bei relevanten Treffern die nächsten Objekte samt verfügbaren Detailberichten.
@@ -440,7 +453,7 @@
     <section class="container test-panel" aria-labelledby="heritage-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">9 · Kultur & Schutzstatus</p>
+          <p class="eyebrow">8 · Kultur & Schutzstatus</p>
           <h2 id="heritage-title">Denkmalschutz & baukultureller Kontext</h2>
           <p>Rechtlichen Denkmalschutz und TIRIS-Kontextdaten behandeln wir getrennt. Die BDA-Liste wird in Test 12 nur noch bei exakt passender Straße <strong>und Hausnummer</strong> als Treffer gewertet. Kunstkataster, Ensemblekartierung oder Archäologie sind wichtige Hinweise, aber kein automatischer Nachweis der Schutzstellung.</p>
         </div>
@@ -456,7 +469,7 @@
     <section class="container test-panel" aria-labelledby="radon-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">10 · Standort & Risiken</p>
+          <p class="eyebrow">9 · Radon</p>
           <h2 id="radon-title">Radon · Gebietsstatus</h2>
           <p>Die Gemeindekennziffer wird mit der Radonschutzverordnung abgeglichen. Für Tirol unterscheiden wir Radonvorsorgegebiet und zusätzlich ausgewiesenes Radonschutzgebiet. Die Zuordnung ist ein Standortindikator und keine Messung im Gebäude.</p>
         </div>
@@ -470,7 +483,7 @@
     </section>
 
 
-    <section class="container test-panel" aria-labelledby="climate-analysis-title">
+    <section class="container test-panel dev-only" aria-labelledby="climate-analysis-title">
       <div class="panel-heading">
         <div>
           <p class="eyebrow">11 · Zusatzprüfung</p>
@@ -486,7 +499,7 @@
       <div class="service-result" id="climateAnalysisResult" hidden></div>
     </section>
 
-    <section class="container technical-panel">
+    <section class="container technical-panel dev-only">
       <details>
         <summary>Technische Testdaten und Rohantworten</summary>
         <p>Diese Ausgabe ist nur für die Entwicklung gedacht.</p>
@@ -528,10 +541,14 @@
   </footer>
 
   <!-- Bestehende Module bleiben als Fallback und Vergleich unverändert. -->
+  <script src="../../shared/js/data-model.js"></script>
+  <script src="../../shared/js/project-store.js"></script>
   <script src="../klima-heizlast/address-provider-core.js"></script>
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="schnittstellentest.js?v=16"></script>
+  <script src="standortpass.js?v=1"></script>
+  <script src="../../shared/js/project-header.js"></script>
+  <script src="standortpass-v1.js?v=1"></script>
 </body>
 </html>
