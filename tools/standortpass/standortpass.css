@@ -2936,3 +2936,89 @@
     aspect-ratio: auto !important;
   }
 }
+
+
+/* =========================================================
+   STANDORTPASS V1.5 · LETZTE FEINABSTIMMUNG
+========================================================= */
+.status-chip--warning {
+  color: var(--berry-dark);
+  background: rgba(241, 218, 226, .72);
+  border: 1px solid rgba(179, 68, 108, .24);
+}
+
+/* Desktop: Info per Hover; Touch/Mobil weiterhin per Klick auf <details>. */
+.metric-info:not([open]) > .metric-info-popover {
+  display: none;
+}
+.metric-info[open] > .metric-info-popover {
+  display: block;
+}
+@media (hover: hover) and (pointer: fine) {
+  .metric-info:hover > .metric-info-popover,
+  .metric-info:focus-within > .metric-info-popover {
+    display: block;
+  }
+  .metric-info:hover .info-tip,
+  .metric-info:focus-within .info-tip {
+    border-color: var(--turquoise-dark);
+    background: var(--turquoise-light);
+  }
+}
+
+/* Solar-Zusatzdarstellung: Titelzeile wirklich über dem Ergebnisblock. */
+.solar-subtest-block {
+  display: block;
+}
+.solar-subtest-block > .subtest-heading {
+  width: 100%;
+  margin-bottom: .85rem;
+}
+.solar-subtest-block > #solarMapResult {
+  width: 100%;
+}
+#solarMapResult .solar-map-layout {
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+}
+#solarMapResult .solar-map-copy .external-action-link {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-inline: .65rem;
+  font-size: .78rem;
+  overflow-wrap: anywhere;
+}
+
+/* Kultur: gleiche Kartenlogik/Typografie, bewusst untereinander. */
+.heritage-result-grid {
+  grid-template-columns: 1fr;
+}
+
+/* Radon: Erklärung bekommt Platz; beide Quellenlinks rechts gestapelt. */
+.radon-heading-row > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.radon-heading-row .environment-action-links {
+  display: grid;
+  grid-template-columns: 1fr;
+  flex: 0 0 min(285px, 38%);
+  width: min(285px, 38%);
+  gap: .45rem;
+}
+.radon-heading-row .environment-action-links .external-action-link {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 720px) {
+  .radon-heading-row {
+    flex-direction: column;
+  }
+  .radon-heading-row .environment-action-links {
+    width: 100%;
+    flex-basis: auto;
+  }
+}

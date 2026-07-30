@@ -332,7 +332,7 @@
     <section class="container main-tool-area" id="area-heat" aria-labelledby="area-heat-title">
       <div class="main-area-heading"><div><p class="eyebrow">2 · Wärmeversorgung</p><h2 id="area-heat-title">Wärmeversorgung</h2><p>Wärmenetz-Check sowie Hinweise zu Erdsonden, Grundwasser und wasserrechtlichen Randbedingungen.</p></div></div>
     <section class="tool-subpanel" aria-labelledby="heat-v1-title">
-      <div class="panel-heading"><div><p class="eyebrow">Wärmenetz</p><h2 id="heat-v1-title">Wärmenetz</h2><p>Die TIRIS-Daten sind identifiziert; ein stabiler öffentlicher Datenzugang ist beim Land Tirol angefragt.</p></div><span class="status-chip status-chip--muted">manueller Check</span></div>
+      <div class="panel-heading"><div><p class="eyebrow">Wärmenetz</p><h2 id="heat-v1-title">Wärmenetz</h2><p>Die TIRIS-Daten sind identifiziert; ein stabiler öffentlicher Datenzugang ist beim Land Tirol angefragt.</p></div><span class="status-chip status-chip--warning">manueller Check</span></div>
       <div class="manual-check-card"><div><strong>Automatische Prüfung derzeit nicht verfügbar</strong><p>Bis zur Klärung der Schnittstelle wird das Wärmenetz direkt in tirisMaps kontrolliert.</p></div><a class="external-action-link" id="heatTirisLink" href="https://maps.tirol.gv.at/" target="_blank" rel="noopener noreferrer">Wärmenetz am Standort in TIRIS prüfen ↗</a></div>
     </section>
     <section class="tool-subpanel" aria-labelledby="environmental-heat-title">
@@ -406,16 +406,12 @@
           <span><i class="legend-line legend-line--winter"></i>Winter</span>
         </div>
         <p class="geometry-note solar-user-note"><strong>Lesart:</strong> Grau zeigt die Geländeabschattung. Türkis zeigt nur die zusätzliche Abschattung oberhalb des Geländehorizonts – typischerweise durch Gebäude und Vegetation.</p>
-        <details class="solar-term-details">
-          <summary>Was bedeuten DTM und DSM?</summary>
-          <p><strong>DTM – Digital Terrain Model</strong> entspricht dem digitalen Geländemodell (DGM): Gelände ohne Gebäude und Vegetation. <strong>DSM – Digital Surface Model</strong> entspricht dem digitalen Oberflächenmodell (DOM): Gelände inklusive darauf befindlicher Objekte. Die Grafik zeigt deshalb die Differenz zwischen beiden als zusätzliche Verschattung.</p>
-        </details>
         <p class="geometry-note" id="solarChartNote">–</p>
       </div>
 
       <div class="service-result" id="solarResult" hidden></div>
 
-      <div class="subtest-block">
+      <div class="subtest-block solar-subtest-block">
         <div class="subtest-heading">
           <div>
             <span class="mini-label">Zusatzdarstellung · Solar</span>
@@ -432,13 +428,13 @@
     </section>
 
     <section class="container main-tool-area" id="area-risks" aria-labelledby="area-risks-title">
-      <div class="main-area-heading"><div><p class="eyebrow">4 · Standort & Risiken</p><h2 id="area-risks-title">Standort & Risiken</h2><p>Denkmalschutz zuerst, danach Hochwasser/Naturgefahren und Radonstatus.</p></div></div>
+      <div class="main-area-heading"><div><p class="eyebrow">4 · Standort & Risiken</p><h2 id="area-risks-title">Standort & Risiken</h2></div></div>
     <section class="tool-subpanel" aria-labelledby="heritage-title">
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Kultur & Schutzstatus</p>
           <h2 id="heritage-title">Denkmalschutz & baukultureller Kontext</h2>
-          <p>BDA-Denkmalliste sowie TIRIS-Hinweise zu Kunstkataster, Ensemble und Archäologie – rechtliche Schutzstellung und Kontext bleiben getrennt.</p>
+          <p>BDA-Denkmalliste sowie TIRIS-Hinweise zu Kunstkataster, Ensemble und Archäologie.</p>
         </div>
         <span class="status-chip status-chip--muted" id="heritageStatus">Adresse fehlt</span>
       </div>
@@ -573,7 +569,7 @@
           </div>
           <div>
             <h3>Grenzen</h3>
-            <p>Der Standortpass ist eine Vorprüfung. Orthofotos können erhöhte Dächer lageversetzt darstellen. DTM/DGM beschreibt Gelände; DSM/DOM zusätzliche Oberflächenobjekte. Kein Treffer in einer ausgewerteten Gefahrenfläche ist keine Sicherheitsbestätigung. Wasser-/Erdwärmehinweise sind keine Eignungszusage.</p>
+            <p>Der Standortpass ist eine Vorprüfung. Orthofotos können erhöhte Dächer lageversetzt darstellen. Das digitale Geländemodell beschreibt das Gelände; das Oberflächenmodell berücksichtigt zusätzlich Gebäude und Vegetation. Kein Treffer in einer ausgewerteten Gefahrenfläche ist keine Sicherheitsbestätigung. Wasser-/Erdwärmehinweise sind keine Eignungszusage.</p>
           </div>
         </div>
       </details>

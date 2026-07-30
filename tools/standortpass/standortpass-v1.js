@@ -686,7 +686,7 @@
           <h2>Sonnenbahn & Verschattung</h2>
           <div class="print-solar-meta"><span><b>Bezugshöhe</b>${escapeHtml(observerHeight || '–')}</span>${printSolarDurationTable(solarMonths)}</div>
           ${chart}
-          <p class="print-source">Quelle: ${escapeHtml(solarSource || 'GeoLand / voibos')}. Grau = Gelände/DTM, Türkis = zusätzliche Gebäude-/Vegetationsverschattung/DSM.</p>
+          <p class="print-source">Quelle: ${escapeHtml(solarSource || 'GeoLand / voibos')}. Grau = Gelände, Türkis = zusätzliche Gebäude-/Vegetationsverschattung.</p>
         </section>
         <section class="print-section print-section--risks">
           <h2>Standort & Risiken</h2>

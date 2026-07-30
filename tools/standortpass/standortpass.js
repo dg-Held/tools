@@ -2121,10 +2121,9 @@ function drawSolarChart(payload, observerInfo) {
   $('solarChartHeight').textContent = observerInfo.source;
   $('solarChartNote').textContent =
     `${payload?.datengrundlage ?? 'GeoLand'} · Befliegungsjahr ${payload?.flugjahr ?? '–'} · ` +
-    `DTM/DGM = Gelände; DSM/DOM = Oberfläche inklusive Bebauung und Vegetation. ` +
-    `Türkis dargestellt wird nur die zusätzliche Abschattung über dem Gelände. ` +
+    `Grau zeigt den Geländehorizont; Türkis nur die zusätzliche Verschattung durch Oberflächenobjekte. ` +
     `Frühling/Herbst basiert auf dem GeoLand-Abfragedatum 20. März.` +
-    (clampedCount ? ` ${clampedCount} minimale DSM<DTM-Abweichung(en) wurden ausschließlich für die Grafik auf DTM begrenzt.` : '');
+    (clampedCount ? ` ${clampedCount} minimale numerische Abweichung(en) wurden ausschließlich für die Grafik bereinigt.` : '');
   $('solarChartCard').hidden = false;
 }
 
@@ -3710,17 +3709,16 @@ async function testHeritage() {
       : '<article class="environment-card"><span>TIRIS Kultur-Kontext</span><strong>kein Treffer in den ausgewerteten Layern</strong><small>Kunstkataster/Ensemble/Archäologie – keine Aussage zur rechtlichen Schutzstellung.</small></article>';
 
     box.innerHTML = `
-      <div class="environment-heading-row"><div><h3>Kultur & Schutzstatus</h3><p>Die rechtliche Schutzstellung und dokumentarische TIRIS-Hinweise bleiben getrennt.</p></div><a class="external-action-link" href="${escapeHtml(BDA_DENKMALLISTE_PAGE)}" target="_blank" rel="noopener noreferrer">BDA-Denkmalliste öffnen ↗</a></div>
-      <div class="environment-grid">
+      <div class="environment-heading-row"><div><h3>Kultur & Schutzstatus</h3></div><a class="external-action-link" href="${escapeHtml(BDA_DENKMALLISTE_PAGE)}" target="_blank" rel="noopener noreferrer">BDA-Denkmalliste öffnen ↗</a></div>
+      <div class="environment-grid heritage-result-grid">
         <article class="environment-card ${bdaHit ? 'hazard-card--hit' : ''}">
           <span>Bundesdenkmalamt · Denkmalliste Tirol 2026</span>
           <strong>${raw.bda.error ? 'Browserabruf nicht möglich' : (bdaHit ? 'exakter Adresstreffer – Schutzstatus prüfen' : 'kein exakter Adresstreffer gefunden')}</strong>
           <small>${raw.bda.error ? 'Für die Produktivversion wäre ein kleiner jährlich aktualisierter lokaler Datensatz die robuste Alternative.' : 'Die veröffentlichte Denkmalliste ist laut BDA selbst nicht rechtsverbindlich.'}</small>
           ${bdaHit ? `<details><summary>Trefferzeilen</summary><pre>${escapeHtml(raw.bda.candidates.join('\n'))}</pre></details>` : ''}
         </article>
+        ${tirisHtml}
       </div>
-      <h4 class="hazard-subheading">TIRIS · baukultureller Kontext</h4>
-      <div class="environment-grid">${tirisHtml}</div>
       <details class="environment-source-details"><summary>Alle geprüften TIRIS-Kulturlayer</summary><ul>${raw.tiris.map((item) => `<li>Layer ${item.id} · ${escapeHtml(item.path)} · ${number0.format(item.count)} Treffer</li>`).join('') || '<li>Keine passenden Feature-Layer gefunden.</li>'}</ul></details>
       <p class="geometry-note"><strong>Wichtig:</strong> Kunstkataster oder Ensemblekartierung bedeuten nicht automatisch Denkmalschutz. Bei einem BDA-Treffer bzw. konkretem Sanierungsvorhaben ist die Schutzstellung fachlich/rechtlich zu verifizieren.</p>`;
     box.hidden = false;
@@ -4087,7 +4085,7 @@ function testRadon() {
   }
 
   box.innerHTML = `
-    <div class="environment-heading-row">
+    <div class="environment-heading-row radon-heading-row">
       <div>
         <h3>Radon · Gebietsstatus</h3>
         <p>Amtliche Zuordnung über die Gemeindekennziffer. Sie sagt nichts über die tatsächliche Radonkonzentration in einem konkreten Gebäude aus.</p>
