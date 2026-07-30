@@ -7,7 +7,7 @@
   <meta name="description" content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="standortpass.css?v=2">
+  <link rel="stylesheet" href="standortpass.css?v=3">
 </head>
 <body>
 
@@ -248,6 +248,82 @@
           <p>
             Brutto-Außenwand = Dachpolygon-Umfang × Medianhöhe. Es gibt bewusst <strong>keinen Korrekturfaktor</strong>. Der Wert bleibt eine grobe Orientierung und wird später manuell korrigierbar.
           </p>
+        </div>
+
+        <div class="estimate-block">
+          <div class="validation-heading">
+            <div>
+              <span class="mini-label">Beratungsentwurf</span>
+              <h3>Überschlägige Gebäudegrößen</h3>
+            </div>
+          </div>
+          <p class="geometry-note">Automatikwerte bleiben sichtbar. Manuelle Eingaben überschreiben nur den verwendeten Beratungswert und den Ausdruck.</p>
+
+          <div class="estimate-settings">
+            <label>
+              <span>Fensterflächenanteil</span>
+              <input id="windowSharePercent" type="number" min="0" max="100" step="1" value="20">
+              <small>% der opaken Außenwand als grobe Erstannahme</small>
+            </label>
+          </div>
+
+          <div class="estimate-table-wrap">
+            <table class="estimate-table">
+              <thead>
+                <tr>
+                  <th>Bauteil / Größe</th>
+                  <th>Automatik</th>
+                  <th>Manuell</th>
+                  <th>Verwendet</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Außenwandfläche</th>
+                  <td id="autoExteriorWallValue">–</td>
+                  <td><input id="manualExteriorWallValue" type="number" min="0" step="1" placeholder="ganze m²"></td>
+                  <td id="effectiveExteriorWallValue">–</td>
+                </tr>
+                <tr>
+                  <th>Fensterfläche</th>
+                  <td id="autoWindowAreaValue">–</td>
+                  <td><input id="manualWindowAreaValue" type="number" min="0" step="1" placeholder="ganze m²"></td>
+                  <td id="effectiveWindowAreaValue">–</td>
+                </tr>
+                <tr>
+                  <th>Oberste Geschoßfläche</th>
+                  <td id="autoTopFloorAreaValue">–</td>
+                  <td><input id="manualTopFloorAreaValue" type="number" min="0" step="1" placeholder="ganze m²"></td>
+                  <td id="effectiveTopFloorAreaValue">–</td>
+                </tr>
+                <tr>
+                  <th>Kellerdecke / unterste Geschoßfläche</th>
+                  <td id="autoBasementAreaValue">–</td>
+                  <td><input id="manualBasementAreaValue" type="number" min="0" step="1" placeholder="ganze m²"></td>
+                  <td id="effectiveBasementAreaValue">–</td>
+                </tr>
+                <tr>
+                  <th>Dachneigung</th>
+                  <td id="autoRoofPitchValue">–</td>
+                  <td><input id="manualRoofPitchValue" type="number" min="0" max="89" step="1" placeholder="Grad"></td>
+                  <td id="effectiveRoofPitchValue">–</td>
+                </tr>
+                <tr>
+                  <th>Dachschrägefläche</th>
+                  <td id="autoRoofSlopeAreaValue">–</td>
+                  <td><input id="manualRoofSlopeAreaValue" type="number" min="0" step="1" placeholder="ganze m²"></td>
+                  <td id="effectiveRoofSlopeAreaValue">–</td>
+                </tr>
+                <tr>
+                  <th>Gebäudevolumen</th>
+                  <td id="autoVolumeValue">–</td>
+                  <td><input id="manualVolumeValue" type="number" min="0" step="1" placeholder="ganze m³"></td>
+                  <td id="effectiveVolumeValue">–</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="geometry-note">Automatisch gerundete Flächen: Außenwand, Dachprojektion, oberste Geschoßfläche, Kellerdecke und Dachschräge auf 10 m²; Fensterfläche auf 5 m². Dachneigung derzeit nur manuell.</p>
         </div>
 
         <div class="validation-block">
@@ -568,8 +644,8 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="standortpass.js?v=2"></script>
+  <script src="standortpass.js?v=3"></script>
   <script src="../../shared/js/project-header.js"></script>
-  <script src="standortpass-v1.js?v=2"></script>
+  <script src="standortpass-v1.js?v=3"></script>
 </body>
 </html>

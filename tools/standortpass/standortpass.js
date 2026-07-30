@@ -3314,9 +3314,9 @@ async function testEnvironmentalHeat() {
     raw.service = service;
     raw.tiris_map = {
       projected_point: projectedPoint,
-      url: buildTirisMapUrl(projectedPoint, 2500),
-      scale: 2500,
-      note: 'Position/Ausschnitt können übernommen werden; die Themenschaltung muss in tirisMaps weiterhin manuell aktiviert werden.',
+      url: buildTirisMapUrl(projectedPoint, 500),
+      scale: 500,
+      note: 'Position/Ausschnitt können übernommen werden; die Themenschaltung muss in tirisMaps weiterhin manuell aktiviert werden. Maßstab bewusst 1:500 für die Standortkontrolle.',
     };
 
     const candidates = environmentalHeatCandidateLayers(service);
@@ -3565,18 +3565,25 @@ async function testSolarMap() {
 
     box.innerHTML = `
       <div class="environment-heading-row">
-        <div>
-          <h3>Solarstrahlung im Standortumfeld</h3>
-          <p>${ageNote}</p>
+        <div class="solar-map-layout">
+          <div class="solar-map-copy">
+            <div>
+              <h3>Solarstrahlung im Standortumfeld</h3>
+              <p>${ageNote} Die spezielle TIRIS-Gebäudeansicht bleibt zusätzlich verlinkt.</p>
+            </div>
+            ${tirisLink}
+            <p class="geometry-note">Amtliche Solarstrahlung im Umfeld des Gebäudestandorts.</p>
+            <div class="solar-map-meta">
+              <span>Ausschnitt ca. 125 m</span>
+              <span>${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
+            </div>
+            <details class="environment-source-details"><summary>Datenquelle / WMS-Details</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>
+          </div>
+          <div>
+            <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
+          </div>
         </div>
-        ${tirisLink}
-      </div>
-      <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
-      <div class="solar-map-meta">
-        <span>Ausschnitt ca. 125 m</span>
-        <span>${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
-      </div>
-      <details class="environment-source-details"><summary>Datenquelle / WMS-Details</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
+      </div>`;
 
     box.hidden = false;
     setStatus(status, 'Raster bereit', 'success');

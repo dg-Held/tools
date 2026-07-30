@@ -115,6 +115,160 @@
     };
   }
 
+
+  const number0 = new Intl.NumberFormat('de-AT', { maximumFractionDigits: 0 });
+
+  function finiteNumber(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function roundToStep(value, step) {
+    return Math.round(value / step) * step;
+  }
+
+  function parseInputValue(id) {
+    const el = $(id);
+    if (!el) return null;
+    const raw = String(el.value ?? '').replace(',', '.').trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function setInputValue(id, value) {
+    const el = $(id);
+    if (!el) return;
+    el.value = value === null || value === undefined || value === '' ? '' : String(value);
+  }
+
+  function formatArea(value) {
+    return value === null ? '–' : `${number0.format(value)} m²`;
+  }
+
+  function formatVolume(value) {
+    return value === null ? '–' : `${number0.format(value)} m³`;
+  }
+
+  function formatPitch(value) {
+    return value === null ? '–' : `${number0.format(value)}°`;
+  }
+
+  function estimateFieldConfig() {
+    return [
+      { key: 'exteriorWall', autoId: 'autoExteriorWallValue', manualId: 'manualExteriorWallValue', effectiveId: 'effectiveExteriorWallValue', unit: 'm²', format: formatArea },
+      { key: 'windowArea', autoId: 'autoWindowAreaValue', manualId: 'manualWindowAreaValue', effectiveId: 'effectiveWindowAreaValue', unit: 'm²', format: formatArea },
+      { key: 'topFloorArea', autoId: 'autoTopFloorAreaValue', manualId: 'manualTopFloorAreaValue', effectiveId: 'effectiveTopFloorAreaValue', unit: 'm²', format: formatArea },
+      { key: 'basementArea', autoId: 'autoBasementAreaValue', manualId: 'manualBasementAreaValue', effectiveId: 'effectiveBasementAreaValue', unit: 'm²', format: formatArea },
+      { key: 'roofPitch', autoId: 'autoRoofPitchValue', manualId: 'manualRoofPitchValue', effectiveId: 'effectiveRoofPitchValue', unit: '°', format: formatPitch },
+      { key: 'roofSlopeArea', autoId: 'autoRoofSlopeAreaValue', manualId: 'manualRoofSlopeAreaValue', effectiveId: 'effectiveRoofSlopeAreaValue', unit: 'm²', format: formatArea },
+      { key: 'volume', autoId: 'autoVolumeValue', manualId: 'manualVolumeValue', effectiveId: 'effectiveVolumeValue', unit: 'm³', format: formatVolume },
+    ];
+  }
+
+  function currentGeometryEstimates() {
+    const feature = core.getSelectedBuilding();
+    const attrs = feature?.attributes || {};
+    const roofArea = finiteNumber(attrs.Shape__Area);
+    const perimeter = finiteNumber(attrs.Shape__Length);
+    const medianHeight = finiteNumber(attrs.GEB_HOEHE_MEDIAN);
+    const windowShare = Math.max(0, Math.min(100, parseInputValue('windowSharePercent') ?? 20));
+
+    const autoExteriorWall = perimeter !== null && medianHeight !== null ? roundToStep(perimeter * medianHeight, 10) : null;
+    const autoTopFloor = roofArea !== null ? roundToStep(roofArea, 10) : null;
+    const autoBasement = roofArea !== null ? roundToStep(roofArea, 10) : null;
+    const autoWindowArea = autoExteriorWall !== null ? roundToStep((autoExteriorWall * windowShare) / 100, 5) : null;
+    const effectiveRoofPitch = parseInputValue('manualRoofPitchValue');
+    const autoRoofSlopeArea = roofArea !== null && effectiveRoofPitch !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
+      ? roundToStep(roofArea / Math.cos((effectiveRoofPitch * Math.PI) / 180), 10)
+      : null;
+    const autoVolume = roofArea !== null && medianHeight !== null ? roundToStep(roofArea * medianHeight, 10) : null;
+
+    const auto = {
+      exteriorWall: autoExteriorWall,
+      windowArea: autoWindowArea,
+      topFloorArea: autoTopFloor,
+      basementArea: autoBasement,
+      roofPitch: null,
+      roofSlopeArea: autoRoofSlopeArea,
+      volume: autoVolume,
+    };
+
+    const result = { windowSharePercent: windowShare, fields: {} };
+    estimateFieldConfig().forEach((config) => {
+      const manual = parseInputValue(config.manualId);
+      const automatic = auto[config.key] ?? null;
+      result.fields[config.key] = {
+        automatic,
+        manual,
+        effective: manual ?? automatic,
+        unit: config.unit,
+        source: manual !== null ? 'manual' : 'automatic',
+      };
+    });
+    return result;
+  }
+
+  function renderGeometryEstimates() {
+    const data = currentGeometryEstimates();
+    estimateFieldConfig().forEach((config) => {
+      const item = data.fields[config.key];
+      if ($(config.autoId)) $(config.autoId).textContent = config.key === 'roofPitch' ? '–' : config.format(item.automatic);
+      const effective = $(config.effectiveId);
+      if (effective) {
+        effective.textContent = config.format(item.effective);
+        effective.classList.remove('estimate-used', 'is-manual', 'is-auto');
+        if (item.effective !== null) effective.classList.add('estimate-used', item.source === 'manual' ? 'is-manual' : 'is-auto');
+      }
+    });
+  }
+
+  function geometryEstimatesShared() {
+    const data = currentGeometryEstimates();
+    const out = { windowSharePercent: data.windowSharePercent, updatedAt: new Date().toISOString() };
+    Object.entries(data.fields).forEach(([key, item]) => {
+      out[key] = clone(item);
+    });
+    return out;
+  }
+
+  function restoreGeometryEstimates(saved) {
+    if (!saved) return;
+    setInputValue('windowSharePercent', saved.windowSharePercent ?? 20);
+    const mapping = {
+      exteriorWall: 'manualExteriorWallValue',
+      windowArea: 'manualWindowAreaValue',
+      topFloorArea: 'manualTopFloorAreaValue',
+      basementArea: 'manualBasementAreaValue',
+      roofPitch: 'manualRoofPitchValue',
+      roofSlopeArea: 'manualRoofSlopeAreaValue',
+      volume: 'manualVolumeValue',
+    };
+    Object.entries(mapping).forEach(([key, id]) => setInputValue(id, saved[key]?.manual ?? null));
+    renderGeometryEstimates();
+  }
+
+  function resetGeometryEstimatesInputs() {
+    setInputValue('windowSharePercent', 20);
+    ['manualExteriorWallValue', 'manualWindowAreaValue', 'manualTopFloorAreaValue', 'manualBasementAreaValue', 'manualRoofPitchValue', 'manualRoofSlopeAreaValue', 'manualVolumeValue']
+      .forEach((id) => setInputValue(id, null));
+    renderGeometryEstimates();
+  }
+
+  function effectiveEstimateText(key, fallback = '–') {
+    const ids = {
+      exteriorWall: 'effectiveExteriorWallValue',
+      windowArea: 'effectiveWindowAreaValue',
+      topFloorArea: 'effectiveTopFloorAreaValue',
+      basementArea: 'effectiveBasementAreaValue',
+      roofPitch: 'effectiveRoofPitchValue',
+      roofSlopeArea: 'effectiveRoofSlopeAreaValue',
+      volume: 'effectiveVolumeValue',
+    };
+    const value = text(ids[key]);
+    return value && value !== '–' ? value : fallback;
+  }
+
   function syncProjectFromUi() {
     const addressRecord = core.getSelectedAddress();
     const buildingFeature = core.getSelectedBuilding();
@@ -135,6 +289,8 @@
       radonStatus: statusText('radonStatus'),
       terrainHeight: terrainRaw?.elevation_m ?? null,
       reportStatus: statusText('reportRunStatus'),
+      windowSharePercent: parseInputValue('windowSharePercent') ?? 20,
+      geometryEstimateManuals: estimateFieldConfig().map((config) => parseInputValue(config.manualId)),
     });
     if (uiSignature === lastUiSignature) return;
     lastUiSignature = uiSignature;
@@ -173,6 +329,7 @@
       radonStatus: statusText('radonStatus'),
       reportStatus: statusText('reportRunStatus'),
       solar: compactSolarShared(),
+      geometryEstimates: geometryEstimatesShared(),
       updatedAt: new Date().toISOString(),
     };
 
@@ -260,7 +417,7 @@
   async function updateLocationLinks() {
     const heatLink = $('heatTirisLink');
     if (!heatLink || !core.getSelectedAddress()) return;
-    heatLink.href = await core.getTirisMapUrl(1000);
+    heatLink.href = await core.getTirisMapUrl(500);
   }
 
   async function runFullReport(options = {}) {
@@ -348,52 +505,111 @@
     return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
   }
 
+  function compactCardsDetailed(containerId, maxItems = 4) {
+    const root = $(containerId);
+    if (!root || root.hidden) return [];
+    return [...root.querySelectorAll('.environment-card')]
+      .slice(0, maxItems)
+      .map((card) => ({
+        label: card.querySelector('span')?.textContent?.trim() || '',
+        value: card.querySelector('strong')?.textContent?.trim() || '',
+        note: card.querySelector('small')?.textContent?.trim() || '',
+      }))
+      .filter((item) => item.label || item.value || item.note);
+  }
+
+  function detailedListHtml(items, fallback = 'Noch nicht geprüft.') {
+    if (!items.length) return `<p>${escapeHtml(fallback)}</p>`;
+    return `<ul>${items.map((item) => `<li><strong>${escapeHtml(item.label)}</strong>: ${escapeHtml(item.value)}${item.note ? ` <small>(${escapeHtml(item.note)})</small>` : ''}</li>`).join('')}</ul>`;
+  }
+
+  function printMiniGridHtml(items) {
+    return `<div class="print-mini-grid">${items.filter((item) => item && item.value && item.value !== '–').map((item) => `<div><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong></div>`).join('')}</div>`;
+  }
+
   function buildPrintSummary() {
+    renderGeometryEstimates();
     const grid = $('printReportGrid');
     if (!grid) return;
-    const building = [];
-    if (text('terrainHeight') && text('terrainHeight') !== '–') building.push(`Höhenlage: ${text('terrainHeight')}`);
-    if (text('metricAreaRounded') && text('metricAreaRounded') !== '–') building.push(`Dachprojektion: ${text('metricAreaRounded')}`);
-    if (text('metricHeightMedian') && text('metricHeightMedian') !== '–') building.push(`Gebäudehöhe Median: ${text('metricHeightMedian')}`);
-    if (text('wallPreview') && text('wallPreview') !== '–') building.push(text('wallPreview'));
 
-    const heat = compactCards('environmentalHeatResult', 5);
-    heat.unshift('Wärmenetz: derzeit direkter TIRIS-Check am Projektstandort');
+    const buildingMetrics = [
+      { label: 'Höhenlage', value: text('terrainHeight') },
+      { label: 'Dachprojektion', value: text('metricAreaRounded') },
+      { label: 'Gebäudehöhe Median', value: text('metricHeightMedian') },
+      { label: 'Außenwandfläche', value: effectiveEstimateText('exteriorWall') },
+      { label: 'Fensterfläche', value: effectiveEstimateText('windowArea') },
+      { label: 'Oberste Geschoßfläche', value: effectiveEstimateText('topFloorArea') },
+      { label: 'Kellerdecke / UG-Fläche', value: effectiveEstimateText('basementArea') },
+      { label: 'Dachneigung', value: effectiveEstimateText('roofPitch', '') },
+      { label: 'Dachschrägefläche', value: effectiveEstimateText('roofSlopeArea', '') },
+      { label: 'Gebäudevolumen', value: effectiveEstimateText('volume', '') },
+    ];
 
-    const solarMonths = [...document.querySelectorAll('#solarResult .solar-month-grid > div')]
-      .map((item) => `${item.querySelector('span')?.textContent?.trim() || ''}: ${item.querySelector('strong')?.textContent?.trim() || ''}`)
-      .filter((item) => !item.startsWith(':'));
-    const solarMeta = [];
-    if (text('solarChartHeight') && text('solarChartHeight') !== '–') solarMeta.push(`Bezugshöhe: ${text('solarChartHeight')}`);
-    solarMeta.push(...solarMonths);
+    const heat = compactCardsDetailed('environmentalHeatResult', 6);
+    heat.unshift({ label: 'Wärmenetz', value: 'direkter TIRIS-Check am Projektstandort', note: 'Link folgt der ausgewählten Adresse' });
 
-    const risks = [
-      ...compactCards('hazardResult', 6),
-      ...compactCards('heritageResult', 3),
-      ...compactCards('radonResult', 3),
+    const solarMeta = [
+      { label: 'Bezugshöhe', value: text('solarChartHeight') },
+      ...[...document.querySelectorAll('#solarResult .solar-month-grid > div')].map((item) => ({
+        label: item.querySelector('span')?.textContent?.trim() || '',
+        value: item.querySelector('strong')?.textContent?.trim() || '',
+      })),
     ];
 
     const chart = !$('solarChartCard')?.hidden && $('solarChart')?.childElementCount
-      ? `<div class="print-solar-chart">${$('solarChart').outerHTML.replace('id="solarChart"', '')}</div>`
+      ? `<div class="print-solar-chart">${$('solarChart').outerHTML.replace('id="solarChart"', '')}</div>${$('solarChartCard')?.querySelector('.solar-legend')?.outerHTML || ''}`
       : '';
+
+    const orthoSrc = $('orthophotoImage')?.getAttribute('src') || '';
+    const solarSrc = document.querySelector('#solarMapResult .solar-map-preview')?.getAttribute('src') || '';
+    const mediaItems = [];
+    if (orthoSrc) mediaItems.push(`<div class="print-media-item"><img src="${escapeHtml(orthoSrc)}" alt="Orthofoto des Projektstandorts"><small>Orthofoto + TIRIS-Gebäudepolygon</small></div>`);
+    if (solarSrc) mediaItems.push(`<div class="print-media-item"><img src="${escapeHtml(solarSrc)}" alt="Solarstrahlung im Standortumfeld"><small>Solarstrahlung im Standortumfeld · Image Jahressumme</small></div>`);
+    const mediaHtml = mediaItems.length ? `<article class="print-summary-card print-summary-card--wide"><h2>Karten</h2><div class="print-media-grid">${mediaItems.join('')}</div></article>` : '';
+
+    const riskItems = [
+      ...[...document.querySelectorAll('#hazardResult .environment-card')].map((card) => ({
+        label: card.querySelector('span')?.textContent?.trim() || '',
+        value: card.querySelector('strong')?.textContent?.trim() || '',
+        note: card.querySelector('small')?.textContent?.trim() || '',
+        hit: card.classList.contains('hazard-card--hit'),
+      })),
+      ...[...document.querySelectorAll('#heritageResult .environment-card')].slice(0, 2).map((card) => ({
+        label: card.querySelector('span')?.textContent?.trim() || '',
+        value: card.querySelector('strong')?.textContent?.trim() || '',
+        note: card.querySelector('small')?.textContent?.trim() || '',
+        hit: card.classList.contains('hazard-card--hit'),
+      })),
+      ...[...document.querySelectorAll('#radonResult .environment-card')].map((card) => ({
+        label: card.querySelector('span')?.textContent?.trim() || '',
+        value: card.querySelector('strong')?.textContent?.trim() || '',
+        note: card.querySelector('small')?.textContent?.trim() || '',
+        hit: card.classList.contains('environment-card--notice'),
+      })),
+    ].filter((item) => item.label || item.value);
+
+    const riskHtml = riskItems.length
+      ? `<div class="print-risk-list">${riskItems.map((item) => `<div class="print-risk-item ${item.hit ? 'print-risk-item--hit' : ''}"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.value)}</span>${item.note ? `<small>${escapeHtml(item.note)}</small>` : ''}</div>`).join('')}</div>`
+      : '<p>Noch nicht geprüft.</p>';
 
     grid.innerHTML = `
       <article class="print-summary-card">
         <h2>Gebäude & Standort</h2>
-        ${listHtml(building)}
+        ${printMiniGridHtml(buildingMetrics)}
       </article>
       <article class="print-summary-card">
         <h2>Wärmeversorgung</h2>
-        ${listHtml(heat)}
+        ${detailedListHtml(heat)}
       </article>
+      ${mediaHtml}
       <article class="print-summary-card print-summary-card--wide">
         <h2>Solar</h2>
-        ${listHtml(solarMeta)}
+        ${printMiniGridHtml(solarMeta)}
         ${chart}
       </article>
       <article class="print-summary-card print-summary-card--wide">
         <h2>Standort & Risiken</h2>
-        ${listHtml(risks)}
+        ${riskHtml}
       </article>`;
   }
 
@@ -409,6 +625,7 @@
     $('reportProgressBar').style.width = '0%';
     reportSteps.forEach((step) => setRetry(step, false));
     $('printReportGrid').innerHTML = '';
+    resetGeometryEstimatesInputs();
     renderOverview();
   }
 
@@ -429,6 +646,7 @@
         $('tirisLiveAddressInput').value = label;
         $('reportRunMessage').textContent = 'Projektadresse übernommen. Bitte die Adresse einmal suchen und bestätigen, da im älteren Projekt keine Koordinate gespeichert war.';
       }
+      restoreGeometryEstimates(projectState.modules?.standortpass?.geometryEstimates);
       if (restored && options.autoRun) await runFullReport({ source: 'import' });
     } finally {
       hydrationRunning = false;
@@ -452,6 +670,7 @@
     button.textContent = 'Bericht erstellen';
     setReportStatus('bereit', 'success');
     $('reportRunMessage').textContent = 'Standort ist gewählt. Mit „Bericht erstellen“ werden alle verfügbaren Prüfungen automatisch nacheinander ausgeführt.';
+    resetGeometryEstimatesInputs();
     await updateLocationLinks();
     syncProjectFromUi();
   });
@@ -479,6 +698,7 @@
   window.addEventListener('standortpass:building-selected', (event) => {
     const feature = event.detail?.feature;
     if (feature) store.setPath('building', selectedBuildingShared(feature));
+    renderGeometryEstimates();
     if (reportHasRun && !reportRunning) {
       setReportStatus('aktualisieren');
       $('runReportButton').textContent = 'Bericht aktualisieren';
@@ -489,6 +709,7 @@
 
   window.addEventListener('standortpass:building-cleared', () => {
     store.setPath('building', {});
+    renderGeometryEstimates();
     syncProjectFromUi();
   });
 
@@ -510,6 +731,14 @@
     window.requestAnimationFrame(() => window.print());
   });
 
+  ['windowSharePercent', 'manualExteriorWallValue', 'manualWindowAreaValue', 'manualTopFloorAreaValue', 'manualBasementAreaValue', 'manualRoofPitchValue', 'manualRoofSlopeAreaValue', 'manualVolumeValue'].forEach((id) => {
+    $(id)?.addEventListener('input', () => {
+      renderGeometryEstimates();
+      buildPrintSummary();
+      syncProjectFromUi();
+    });
+  });
+
   const observer = new MutationObserver(() => {
     window.clearTimeout(observer.timer);
     observer.timer = window.setTimeout(syncProjectFromUi, 140);
@@ -522,6 +751,7 @@
     attributeFilter: ['class', 'hidden'],
   });
 
+  renderGeometryEstimates();
   renderOverview();
   syncProjectFromUi();
 

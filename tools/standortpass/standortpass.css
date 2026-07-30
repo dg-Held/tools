@@ -460,6 +460,82 @@
   color: var(--text-muted);
 }
 
+
+.estimate-block {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--line);
+}
+
+.estimate-settings {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px);
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+
+.estimate-settings label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.estimate-settings input {
+  width: 100%;
+}
+
+.estimate-table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.estimate-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+  font-size: 0.9rem;
+}
+
+.estimate-table th,
+.estimate-table td {
+  padding: 0.7rem 0.65rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.estimate-table thead th {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.estimate-table tbody th {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.estimate-table td:nth-child(2),
+.estimate-table td:nth-child(4) {
+  white-space: nowrap;
+}
+
+.estimate-table td input {
+  width: 120px;
+  min-width: 0;
+}
+
+.estimate-used.is-manual {
+  color: var(--berry-dark);
+  font-weight: 700;
+}
+
+.estimate-used.is-auto {
+  color: var(--turquoise-dark);
+  font-weight: 700;
+}
+
 .technical-panel details > summary {
   cursor: pointer;
   font-weight: 500;
@@ -1953,19 +2029,41 @@
 }
 
 #solarMapResult .environment-heading-row {
+  display: block;
+}
+
+#solarMapResult .solar-map-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+  gap: 1rem;
   align-items: start;
 }
 
-#solarMapResult .environment-heading-row p,
+#solarMapResult .solar-map-copy {
+  display: grid;
+  gap: 0.7rem;
+}
+
+#solarMapResult .solar-map-copy p,
 #solarMapResult .geometry-note {
   font-size: 0.84rem;
 }
 
+#solarMapResult .solar-map-copy .external-action-link {
+  justify-self: start;
+  max-width: 100%;
+}
+
 #solarMapResult .solar-map-preview {
-  margin-top: 0.7rem;
-  max-height: 390px;
+  width: 100%;
+  aspect-ratio: 13 / 9;
+  margin-top: 0;
+  max-height: none;
+  object-fit: cover;
+}
+
+#solarMapResult .solar-map-meta {
+  margin-top: 0.8rem;
 }
 
 #solarMapResult .environment-source-details {
@@ -2034,6 +2132,89 @@
   margin-top: 2mm;
 }
 
+
+.print-media-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3mm;
+  margin-top: 2mm;
+}
+
+.print-media-item {
+  display: grid;
+  gap: 1.2mm;
+}
+
+.print-media-item img {
+  width: 100%;
+  border: 0.25mm solid #d7e3e1;
+  border-radius: 2mm;
+}
+
+.print-media-item small {
+  font-size: 7.6pt;
+  color: #5c6665;
+}
+
+.print-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5mm 3mm;
+  margin-top: 1mm;
+}
+
+.print-mini-grid div {
+  padding: 1.5mm 1.75mm;
+  border-radius: 2mm;
+  background: #f4f7f7;
+}
+
+.print-mini-grid span,
+.print-mini-grid strong {
+  display: block;
+}
+
+.print-mini-grid span {
+  font-size: 7pt;
+  color: #60716f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.print-mini-grid strong {
+  margin-top: 0.5mm;
+  font-size: 8.5pt;
+}
+
+.print-risk-list {
+  display: grid;
+  gap: 1.2mm;
+  margin-top: 1mm;
+}
+
+.print-risk-item {
+  padding: 1.7mm 2mm;
+  border-left: 1.2mm solid #d7e3e1;
+  background: #f7f8f8;
+  border-radius: 0 1.8mm 1.8mm 0;
+}
+
+.print-risk-item--hit {
+  border-left-color: #b3446c;
+  background: #fbf3f6;
+}
+
+.print-risk-item strong {
+  display: block;
+  font-size: 8.6pt;
+}
+
+.print-risk-item small {
+  display: block;
+  font-size: 7.8pt;
+  color: #5a6665;
+}
+
 @media (max-width: 720px) {
   .report-run-card,
   .report-run-actions,
@@ -2042,7 +2223,9 @@
     flex-direction: column;
   }
 
-  #solarMapResult .environment-heading-row {
+  #solarMapResult .solar-map-layout,
+  .print-media-grid,
+  .print-mini-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -2061,12 +2244,31 @@
   .project-header-card {
     display: block !important;
     margin-bottom: 4mm;
-    padding: 3mm 4mm;
+    padding: 2.6mm 3.2mm;
+  }
+
+  .project-header-row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 2.5mm;
+    align-items: start;
+  }
+
+  .project-header-card label > span,
+  .project-address-field > span,
+  .project-date-field > span {
+    font-size: 6.6pt;
+  }
+
+  .project-header-card input,
+  .project-address-field strong,
+  .project-date-field strong {
+    font-size: 10pt;
+    min-height: 0;
   }
 
   .project-header-row + .project-header-row {
-    margin-top: 2mm;
-    padding-top: 2mm;
+    margin-top: 1.7mm;
+    padding-top: 1.7mm;
   }
 
   .print-report-only {
