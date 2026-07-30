@@ -46,7 +46,7 @@
       },
       metadata: {
         app: 'Standortpass Energie & Gebäude',
-        appVersion: '1.2.0-prototype',
+        appVersion: '1.3.0-prototype',
       },
     };
   }
