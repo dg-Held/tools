@@ -1360,6 +1360,7 @@ function showSelectedBuilding(feature) {
     ? '–'
     : `ca. ${number0.format(roundTo(area, 10))} m²`;
   $('metricLengthRaw').textContent = formatLength(length, 1);
+  if ($('metricLengthRounded')) $('metricLengthRounded').textContent = length === null ? '–' : `ca. ${number0.format(roundTo(length, 1))} m`;
   $('metricHeightMedian').textContent = formatLength(medianHeight, 1);
   $('metricHeightMax').textContent = formatLength(maxHeight, 1);
   $('metricStand').textContent = formatDate(attrs.STAND);
@@ -3564,26 +3565,19 @@ async function testSolarMap() {
       : 'Amtliche Jahressolarstrahlung im Standortumfeld einschließlich Gelände.';
 
     box.innerHTML = `
-      <div class="environment-heading-row">
-        <div class="solar-map-layout">
-          <div class="solar-map-copy">
-            <div>
-              <h3>Solarstrahlung im Standortumfeld</h3>
-              <p>${ageNote} Die spezielle TIRIS-Gebäudeansicht bleibt zusätzlich verlinkt.</p>
-            </div>
-            ${tirisLink}
-            <p class="geometry-note">Amtliche Solarstrahlung im Umfeld des Gebäudestandorts.</p>
-            <div class="solar-map-meta">
-              <span>Ausschnitt ca. 125 m</span>
-              <span>${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
-            </div>
-            <details class="environment-source-details"><summary>Datenquelle / WMS-Details</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>
-          </div>
-          <div>
-            <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
-          </div>
+      <div class="solar-map-toolbar">
+        <div>
+          <strong>Amtliche Jahressolarstrahlung</strong>
+          <span>${ageNote}</span>
         </div>
-      </div>`;
+        ${tirisLink}
+      </div>
+      <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
+      <div class="solar-map-meta">
+        <span>Ausschnitt ca. 125 m</span>
+        <span>${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
+      </div>
+      <details class="environment-source-details"><summary>Datenquelle / WMS-Details</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
 
     box.hidden = false;
     setStatus(status, 'Raster bereit', 'success');

@@ -196,7 +196,10 @@
 
     const result = { windowSharePercent: windowShare, fields: {} };
     estimateFieldConfig().forEach((config) => {
-      const manual = parseInputValue(config.manualId);
+      let manual = parseInputValue(config.manualId);
+      // Bei Flächen/Volumen bedeutet 0: manuelle Korrektur verwerfen und Automatik verwenden.
+      // Bei Dachneigung bleibt 0° ein gültiger manueller Wert (Flachdach).
+      if (config.key !== 'roofPitch' && manual !== null && manual <= 0) manual = null;
       const automatic = auto[config.key] ?? null;
       result.fields[config.key] = {
         automatic,
@@ -229,6 +232,18 @@
     Object.entries(data.fields).forEach(([key, item]) => {
       out[key] = clone(item);
     });
+    const exterior = data.fields.exteriorWall?.effective;
+    const windows = data.fields.windowArea?.effective;
+    const exteriorAuto = data.fields.exteriorWall?.automatic;
+    const windowsAuto = data.fields.windowArea?.automatic;
+    out.opaqueExteriorWall = {
+      automatic: exteriorAuto !== null && windowsAuto !== null ? Math.max(0, exteriorAuto - windowsAuto) : null,
+      manual: null,
+      effective: exterior !== null && windows !== null ? Math.max(0, exterior - windows) : null,
+      unit: 'm²',
+      source: 'derived',
+      method: 'Außenwandfläche - Fensterfläche',
+    };
     return out;
   }
 
@@ -329,14 +344,16 @@
       radonStatus: statusText('radonStatus'),
       reportStatus: statusText('reportRunStatus'),
       solar: compactSolarShared(),
-      geometryEstimates: geometryEstimatesShared(),
       updatedAt: new Date().toISOString(),
     };
+
+    const sharedBuilding = buildingFeature ? selectedBuildingShared(buildingFeature) : {};
+    sharedBuilding.estimates = geometryEstimatesShared();
 
     store.patch({
       project: addressRecord ? { addressLabel } : {},
       location: locationPatch,
-      building: buildingFeature ? selectedBuildingShared(buildingFeature) : {},
+      building: sharedBuilding,
       modules: { standortpass: modulePatch },
     });
 
@@ -514,17 +531,79 @@
         label: card.querySelector('span')?.textContent?.trim() || '',
         value: card.querySelector('strong')?.textContent?.trim() || '',
         note: card.querySelector('small')?.textContent?.trim() || '',
+        hit: card.classList.contains('hazard-card--hit'),
+        notice: card.classList.contains('environment-card--notice'),
       }))
       .filter((item) => item.label || item.value || item.note);
   }
 
-  function detailedListHtml(items, fallback = 'Noch nicht geprüft.') {
-    if (!items.length) return `<p>${escapeHtml(fallback)}</p>`;
-    return `<ul>${items.map((item) => `<li><strong>${escapeHtml(item.label)}</strong>: ${escapeHtml(item.value)}${item.note ? ` <small>(${escapeHtml(item.note)})</small>` : ''}</li>`).join('')}</ul>`;
+  function compactHeatHtml(items) {
+    if (!items.length) return '<p>Noch nicht geprüft.</p>';
+    return `<div class="print-heat-list">${items.map((item) => {
+      let value = item.value;
+      const nearest = item.note.match(/nächster Treffer ca\. ([0-9.,]+) m/i)?.[1];
+      if (nearest && !/nächster/i.test(value)) value += ` · nächster ca. ${nearest} m`;
+      value = value.replace(/\s*\(.*?\)\s*$/g, '');
+      return `<div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(value)}</span></div>`;
+    }).join('')}</div>`;
   }
 
-  function printMiniGridHtml(items) {
-    return `<div class="print-mini-grid">${items.filter((item) => item && item.value && item.value !== '–').map((item) => `<div><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong></div>`).join('')}</div>`;
+  function printBuildingGridHtml(items) {
+    const rows = items.filter((item) => item.value && item.value !== '–' && item.value !== '');
+    return `<div class="print-building-grid">${rows.map((item) => `<div><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong></div>`).join('')}</div>`;
+  }
+
+  function printSolarDurationTable(items) {
+    const rows = items.filter((item) => item.value);
+    if (!rows.length) return '';
+    return `<div class="print-sun-duration"><strong>Sonnenscheindauer</strong><div>${rows.map((item) => `<span><b>${escapeHtml(item.label)}</b><em>${escapeHtml(item.value)}</em></span>`).join('')}</div></div>`;
+  }
+
+  function simplifiedRiskLabel(label) {
+    const normalized = String(label || '');
+    if (/HQ30/i.test(normalized)) return 'Hochwasser HQ30';
+    if (/HQ100/i.test(normalized)) return 'Hochwasser HQ100';
+    if (/HQ300/i.test(normalized)) return 'Hochwasser HQ300';
+    if (/Bundesdenkmalamt/i.test(normalized)) return 'Denkmalschutz (BDA)';
+    if (/TIRIS Kultur/i.test(normalized)) return 'Baukultureller Kontext';
+    if (/GZW|Wildbach|Lawinenverbauung/i.test(normalized)) return 'WLV-Planungsbereich';
+    if (/Weitere Naturgefahren/i.test(normalized)) return 'Weitere Naturgefahren';
+    if (/Radonvorsorge/i.test(normalized)) return 'Radonvorsorgegebiet';
+    if (/Radonschutz/i.test(normalized)) return 'Radonschutzgebiet';
+    return normalized;
+  }
+
+  function simplifiedRiskValue(label, value) {
+    const combined = `${label} ${value}`;
+    if (/abfrage fehlgeschlagen|operation was aborted|fehler/i.test(combined)) return 'Prüfung offen';
+    if (/kein exakter adresstreffer/i.test(value)) return 'Kein Eintrag gefunden';
+    if (/kein Treffer/i.test(value)) return 'Kein Treffer';
+    const hitMatch = value.match(/([0-9]+)\s+Flächentreffer/i);
+    if (hitMatch) return `${hitMatch[1]} Flächentreffer`;
+    if (/^ja$/i.test(value) || /^nein$/i.test(value)) return value.toLowerCase();
+    return value;
+  }
+
+  function riskTone(label, value, card) {
+    const combined = `${label} ${value}`;
+    if (/abfrage fehlgeschlagen|operation was aborted|fehler|offen/i.test(combined)) return 'warning';
+    if (card.hit) return 'hit';
+    if (/Radonschutzgebiet/i.test(label) && /^ja$/i.test(value)) return 'hit';
+    if (/kein Treffer|kein Eintrag|^nein$/i.test(value)) return 'clear';
+    if (/Radonvorsorgegebiet/i.test(label)) return 'info';
+    if (card.notice && !/Radonvorsorgegebiet/i.test(label)) return 'hit';
+    return 'info';
+  }
+
+  function cloneOrthophotoCompositeForPrint() {
+    const stage = $('geometryStage');
+    if (!stage || $('orthophotoImage')?.hidden) return '';
+    const clone = stage.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.classList.add('print-map-stage');
+    clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+    clone.querySelectorAll('button, select, label').forEach((el) => el.remove());
+    return clone.outerHTML;
   }
 
   function buildPrintSummary() {
@@ -545,72 +624,75 @@
       { label: 'Gebäudevolumen', value: effectiveEstimateText('volume', '') },
     ];
 
-    const heat = compactCardsDetailed('environmentalHeatResult', 6);
-    heat.unshift({ label: 'Wärmenetz', value: 'direkter TIRIS-Check am Projektstandort', note: 'Link folgt der ausgewählten Adresse' });
+    const heat = compactCardsDetailed('environmentalHeatResult', 7);
+    heat.unshift({ label: 'Wärmenetz', value: 'Direkter TIRIS-Check am Projektstandort', note: '' });
 
-    const solarMeta = [
-      { label: 'Bezugshöhe', value: text('solarChartHeight') },
-      ...[...document.querySelectorAll('#solarResult .solar-month-grid > div')].map((item) => ({
-        label: item.querySelector('span')?.textContent?.trim() || '',
-        value: item.querySelector('strong')?.textContent?.trim() || '',
-      })),
-    ];
+    const observerHeight = text('solarChartHeight');
+    const solarMonths = [...document.querySelectorAll('#solarResult .solar-month-grid > div')].map((item) => ({
+      label: (item.querySelector('span')?.textContent?.trim() || '').replace('Jänner', 'Jän').replace('September', 'Sept'),
+      value: item.querySelector('strong')?.textContent?.trim() || '',
+    }));
+    const solarShared = compactSolarShared();
+    const solarSource = [
+      'GeoLand / voibos',
+      solarShared?.dataBasis || null,
+      solarShared?.flightYear ? `Befliegungsjahr ${solarShared.flightYear}` : null,
+    ].filter(Boolean).join(' · ');
 
     const chart = !$('solarChartCard')?.hidden && $('solarChart')?.childElementCount
-      ? `<div class="print-solar-chart">${$('solarChart').outerHTML.replace('id="solarChart"', '')}</div>${$('solarChartCard')?.querySelector('.solar-legend')?.outerHTML || ''}`
+      ? `<div class="print-solar-chart">${$('solarChart').outerHTML.replace('id="solarChart"', '')}</div><div class="print-solar-legend">${$('solarChartCard')?.querySelector('.solar-legend')?.innerHTML || ''}</div>`
       : '';
 
-    const orthoSrc = $('orthophotoImage')?.getAttribute('src') || '';
+    const orthophotoComposite = cloneOrthophotoCompositeForPrint();
     const solarSrc = document.querySelector('#solarMapResult .solar-map-preview')?.getAttribute('src') || '';
-    const mediaItems = [];
-    if (orthoSrc) mediaItems.push(`<div class="print-media-item"><img src="${escapeHtml(orthoSrc)}" alt="Orthofoto des Projektstandorts"><small>Orthofoto + TIRIS-Gebäudepolygon</small></div>`);
-    if (solarSrc) mediaItems.push(`<div class="print-media-item"><img src="${escapeHtml(solarSrc)}" alt="Solarstrahlung im Standortumfeld"><small>Solarstrahlung im Standortumfeld · Image Jahressumme</small></div>`);
-    const mediaHtml = mediaItems.length ? `<article class="print-summary-card print-summary-card--wide"><h2>Karten</h2><div class="print-media-grid">${mediaItems.join('')}</div></article>` : '';
+    const scaleText = $('orthophotoScale')?.selectedOptions?.[0]?.textContent?.trim() || 'ca. 1:500';
+    const maps = [];
+    if (orthophotoComposite) maps.push(`<div class="print-map-card">${orthophotoComposite}<div><strong>Gebäudeübersicht</strong><small>Quelle: TIRIS Orthofoto + Gebäude · ${escapeHtml(scaleText)}</small></div></div>`);
+    if (solarSrc) maps.push(`<div class="print-map-card"><img src="${escapeHtml(solarSrc)}" alt="Solarstrahlung im Standortumfeld"><div><strong>Solarstrahlung im Standortumfeld</strong><small>Quelle: Land Tirol · Energiequellen WMS · Image Jahressumme · Ausschnitt ca. 125 m</small></div></div>`);
 
-    const riskItems = [
-      ...[...document.querySelectorAll('#hazardResult .environment-card')].map((card) => ({
-        label: card.querySelector('span')?.textContent?.trim() || '',
-        value: card.querySelector('strong')?.textContent?.trim() || '',
-        note: card.querySelector('small')?.textContent?.trim() || '',
-        hit: card.classList.contains('hazard-card--hit'),
-      })),
-      ...[...document.querySelectorAll('#heritageResult .environment-card')].slice(0, 2).map((card) => ({
-        label: card.querySelector('span')?.textContent?.trim() || '',
-        value: card.querySelector('strong')?.textContent?.trim() || '',
-        note: card.querySelector('small')?.textContent?.trim() || '',
-        hit: card.classList.contains('hazard-card--hit'),
-      })),
-      ...[...document.querySelectorAll('#radonResult .environment-card')].map((card) => ({
-        label: card.querySelector('span')?.textContent?.trim() || '',
-        value: card.querySelector('strong')?.textContent?.trim() || '',
-        note: card.querySelector('small')?.textContent?.trim() || '',
-        hit: card.classList.contains('environment-card--notice'),
-      })),
-    ].filter((item) => item.label || item.value);
-
-    const riskHtml = riskItems.length
-      ? `<div class="print-risk-list">${riskItems.map((item) => `<div class="print-risk-item ${item.hit ? 'print-risk-item--hit' : ''}"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.value)}</span>${item.note ? `<small>${escapeHtml(item.note)}</small>` : ''}</div>`).join('')}</div>`
-      : '<p>Noch nicht geprüft.</p>';
+    const heritageCards = compactCardsDetailed('heritageResult', 3);
+    const hazardCards = compactCardsDetailed('hazardResult', 10);
+    const radonCards = compactCardsDetailed('radonResult', 3);
+    const orderedRisks = [...heritageCards, ...hazardCards, ...radonCards];
+    const riskHtml = orderedRisks.length ? `<div class="print-risk-grid">${orderedRisks.map((card) => {
+      const label = simplifiedRiskLabel(card.label);
+      const value = simplifiedRiskValue(label, card.value);
+      const tone = riskTone(label, value, card);
+      return `<div class="print-risk-card print-risk-card--${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+    }).join('')}</div>` : '<p>Noch nicht geprüft.</p>';
 
     grid.innerHTML = `
-      <article class="print-summary-card">
-        <h2>Gebäude & Standort</h2>
-        ${printMiniGridHtml(buildingMetrics)}
-      </article>
-      <article class="print-summary-card">
-        <h2>Wärmeversorgung</h2>
-        ${detailedListHtml(heat)}
-      </article>
-      ${mediaHtml}
-      <article class="print-summary-card print-summary-card--wide">
-        <h2>Solar</h2>
-        ${printMiniGridHtml(solarMeta)}
-        ${chart}
-      </article>
-      <article class="print-summary-card print-summary-card--wide">
-        <h2>Standort & Risiken</h2>
-        ${riskHtml}
-      </article>`;
+      <div class="print-page print-page--first">
+        <section class="print-section print-section--maps">
+          <h2>Karten</h2>
+          <div class="print-map-grid">${maps.join('')}</div>
+        </section>
+        <div class="print-two-column">
+          <section class="print-section">
+            <h2>Gebäude & Standort</h2>
+            ${printBuildingGridHtml(buildingMetrics)}
+            <p class="print-source">Quelle: Land Tirol / TIRIS. Abgeleitete Bauteilgrößen sind Orientierungswerte; manuelle Korrekturen werden bevorzugt.</p>
+          </section>
+          <section class="print-section">
+            <h2>Wärmeversorgung</h2>
+            ${compactHeatHtml(heat)}
+            <p class="print-source">Quelle: TIRIS WASSER; Wärmenetz derzeit direkter TIRIS-Check. Keine Eignungszusage.</p>
+          </section>
+        </div>
+      </div>
+      <div class="print-page print-page--second">
+        <section class="print-section print-section--solar">
+          <h2>Sonnenbahn & Verschattung</h2>
+          <div class="print-solar-meta"><span><b>Bezugshöhe</b>${escapeHtml(observerHeight || '–')}</span>${printSolarDurationTable(solarMonths)}</div>
+          ${chart}
+          <p class="print-source">Quelle: ${escapeHtml(solarSource || 'GeoLand / voibos')}. Grau = Gelände/DTM, Türkis = zusätzliche Gebäude-/Vegetationsverschattung/DSM.</p>
+        </section>
+        <section class="print-section print-section--risks">
+          <h2>Standort & Risiken</h2>
+          ${riskHtml}
+          <p class="print-source">Quellen: Bundesdenkmalamt, TIRIS Naturgefahren/Kultur, Radonschutzverordnung. Kein Treffer ist keine Sicherheitsbestätigung.</p>
+        </section>
+      </div>`;
   }
 
   function resetReportUi() {
@@ -646,7 +728,7 @@
         $('tirisLiveAddressInput').value = label;
         $('reportRunMessage').textContent = 'Projektadresse übernommen. Bitte die Adresse einmal suchen und bestätigen, da im älteren Projekt keine Koordinate gespeichert war.';
       }
-      restoreGeometryEstimates(projectState.modules?.standortpass?.geometryEstimates);
+      restoreGeometryEstimates(projectState.building?.estimates || projectState.modules?.standortpass?.geometryEstimates);
       if (restored && options.autoRun) await runFullReport({ source: 'import' });
     } finally {
       hydrationRunning = false;
@@ -733,6 +815,24 @@
 
   ['windowSharePercent', 'manualExteriorWallValue', 'manualWindowAreaValue', 'manualTopFloorAreaValue', 'manualBasementAreaValue', 'manualRoofPitchValue', 'manualRoofSlopeAreaValue', 'manualVolumeValue'].forEach((id) => {
     $(id)?.addEventListener('input', () => {
+      renderGeometryEstimates();
+      buildPrintSummary();
+      syncProjectFromUi();
+    });
+    $(id)?.addEventListener('change', () => {
+      if (id !== 'manualRoofPitchValue') {
+        const value = parseInputValue(id);
+        if (value !== null && value <= 0) setInputValue(id, null);
+      }
+      renderGeometryEstimates();
+      buildPrintSummary();
+      syncProjectFromUi();
+    });
+  });
+
+  document.querySelectorAll('.estimate-reset').forEach((button) => {
+    button.addEventListener('click', () => {
+      setInputValue(button.dataset.resetId, null);
       renderGeometryEstimates();
       buildPrintSummary();
       syncProjectFromUi();
