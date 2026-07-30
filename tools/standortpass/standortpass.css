@@ -1360,7 +1360,7 @@
   padding: var(--space-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-medium);
-  background: var(--page-background);
+  background: #fff;
 }
 
 .environment-card > span,
@@ -2327,10 +2327,13 @@
 
 .metric-grid-test--compact {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .metric--summary {
+  position: relative;
   min-height: 112px;
+  margin-top: 0;
   background: #f2f5f5;
 }
 
@@ -2348,21 +2351,26 @@
   color: var(--text-muted);
 }
 
-.metric--summary strong {
+.metric--summary > strong {
   margin-top: .35rem;
   color: var(--text-dark);
   font-size: 1.25rem;
   font-weight: 500;
 }
 
-.metric--summary small {
-  margin-top: .35rem;
-  color: var(--text-muted);
-  font-size: .74rem;
+.metric-info {
+  position: relative;
+  flex: 0 0 auto;
 }
 
+.metric-info > summary {
+  list-style: none;
+}
+.metric-info > summary::-webkit-details-marker { display:none; }
+
 .info-tip {
-  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
   width: 20px;
   height: 20px;
   padding: 0;
@@ -2371,8 +2379,71 @@
   font: 700 .72rem/1 Nunito, sans-serif;
   color: var(--turquoise-dark);
   background: #fff;
-  cursor: help;
+  cursor: pointer;
+  user-select: none;
 }
+
+.metric-info-popover {
+  position: absolute;
+  z-index: 20;
+  top: 27px;
+  right: 0;
+  width: min(250px, 70vw);
+  padding: .7rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 10px 26px rgba(28,75,71,.14);
+  color: var(--text-muted);
+  font-size: .78rem;
+  line-height: 1.45;
+  background: #fff;
+}
+
+.metric-info-popover strong,
+.metric-info-popover code {
+  color: var(--text-dark);
+  font-size: inherit;
+}
+
+.building-edit-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: var(--space-2);
+}
+
+.building-edit-heading h3 { margin: 0; }
+
+#buildingResults.has-selection:not(.is-editing) .candidate-button:not(.is-selected) {
+  display: none;
+}
+
+.location-data-details {
+  margin-top: .85rem;
+  border-top: 1px solid var(--line);
+}
+
+.location-data-details > summary {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  list-style: none;
+  cursor: pointer;
+  padding: .8rem 0 .1rem;
+  color: var(--turquoise-dark);
+  font-weight: 700;
+}
+.location-data-details > summary::-webkit-details-marker { display:none; }
+.location-data-details > summary::before {
+  content: '▸';
+  font-size: .85rem;
+  transition: transform .18s ease;
+}
+.location-data-details[open] > summary::before { transform: rotate(90deg); }
+.location-data-details > summary small { color:var(--text-muted); font-weight:400; }
+.location-data-details__content { padding-top: .65rem; }
+.selected-card--compact { margin-top: 0; }
 
 .terrain-inline-action {
   margin-top: .75rem;
@@ -2414,39 +2485,53 @@
   background: #f6f8f8;
 }
 
-/* Solar-Zusatzkarte: Einleitung außerhalb, Karte im Ergebnis über volle Breite. */
+/* Solar-Zusatzkarte: nur die Karte rechts; Erklärung/Link kompakt links. */
 #solarMapResult {
   padding: 1rem;
 }
 
-#solarMapResult .solar-map-toolbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: .75rem;
-}
-
-#solarMapResult .solar-map-toolbar > div {
+#solarMapResult .solar-map-layout {
   display: grid;
-  gap: .2rem;
+  grid-template-columns: minmax(220px, .72fr) minmax(0, 1.28fr);
+  gap: 1rem;
+  align-items: start;
 }
 
-#solarMapResult .solar-map-toolbar span {
+#solarMapResult .solar-map-copy {
+  display: grid;
+  gap: .7rem;
+  min-width: 0;
+}
+
+#solarMapResult .solar-map-copy p {
+  margin: 0;
   color: var(--text-muted);
-  font-size: .84rem;
+  font-size: .87rem;
+  line-height: 1.5;
+}
+
+#solarMapResult .solar-map-copy .external-action-link {
+  width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  justify-content: center;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 #solarMapResult .solar-map-preview {
   width: 100%;
-  max-height: 470px;
   aspect-ratio: 13 / 9;
   object-fit: cover;
   margin: 0;
 }
 
 #solarMapResult .solar-map-meta {
-  margin-top: .65rem;
+  margin-top: 0;
+}
+
+#solarMapResult .environment-source-details {
+  margin-top: 0;
 }
 
 .methodology-panel {
@@ -2458,6 +2543,9 @@
 }
 
 .methodology-panel > details > summary {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
   list-style: none;
   cursor: pointer;
   padding: 1rem 1.15rem;
@@ -2465,6 +2553,13 @@
 }
 
 .methodology-panel > details > summary::-webkit-details-marker { display:none; }
+.methodology-panel > details > summary::before {
+  content: '▸';
+  flex: 0 0 auto;
+  font-size: 1rem;
+  transition: transform .18s ease;
+}
+.methodology-panel > details[open] > summary::before { transform: rotate(90deg); }
 .methodology-panel > details > summary span { display:grid; gap:.15rem; }
 .methodology-panel > details > summary small { color:var(--text-muted); font-weight:400; }
 
@@ -2485,7 +2580,8 @@
 @media (max-width: 780px) {
   .metric-grid-test--compact { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .methodology-content { grid-template-columns: 1fr; }
-  #solarMapResult .solar-map-toolbar { flex-direction: column; }
+  #solarMapResult .solar-map-layout { grid-template-columns: 1fr; }
+  .metric-info-popover { position: static; width: auto; margin-top: .45rem; }
 }
 
 @media (max-width: 500px) {
@@ -2824,8 +2920,8 @@
   }
 
   .print-risk-card--hit {
-    border-color: #e4bac9;
-    background: #fbf0f4;
+    border-color: #dcaabd;
+    background: #fae8ef;
   }
 
   .print-risk-card--warning {

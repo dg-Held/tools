@@ -1337,6 +1337,8 @@ function selectBuilding(objectId) {
   });
 
   showSelectedBuilding(feature);
+  $('buildingResults').classList.add('has-selection');
+  $('buildingResults').classList.remove('is-editing');
   resetSolarOutput();
   if (selectedAddress) setStatus($('solarStatus'), 'bereit');
   window.dispatchEvent(new CustomEvent('standortpass:building-selected', {
@@ -1385,6 +1387,7 @@ function resetBuildingOutput(clearRaw = true) {
   buildingFeatures = [];
   selectedBuildingId = null;
   $('buildingResults').hidden = true;
+  $('buildingResults').classList.remove('has-selection', 'is-editing');
   $('selectedBuildingPanel').hidden = true;
   $('buildingCandidateList').innerHTML = '';
   $('noSuitableBuildingButton').hidden = true;
@@ -1832,6 +1835,8 @@ function editSelectedBuilding() {
   const radiusSelect = $('buildingRadius');
   if (Number(radiusSelect.value) < 30) radiusSelect.value = '30';
   loadBuildingArea().then(() => {
+    $('buildingResults').classList.add('is-editing');
+    $('buildingResults').classList.remove('has-selection');
     $('buildingResults').scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 }
@@ -3523,11 +3528,13 @@ async function testSolarMap() {
     if (!chosen) {
       $('rawSolarMap').textContent = pretty(raw);
       box.innerHTML = `
-        <div class="environment-heading-row">
-          <div><h3>Solarstrahlung im Standortumfeld</h3><p>Kein geeigneter öffentlicher Solar-WMS-Layer konnte automatisch bestätigt werden.</p></div>
-          ${tirisLink}
-        </div>
-        <p>Die offizielle tirisMaps-Ansicht bleibt direkt verlinkt; wir verwenden keinen geratenen Layernamen.</p>`;
+        <div class="solar-map-layout">
+          <div class="solar-map-copy">
+            <p>Kein geeigneter öffentlicher Solar-WMS-Layer konnte automatisch bestätigt werden. Die offizielle tirisMaps-Gebäudeansicht bleibt direkt verlinkt; es wird kein Layername geraten.</p>
+            ${tirisLink}
+          </div>
+          <div class="solar-map-empty">Keine Rasterdarstellung verfügbar.</div>
+        </div>`;
       box.hidden = false;
       setStatus(status, 'Layer offen', 'muted');
       return;
@@ -3565,19 +3572,18 @@ async function testSolarMap() {
       : 'Amtliche Jahressolarstrahlung im Standortumfeld einschließlich Gelände.';
 
     box.innerHTML = `
-      <div class="solar-map-toolbar">
-        <div>
-          <strong>Amtliche Jahressolarstrahlung</strong>
-          <span>${ageNote}</span>
+      <div class="solar-map-layout">
+        <div class="solar-map-copy">
+          <p>${ageNote} Die spezielle TIRIS-Gebäudeansicht bleibt als ergänzende Dachauswertung verlinkt.</p>
+          ${tirisLink}
+          <div class="solar-map-meta">
+            <span>Ausschnitt ca. 125 m</span>
+            <span>${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
+          </div>
+          <details class="environment-source-details"><summary>Datenquelle / WMS-Details</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>
         </div>
-        ${tirisLink}
-      </div>
-      <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
-      <div class="solar-map-meta">
-        <span>Ausschnitt ca. 125 m</span>
-        <span>${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
-      </div>
-      <details class="environment-source-details"><summary>Datenquelle / WMS-Details</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
+        <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
+      </div>`;
 
     box.hidden = false;
     setStatus(status, 'Raster bereit', 'success');

@@ -7,7 +7,7 @@
   <meta name="description" content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="standortpass.css?v=5">
+  <link rel="stylesheet" href="standortpass.css?v=6">
 </head>
 <body>
 
@@ -85,45 +85,48 @@
       </div>
       <div class="suggestions" id="tirisLiveAddressResults" role="listbox" hidden></div>
 
-      <article class="selected-card" id="selectedAddressCard" hidden>
-        <div>
-          <span class="mini-label">Gemeinsamer Standort</span>
-          <strong id="selectedAddressLabel">–</strong>
-          <small id="selectedAddressMeta">–</small>
-        </div>
-        <button class="quiet-button" id="clearAddressButton" type="button">Auswahl löschen</button>
-      </article>
+      <details class="location-data-details no-print">
+        <summary><span>Standortdetails & Datenabgleich</span><small>Ausgewählte Adresse, Katastralgemeinde und BEV-Vergleich</small></summary>
+        <div class="location-data-details__content">
+          <article class="selected-card selected-card--compact" id="selectedAddressCard" hidden>
+            <div>
+              <span class="mini-label">Ausgewählte Adresse</span>
+              <strong id="selectedAddressLabel">–</strong>
+              <small id="selectedAddressMeta">–</small>
+            </div>
+            <button class="quiet-button" id="clearAddressButton" type="button">Auswahl löschen</button>
+          </article>
 
-      <div class="two-column-test" id="liveAddressChecks" hidden>
-        <article class="mini-test-card">
-          <span class="mini-label">1b · Katastralgemeinde</span>
-          <h3>TIRIS-Punkt → KG-Polygon</h3>
-          <div id="kgResult" class="compact-result">wird geprüft …</div>
-        </article>
+          <div class="two-column-test" id="liveAddressChecks" hidden>
+            <article class="mini-test-card">
+              <span class="mini-label">Katastralgemeinde</span>
+              <h3>TIRIS-Punkt → KG-Polygon</h3>
+              <div id="kgResult" class="compact-result">wird geprüft …</div>
+            </article>
 
-        <article class="mini-test-card">
-          <span class="mini-label">1c · Vergleich</span>
-          <h3>TIRIS ↔ BEV</h3>
-          <div id="bevComparisonResult" class="compact-result">BEV-Modul wird initialisiert …</div>
-        </article>
-      </div>
-
-      <details class="fallback-details">
-        <summary>BEV-Fallback / Vergleich manuell öffnen</summary>
-        <div class="fallback-content">
-          <div class="fallback-heading">
-            <p>
-              Diese Suche verwendet unverändert den bestehenden lokalen BEV-Bestand von „Klima & Heizlast“. Sie bleibt in Test 03 bewusst als Rückfallweg erhalten.
-            </p>
-            <span class="status-chip" id="addressModuleStatus">lädt …</span>
+            <article class="mini-test-card">
+              <span class="mini-label">Datenabgleich</span>
+              <h3>TIRIS ↔ BEV</h3>
+              <div id="bevComparisonResult" class="compact-result">BEV-Modul wird initialisiert …</div>
+            </article>
           </div>
 
-          <label class="search-field">
-            <span>PLZ, Gemeinde, Straße und Hausnummer</span>
-            <input id="addressSearchInput" type="search" autocomplete="off" placeholder="z. B. 6020 Adele-Obermayr-Straße 2" aria-controls="addressSuggestions" aria-expanded="false">
-          </label>
-          <div class="suggestions" id="addressSuggestions" role="listbox" hidden></div>
-          <p class="field-status" id="addressSearchStatus">Adressmodul wird initialisiert …</p>
+          <details class="fallback-details">
+            <summary>BEV-Fallback / Vergleich manuell öffnen</summary>
+            <div class="fallback-content">
+              <div class="fallback-heading">
+                <p>Die lokale BEV-Suche bleibt als Rückfallweg und technischer Vergleich erhalten.</p>
+                <span class="status-chip" id="addressModuleStatus">lädt …</span>
+              </div>
+
+              <label class="search-field">
+                <span>PLZ, Gemeinde, Straße und Hausnummer</span>
+                <input id="addressSearchInput" type="search" autocomplete="off" placeholder="z. B. 6020 Adele-Obermayr-Straße 2" aria-controls="addressSuggestions" aria-expanded="false">
+              </label>
+              <div class="suggestions" id="addressSuggestions" role="listbox" hidden></div>
+              <p class="field-status" id="addressSearchStatus">Adressmodul wird initialisiert …</p>
+            </div>
+          </details>
         </div>
       </details>
 
@@ -197,7 +200,10 @@
 
       <div class="building-layout" id="buildingResults" hidden>
         <div>
-          <h3>Kandidaten / Bearbeiten</h3>
+          <div class="building-edit-heading">
+            <h3>Gebäudeauswahl</h3>
+            <button class="quiet-button" id="changeBuildingButton" type="button">Gebäude bearbeiten</button>
+          </div>
           <div class="candidate-list" id="buildingCandidateList"></div>
           <button class="quiet-button no-building-choice" id="noSuitableBuildingButton" type="button" hidden>Keines davon · ohne Geometrie weiter</button>
         </div>
@@ -230,35 +236,29 @@
           </div>
           <div class="selected-building-actions">
             <span class="origin-label">Amtlich · TIRIS</span>
-            <button class="quiet-button" id="changeBuildingButton" type="button">Gebäude bearbeiten</button>
           </div>
         </div>
 
         <div class="metric-grid-test metric-grid-test--compact">
-          <div class="metric metric--summary terrain-result" id="terrainResult" hidden>
-            <div class="compact-card-heading"><span>Höhenlage</span><button class="info-tip" type="button" title="Amtliche Geländehöhe am Standort aus dem TIRIS-DGM. Details und Datenquelle stehen in den technischen Grundlagen.">i</button></div>
+          <div class="metric metric--summary" id="terrainResult" hidden>
+            <div class="compact-card-heading"><span>Höhenlage</span><details class="metric-info"><summary class="info-tip" aria-label="Info zur Höhenlage">i</summary><div class="metric-info-popover">Amtliche Geländehöhe am Standort aus dem TIRIS-DGM.<br><span id="terrainMeta">–</span></div></details></div>
             <strong id="terrainHeight">–</strong>
-            <small id="terrainMeta">–</small>
           </div>
           <div class="metric metric--summary">
-            <div class="compact-card-heading"><span>Dachprojektion</span><button class="info-tip" type="button" title="Gerundeter Orientierungswert aus TIRIS Shape__Area. Der exakte Rohwert bleibt intern erhalten.">i</button></div>
+            <div class="compact-card-heading"><span>Dachprojektion</span><details class="metric-info"><summary class="info-tip" aria-label="Info zur Dachprojektion">i</summary><div class="metric-info-popover">Gerundeter Beratungswert aus TIRIS <code>Shape__Area</code>.<br>Exakter Rohwert: <strong id="metricAreaRaw">–</strong></div></details></div>
             <strong id="metricAreaRounded">–</strong>
-            <small>exakt <span id="metricAreaRaw">–</span></small>
           </div>
           <div class="metric metric--summary">
-            <div class="compact-card-heading"><span>Dachumfang</span><button class="info-tip" type="button" title="Umfang des TIRIS-Dachpolygons. Er ist nicht identisch mit dem thermisch relevanten Fassadenumfang.">i</button></div>
+            <div class="compact-card-heading"><span>Dachumfang</span><details class="metric-info"><summary class="info-tip" aria-label="Info zum Dachumfang">i</summary><div class="metric-info-popover">Umfang des TIRIS-Dachpolygons; nicht identisch mit dem thermisch relevanten Fassadenumfang.<br>Exakter Rohwert: <strong id="metricLengthRaw">–</strong></div></details></div>
             <strong id="metricLengthRounded">–</strong>
-            <small>exakt <span id="metricLengthRaw">–</span></small>
           </div>
           <div class="metric metric--summary">
-            <div class="compact-card-heading"><span>Gebäudehöhe Median</span><button class="info-tip" type="button" title="Robuste typische Gebäude-/Dachhöhe aus TIRIS. Maximalhöhe wird nur als Vergleichswert gespeichert.">i</button></div>
+            <div class="compact-card-heading"><span>Gebäudehöhe Median</span><details class="metric-info"><summary class="info-tip" aria-label="Info zur Gebäudehöhe">i</summary><div class="metric-info-popover">Robuste typische Gebäude-/Dachhöhe aus TIRIS. Die Maximalhöhe bleibt ein Vergleichswert.<br>Maximum: <strong id="metricHeightMax">–</strong></div></details></div>
             <strong id="metricHeightMedian">–</strong>
-            <small>Maximum <span id="metricHeightMax">–</span></small>
           </div>
           <div class="metric metric--summary">
-            <div class="compact-card-heading"><span>Datenstand Gebäude</span><button class="info-tip" type="button" title="STAND des TIRIS-Gebäudeobjekts; die technische Aktualisierung wird separat mitgeführt.">i</button></div>
+            <div class="compact-card-heading"><span>Datenstand Gebäude</span><details class="metric-info"><summary class="info-tip" aria-label="Info zum Datenstand">i</summary><div class="metric-info-popover">Datenstand des TIRIS-Gebäudeobjekts.<br>Technisch aktualisiert: <strong id="metricUpdated">–</strong></div></details></div>
             <strong id="metricStand">–</strong>
-            <small>aktualisiert <span id="metricUpdated">–</span></small>
           </div>
         </div>
 
@@ -293,13 +293,13 @@
             <table class="estimate-table">
               <thead><tr><th>Bauteil / Größe</th><th>Automatik</th><th>Manuell</th><th>Verwendet</th></tr></thead>
               <tbody>
-                <tr><th>Außenwandfläche</th><td id="autoExteriorWallValue">–</td><td><div class="manual-value-control"><input id="manualExteriorWallValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualExteriorWallValue">Auto</button></div></td><td id="effectiveExteriorWallValue">–</td></tr>
-                <tr><th>Fensterfläche</th><td id="autoWindowAreaValue">–</td><td><div class="manual-value-control"><input id="manualWindowAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualWindowAreaValue">Auto</button></div></td><td id="effectiveWindowAreaValue">–</td></tr>
-                <tr><th>Oberste Geschoßfläche</th><td id="autoTopFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualTopFloorAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualTopFloorAreaValue">Auto</button></div></td><td id="effectiveTopFloorAreaValue">–</td></tr>
-                <tr><th>Kellerdecke / unterste Geschoßfläche</th><td id="autoBasementAreaValue">–</td><td><div class="manual-value-control"><input id="manualBasementAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualBasementAreaValue">Auto</button></div></td><td id="effectiveBasementAreaValue">–</td></tr>
-                <tr><th>Dachneigung</th><td id="autoRoofPitchValue">–</td><td><div class="manual-value-control"><input id="manualRoofPitchValue" type="number" min="0" max="89" step="1" placeholder="Grad"><button type="button" class="estimate-reset" data-reset-id="manualRoofPitchValue">Auto</button></div></td><td id="effectiveRoofPitchValue">–</td></tr>
-                <tr><th>Dachschrägefläche</th><td id="autoRoofSlopeAreaValue">–</td><td><div class="manual-value-control"><input id="manualRoofSlopeAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualRoofSlopeAreaValue">Auto</button></div></td><td id="effectiveRoofSlopeAreaValue">–</td></tr>
-                <tr><th>Gebäudevolumen</th><td id="autoVolumeValue">–</td><td><div class="manual-value-control"><input id="manualVolumeValue" type="number" min="0" step="1" placeholder="ganze m³"><button type="button" class="estimate-reset" data-reset-id="manualVolumeValue">Auto</button></div></td><td id="effectiveVolumeValue">–</td></tr>
+                <tr><th>Außenwandfläche</th><td id="autoExteriorWallValue">–</td><td><div class="manual-value-control"><input id="manualExteriorWallValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualExteriorWallValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveExteriorWallValue">–</td></tr>
+                <tr><th>Fensterfläche</th><td id="autoWindowAreaValue">–</td><td><div class="manual-value-control"><input id="manualWindowAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualWindowAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveWindowAreaValue">–</td></tr>
+                <tr><th>Oberste Geschoßfläche</th><td id="autoTopFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualTopFloorAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualTopFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveTopFloorAreaValue">–</td></tr>
+                <tr><th>Kellerdecke / unterste Geschoßfläche</th><td id="autoBasementAreaValue">–</td><td><div class="manual-value-control"><input id="manualBasementAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualBasementAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveBasementAreaValue">–</td></tr>
+                <tr><th>Dachneigung</th><td id="autoRoofPitchValue">–</td><td><div class="manual-value-control"><input id="manualRoofPitchValue" type="number" min="0" max="89" step="1" placeholder="Grad"><button type="button" class="estimate-reset" data-reset-id="manualRoofPitchValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveRoofPitchValue">–</td></tr>
+                <tr><th>Dachschrägefläche</th><td id="autoRoofSlopeAreaValue">–</td><td><div class="manual-value-control"><input id="manualRoofSlopeAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualRoofSlopeAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveRoofSlopeAreaValue">–</td></tr>
+                <tr><th>Gebäudevolumen</th><td id="autoVolumeValue">–</td><td><div class="manual-value-control"><input id="manualVolumeValue" type="number" min="0" step="1" placeholder="ganze m³"><button type="button" class="estimate-reset" data-reset-id="manualVolumeValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveVolumeValue">–</td></tr>
               </tbody>
             </table>
           </div>
@@ -355,7 +355,7 @@
     </section>
 
     <section class="container main-tool-area" id="area-solar" aria-labelledby="area-solar-title">
-      <div class="main-area-heading"><div><p class="eyebrow">3 · Solar</p><h2 id="area-solar-title">Solar</h2><p>Sonnenbahn, Verschattung und amtliche Jahressolarstrahlung im Standortumfeld.</p></div></div>
+      <div class="main-area-heading"><div><p class="eyebrow">3 · Solar</p><h2 id="area-solar-title">Solar</h2></div></div>
     <section class="tool-subpanel" aria-labelledby="solar-title">
       <div class="panel-heading">
         <div>
@@ -420,7 +420,6 @@
           <div>
             <span class="mini-label">Zusatzdarstellung · Solar</span>
             <h3>Solarstrahlung im Standortumfeld</h3>
-            <p>Amtliche Jahressolarstrahlung im direkten Standortumfeld. Die spezielle TIRIS-Gebäudeansicht bleibt zusätzlich verlinkt.</p>
           </div>
           <span class="status-chip status-chip--muted" id="solarMapStatus">Adresse fehlt</span>
         </div>
@@ -637,8 +636,8 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="standortpass.js?v=5"></script>
+  <script src="standortpass.js?v=6"></script>
   <script src="../../shared/js/project-header.js"></script>
-  <script src="standortpass-v1.js?v=5"></script>
+  <script src="standortpass-v1.js?v=6"></script>
 </body>
 </html>

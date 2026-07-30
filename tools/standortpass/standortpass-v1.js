@@ -561,9 +561,9 @@
 
   function simplifiedRiskLabel(label) {
     const normalized = String(label || '');
-    if (/HQ30/i.test(normalized)) return 'Hochwasser HQ30';
-    if (/HQ100/i.test(normalized)) return 'Hochwasser HQ100';
     if (/HQ300/i.test(normalized)) return 'Hochwasser HQ300';
+    if (/HQ100/i.test(normalized)) return 'Hochwasser HQ100';
+    if (/HQ30(?!0)/i.test(normalized)) return 'Hochwasser HQ30';
     if (/Bundesdenkmalamt/i.test(normalized)) return 'Denkmalschutz (BDA)';
     if (/TIRIS Kultur/i.test(normalized)) return 'Baukultureller Kontext';
     if (/GZW|Wildbach|Lawinenverbauung/i.test(normalized)) return 'WLV-Planungsbereich';
@@ -652,7 +652,8 @@
 
     const heritageCards = compactCardsDetailed('heritageResult', 3);
     const hazardCards = compactCardsDetailed('hazardResult', 10);
-    const radonCards = compactCardsDetailed('radonResult', 3);
+    const radonCards = compactCardsDetailed('radonResult', 3)
+      .filter((card) => !/Radonvorsorgegebiet/i.test(card.label));
     const orderedRisks = [...heritageCards, ...hazardCards, ...radonCards];
     const riskHtml = orderedRisks.length ? `<div class="print-risk-grid">${orderedRisks.map((card) => {
       const label = simplifiedRiskLabel(card.label);
