@@ -245,6 +245,7 @@ let selectedBuildingId = null;
 let addressSearchTimer = null;
 let selectedKgResult = null;
 let selectedAddressProvider = null;
+let buildingMapDrawToken = 0;
 
 const number0 = new Intl.NumberFormat('de-AT', {
   maximumFractionDigits: 0,
@@ -530,7 +531,7 @@ function normalizeTirisAddressFeature(feature, layer) {
   };
 }
 
-async function searchTirisLiveAddress() {
+async function searchTirisLiveAddress(options = {}) {
   const input = $('tirisLiveAddressInput');
   const resultBox = $('tirisLiveAddressResults');
   const search = extractTirisSearchKeys(input.value);
@@ -585,7 +586,7 @@ async function searchTirisLiveAddress() {
       setStatus($('tirisLiveAddressStatus'), 'kein Treffer', 'error');
       resultBox.innerHTML = '<p class="empty-result">Keine passende TIRIS-Adresse gefunden. Der BEV-Fallback bleibt unten verfügbar.</p>';
       resultBox.hidden = false;
-      return;
+      return [];
     }
 
     const bestScore = ranked[0].score;
@@ -607,17 +608,29 @@ async function searchTirisLiveAddress() {
       'success'
     );
 
+    if (options.autoSelectBest) {
+      const expected = normalizeSearchText(options.expectedLabel || input.value);
+      const exact = visible.find((entry) => normalizeSearchText(entry.item.label) === expected);
+      const chosen = exact || (visible.length === 1 ? visible[0] : null);
+      if (chosen) {
+        selectAddress(chosen.item, options.provider || 'tiris-live');
+        return visible;
+      }
+    }
+
     resultBox.querySelectorAll('[data-tiris-result-index]').forEach((button) => {
       button.addEventListener('click', () => {
         const entry = visible[Number(button.dataset.tirisResultIndex)];
         if (entry) selectAddress(entry.item, 'tiris-live');
       });
     });
+    return visible;
   } catch (error) {
     setStatus($('tirisLiveAddressStatus'), 'Fehler', 'error');
     resultBox.innerHTML = `<p class="empty-result">TIRIS-Live-Suche fehlgeschlagen: ${escapeHtml(error.message)}. Der lokale BEV-Fallback bleibt verfügbar.</p>`;
     resultBox.hidden = false;
     $('rawTirisLiveAddress').textContent = pretty({ search, attempts, error: error.message });
+    return [];
   }
 }
 
@@ -681,6 +694,10 @@ async function loadKatastralgemeinde(address) {
       <small>${likelyNumberKey ? `${escapeHtml(likelyNumberKey)} = ${escapeHtml(likelyNumber)}` : 'KG-Nummer noch nicht automatisch erkannt'}</small>
       <small>Felder: ${escapeHtml(fields.join(', '))}</small>
     `;
+
+    window.dispatchEvent(new CustomEvent('standortpass:kg-loaded', {
+      detail: { name: likelyName ?? null, number: likelyNumber ?? null, attributes: attrs }
+    }));
   } catch (error) {
     $('rawKg').textContent = pretty({ error: error.message });
     $('kgResult').innerHTML = `<strong>KG-Abfrage fehlgeschlagen</strong><small>${escapeHtml(error.message)}</small>`;
@@ -895,6 +912,10 @@ function selectAddress(record, provider = 'bev') {
   resetRadonOutput();
   resetClimateAnalysisOutput();
 
+  window.dispatchEvent(new CustomEvent('standortpass:address-selected', {
+    detail: { record: JSON.parse(JSON.stringify(record)), provider }
+  }));
+
   loadKatastralgemeinde(record);
   compareSelectedAddressWithBev(record);
 }
@@ -944,6 +965,7 @@ function clearAddress() {
   resetHeritageOutput();
   resetRadonOutput();
   resetClimateAnalysisOutput();
+  window.dispatchEvent(new CustomEvent('standortpass:address-cleared'));
 }
 
 /* ---------------------------------------------------------
@@ -1317,6 +1339,9 @@ function selectBuilding(objectId) {
   showSelectedBuilding(feature);
   resetSolarOutput();
   if (selectedAddress) setStatus($('solarStatus'), 'bereit');
+  window.dispatchEvent(new CustomEvent('standortpass:building-selected', {
+    detail: { feature: JSON.parse(JSON.stringify(feature)) }
+  }));
 }
 
 function showSelectedBuilding(feature) {
@@ -1464,14 +1489,14 @@ function expandBoundsToInclude(bounds, points, marginFactor = 1.08) {
   };
 }
 
-function buildOrthophotoWmsUrl(minX, minY, maxX, maxY) {
+function buildOrthophotoWmsUrl(minX, minY, maxX, maxY, srs = 'EPSG:4326') {
   const params = new URLSearchParams({
     SERVICE: 'WMS',
     VERSION: '1.1.1',
     REQUEST: 'GetMap',
     LAYERS: 'Image_Aktuell_RGB',
     STYLES: '',
-    SRS: 'EPSG:4326',
+    SRS: srs,
     BBOX: `${minX},${minY},${maxX},${maxY}`,
     WIDTH: '1040',
     HEIGHT: '720',
@@ -1481,15 +1506,16 @@ function buildOrthophotoWmsUrl(minX, minY, maxX, maxY) {
   return `${TIRIS_ORTHOPHOTO_WMS_URL}?${params.toString()}`;
 }
 
-function loadOrthophotoForBounds(minX, minY, maxX, maxY, viewInfo = {}) {
+function loadOrthophotoForBounds(minX, minY, maxX, maxY, viewInfo = {}, srs = 'EPSG:4326') {
   const image = $('orthophotoImage');
   const status = $('orthophotoStatus');
-  const url = buildOrthophotoWmsUrl(minX, minY, maxX, maxY);
+  const url = buildOrthophotoWmsUrl(minX, minY, maxX, maxY, srs);
 
   $('rawOrthophoto').textContent = pretty({
     service: 'TIRIS Orthofoto WMS',
     layer: 'Image_Aktuell_RGB',
-    bbox_wgs84: [minX, minY, maxX, maxY],
+    srs,
+    bbox: [minX, minY, maxX, maxY],
     view: viewInfo,
     request_url: url,
   });
@@ -1499,57 +1525,85 @@ function loadOrthophotoForBounds(minX, minY, maxX, maxY, viewInfo = {}) {
   image.onload = () => {
     image.hidden = false;
     const preset = mapViewPreset();
-    status.textContent = `TIRIS Orthofoto geladen · Ausschnitt ${preset.label} ausgelegt (${number0.format(preset.groundWidthM)} m Breite) · Browserdarstellung selbst nicht maßstabsgetreu.`;
+    const shownWidth = Number(viewInfo.actual_ground_width_m ?? preset.groundWidthM);
+    const extended = shownWidth > preset.groundWidthM + 1;
+    status.textContent = extended
+      ? `TIRIS Orthofoto geladen · Ausschnitt automatisch auf ca. ${number0.format(shownWidth)} m erweitert.`
+      : `TIRIS Orthofoto geladen · Ausschnitt ${preset.label} (${number0.format(preset.groundWidthM)} m Breite).`;
   };
   image.onerror = () => {
     image.hidden = true;
-    status.textContent = 'Orthofoto konnte nicht geladen werden – bitte Roh-URL / WMS prüfen.';
+    status.textContent = 'Orthofoto konnte nicht geladen werden – bitte WMS prüfen.';
   };
   image.src = url;
 }
 
-function drawBuildingGeometry(features) {
-  const svg = $('buildingSvg');
-  svg.innerHTML = '';
+function buildProjectedBuildingQueryUrl(features) {
+  const objectIds = features
+    .map((feature) => feature?.attributes?.OBJECTID)
+    .filter((value) => value !== null && value !== undefined)
+    .join(',');
+  if (!objectIds) return null;
+  const params = new URLSearchParams({
+    f: 'json',
+    objectIds,
+    outFields: 'OBJECTID',
+    returnGeometry: 'true',
+    outSR: '31254',
+    returnZ: 'false',
+    returnM: 'false',
+  });
+  return `${TIRIS_BUILDING_QUERY_URL}?${params.toString()}`;
+}
 
-  const allPoints = features.flatMap((feature) => geometryPoints(feature.geometry));
+function projectedBoundsAroundPoint(x, y, groundWidthM, aspect = 13 / 9) {
+  const groundHeightM = groundWidthM / aspect;
+  return {
+    minX: x - groundWidthM / 2,
+    maxX: x + groundWidthM / 2,
+    minY: y - groundHeightM / 2,
+    maxY: y + groundHeightM / 2,
+    groundWidthM,
+    groundHeightM,
+  };
+}
 
-  if (selectedAddress) {
-    allPoints.push([selectedAddress.longitude, selectedAddress.latitude]);
-  }
-
-  if (allPoints.length === 0) {
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', '260');
-    text.setAttribute('y', '180');
-    text.setAttribute('text-anchor', 'middle');
-    text.setAttribute('fill', '#526562');
-    text.textContent = 'Keine Geometrie verfügbar';
-    svg.appendChild(text);
-    return;
-  }
-
-  const preset = mapViewPreset();
-  const centerLatitude = selectedAddress?.latitude ?? Number(allPoints[0][1]);
-  const centerLongitude = selectedAddress?.longitude ?? Number(allPoints[0][0]);
-  let bounds = boundsAroundPoint(
-    centerLatitude,
-    centerLongitude,
-    preset.groundWidthM,
-    520 / 360
-  );
-  bounds = expandBoundsToInclude(bounds, allPoints, 1.06);
-
-  const { minX, minY, maxX, maxY } = bounds;
-  loadOrthophotoForBounds(minX, minY, maxX, maxY, {
-    preset: preset.label,
-    requested_ground_width_m: preset.groundWidthM,
-    requested_ground_height_m: preset.groundWidthM / (520 / 360),
+function expandProjectedBoundsToInclude(bounds, points, marginFactor = 1.08, aspect = 13 / 9) {
+  if (!points.length) return bounds;
+  let minX = bounds.minX;
+  let minY = bounds.minY;
+  let maxX = bounds.maxX;
+  let maxY = bounds.maxY;
+  points.forEach(([x, y]) => {
+    minX = Math.min(minX, Number(x));
+    maxX = Math.max(maxX, Number(x));
+    minY = Math.min(minY, Number(y));
+    maxY = Math.max(maxY, Number(y));
   });
 
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  let width = Math.max(bounds.groundWidthM, (maxX - minX) * marginFactor);
+  let height = Math.max(bounds.groundHeightM, (maxY - minY) * marginFactor);
+
+  // BBOX und Bildfläche behalten exakt dasselbe Seitenverhältnis.
+  if (width / height < aspect) width = height * aspect;
+  else height = width / aspect;
+
+  return {
+    minX: centerX - width / 2,
+    maxX: centerX + width / 2,
+    minY: centerY - height / 2,
+    maxY: centerY + height / 2,
+    groundWidthM: width,
+    groundHeightM: height,
+  };
+}
+
+function drawProjectedBuildingSvg(svg, features, bounds, projectedAddress) {
   const width = 520;
   const height = 360;
-
+  const { minX, minY, maxX, maxY } = bounds;
   const project = ([x, y]) => {
     const px = ((x - minX) / (maxX - minX || 1)) * width;
     const py = height - ((y - minY) / (maxY - minY || 1)) * height;
@@ -1559,34 +1613,88 @@ function drawBuildingGeometry(features) {
   features.forEach((feature) => {
     const objectId = feature.attributes?.OBJECTID;
     const rings = Array.isArray(feature.geometry?.rings) ? feature.geometry.rings : [];
-
     rings.forEach((ring) => {
       if (!Array.isArray(ring) || ring.length < 3) return;
-
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const d = ring
-        .map((point, index) => {
-          const [x, y] = project(point);
-          return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
-        })
-        .join(' ') + ' Z';
-
+      const d = ring.map((point, index) => {
+        const [x, y] = project(point);
+        return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+      }).join(' ') + ' Z';
       path.setAttribute('d', d);
       path.setAttribute('class', 'building-shape');
+      if (String(objectId) === String(selectedBuildingId)) path.classList.add('is-selected');
       path.dataset.objectId = objectId;
       path.addEventListener('click', () => selectBuilding(objectId));
       svg.appendChild(path);
     });
   });
 
-  if (selectedAddress) {
-    const [cx, cy] = project([selectedAddress.longitude, selectedAddress.latitude]);
+  if (projectedAddress) {
+    const [cx, cy] = project([projectedAddress.x, projectedAddress.y]);
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', cx.toFixed(2));
     circle.setAttribute('cy', cy.toFixed(2));
     circle.setAttribute('r', '6');
     circle.setAttribute('class', 'address-point');
     svg.appendChild(circle);
+  }
+}
+
+async function drawBuildingGeometry(features) {
+  const svg = $('buildingSvg');
+  const token = ++buildingMapDrawToken;
+  svg.innerHTML = '';
+
+  if (!selectedAddress || features.length === 0) {
+    if (features.length === 0) {
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', '260');
+      text.setAttribute('y', '180');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('fill', '#526562');
+      text.textContent = 'Keine Geometrie verfügbar';
+      svg.appendChild(text);
+    }
+    return;
+  }
+
+  const preset = mapViewPreset();
+
+  try {
+    // Für die Kartenkontrolle verwenden Orthofoto UND Gebäudegeometrie dieselbe
+    // amtliche Tiroler Projektion EPSG:31254. Damit vermeiden wir Browser-/WMS-
+    // Abweichungen aus unterschiedlichen Koordinatensystemen.
+    const [projectedAddress, projectedBuildings] = await Promise.all([
+      fetchProjectedTirisAddressPoint(selectedAddress),
+      (async () => {
+        const url = buildProjectedBuildingQueryUrl(features);
+        if (!url) return { url: null, features: [] };
+        const payload = await fetchJson(url);
+        return { url, features: Array.isArray(payload?.features) ? payload.features : [] };
+      })(),
+    ]);
+    if (token !== buildingMapDrawToken) return;
+    if (!projectedAddress || projectedBuildings.features.length === 0) {
+      throw new Error('Projizierte Kartenkontrolle nicht verfügbar.');
+    }
+
+    const points = projectedBuildings.features.flatMap((feature) => geometryPoints(feature.geometry));
+    points.push([projectedAddress.x, projectedAddress.y]);
+    let bounds = projectedBoundsAroundPoint(projectedAddress.x, projectedAddress.y, preset.groundWidthM);
+    bounds = expandProjectedBoundsToInclude(bounds, points, 1.06);
+
+    loadOrthophotoForBounds(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, {
+      preset: preset.label,
+      requested_ground_width_m: preset.groundWidthM,
+      actual_ground_width_m: bounds.groundWidthM,
+      projected_address_layer: projectedAddress.layer_id,
+      projected_building_query: projectedBuildings.url,
+    }, 'EPSG:31254');
+    drawProjectedBuildingSvg(svg, projectedBuildings.features, bounds, projectedAddress);
+  } catch (error) {
+    if (token !== buildingMapDrawToken) return;
+    $('orthophotoStatus').textContent = `Kartenkontrolle konnte nicht gemeinsam projiziert werden: ${error.message}`;
+    $('orthophotoImage').hidden = true;
   }
 }
 
@@ -1714,6 +1822,7 @@ function continueWithoutBuildingGeometry() {
   $('buildingMatchInfo').textContent = 'Bewusst ohne Gebäudepolygon fortfahren. Die übrigen Standortmodule bleiben verfügbar.';
   resetSolarOutput();
   if (selectedAddress) setStatus($('solarStatus'), 'bereit');
+  window.dispatchEvent(new CustomEvent('standortpass:building-cleared'));
 }
 
 
@@ -3451,8 +3560,8 @@ async function testSolarMap() {
     $('rawSolarMap').textContent = pretty(raw);
 
     const ageNote = chosen.service.historical
-      ? '<strong>Orientierung:</strong> historische SOLAR-TIROL-Darstellung; nicht als aktuelle Rechenbasis verwenden.'
-      : '<strong>Amtliche Rasterdarstellung:</strong> zeigt die Solarstrahlung im Standortumfeld einschließlich Gelände.';
+      ? 'Historische Orientierung – nicht als aktuelle Rechenbasis verwenden.'
+      : 'Amtliche Jahressolarstrahlung im Standortumfeld einschließlich Gelände.';
 
     box.innerHTML = `
       <div class="environment-heading-row">
@@ -3465,10 +3574,9 @@ async function testSolarMap() {
       <img class="solar-map-preview" src="${escapeHtml(previewUrl)}" alt="Amtliche Solarstrahlung im Umfeld des Gebäudestandorts">
       <div class="solar-map-meta">
         <span>Ausschnitt ca. 125 m</span>
-        <span>Raster: ${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
+        <span>${escapeHtml(chosen.layer.title || chosen.layer.name)}</span>
       </div>
-      <p class="geometry-note"><strong>Zwischenlösung:</strong> Diese Karte zeigt bewusst Gelände und Umgebung. Das Orthofoto mit Gebäudeumriss ist bereits separat vorhanden. Die spezielle tirisMaps-Gebäudepotenzialkarte bleibt über den Link erreichbar, bis deren öffentlicher Einzellayer eindeutig identifiziert ist.</p>
-      <details class="environment-source-details"><summary>Gefundene öffentliche Solar-WMS-Layer</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
+      <details class="environment-source-details"><summary>Datenquelle / WMS-Details</summary><pre>${escapeHtml(pretty(raw.services))}</pre></details>`;
 
     box.hidden = false;
     setStatus(status, 'Raster bereit', 'success');
@@ -3882,7 +3990,7 @@ async function testHazards() {
     }
 
     const projectedPoint = await fetchProjectedTirisAddressPoint(selectedAddress).catch(() => null);
-    const tirisMapUrl = buildTirisMapUrl(projectedPoint, 5000);
+    const tirisMapUrl = buildTirisMapUrl(projectedPoint, 500);
     const floodCards = floodResults.map((result) => result.error
       ? `<article class="environment-card"><span>${escapeHtml(result.label)}</span><strong>Abfrage fehlgeschlagen</strong><small>${escapeHtml(result.error)}</small></article>`
       : floodCardHtml(result, reference)).join('');
@@ -4266,5 +4374,48 @@ $('orthophotoScale').addEventListener('change', () => {
 });
 
 $('year').textContent = String(new Date().getFullYear());
+
+/* ---------------------------------------------------------
+   Öffentliche Tool-internen Funktionen für die V1-Oberfläche.
+   Keine externen TIRIS-Sessions; nur bereits bestätigte Browserabfragen.
+--------------------------------------------------------- */
+window.StandortpassCore = Object.freeze({
+  getSelectedAddress() {
+    return selectedAddress ? JSON.parse(JSON.stringify(selectedAddress)) : null;
+  },
+  getSelectedBuilding() {
+    const feature = selectedBuildingFeature();
+    return feature ? JSON.parse(JSON.stringify(feature)) : null;
+  },
+  selectAddressRecord(record, provider = 'tiris-project-import') {
+    if (!record) return false;
+    selectAddress(JSON.parse(JSON.stringify(record)), provider);
+    return true;
+  },
+  async searchAndSelectAddress(label) {
+    if (!label) return false;
+    $('tirisLiveAddressInput').value = label;
+    const results = await searchTirisLiveAddress({
+      autoSelectBest: true,
+      expectedLabel: label,
+      provider: 'tiris-live',
+    });
+    return Boolean(selectedAddress && Array.isArray(results));
+  },
+  clearAddress,
+  loadBuildings,
+  loadTerrain,
+  loadSolar,
+  testSolarMap,
+  testEnvironmentalHeat,
+  testHazards,
+  testHeritage,
+  testRadon,
+  async getTirisMapUrl(scale = 2500) {
+    if (!selectedAddress) return 'https://maps.tirol.gv.at/';
+    const point = await fetchProjectedTirisAddressPoint(selectedAddress).catch(() => null);
+    return buildTirisMapUrl(point, scale);
+  },
+});
 
 initAddressModule();

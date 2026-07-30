@@ -7,7 +7,7 @@
   <meta name="description" content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="standortpass.css?v=1">
+  <link rel="stylesheet" href="standortpass.css?v=2">
 </head>
 <body>
 
@@ -126,6 +126,22 @@
           <p class="field-status" id="addressSearchStatus">Adressmodul wird initialisiert …</p>
         </div>
       </details>
+
+      <div class="report-run-card no-print" id="reportRunCard">
+        <div>
+          <span class="mini-label">Automatischer Ablauf</span>
+          <strong>Standortbericht in einem Durchlauf erstellen</strong>
+          <p id="reportRunMessage">Nach der Adressauswahl werden Gebäude, Höhenlage, Solar, Umweltwärme, Naturgefahren, Schutzstatus und Radon nacheinander geprüft.</p>
+          <div class="report-progress" id="reportProgress" hidden>
+            <div class="report-progress-bar"><span id="reportProgressBar"></span></div>
+            <small id="reportProgressText">Bereit.</small>
+          </div>
+        </div>
+        <div class="report-run-actions">
+          <span class="status-chip status-chip--muted" id="reportRunStatus">Adresse fehlt</span>
+          <button class="primary-button" id="runReportButton" type="button" disabled>Bericht erstellen</button>
+        </div>
+      </div>
     </section>
 
     <section class="container test-panel dev-only" aria-labelledby="basis-title">
@@ -161,7 +177,7 @@
         <span class="status-chip status-chip--muted" id="buildingStatus">Adresse fehlt</span>
       </div>
 
-      <div class="action-row">
+      <div class="action-row manual-step-action" id="buildingManualAction">
         <button class="primary-button" id="loadBuildingButton" type="button" disabled>Gebäude automatisch zuordnen</button>
         <button class="quiet-button" id="loadBuildingAreaButton" type="button" disabled>Umgebung laden</button>
         <label class="compact-field">
@@ -266,14 +282,14 @@
     <section class="container test-panel" aria-labelledby="terrain-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">4 · Höhenlage</p>
+          <p class="eyebrow">3 · Höhenlage</p>
           <h2 id="terrain-title">TIRIS-DGM prüfen</h2>
-          <p>Hier wird weiterhin exakt dieselbe Höhenfunktion verwendet wie in „Klima & Heizlast V1.0“.</p>
+          <p>Amtliche Geländehöhe am Projektstandort aus dem gemeinsamen TIRIS-DGM-Modul.</p>
         </div>
         <span class="status-chip status-chip--muted" id="terrainStatus">Adresse fehlt</span>
       </div>
 
-      <div class="action-row">
+      <div class="action-row manual-step-action" id="terrainManualAction">
         <button class="primary-button" id="loadTerrainButton" type="button" disabled>Geländehöhe prüfen</button>
       </div>
 
@@ -292,14 +308,14 @@
           <p class="eyebrow">4 · Solar</p>
           <h2 id="solar-title">Sonnenbahn & Verschattung</h2>
           <p>
-            GeoLand/voibos liefert 360 Horizontwerte. Daraus zeichnen wir erstmals selbst ein SVG mit Geländehorizont, Oberflächenhorizont und Sonnenbahnen für Sommer, Frühling/Herbst und Winter.
+            Sonnenbahn und Verschattung aus GeoLand-Daten – Gelände sowie zusätzliche Verschattung durch Gebäude und Vegetation.
           </p>
         </div>
         <span class="status-chip status-chip--muted" id="solarStatus">Adresse fehlt</span>
       </div>
 
       <div class="solar-control-row">
-        <button class="primary-button" id="loadSolarButton" type="button" disabled>Solarprofil laden</button>
+        <button class="primary-button manual-step-button" id="loadSolarButton" type="button" disabled>Solarprofil laden</button>
         <span class="action-note" id="solarHeightHint"><strong>Standard:</strong> mit Gebäude TIRIS-Medianhöhe · ohne Gebäude 2 m.</span>
       </div>
 
@@ -350,11 +366,11 @@
           <div>
             <span class="mini-label">Zusatzdarstellung · Solar</span>
             <h3>Solarstrahlung im Standortumfeld</h3>
-            <p>Bis der echte tirisMaps-Gebäudelayer „Solarpotential pro Jahr – Gebäude“ technisch eindeutig verfügbar ist, verwenden wir wieder die robuste amtliche Rasterdarstellung. Sie zeigt bewusst auch Gelände und Umgebung; das reine Orthofoto mit Gebäudeumriss bleibt separat in der Gebäudeübersicht.</p>
+            <p>Amtliche Jahressolarstrahlung im direkten Standortumfeld. Die spezielle TIRIS-Gebäudeansicht bleibt zusätzlich verlinkt.</p>
           </div>
           <span class="status-chip status-chip--muted" id="solarMapStatus">Adresse fehlt</span>
         </div>
-        <div class="action-row">
+        <div class="action-row manual-step-action" id="solarMapManualAction">
           <button class="secondary-button" id="testSolarMapButton" type="button" disabled>Solarstrahlung-Karte prüfen</button>
         </div>
         <div class="service-result" id="solarMapResult" hidden></div>
@@ -406,7 +422,7 @@
 
     <section class="container test-panel" aria-labelledby="heat-v1-title">
       <div class="panel-heading"><div><p class="eyebrow">5 · Wärmeversorgung</p><h2 id="heat-v1-title">Wärmenetz</h2><p>Die TIRIS-Daten sind identifiziert; ein stabiler öffentlicher Datenzugang ist beim Land Tirol angefragt.</p></div><span class="status-chip status-chip--muted">manueller Check</span></div>
-      <div class="manual-check-card"><div><strong>Automatische Prüfung derzeit nicht verfügbar</strong><p>Bis zur Klärung der Schnittstelle wird das Wärmenetz direkt in tirisMaps kontrolliert.</p></div><a class="external-action-link" href="https://maps.tirol.gv.at/" target="_blank" rel="noopener noreferrer">Wärmenetz in TIRIS prüfen ↗</a></div>
+      <div class="manual-check-card"><div><strong>Automatische Prüfung derzeit nicht verfügbar</strong><p>Bis zur Klärung der Schnittstelle wird das Wärmenetz direkt in tirisMaps kontrolliert.</p></div><a class="external-action-link" id="heatTirisLink" href="https://maps.tirol.gv.at/" target="_blank" rel="noopener noreferrer">Wärmenetz am Standort in TIRIS prüfen ↗</a></div>
     </section>
 
     <section class="container test-panel" aria-labelledby="environmental-heat-title">
@@ -414,14 +430,12 @@
         <div>
           <p class="eyebrow">6 · Umweltwärme</p>
           <h2 id="environmental-heat-title">Wasser & Untergrund – Standortinformationen</h2>
-          <p>
-            Der öffentliche TIRIS-Dienst WASSER liefert Standortinformationen zu Erdwärme, Grundwassernutzung, Messstellen und wasserrechtlichen Flächen. Test 09 trennt bestehende Anlagen, rechtliche Hinweise und Schutzgebiete fachlich sauber und zeigt bei relevanten Treffern die nächsten Objekte samt verfügbaren Detailberichten.
-          </p>
+          <p>Bestehende Erdsonden, Grundwassernutzungen, Messstellen sowie wasserrechtliche Hinweise im Standortumfeld.</p>
         </div>
         <span class="status-chip status-chip--muted" id="environmentalHeatStatus">Adresse fehlt</span>
       </div>
 
-      <div class="action-row">
+      <div class="action-row manual-step-action" id="environmentalHeatManualAction">
         <button class="primary-button" id="testEnvironmentalHeatButton" type="button" disabled>Umweltwärme-Daten prüfen</button>
         <span class="action-note">500-m-Umkreis für Anlagen/Beobachtungspunkte · Flächenhinweise direkt am Standort · mit TIRIS- und WIS-Links.</span>
       </div>
@@ -433,16 +447,14 @@
     <section class="container test-panel" aria-labelledby="hazards-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">8 · Standort & Risiken</p>
+          <p class="eyebrow">7 · Standort & Risiken</p>
           <h2 id="hazards-title">Hochwasser & Naturgefahren</h2>
-          <p>
-            Test 12 prüft HQ30, HQ100 und HQ300 zusätzlich gegen die amtliche Kategorie L_KATEGO der Quelldaten und trennt Gefahrenzonen von reinen Planungs-/Hinweisbereichen. Wenn ein Gebäude gewählt ist, wird das gesamte Dachpolygon auf Überschneidungen geprüft; ohne Gebäude dient der Standortpunkt als Fallback.
-          </p>
+          <p>HQ30, HQ100, HQ300 sowie weitere amtliche Gefahren- und Hinweisbereiche. Mit Gebäude wird das gesamte Polygon geprüft.</p>
         </div>
         <span class="status-chip status-chip--muted" id="hazardStatus">Adresse fehlt</span>
       </div>
 
-      <div class="action-row">
+      <div class="action-row manual-step-action" id="hazardManualAction">
         <button class="primary-button" id="testHazardButton" type="button" disabled>Hochwasser & Naturgefahren prüfen</button>
         <span class="action-note">Amtliche Standortindikation · kein Treffer bedeutet nicht „risikofrei“.</span>
       </div>
@@ -455,11 +467,11 @@
         <div>
           <p class="eyebrow">8 · Kultur & Schutzstatus</p>
           <h2 id="heritage-title">Denkmalschutz & baukultureller Kontext</h2>
-          <p>Rechtlichen Denkmalschutz und TIRIS-Kontextdaten behandeln wir getrennt. Die BDA-Liste wird in Test 12 nur noch bei exakt passender Straße <strong>und Hausnummer</strong> als Treffer gewertet. Kunstkataster, Ensemblekartierung oder Archäologie sind wichtige Hinweise, aber kein automatischer Nachweis der Schutzstellung.</p>
+          <p>BDA-Denkmalliste sowie TIRIS-Hinweise zu Kunstkataster, Ensemble und Archäologie – rechtliche Schutzstellung und Kontext bleiben getrennt.</p>
         </div>
         <span class="status-chip status-chip--muted" id="heritageStatus">Adresse fehlt</span>
       </div>
-      <div class="action-row">
+      <div class="action-row manual-step-action" id="heritageManualAction">
         <button class="primary-button" id="testHeritageButton" type="button" disabled>Kultur & Denkmalschutz prüfen</button>
         <span class="action-note">BDA-Denkmalliste + öffentliche TIRIS-Layer SPORT/KULTUR.</span>
       </div>
@@ -471,11 +483,11 @@
         <div>
           <p class="eyebrow">9 · Radon</p>
           <h2 id="radon-title">Radon · Gebietsstatus</h2>
-          <p>Die Gemeindekennziffer wird mit der Radonschutzverordnung abgeglichen. Für Tirol unterscheiden wir Radonvorsorgegebiet und zusätzlich ausgewiesenes Radonschutzgebiet. Die Zuordnung ist ein Standortindikator und keine Messung im Gebäude.</p>
+          <p>Amtlicher Gebietsstatus über die Gemeindekennziffer: Radonvorsorgegebiet und zusätzlich ausgewiesenes Radonschutzgebiet.</p>
         </div>
         <span class="status-chip status-chip--muted" id="radonStatus">Adresse fehlt</span>
       </div>
-      <div class="action-row">
+      <div class="action-row manual-step-action" id="radonManualAction">
         <button class="primary-button" id="testRadonButton" type="button" disabled>Radonstatus prüfen</button>
         <span class="action-note">Amtliche Gemeindezuordnung über GKZ · Radonschutzverordnung Anlage 1.</span>
       </div>
@@ -524,13 +536,22 @@
         </div>
       </details>
     </section>
+
+    <section class="container print-report-only" id="printReportSummary" aria-label="Kompakter Standortbericht">
+      <div class="print-report-grid" id="printReportGrid"></div>
+    </section>
+
+    <section class="container bottom-report-actions no-print">
+      <button class="secondary-button" id="printReportButtonBottom" type="button">Drucken / PDF</button>
+      <span>Der Ausdruck verwendet eine verdichtete Beratungsansicht statt der vollständigen Arbeitsoberfläche.</span>
+    </section>
   </main>
 
   <footer class="site-footer">
     <div class="container footer-inner">
       <div>
         <p class="footer-name">Tools</p>
-        <p class="footer-note">Entwicklungstest · Standortpass Energie & Gebäude</p>
+        <p class="footer-note">Standortpass V1.1 · Prototyp</p>
       </div>
       <nav class="footer-links" aria-label="Rechtliche Informationen">
         <a href="../../pages/kontakt.html#impressum">Impressum</a>
@@ -547,8 +568,8 @@
   <script src="../klima-heizlast/address-provider-bev-local.js"></script>
   <script src="../klima-heizlast/location-core.js"></script>
 
-  <script src="standortpass.js?v=1"></script>
+  <script src="standortpass.js?v=2"></script>
   <script src="../../shared/js/project-header.js"></script>
-  <script src="standortpass-v1.js?v=1"></script>
+  <script src="standortpass-v1.js?v=2"></script>
 </body>
 </html>

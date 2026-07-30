@@ -1842,3 +1842,241 @@
     page-break-inside: avoid;
   }
 }
+
+/* =========================================================
+   STANDORTPASS V1.1 · AUTOMATISCHER ABLAUF / KOMPAKTE AUSGABE
+========================================================= */
+
+.report-run-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.15rem;
+  padding: 1rem;
+  border: 1px solid rgba(52, 171, 159, 0.28);
+  border-radius: 18px;
+  background: rgba(52, 171, 159, 0.06);
+}
+
+.report-run-card p {
+  max-width: 560px;
+  margin: 0.3rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.report-run-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.report-progress {
+  margin-top: 0.65rem;
+}
+
+.report-progress-bar {
+  width: min(420px, 100%);
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(52, 171, 159, 0.13);
+}
+
+.report-progress-bar span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--turquoise);
+  transition: width 180ms ease;
+}
+
+.report-progress small {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--text-muted);
+}
+
+/* Die normalen Einzelprüfungen laufen automatisch. Nur bei Fehlern wird
+   der zugehörige manuelle Wiederholungsbutton eingeblendet. */
+.manual-step-action,
+.manual-step-button {
+  display: none;
+}
+
+.manual-step-action.is-retry {
+  display: flex;
+}
+
+.manual-step-button.is-retry {
+  display: inline-flex;
+}
+
+/* Orthofoto und SVG liegen in exakt derselben 13:9-Fläche. Dadurch kann
+   keine CSS-bedingte Skalierungsabweichung zwischen beiden Ebenen entstehen. */
+.geometry-stage {
+  aspect-ratio: 13 / 9;
+  min-height: 0;
+  height: auto;
+}
+
+.geometry-stage .orthophoto-image,
+.geometry-stage svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.geometry-stage svg {
+  min-height: 0;
+}
+
+/* Ergebnisüberschriften dürfen Links umbrechen statt den Kartenrand zu sprengen. */
+.environment-heading-row {
+  min-width: 0;
+}
+
+.environment-heading-row > div:first-child {
+  min-width: 0;
+}
+
+.external-action-link {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  justify-content: center;
+  line-height: 1.25;
+}
+
+#solarMapResult .environment-heading-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+#solarMapResult .environment-heading-row p,
+#solarMapResult .geometry-note {
+  font-size: 0.84rem;
+}
+
+#solarMapResult .solar-map-preview {
+  margin-top: 0.7rem;
+  max-height: 390px;
+}
+
+#solarMapResult .environment-source-details {
+  margin-top: 0.65rem;
+}
+
+.bottom-report-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 820px;
+  margin: 1.25rem auto 0;
+  padding: 1rem 0;
+}
+
+.bottom-report-actions span {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.print-report-only {
+  display: none;
+}
+
+.print-report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4mm;
+}
+
+.print-summary-card {
+  padding: 3.2mm;
+  border: 0.25mm solid #d7e3e1;
+  border-radius: 2.5mm;
+  break-inside: avoid;
+}
+
+.print-summary-card h2 {
+  margin: 0 0 2mm;
+  font-size: 12pt;
+}
+
+.print-summary-card p,
+.print-summary-card li {
+  margin: 0;
+  font-size: 8.5pt;
+  line-height: 1.35;
+}
+
+.print-summary-card ul {
+  display: grid;
+  gap: 1mm;
+  margin: 0;
+  padding-left: 4mm;
+}
+
+.print-summary-card--wide {
+  grid-column: 1 / -1;
+}
+
+.print-solar-chart {
+  display: block;
+  width: 100%;
+  max-height: 62mm;
+  margin-top: 2mm;
+}
+
+@media (max-width: 720px) {
+  .report-run-card,
+  .report-run-actions,
+  .bottom-report-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  #solarMapResult .environment-heading-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  /* Im Ausdruck erscheint nur die gemeinsame Kopfzeile und eine eigens
+     verdichtete Berichtszusammenfassung. Die Arbeitsoberfläche bleibt außen vor. */
+  .report-title-block,
+  .overview-panel,
+  .test-panel,
+  .technical-panel,
+  .bottom-report-actions {
+    display: none !important;
+  }
+
+  .project-header-card {
+    display: block !important;
+    margin-bottom: 4mm;
+    padding: 3mm 4mm;
+  }
+
+  .project-header-row + .project-header-row {
+    margin-top: 2mm;
+    padding-top: 2mm;
+  }
+
+  .print-report-only {
+    display: block !important;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-report-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
