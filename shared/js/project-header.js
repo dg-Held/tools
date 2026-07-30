@@ -28,7 +28,10 @@
 
   title.addEventListener('input', () => store.setPath('project.title', title.value));
   projectId.addEventListener('input', () => store.setPath('project.id', projectId.value));
-  printButton.addEventListener('click', () => window.print());
+  printButton.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('energy-tools:prepare-print'));
+    window.requestAnimationFrame(() => window.print());
+  });
 
   exportButton.addEventListener('click', () => {
     const blob = new Blob([store.exportJson()], { type: 'application/json' });
@@ -47,7 +50,8 @@
     const file = importInput.files?.[0];
     if (!file) return;
     try {
-      store.importJson(await file.text());
+      const imported = store.importJson(await file.text());
+      window.dispatchEvent(new CustomEvent('energy-tools:project-imported', { detail: { project: imported } }));
     } catch (error) {
       window.alert(error.message);
     } finally {
@@ -56,7 +60,9 @@
   });
 
   resetButton.addEventListener('click', () => {
-    if (window.confirm('Gemeinsame Projektdaten wirklich zurücksetzen?')) store.reset();
+    if (!window.confirm('Gemeinsame Projektdaten wirklich zurücksetzen?')) return;
+    const resetState = store.reset();
+    window.dispatchEvent(new CustomEvent('energy-tools:project-reset', { detail: { project: resetState } }));
   });
 
   store.subscribe(render);
