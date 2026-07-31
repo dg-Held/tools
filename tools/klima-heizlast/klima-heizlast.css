@@ -2120,3 +2120,158 @@ tr:last-child td { border-bottom: 0; }
     display: none !important;
   }
 }
+
+/* =========================================================
+   V1.1 · GEMEINSAME PROJEKTBASIS
+   Gemeinsame Kopfzeile und saubere Trennung von Projektdaten,
+   Standortservices und Klima-/Heizlastlogik.
+========================================================= */
+
+.project-header-card {
+  max-width: 820px;
+  margin: 0 auto 1.25rem;
+  padding: 1.2rem;
+  border: 1px solid var(--line, #d7e3e1);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 32px rgba(28, 75, 71, 0.08);
+}
+
+.project-header-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.project-header-row + .project-header-row {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line, #d7e3e1);
+}
+
+.project-header-card label,
+.project-address-field,
+.project-date-field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.project-header-card label > span,
+.project-address-field > span,
+.project-date-field > span {
+  color: #58716f;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.project-header-card input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid var(--line, #d7e3e1);
+  border-radius: 14px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+}
+
+.project-address-field strong,
+.project-date-field strong {
+  min-height: 1.45rem;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.quiet-button--danger {
+  color: #8a3653;
+}
+
+@media (max-width: 620px) {
+  .project-header-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  /* Gemeinsame Kopfzeile aller Tools. */
+  .project-header-card {
+    display: block !important;
+    width: 194mm !important;
+    max-width: none !important;
+    margin: 0 0 3mm !important;
+    padding: 2.6mm 3.2mm !important;
+    border: .25mm solid #d7e3e1 !important;
+    border-radius: 2.5mm !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  .project-header-row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
+    gap: 2.5mm !important;
+    align-items: start !important;
+  }
+
+  .project-header-row + .project-header-row {
+    margin-top: 1.7mm !important;
+    padding-top: 1.7mm !important;
+  }
+
+  .project-header-card label > span,
+  .project-address-field > span,
+  .project-date-field > span {
+    font-size: 6.2pt !important;
+  }
+
+  .project-header-card input {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    font-size: 9.5pt !important;
+    font-weight: 600;
+    background: transparent !important;
+  }
+
+  .project-address-field strong,
+  .project-date-field strong {
+    min-height: 0 !important;
+    font-size: 9.5pt !important;
+  }
+
+  .project-actions,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Die bisherigen Druckköpfe werden zu reinen Seitentiteln;
+     Projektname, ID, Adresse und Datum kommen aus der gemeinsamen Kopfzeile. */
+  .print-report-header {
+    display: block !important;
+    margin: 0 0 2.5mm !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  .print-report-header .print-kicker,
+  .print-report-header .print-meta-grid {
+    display: none !important;
+  }
+
+  .print-report-header h1 {
+    margin: 0 !important;
+    font-size: 12pt !important;
+    line-height: 1.1 !important;
+  }
+
+  .print-page-two-header {
+    margin-top: 0 !important;
+  }
+}

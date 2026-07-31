@@ -66,13 +66,250 @@ const state = {
   busy: false,
 };
 
+const projectStore = window.EnergyToolsProjectStore ?? null;
+const projectModel = window.EnergyToolsDataModel ?? null;
+let projectHydrating = false;
+
+function sharedValue(value) {
+  return value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'value')
+    ? value.value
+    : value;
+}
+
+function sharedField(value, options = {}) {
+  if (!projectModel) return value;
+  return projectModel.field(value ?? null, options);
+}
+
+function normalizeSharedAddressRecord(project) {
+  const record = project?.location?.addressRecord;
+  const latitude = Number(record?.latitude ?? sharedValue(project?.location?.latitude));
+  const longitude = Number(record?.longitude ?? sharedValue(project?.location?.longitude));
+  const label = record?.label ?? project?.project?.addressLabel ?? sharedValue(project?.location?.address) ?? '';
+
+  if (!label || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
+  const kgNumber = record?.cadastral_municipality_number
+    ?? sharedValue(project?.location?.cadastralMunicipalityNumber)
+    ?? null;
+
+  return AddressProviderCore.standardizeAddress({
+    ...record,
+    id: record?.id ?? record?.source_id ?? `project-${latitude}-${longitude}`,
+    label,
+    latitude,
+    longitude,
+    municipality: record?.municipality ?? sharedValue(project?.location?.municipality) ?? '',
+    municipality_code: record?.municipality_code ?? sharedValue(project?.location?.municipalityCode) ?? '',
+    cadastral_municipality_number: kgNumber,
+    cadastral_municipality_numbers: record?.cadastral_municipality_numbers ?? (kgNumber ? [String(kgNumber)] : []),
+    source: record?.source ?? record?.tiris_layer_label ?? 'Gemeinsames Projekt',
+    source_id: record?.source_id ?? record?.address_code ?? '',
+    coordinate_kind: record?.coordinate_kind ?? 'building',
+  }, 'Gemeinsames Projekt');
+}
+
+function compactSharedAddress(address) {
+  if (!address) return null;
+  return {
+    id: address.id,
+    label: address.label,
+    street: address.street,
+    house_number: address.house_number,
+    postal_code: address.postal_code,
+    municipality: address.municipality,
+    municipality_code: address.municipality_code,
+    locality: address.locality,
+    latitude: address.latitude,
+    longitude: address.longitude,
+    address_latitude: address.address_latitude,
+    address_longitude: address.address_longitude,
+    coordinate_kind: address.coordinate_kind,
+    cadastral_municipality_number: state.selectedKgNumber ?? address.cadastral_municipality_number ?? null,
+    cadastral_municipality_numbers: address.cadastral_municipality_numbers ?? [],
+    source: address.source,
+    source_id: address.source_id,
+    dataset_date: address.dataset_date,
+    license: address.license,
+  };
+}
+
+function syncSharedLocation(address = state.selectedAddress) {
+  if (!projectStore || projectHydrating || !address) return;
+  const kgNumber = state.selectedKgNumber ?? address.cadastral_municipality_number ?? null;
+  const kgName = state.selectedNatReference?.kg_name ?? null;
+
+  projectStore.patch({
+    project: { addressLabel: address.label },
+    location: {
+      address: sharedField(address.label, { origin: projectModel.ORIGIN.OFFICIAL, source: address.source ?? 'Adresse', dataDate: address.dataset_date ?? null }),
+      latitude: sharedField(Number(address.latitude), { unit: '°', origin: projectModel.ORIGIN.OFFICIAL, source: address.source ?? 'Adresse' }),
+      longitude: sharedField(Number(address.longitude), { unit: '°', origin: projectModel.ORIGIN.OFFICIAL, source: address.source ?? 'Adresse' }),
+      municipality: sharedField(address.municipality || null, { origin: projectModel.ORIGIN.OFFICIAL, source: address.source ?? 'Adresse' }),
+      municipalityCode: sharedField(address.municipality_code || null, { origin: projectModel.ORIGIN.OFFICIAL, source: address.source ?? 'Adresse' }),
+      cadastralMunicipalityNumber: sharedField(kgNumber ? String(kgNumber) : null, { origin: projectModel.ORIGIN.OFFICIAL, source: 'OIB/Adresszuordnung' }),
+      cadastralMunicipalityName: sharedField(kgName, { origin: projectModel.ORIGIN.OFFICIAL, source: 'OIB/Adresszuordnung' }),
+      addressRecord: compactSharedAddress(address),
+    },
+  });
+}
+
+function syncSharedManualLocation(location) {
+  if (!projectStore || projectHydrating || location?.address) return;
+  projectStore.patch({
+    project: { addressLabel: location.address_label || location.name || 'Manueller Standort' },
+    location: {
+      address: sharedField(location.address_label || location.name || 'Manueller Standort', { origin: projectModel.ORIGIN.MANUAL, source: 'Klima & Heizlast' }),
+      latitude: sharedField(Number(location.latitude), { unit: '°', origin: projectModel.ORIGIN.MANUAL, source: 'Klima & Heizlast' }),
+      longitude: sharedField(Number(location.longitude), { unit: '°', origin: projectModel.ORIGIN.MANUAL, source: 'Klima & Heizlast' }),
+      cadastralMunicipalityNumber: sharedField(location.kg_number ?? null, { origin: projectModel.ORIGIN.MANUAL, source: 'Klima & Heizlast' }),
+      cadastralMunicipalityName: sharedField(location.kg_name ?? null, { origin: projectModel.ORIGIN.MANUAL, source: 'Klima & Heizlast' }),
+      addressRecord: null,
+    },
+  });
+}
+
+function heatingInputsForProject() {
+  if (!elements?.annualConsumption) return null;
+  return {
+    annualConsumptionKwh: Number(elements.annualConsumption.value),
+    usefulHeatFactor: Number(elements.usefulHeatFactor.value),
+    hotWaterIncluded: elements.hotWaterIncluded.value === 'yes',
+    persons: Number(elements.persons.value),
+    heatedAreaM2: Number(elements.heatedArea.value),
+    buildingCondition: elements.buildingCondition.value,
+    installedMaximumKw: Number(elements.installedMaximum.value),
+    installedMinimumKw: elements.installedMinimum.value === '' ? null : Number(elements.installedMinimum.value),
+    hwbKwhM2a: elements.hwbValue.value === '' ? null : Number(elements.hwbValue.value),
+    bgfM2: elements.hwbBgf.value === '' ? null : Number(elements.hwbBgf.value),
+  };
+}
+
+function syncSharedInputs() {
+  if (!projectStore || projectHydrating) return;
+  const inputs = heatingInputsForProject();
+  if (!inputs) return;
+
+  projectStore.patch({
+    user: {
+      persons: sharedField(inputs.persons, { unit: 'Personen', origin: projectModel.ORIGIN.MANUAL, source: 'Klima & Heizlast' }),
+    },
+    building: {
+      heatedArea: sharedField(inputs.heatedAreaM2, { unit: 'm²', origin: projectModel.ORIGIN.MANUAL, source: 'Klima & Heizlast' }),
+    },
+    modules: {
+      klimaHeizlast: {
+        inputs,
+        updatedAt: new Date().toISOString(),
+      },
+    },
+  });
+}
+
+function syncSharedResult(result = state.currentResult) {
+  if (!projectStore || projectHydrating || !result) return;
+  const locationCheck = result.location?.location_check;
+  const elevation = locationCheck?.building?.elevation_m;
+  const metrics = result.metrics ?? {};
+  const calculation = state.heatingCalculation;
+
+  const patch = {
+    modules: {
+      klimaHeizlast: {
+        climateSummary: {
+          period: `${START_YEAR}–${END_YEAR}`,
+          source: result.data?.source ?? null,
+          natC: result.location?.nat_c ?? null,
+          tnat13C: result.location?.tnat13_c ?? null,
+          metrics: JSON.parse(JSON.stringify(metrics)),
+          updatedAt: new Date().toISOString(),
+        },
+        resultSummary: calculation ? {
+          consumptionHeatLoadKw: calculation.consumption?.heat_load_kw ?? null,
+          areaMinimumKw: calculation.area_method?.minimum_kw ?? null,
+          areaMaximumKw: calculation.area_method?.maximum_kw ?? null,
+          hwbHeatLoadKw: calculation.hwb_method?.heat_load_kw ?? null,
+          installedMaximumKw: calculation.comparison?.installed_maximum_kw ?? null,
+          installedMinimumKw: calculation.comparison?.installed_minimum_kw ?? null,
+        } : null,
+        updatedAt: new Date().toISOString(),
+      },
+    },
+  };
+
+  if (Number.isFinite(Number(elevation))) {
+    patch.location = {
+      elevation: sharedField(Number(elevation), {
+        unit: 'm ü. A.',
+        origin: projectModel.ORIGIN.OFFICIAL,
+        source: 'TIRIS DGM',
+        method: locationCheck?.building?.layer_name ?? 'DGM 5 m',
+      }),
+    };
+  }
+
+  projectStore.patch(patch);
+}
+
+function restoreSharedInputs(project) {
+  const inputs = project?.modules?.klimaHeizlast?.inputs ?? {};
+  const persons = sharedValue(project?.user?.persons);
+  const heatedArea = sharedValue(project?.building?.heatedArea);
+
+  const hasSavedInputs = Object.keys(inputs).length > 0 || persons !== undefined || heatedArea !== undefined;
+  if (!hasSavedInputs) {
+    elements.annualConsumption.value = '25000';
+    elements.usefulHeatFactor.value = '0.85';
+    elements.hotWaterIncluded.value = 'yes';
+    elements.persons.value = '4';
+    elements.heatedArea.value = '150';
+    elements.buildingCondition.value = 'teilsanierter_bestand';
+    elements.installedMaximum.value = '20';
+    elements.installedMinimum.value = '';
+    elements.hwbValue.value = '';
+    elements.hwbBgf.value = '';
+    return;
+  }
+
+  const assignments = [
+    [elements.annualConsumption, inputs.annualConsumptionKwh],
+    [elements.usefulHeatFactor, inputs.usefulHeatFactor],
+    [elements.persons, Number.isFinite(Number(persons)) ? Number(persons) : inputs.persons],
+    [elements.heatedArea, Number.isFinite(Number(heatedArea)) ? Number(heatedArea) : inputs.heatedAreaM2],
+    [elements.installedMaximum, inputs.installedMaximumKw],
+    [elements.installedMinimum, inputs.installedMinimumKw],
+    [elements.hwbValue, inputs.hwbKwhM2a],
+    [elements.hwbBgf, inputs.bgfM2],
+  ];
+  assignments.forEach(([element, value]) => {
+    if (element && value !== undefined && value !== null && Number.isFinite(Number(value))) element.value = String(value);
+  });
+  if (typeof inputs.hotWaterIncluded === 'boolean') elements.hotWaterIncluded.value = inputs.hotWaterIncluded ? 'yes' : 'no';
+  if (inputs.buildingCondition) elements.buildingCondition.value = inputs.buildingCondition;
+}
+
+function hydrateSharedProject(project = projectStore?.get()) {
+  if (!projectStore || !project) return;
+  projectHydrating = true;
+  try {
+    restoreSharedInputs(project);
+    const address = normalizeSharedAddressRecord(project);
+    if (address) applyAddressResult(address);
+  } catch (error) {
+    console.warn('Gemeinsame Projektdaten konnten nicht vollständig übernommen werden.', error);
+  } finally {
+    projectHydrating = false;
+  }
+  updateAnalyzeAvailability();
+}
+
 
 const addressProviders =
   new AddressProviderCore.AddressProviderRegistry();
 
 const bevAddressProvider = addressProviders.register(
   new BevLocalAddressProvider({
-    baseUrl: 'data/addresses',
+    baseUrl: '../../shared/data/addresses',
   })
 );
 
@@ -500,6 +737,7 @@ function renderMultiKgChoice(address) {
         `${refs.natReference.kg_name}`;
 
       updateAnalyzeAvailability();
+      syncSharedLocation(address);
     });
 
     label.append(radio, text);
@@ -524,6 +762,14 @@ function clearSelectedAddress({ clearInput = true } = {}) {
 
   closeAddressSuggestions();
   updateAnalyzeAvailability();
+
+  if (projectStore && !projectHydrating) {
+    projectStore.patch({
+      project: { addressLabel: '' },
+      location: {},
+      modules: { klimaHeizlast: { climateSummary: null, resultSummary: null } },
+    });
+  }
 }
 
 function applyOibReferencesForAddress(address) {
@@ -629,10 +875,11 @@ function applyAddressResult(address) {
   elements.addressSearchStatus.textContent =
     address.is_demo
       ? natResult.text
-      : `Offizielle BEV-Adresse übernommen. ${natResult.text}`;
+      : `${address.source || 'Standortadresse'} übernommen. ${natResult.text}`;
 
   closeAddressSuggestions();
   updateAnalyzeAvailability();
+  syncSharedLocation(address);
 }
 
 function suggestionButton(address, index) {
@@ -947,7 +1194,7 @@ function readSelectedLocation() {
       manualMode
         ? 'NAT manuell eingegeben; keine automatische KG-Zuordnung.'
         : state.selectedNatReference
-          ? 'OIB-NAT automatisch über BEV-KGNR zugeordnet.'
+          ? 'OIB-NAT automatisch über die zugeordnete Katastralgemeinde (KGNR) übernommen.'
           : 'Keine automatische NAT-Zuordnung.',
 
     address: state.selectedAddress
@@ -2482,6 +2729,9 @@ function renderHeatingCalculation() {
       elements.calculationWarning.hidden = true;
       elements.calculationWarning.textContent = '';
     }
+
+    syncSharedInputs();
+    syncSharedResult();
   } catch (error) {
     console.error(error);
     elements.calculationWarning.hidden = false;
@@ -2515,6 +2765,7 @@ function renderResult(result) {
   renderComparison();
   elements.heatingLoadCard.hidden = false;
   renderHeatingCalculation();
+  syncSharedResult(result);
   elements.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -2558,6 +2809,9 @@ async function runLocations(locations) {
 
   try {
     for (const location of locations) {
+      if (location.address) syncSharedLocation(state.selectedAddress);
+      else syncSharedManualLocation(location);
+
       const result = await loadLocation(
         location,
         progressState
@@ -2595,8 +2849,14 @@ async function runLocations(locations) {
   elements.hwbValue,
   elements.hwbBgf,
 ].forEach((element) => {
-  element.addEventListener('input', renderHeatingCalculation);
-  element.addEventListener('change', renderHeatingCalculation);
+  element.addEventListener('input', () => {
+    renderHeatingCalculation();
+    syncSharedInputs();
+  });
+  element.addEventListener('change', () => {
+    renderHeatingCalculation();
+    syncSharedInputs();
+  });
 });
 
 
@@ -2764,7 +3024,29 @@ elements.clearCacheButton.addEventListener('click', async () => {
 elements.downloadButton.addEventListener('click', downloadJson);
 
 
+window.addEventListener('energy-tools:project-imported', (event) => {
+  hydrateSharedProject(event.detail?.project);
+});
+
+window.addEventListener('energy-tools:project-reset', () => {
+  projectHydrating = true;
+  try {
+    clearSelectedAddress({ clearInput: true });
+    restoreSharedInputs({});
+    state.results = {};
+    state.currentResult = null;
+    state.heatingCalculation = null;
+    elements.resultsSection.hidden = true;
+    elements.heatingLoadCard.hidden = true;
+  } finally {
+    projectHydrating = false;
+  }
+  updateAnalyzeAvailability();
+});
+
 populateLocationInputs(elements.locationSelect.value);
 resetProductionLocationFields();
-initializeAddressProvider();
+initializeAddressProvider()
+  .then(() => hydrateSharedProject())
+  .catch(() => hydrateSharedProject());
 updateAnalyzeAvailability();

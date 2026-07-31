@@ -7,7 +7,7 @@
   <meta name="description" content="Standortbezogene Klimaauswertung und vereinfachte Heizlastabschätzung für Gebäude in Tirol.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="klima-heizlast.css?v=18">
+  <link rel="stylesheet" href="klima-heizlast.css?v=19">
 </head>
 <body>
 
@@ -41,10 +41,27 @@
     </p>
 
     <div class="data-source-strip" aria-label="Datengrundlagen">
-      <span><strong>Adresse</strong> BEV · 01.04.2026</span>
+      <span><strong>Adresse</strong> Projekt / BEV · 01.04.2026</span>
       <span><strong>Klima</strong> INCA · 2012–2025</span>
       <span><strong>Normklima</strong> OIB NAT / TNAT,13</span>
       <span><strong>Höhe</strong> TIRIS DGM</span>
+    </div>
+  </section>
+
+  <section class="container project-header-card" aria-label="Gemeinsame Projektkopfzeile">
+    <div class="project-header-row project-header-row--top">
+      <label class="project-title-field"><span>Projekttitel</span><input id="projectTitle" type="text" placeholder="z. B. Energieberatung Musterhaus"></label>
+      <label class="project-id-field"><span>Projekt-ID</span><input id="projectId" type="text" placeholder="optional"></label>
+    </div>
+    <div class="project-header-row">
+      <div class="project-address-field"><span>Adresse</span><strong id="projectAddress">Noch kein Standort gewählt</strong></div>
+      <div class="project-date-field"><span>Datum / Ausdruck</span><strong id="projectPrintDate">–</strong></div>
+    </div>
+    <div class="project-actions no-print">
+      <button class="quiet-button" id="exportProjectButton" type="button">Projekt exportieren</button>
+      <button class="quiet-button" id="importProjectButton" type="button">Projekt importieren</button>
+      <button class="quiet-button quiet-button--danger" id="resetProjectButton" type="button">Projekt zurücksetzen</button>
+      <input id="importProjectInput" type="file" accept="application/json,.json" hidden>
     </div>
   </section>
 
@@ -66,8 +83,8 @@
         <div>
           <h3 id="address-search-title">Adresse</h3>
           <p>
-            Die Suche verwendet den lokalen Tiroler Datenbestand des
-            Österreichischen Adressregisters.
+            Die Suche verwendet die gemeinsame Adressbasis der Tools.
+            Ohne bestehendes Projekt kann der Standort hier vollständig eigenständig gewählt werden.
           </p>
         </div>
 
@@ -258,7 +275,7 @@
           die OIB-Sommerreferenz mit 130 Überschreitungstagen in 10 Jahren.
         </p>
         <p class="print-data-reference">
-          Datenbasis: BEV 01.04.2026 · GeoSphere INCA-v1 2012–2025 ·
+          Datenbasis: Projekt/Adressbasis · GeoSphere INCA-v1 2012–2025 ·
           OIB NAT 16.06.2015 / TNAT,13 04/2026 · TIRIS DGM.
         </p>
       </div>
@@ -581,7 +598,7 @@
             keine Empfehlung zur monovalenten Auslegung.
           </p>
           <p class="print-data-reference">
-            Datenbasis: BEV 01.04.2026 · GeoSphere INCA-v1 2012–2025 ·
+            Datenbasis: Projekt/Adressbasis · GeoSphere INCA-v1 2012–2025 ·
             OIB NAT / TNAT,13 · TIRIS DGM.
           </p>
         </div>
@@ -671,7 +688,7 @@
         if (status) {
           const detail =
             window.__KLIMA_TOOL_BOOT_ERRORS[0] ||
-            'Bitte Seite mit Strg+F5 neu laden und prüfen, ob alle Dateien aus Stufe 17 hochgeladen wurden.';
+            'Bitte Seite mit Strg+F5 neu laden und prüfen, ob der Ordner shared/ sowie alle Klima-&-Heizlast-Dateien vollständig hochgeladen wurden.';
 
           status.textContent = detail;
         }
@@ -680,16 +697,23 @@
   </script>
 
   <script src="../../script.js"></script>
-  <script src="data/oib/nat-tirol.js?v=18"></script>
-  <script src="data/oib/tnat13-tirol.js?v=18"></script>
-  <script src="address-provider-core.js?v=18"></script>
-  <script src="oib-nat-core.js?v=18"></script>
-  <script src="oib-tnat13-core.js?v=18"></script>
-  <script src="address-provider-bev-local.js?v=18"></script>
-  <script src="climate-core.js?v=18"></script>
-  <script src="precomputed-climate-core.js?v=18"></script>
-  <script src="heating-core.js?v=18"></script>
-  <script src="location-core.js?v=18"></script>
-  <script src="klima-heizlast.js?v=18"></script>
+
+  <!-- Gemeinsame Projekt- und Standortbasis -->
+  <script src="../../shared/js/data-model.js?v=1"></script>
+  <script src="../../shared/js/project-store.js?v=1"></script>
+  <script src="../../shared/js/project-header.js?v=1"></script>
+  <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
+  <script src="../../shared/js/services/address-provider-bev-local.js?v=1"></script>
+  <script src="../../shared/js/services/location-core.js?v=1"></script>
+
+  <!-- Klima-&-Heizlast-spezifische Daten und Berechnungen -->
+  <script src="data/oib/nat-tirol.js?v=19"></script>
+  <script src="data/oib/tnat13-tirol.js?v=19"></script>
+  <script src="oib-nat-core.js?v=19"></script>
+  <script src="oib-tnat13-core.js?v=19"></script>
+  <script src="climate-core.js?v=19"></script>
+  <script src="precomputed-climate-core.js?v=19"></script>
+  <script src="heating-core.js?v=19"></script>
+  <script src="klima-heizlast.js?v=19"></script>
 </body>
 </html>
