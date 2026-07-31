@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-27T13:55:59.291622+00:00",
+  "bev": {
+    "source": "Österreichisches Adressregister",
+    "record_date": "2026-04-01",
+    "license": "CC BY 4.0",
+    "publisher": "Bundesamt für Eich- und Vermessungswesen (BEV)",
+    "product": "Adresse Relationale Tabellen – Stichtagsdaten",
+    "source_url": "https://www.bev.gv.at/Services/Downloads/Produktbezogene-Downloads/Unentgeltliche-Produkte/Adressregister.html",
+    "product_info_url": "https://www.bev.gv.at/Services/Produkte/Adressregister/Oesterreichisches-Adressregister.html",
+    "format_documentation": "BEV_S_AD_Adresse_Relationale_Tabellen-Stichtagsdaten-CSV_V1.5",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "© Österreichisches Adressregister, Stichtagsdaten vom 01.04.2026",
+    "update_note": "BEV-Stichtagsdaten werden zu Beginn des 2. und 4. Quartals erzeugt und etwa 14 Tage später bereitgestellt."
+  },
+  "tiris": {
+    "source": "Land Tirol / TIRIS Gelände Tirol",
+    "dataset": "DGM 5 m",
+    "mode": "live_point_query",
+    "publisher": "Land Tirol",
+    "info_url": "https://www.tirol.gv.at/sicherheit/geoinformation/geodaten-tiris/laserscandaten",
+    "services_url": "https://www.tirol.gv.at/statistik-budget/tiris/tiris-geodatendienste/",
+    "rest_service_url": "https://gis.tirol.gv.at/arcgis/rest/services/Service_Public/terrain/MapServer",
+    "identify_url": "https://gis.tirol.gv.at/arcgis/rest/services/Service_Public/terrain/MapServer/identify",
+    "layer": "Image_DGM_5m_M28",
+    "layer_id": 4,
+    "service_crs": "EPSG:31254",
+    "license": "CC BY 4.0 für OGD des Landes Tirol, mit ergänzenden Nutzungsbedingungen",
+    "license_url": "https://www.tirol.gv.at/data/nutzungsbedingungen/",
+    "attribution": "Datenquelle: Land Tirol - data.tirol.gv.at",
+    "automatic_temperature_correction": false
+  },
+  "note": "Gemeinsame Standort- und Adressdaten für mehrere Energie-Tools."
+}
