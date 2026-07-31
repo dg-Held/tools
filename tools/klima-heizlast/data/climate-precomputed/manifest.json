@@ -1098,16 +1098,42 @@
   "note": "Stufe 15 enthält zunächst drei reale Referenzprofile. Nach dem Vollauf schreibt das Precompute-Skript denselben Ordner mit vollständiger Tirol-Abdeckung neu.",
   "yearly_packages": {
     "schema_version": 1,
-    "enabled": false,
+    "enabled": true,
     "years": [
-      2012
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
     ],
     "index_path": "yearly/index.json",
     "year_manifest_pattern": "yearly/{year}.json",
     "activation_rule": "Erst aktivieren, wenn der gewünschte durchgehende Jahreszeitraum vollständig als Jahrespakete vorliegt.",
-    "note": "Jahrespakete vorbereitet, aber noch nicht aktiv. Für die einmalige Migration fehlen: 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025",
+    "note": "Jahrespakete aktiv. Neue lückenlos anschließende Jahre erweitern den Zeitraum automatisch.",
     "available_years": [
-      2012
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
     ]
   }
 }
