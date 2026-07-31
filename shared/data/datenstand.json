@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-27T13:55:59.291622+00:00",
+  "generated_at": "2026-07-31T00:00:00+00:00",
   "bev": {
     "source": "Österreichisches Adressregister",
     "record_date": "2026-04-01",
@@ -31,5 +31,16 @@
     "attribution": "Datenquelle: Land Tirol - data.tirol.gv.at",
     "automatic_temperature_correction": false
   },
-  "note": "Gemeinsame Standort- und Adressdaten für mehrere Energie-Tools."
+  "note": "Gemeinsame Standort- und Adressdaten für mehrere Energie-Tools. BEV liefert schnelle Vorschläge; TIRIS wird für die gewählte Adresse live abgeglichen.",
+  "tiris_address": {
+    "source": "Land Tirol / TIRIS ogd_basis",
+    "mode": "live_resolution_after_bev_autocomplete",
+    "rest_service_url": "https://gis.tirol.gv.at/arcgis/rest/services/Service_Public/ogd_basis/MapServer",
+    "layers": [
+      19,
+      22,
+      13
+    ],
+    "note": "BEV-Stichtagsdaten dienen als schnelle lokale Vorschlagsquelle. Nach Auswahl wird bevorzugt über ADRCD, sonst über PLZ/Hausnummer, live in TIRIS aufgelöst. Bei Ausfall bleibt BEV als Fallback nutzbar."
+  }
 }
