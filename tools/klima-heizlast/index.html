@@ -7,7 +7,7 @@
   <meta name="description" content="Standortbezogene Klimaauswertung und vereinfachte Heizlastabschätzung für Gebäude in Tirol.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="klima-heizlast.css?v=19">
+  <link rel="stylesheet" href="klima-heizlast.css?v=20">
 </head>
 <body>
 
@@ -42,7 +42,7 @@
 
     <div class="data-source-strip" aria-label="Datengrundlagen">
       <span><strong>Adresse</strong> Projekt / BEV · 01.04.2026</span>
-      <span><strong>Klima</strong> INCA · 2012–2025</span>
+      <span><strong>Klima</strong> INCA · <span data-climate-period>2012–2025</span></span>
       <span><strong>Normklima</strong> OIB NAT / TNAT,13</span>
       <span><strong>Höhe</strong> TIRIS DGM</span>
     </div>
@@ -83,7 +83,8 @@
         <div>
           <h3 id="address-search-title">Adresse</h3>
           <p>
-            Die Suche verwendet die gemeinsame Adressbasis der Tools.
+            Schnelle Vorschläge kommen aus dem lokalen BEV-Stichtagsbestand.
+            Beim Auswählen wird die Adresse automatisch live mit TIRIS abgeglichen.
             Ohne bestehendes Projekt kann der Standort hier vollständig eigenständig gewählt werden.
           </p>
         </div>
@@ -116,7 +117,7 @@
       </div>
 
       <p class="address-search-status" id="addressSearchStatus">
-        Offizieller Tiroler Adressbestand wird geladen …
+        BEV-Vorschläge und TIRIS-Live-Abgleich werden geladen …
       </p>
 
       <article class="selected-address-card" id="selectedAddressCard" hidden>
@@ -253,7 +254,7 @@
         <div class="chart-heading">
           <div>
             <h3>Stundenhäufigkeit der Außentemperatur</h3>
-            <p>Helle Linien zeigen die Einzeljahre, die kräftige Linie den Median 2012–2025.</p>
+            <p>Helle Linien zeigen die Einzeljahre, die kräftige Linie den Median <span data-climate-period>2012–2025</span>.</p>
           </div>
           <div class="chart-legend" aria-label="Legende">
             <span><i class="legend-years"></i>Einzeljahre</span>
@@ -268,14 +269,14 @@
       <div class="print-source-note print-only">
         <p>
           <strong>Einordnung:</strong> Die Kennzahlen in den Kärtchen sind
-          Mittelwerte der Jahresauswertungen 2012–2025; die kräftige Linie der
+          Mittelwerte der Jahresauswertungen <span data-climate-period>2012–2025</span>; die kräftige Linie der
           Stundenhäufigkeit zeigt den Median der Jahreskurven. NAT ist die
           OIB-Normaußentemperatur am ELEVmin, die Heizgrenze von 15 °C die
           verwendete Modellgrenze für rechnerischen Heizbedarf. TNAT,13 ist
           die OIB-Sommerreferenz mit 130 Überschreitungstagen in 10 Jahren.
         </p>
         <p class="print-data-reference">
-          Datenbasis: Projekt/Adressbasis · GeoSphere INCA-v1 2012–2025 ·
+          Datenbasis: Projekt/Adressbasis · GeoSphere INCA-v1 <span data-climate-period>2012–2025</span> ·
           OIB NAT 16.06.2015 / TNAT,13 04/2026 · TIRIS DGM.
         </p>
       </div>
@@ -536,7 +537,7 @@
             <section>
               <h4>Klimadaten</h4>
               <p>
-                GeoSphere Austria INCA-v1, stündliche Rasterwerte 2012–2025.
+                GeoSphere Austria INCA-v1, stündliche Rasterwerte <span data-climate-period>2012–2025</span>.
                 Heizgrenze 15 °C; NAT und TNAT,13 gemäß OIB-Referenz der
                 zugeordneten Katastralgemeinde.
               </p>
@@ -598,7 +599,7 @@
             keine Empfehlung zur monovalenten Auslegung.
           </p>
           <p class="print-data-reference">
-            Datenbasis: Projekt/Adressbasis · GeoSphere INCA-v1 2012–2025 ·
+            Datenbasis: Projekt/Adressbasis · GeoSphere INCA-v1 <span data-climate-period>2012–2025</span> ·
             OIB NAT / TNAT,13 · TIRIS DGM.
           </p>
         </div>
@@ -703,7 +704,9 @@
   <script src="../../shared/js/project-store.js?v=1"></script>
   <script src="../../shared/js/project-header.js?v=1"></script>
   <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
-  <script src="../../shared/js/services/address-provider-bev-local.js?v=1"></script>
+  <script src="../../shared/js/services/address-provider-bev-local.js?v=2"></script>
+  <script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
+  <script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
   <script src="../../shared/js/services/location-core.js?v=1"></script>
 
   <!-- Klima-&-Heizlast-spezifische Daten und Berechnungen -->
@@ -712,8 +715,8 @@
   <script src="oib-nat-core.js?v=19"></script>
   <script src="oib-tnat13-core.js?v=19"></script>
   <script src="climate-core.js?v=19"></script>
-  <script src="precomputed-climate-core.js?v=19"></script>
+  <script src="precomputed-climate-core.js?v=20"></script>
   <script src="heating-core.js?v=19"></script>
-  <script src="klima-heizlast.js?v=19"></script>
+  <script src="klima-heizlast.js?v=20"></script>
 </body>
 </html>

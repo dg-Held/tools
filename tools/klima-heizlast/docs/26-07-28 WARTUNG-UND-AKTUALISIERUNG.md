@@ -1,8 +1,8 @@
 
 # Klima & Heizlast – Wartung und Aktualisierung
 
-**Toolversion:** 1.0.0  
-**Stand:** 27.07.2026
+**Toolversion:** 1.2.0  
+**Stand:** 31.07.2026
 
 Dieses Dokument ist die kurze operative Ergänzung zu
 `METHODIK-UND-DATENBASIS.md`.
@@ -13,7 +13,7 @@ Dieses Dokument ist die kurze operative Ergänzung zu
 
 | Bereich | empfohlen |
 |---|---|
-| BEV Adressregister | April und Oktober bzw. nach neuem Stichtag |
+| BEV Adressregister | April und Oktober bzw. nach neuem Stichtag – Vorschlagsindex/Fallback |
 | GeoSphere INCA | jährlich nach vollständigem Kalenderjahr |
 | OIB NAT | bei neuer Richtlinien-/Dateiversion |
 | OIB TNAT,13 | bei neuer OIB-Datei |
@@ -46,36 +46,65 @@ Dieses Dokument ist die kurze operative Ergänzung zu
 Der Datenstand darf erst geändert werden, nachdem der tatsächlich verwendete
 Index neu erzeugt wurde.
 
+### TIRIS-Liveabgleich der gewählten Adresse
+
+Nach einer BEV-Aktualisierung zusätzlich prüfen:
+
+- Vorschläge erscheinen weiterhin während der Eingabe,
+- nach Auswahl wird bevorzugt per ADRCD gegen TIRIS `ogd_basis` aufgelöst,
+- TIRIS-Layer 19 / 22 / 13 sind erreichbar,
+- abweichende Schreibweisen von Gemeinde/Ort verändern nicht die Zuordnung bei identischem ADRCD,
+- bei Netzausfall bleibt der BEV-Fallback klar gekennzeichnet funktionsfähig.
+
+Der BEV-Stichtag bleibt wartungsrelevant, weil er die lokale Vorschlagsliste bestimmt; er ist ab Version 1.2 aber nicht mehr die bevorzugte Quelle der final ausgewählten Adresse.
+
 ---
 
 ## 3. INCA jährlich erweitern
 
-Aktuell:
+### Zielbild
+
+Nach der einmaligen Migration wird jedes abgeschlossene Kalenderjahr separat ergänzt. Frühere Jahre werden **nicht neu berechnet**.
+
+Die Runtime-Struktur ist absichtlich jahresweise und kachelweise:
 
 ```text
-2012–2025
+data/climate-precomputed/
+  manifest.json
+  yearly/
+    index.json
+    2012.json
+    2012/<tile>.json
+    ...
+    2026.json
+    2026/<tile>.json
 ```
 
-Nach vollständigem Jahr 2026:
+Eine globale Einzeldatei pro Jahr wird vermieden, weil der Browser sonst für einen Standort alle Tiroler Rasterpunkte dieses Jahres laden müsste.
+
+### Ein Jahr aus 12 Monatsdateien erzeugen
+
+1. Vollständiges Kalenderjahr bei GeoSphere bereitstellen; erwartet werden NetCDF-Dateien mit `T2M` und stündlicher Zeitachse. Die Dateinamen selbst sind nicht maßgeblich – das Skript prüft Inhalt und Zeitstempel.
+2. Die 12 Monatsdateien in einen Jahresordner legen, zum Beispiel `C:\INCA\2026`.
+3. Ausführen:
 
 ```text
-2012–2026
+INCA_JAHR_AUFBEREITEN.bat 2026 "C:\INCA\2026"
 ```
 
-Vorgehen:
+4. Die BAT legt beim ersten Start lokal eine Python-Umgebung an und installiert `numpy`, `xarray` und `netCDF4`.
+5. Das Skript schreibt direkt nach `data/climate-precomputed/yearly/`, aktualisiert Jahresmanifest, Index und globales Manifest.
+6. Danach an mehreren Standorten prüfen: Tal, Hang/Hochlage, Osttirol, Datenlücken, Dauerlinie und Sommerkennwerte.
 
-1. Verfügbarkeit des vollständigen Jahres bei GeoSphere prüfen.
-2. Live-Auswertung zunächst an mehreren Standorten testen.
-3. `START_YEAR` / `END_YEAR` und Datenstand gemeinsam aktualisieren.
-4. Optional vollständige Precompute-Daten neu erzeugen:
-   `KLIMADATEN_AKTUALISIEREN.bat`
-5. Prüfen:
-   - Talstandort
-   - Hang-/Hochlagenstandort
-   - Osttirol
-   - Datenlücken
-   - Dauerlinien
-6. Ausdruckdatenstand aktualisieren.
+### Einmalige Migration 2012–2025
+
+Die bestehende Runtime bleibt aktiv, bis alle bisherigen Basisjahre als Jahrespakete vorliegen. Für eine identische Tropennacht-Methodik die Jahre möglichst **chronologisch** erzeugen: Das Paket eines Jahres speichert die Abendstunden des 31. Dezember; das Folgejahr kann damit die Nacht zum 1. Jänner vollständig bewerten. Beim ersten Basisjahr ohne Vorjahrespaket darf genau diese eine Nacht unvollständig bleiben – entsprechend dem bisherigen Start des Gesamtzeitraums.
+
+Erst wenn der alte Basiszeitraum vollständig vorhanden ist, setzt das Skript `yearly_packages.enabled` automatisch auf `true`. Danach erweitern lückenlos anschließende Jahre den Zeitraum automatisch. Ein vorzeitig erzeugtes späteres Jahr bleibt gespeichert, aber bis zum Schließen einer Jahreslücke inaktiv.
+
+### Was nicht mehr manuell geändert wird
+
+Nach Aktivierung der Jahrespakete müssen `START_YEAR` und `END_YEAR` nicht mehr jährlich angepasst werden. Webanzeige, Diagrammtexte, Exportname und Auswertungszeitraum werden aus `manifest.json` abgeleitet.
 
 ---
 
@@ -181,12 +210,14 @@ Jede Methodikänderung muss gleichzeitig in
 
 ## 8. Precompute-Status
 
-Der vollständige INCA-Precompute ist in Version 1.0 optional.
+Version 1.2 bereitet die Umstellung auf jahresweise INCA-Pakete vor. Bis zur vollständigen Migration des bisherigen Basiszeitraums bleibt der vorhandene Precompute-/Live-Rückfallweg aktiv.
 
-Er darf jederzeit später ergänzt werden, sofern:
+Produktionsregel:
 
-- die Ergebnisse gegen den Live-Abruf validiert werden,
-- NAT-abhängige Berechnungen weiterhin am konkreten Standort erfolgen,
-- Live-GeoSphere als Rückfallweg erhalten bleibt.
+- keine teilweise Jahresserie aktiv schalten,
+- Jahrespakete gegen vorhandene Auswertungen plausibilisieren,
+- NAT-abhängige Berechnungen weiterhin am konkreten Standort durchführen,
+- Live-GeoSphere als Rückfallweg erhalten,
+- nach Aktivierung neue Jahre nur anhängen, nicht alle Altjahre neu erzeugen.
 
-Dadurch ist die Performance-Schicht von der fachlichen Methodik getrennt.
+Dadurch bleibt die Performance-Schicht von der fachlichen Methodik getrennt und die jährliche Wartung wird auf ein einzelnes neues Kalenderjahr reduziert.

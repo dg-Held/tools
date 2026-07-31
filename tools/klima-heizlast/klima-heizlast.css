@@ -2275,3 +2275,25 @@ tr:last-child td { border-bottom: 0; }
     margin-top: 0 !important;
   }
 }
+
+/* =========================================================
+   V1.2 – DRUCKHINTERGRUND
+   Browser sollen außerhalb der Berichtskarten kein Seiten-Grau drucken.
+========================================================= */
+@media print {
+  html,
+  body,
+  main,
+  .climate-tool-page,
+  .climate-test-page,
+  .results-section {
+    background: #ffffff !important;
+    background-image: none !important;
+  }
+
+  .climate-tool-page::before,
+  .climate-tool-page::after {
+    display: none !important;
+    content: none !important;
+  }
+}

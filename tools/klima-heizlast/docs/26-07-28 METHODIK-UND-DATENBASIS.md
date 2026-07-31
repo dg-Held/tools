@@ -1,6 +1,8 @@
 
 # Klima & Heizlast – Methodik und Datenbasis
 
+**Fortgeschrieben für Toolversion 1.2 · Stand 31.07.2026**
+
 **Dokumentversion:** 1.0  
 **Toolversion:** 1.0.0  
 **Stand:** 27.07.2026  
@@ -26,7 +28,7 @@ Es dient dazu, auch zu einem späteren Zeitpunkt nachvollziehen zu können:
 - wie die Datengrundlagen aktualisiert werden.
 
 Das Dokument beschreibt den **tatsächlich implementierten Berechnungsstand von
-Version 1.0.0**.
+Version 1.2.0**.
 
 ---
 
@@ -37,11 +39,16 @@ Der normale Datenfluss lautet:
 ```text
 Gebäudeadresse
     │
-    ▼
-Österreichisches Adressregister (BEV)
+    ├──► BEV-Stichtagsindex
+    │      └── schnelle Vorschläge / Fallback
     │
-    ├── Adresscode / Gemeinde / Straße / Hausnummer
-    ├── Gebäude- oder Zugangskoordinate
+    └──► TIRIS ogd_basis live
+           └── bevorzugte finale Adresse / Koordinate nach Auswahl
+                  │
+                  ├── Adresscode / Gemeinde / Straße / Hausnummer
+                  └── Koordinate
+
+Gemeinsames Projekt / BEV-Fallback
     └── KGNR
              │
              ├──────────────► OIB NAT
@@ -52,7 +59,7 @@ Koordinate
     │
     ├────────► GeoSphere INCA
     │           └── nächster 1-km-Rasterpunkt
-    │               └── stündliche T2M-Klimadaten 2012–2025
+    │               └── stündliche T2M-Klimadaten im aktiven Zeitraum laut Manifest
     │
     └────────► TIRIS DGM
                 ├── Geländehöhe Gebäudestandort
@@ -80,7 +87,8 @@ vereinfachte Heizlast- und Leistungsanalyse
 Die Eingangsdaten und Berechnungen werden bewusst getrennt:
 
 **Offizielle Eingangsdaten**
-- Adresse / Koordinaten / KGNR: BEV
+- Adresse / Koordinaten: TIRIS live bevorzugt, BEV als Vorschlags-/Fallbackquelle
+- KGNR: gemeinsamer Projektbestand / BEV, bis die gemeinsame Standortbasis vollständig auf TIRIS umgestellt ist
 - Klima: GeoSphere Austria
 - NAT / TNAT,13: OIB
 - Geländehöhen: Land Tirol / TIRIS
@@ -146,18 +154,18 @@ Gebäudekoordinate verwendet:      193.902
 Zugangskoordinate verwendet:       13.420
 ```
 
-### Auswahl der Standortkoordinate
+### Adresssuche und Auswahl der Standortkoordinate
 
-Die Auswahl der Koordinate ist eine **eigene technische Regel des Tools**:
+Seit Version 1.2 werden **schnelle Vorschläge** und **amtlicher Live-Abgleich** getrennt:
 
-1. Liegt eine plausible Gebäudekoordinate vor, wird der nächstgelegene passende
-   Gebäudepunkt verwendet.
-2. Der Gebäudepunkt wird nur akzeptiert, wenn er höchstens 100 m von der
-   offiziellen Zugangskoordinate entfernt liegt.
-3. Andernfalls wird die Zugangskoordinate aus `ADRESSE.csv` verwendet.
+1. Während der Eingabe liefert der lokale BEV-Stichtagsbestand die Vorschlagsliste. Dadurch bleibt die Suche schnell und funktioniert auch ohne Netzwerkverzögerung.
+2. Nach Auswahl eines Vorschlags wird die Adresse bevorzugt über den gemeinsamen `ADRCD` live gegen TIRIS `ogd_basis` geprüft.
+3. Ist kein eindeutiger ADRCD-Treffer vorhanden, erfolgt ein zweiter Live-Abgleich über PLZ und Hausnummer mit anschließender Plausibilisierung von Straße/Gemeinde.
+4. Nur wenn TIRIS nicht erreichbar ist oder kein eindeutiger Treffer gefunden wird, bleibt die BEV-Stichtagsadresse als gekennzeichneter Fallback bestehen.
 
-Die 100-m-Grenze ist keine BEV-Vorgabe, sondern eine konservative
-Plausibilitätsregel des Tools.
+Damit ist der BEV-Bestand **Vorschlags- und Rückfallquelle**, während die tatsächlich ausgewählte Adresse nach Möglichkeit aus TIRIS live stammt. Unterschiedliche Schreibweisen zwischen BEV und TIRIS – etwa Orts-/Gemeindezusätze – werden dadurch nicht als unterschiedliche Gebäude interpretiert, sofern der Adresscode übereinstimmt.
+
+Für die BEV-Fallbackkoordinate gilt weiterhin die technische Regel: plausible Gebäudekoordinate bevorzugen, ansonsten Zugangskoordinate. Die bisherige 100-m-Plausibilitätsgrenze ist keine BEV-Vorgabe, sondern eine konservative Regel des Tools.
 
 ### Mehrere Katastralgemeinden
 
@@ -194,23 +202,39 @@ ELEVmin an und verlangt eine Auswahl.
 Die Timeseries-API liefert für eine in EPSG:4326 angegebene Koordinate den
 nächstgelegenen Rasterpunkt.
 
-### Abruf in Version 1.0
+### Laufzeit-Abruf und vorberechnete Klimaprofile
 
-Für einen neuen Standort versucht das Tool zuerst, den gesamten Zeitraum
-2012–2025 mit **einer API-Abfrage** zu laden. Bei einem Fehler wird automatisch
-auf einzelne Jahresabfragen zurückgefallen.
+Der Live-Abruf bleibt als Rückfallweg erhalten. Für die reguläre Nutzung wird die INCA-Auswertung jedoch schrittweise auf **jahresweise vorberechnete Pakete** umgestellt.
 
-Bereits geladene Daten können im Browsercache weiterverwendet werden.
+Die fachliche Berechnung bleibt unverändert: NAT-abhängige Kennzahlen werden weiterhin für die konkrete Katastralgemeinde im Browser berechnet. Die Jahrespakete enthalten nur jene standortunabhängigen INCA-Kennwerte und Dauerlinien-Stützstellen, die aus den Stundenwerten abgeleitet werden können.
 
-### Vorberechnete Klimaprofile
+### Jahresweise Paketstruktur ab Version 1.2
 
-Die Software enthält bereits eine Precompute-Infrastruktur. Der vollständige
-Tiroler Precompute ist **keine Voraussetzung für Version 1.0** und derzeit nur
-als optionale Performance-Optimierung vorbereitet.
+```text
+data/climate-precomputed/
+  manifest.json
+  yearly/
+    index.json
+    2025.json
+    2025/<tile>.json
+    2026.json
+    2026/<tile>.json
+    ...
+```
 
-Die fachliche Berechnung ist bei Live-Abruf und vorberechnetem Profil
-gleichwertig aufgebaut. Fehlt ein vorberechnetes Profil, wird automatisch der
-Live-Abruf verwendet.
+Ein Kalenderjahr ist damit ein eigenständiges Paket. Die Kachelung bleibt bewusst erhalten: Eine einzige große JSON-Datei pro Jahr würde im Browser für einen einzelnen Standort unnötig die Daten aller Tiroler Rasterpunkte übertragen.
+
+Jedes Jahresprofil enthält:
+
+- die vollständige Zeile nach `annual_schema`,
+- Temperaturhäufigkeiten,
+- NAT-Schwellenzählungen,
+- Stützstellen der Jahres-Dauerlinie,
+- sechs Grenzwerte des 31. Dezember 18–23 UTC für die korrekte Tropennacht zum 1. Jänner des Folgejahres.
+
+Sobald die einmalige Migration des bisherigen Basiszeitraums vollständig ist, wird der aktive Zeitraum ausschließlich aus `manifest.json` ermittelt. Ein lückenlos neu hinzugefügtes Jahr erweitert Zeitraum, Diagramme und Datenstand automatisch; `START_YEAR` / `END_YEAR` müssen dann nicht mehr manuell geändert werden.
+
+Bis diese Migration vollständig abgeschlossen ist, bleibt der bisherige Precompute-/Live-Betrieb unverändert aktiv. Es gibt dadurch keinen Zwischenzustand mit unvollständigem Klimazeitraum.
 
 ---
 
@@ -395,7 +419,7 @@ Te < 15 °C
 ```
 
 Die angezeigte Kennzahl ist der arithmetische Mittelwert der jährlichen
-Stundenzahlen 2012–2025.
+Stundenzahlen des jeweils aktiven Mehrjahreszeitraums.
 
 ---
 
@@ -446,7 +470,7 @@ Te ≤ NAT
 Te < 15 °C
 ```
 
-Die Hauptkennzahlen sind die Mittelwerte über 2012–2025.
+Die Hauptkennzahlen sind die Mittelwerte über alle Jahre des jeweils aktiven Mehrjahreszeitraums.
 
 `Stunden ≤ NAT` bedeutet nicht, dass ein vorhandener Wärmeerzeuger mit 100 %
 läuft. Es bedeutet, dass die vereinfachte lineare **Gebäudelast** bei diesen
@@ -490,7 +514,7 @@ Für jede Temperaturklasse wird aus den 14 Jahreswerten der Median gebildet.
 Die kräftige Linie zeigt daher:
 
 ```text
-Median der Stundenhäufigkeit 2012–2025
+Median der Stundenhäufigkeit über den aktiven Mehrjahreszeitraum
 ```
 
 Die Kärtchen oberhalb des Diagramms sind dagegen überwiegend
@@ -528,7 +552,7 @@ Stundentemperaturen, nicht den zeitlichen Verlauf eines konkreten Jahres.
 ## 7.1 Kälteste Einzelstunde
 
 ```text
-Minimum aller gültigen stündlichen T2M-Werte 2012–2025
+Minimum aller gültigen stündlichen T2M-Werte des aktiven Mehrjahreszeitraums
 ```
 
 ## 7.2 Kältestes 24-h-Mittel
@@ -586,8 +610,7 @@ stationsbasierte offizielle Klimastatistik.
 
 # 8. Datenqualität
 
-Die Datenqualität wird aus den erwarteten und fehlenden Stundenwerten
-2012–2025 abgeleitet.
+Die Datenqualität wird aus den erwarteten und fehlenden Stundenwerten des aktiven Mehrjahreszeitraums abgeleitet.
 
 Eigene UI-Klassifikation:
 
@@ -935,8 +958,7 @@ Nicht stundengenau oder nicht vollständig abgebildet werden insbesondere:
 - individuelle Nutzergewohnheiten
 - lokale Mikroklimaeffekte unterhalb der 1-km-INCA-Auflösung
 
-Der Zeitraum 2012–2025 ist eine bewusst gewählte aktuelle mehrjährige
-Vergleichsperiode. Er ist **keine 30-jährige klimatologische Normalperiode**.
+Der jeweils in `manifest.json` aktive, lückenlose Mehrjahreszeitraum ist eine bewusst gewählte aktuelle Vergleichsperiode. Er ist **keine 30-jährige klimatologische Normalperiode**.
 
 ---
 
@@ -983,16 +1005,7 @@ Nach neuem Stichtagsdownload den Tiroler Adressindex neu erzeugen und
 
 Empfohlen: einmal jährlich nach Abschluss eines vollständigen Kalenderjahres.
 
-Beispiel:
-
-```text
-V1.0: 2012–2025
-nächstes vollständiges Update: 2012–2026
-```
-
-Das neue Jahr sollte erst aufgenommen werden, wenn es vollständig vorliegt.
-
-Der vollständige Precompute kann dann ebenfalls neu erzeugt werden.
+Initialer Basiszeitraum ist 2012–2025. Nach der einmaligen Migration auf Jahrespakete wird ein neues Jahr nur dann aktiv, wenn es vollständig vorliegt und lückenlos an den bisherigen Zeitraum anschließt. Die BAT erzeugt ausschließlich das neue Jahrespaket; alte Jahrespakete werden nicht neu berechnet.
 
 ## OIB NAT
 
@@ -1032,8 +1045,8 @@ Mindestens bei Wartungsupdates prüfen:
 Empfohlene kompakte Referenz im Tool bzw. Ausdruck:
 
 ```text
-Adresse: BEV / Österreichisches Adressregister, Stichtag 01.04.2026
-Klima: GeoSphere Austria, INCA-v1, T2M, 2012–2025, CC BY 4.0
+Adresse: BEV-Stichtagsbestand für Vorschläge/Fallback; ausgewählte Adresse bevorzugt TIRIS live über ogd_basis
+Klima: GeoSphere Austria, INCA-v1, T2M, aktiver Zeitraum laut manifest.json, CC BY 4.0
 Normklima: OIB NAT und TNAT,13
 Höhe: Datenquelle Land Tirol - data.tirol.gv.at, TIRIS DGM
 ```
@@ -1088,7 +1101,7 @@ r(h) = max(0 ; (15 − Te(h)) / (15 − NAT))
 
 hVL,Jahr = Σ r(h)
 
-hVL = Mittelwert der Jahreswerte 2012–2025
+hVL = Mittelwert der Jahreswerte des aktiven Mehrjahreszeitraums
 
 PVerbrauch = Qraum / hVL
 
@@ -1120,12 +1133,6 @@ TMindest =
 
 # 24. Versionsstatus
 
-**Version 1.0.0** ist fachlich und funktional für die vorgesehene
-Beratungsorientierung abgeschlossen.
+**Version 1.2.0** verändert die fachliche Klima- und Heizlastmethodik nicht. Neu sind die gemeinsame Projekt-/Standortarchitektur, der hybride Adressablauf und die vorbereitete jahresweise INCA-Paketierung.
 
-Der vollständige vorberechnete INCA-Bestand ist eine spätere
-Performance-Optimierung. Solange er nicht vollständig erzeugt wurde, verwendet
-das Tool für nicht vorberechnete Standorte automatisch den funktionierenden
-GeoSphere-Liveabruf.
-
-Damit ist der Precompute kein fachlich offener Punkt der Version 1.0.
+Bis zur vollständigen Basismigration bleibt die bisherige vorberechnete/Live-Logik aktiv. Danach werden lückenlose Jahrespakete verwendet; GeoSphere Live bleibt Rückfallweg. Damit ist die jährliche Datenpflege von der fachlichen Berechnung getrennt.

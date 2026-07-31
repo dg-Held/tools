@@ -6,7 +6,9 @@
   const NORMALIZED_HOURS = 8760;
 
   let manifestPromise = null;
+  let yearlyIndexPromise = null;
   const tileCache = new Map();
+  const jsonCache = new Map();
 
   function finite(value) {
     return typeof value === 'number' && Number.isFinite(value);
@@ -74,6 +76,37 @@
     }
 
     return manifestPromise;
+  }
+
+  function getAvailableYears(manifest) {
+    const yearly = manifest?.yearly_packages;
+    if (yearly?.enabled && Array.isArray(yearly.years) && yearly.years.length) {
+      return [...yearly.years].map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+    }
+    return [...(manifest?.years ?? [])].map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+  }
+
+  function periodInfo(manifest) {
+    const years = getAvailableYears(manifest);
+    return {
+      years,
+      start_year: years[0] ?? null,
+      end_year: years[years.length - 1] ?? null,
+      year_count: years.length,
+      mode: manifest?.yearly_packages?.enabled ? 'yearly-packages' : 'baseline',
+    };
+  }
+
+  async function loadCachedJson(relativePath) {
+    if (jsonCache.has(relativePath)) return jsonCache.get(relativePath);
+    const promise = fetchJson(`${BASE_URL}/${relativePath}`);
+    jsonCache.set(relativePath, promise);
+    try {
+      return await promise;
+    } catch (error) {
+      jsonCache.delete(relativePath);
+      throw error;
+    }
   }
 
   async function loadTile(manifest, tileId) {
@@ -502,6 +535,162 @@
     };
   }
 
+  async function loadYearlyIndex(manifest) {
+    const path = manifest?.yearly_packages?.index_path;
+    if (!path) throw new Error('Jahrespakete sind aktiviert, aber index_path fehlt.');
+    if (!yearlyIndexPromise) yearlyIndexPromise = loadCachedJson(path);
+    return yearlyIndexPromise;
+  }
+
+  function findYearlyProfileReference(manifest, indexPayload, location) {
+    return findProfileReference({
+      ...manifest,
+      coverage_mode: 'full',
+      index: indexPayload?.index ?? [],
+      lookup_max_distance_m:
+        indexPayload?.lookup_max_distance_m ?? manifest.lookup_max_distance_m,
+    }, location);
+  }
+
+  function yearManifestPath(manifest, year) {
+    const pattern = manifest?.yearly_packages?.year_manifest_pattern ?? 'yearly/{year}.json';
+    return pattern.replace('{year}', String(year));
+  }
+
+  async function loadYearPackage(manifest, year, tileId, profileId) {
+    const yearManifest = await loadCachedJson(yearManifestPath(manifest, year));
+    const tilePath = yearManifest?.tiles?.[tileId];
+    if (!tilePath) {
+      throw new Error(`Jahrespaket ${year}: Klimakachel ${tileId} fehlt.`);
+    }
+    const tile = await loadCachedJson(tilePath);
+    const profile = tile?.[profileId];
+    if (!profile) {
+      throw new Error(`Jahrespaket ${year}: Profil ${profileId} fehlt.`);
+    }
+    return { yearManifest, profile };
+  }
+
+  function aggregateDurationSamples(manifest, samplesByYear) {
+    const sampleIndices = manifest.duration_sample_indices ?? [];
+    if (!sampleIndices.length || !samplesByYear.length) {
+      throw new Error('Jahrespakete enthalten keine gültigen Dauerlinien-Stützstellen.');
+    }
+
+    const scale = Number(manifest.duration_temperature_scale ?? 100);
+    const p10 = new Array(sampleIndices.length);
+    const median = new Array(sampleIndices.length);
+    const p90 = new Array(sampleIndices.length);
+
+    for (let index = 0; index < sampleIndices.length; index += 1) {
+      const values = samplesByYear
+        .map((entry) => Number(entry.duration_q100?.[index]))
+        .filter(Number.isFinite)
+        .map((value) => value / scale);
+      p10[index] = quantile(values, 0.1);
+      median[index] = quantile(values, 0.5);
+      p90[index] = quantile(values, 0.9);
+    }
+
+    return {
+      p10_c: expandDurationCurve(sampleIndices, p10, NORMALIZED_HOURS),
+      median_c: expandDurationCurve(sampleIndices, median, NORMALIZED_HOURS),
+      p90_c: expandDurationCurve(sampleIndices, p90, NORMALIZED_HOURS),
+    };
+  }
+
+  async function buildYearlyClimateResult(manifest, location) {
+    const period = periodInfo(manifest);
+    if (!period.years.length) return null;
+
+    const indexPayload = await loadYearlyIndex(manifest);
+    const reference = findYearlyProfileReference(manifest, indexPayload, location);
+    if (!reference) return null;
+
+    const loadedYears = [];
+    for (const year of period.years) {
+      const loaded = await loadYearPackage(
+        manifest,
+        year,
+        reference.tile_id,
+        reference.profile_id
+      );
+      loadedYears.push({ year, ...loaded });
+    }
+
+    const natC = Number(location.nat_c);
+    if (!finite(natC)) throw new Error('Für das vorberechnete Klimaprofil fehlt die NAT.');
+
+    const temperatureBins = Array.from(
+      { length: Number(manifest.frequency_max_c) - Number(manifest.frequency_min_c) + 1 },
+      (_, index) => Number(manifest.frequency_min_c) + index
+    );
+
+    const annual = loadedYears
+      .map(({ profile }) => unpackAnnual(manifest, profile.annual_row, natC, temperatureBins))
+      .sort((a, b) => a.year - b.year);
+
+    const annualPublic = annual.map(({ _frequency_hours, ...item }) => item);
+    const curves = aggregateDurationSamples(
+      manifest,
+      loadedYears.map(({ year, profile }) => ({ year, duration_q100: profile.duration_q100 }))
+    );
+
+    const firstProfile = loadedYears[0]?.profile ?? {};
+    const latestGenerated = loadedYears
+      .map(({ yearManifest }) => yearManifest.generated_at)
+      .filter(Boolean)
+      .sort()
+      .at(-1) ?? new Date().toISOString();
+
+    return {
+      manifest,
+      reference,
+      profile: null,
+      result: {
+        schema_version: 5,
+        generated_at: latestGenerated,
+        location: {
+          ...location,
+          grid_longitude: firstProfile.grid_longitude ?? reference.grid_longitude,
+          grid_latitude: firstProfile.grid_latitude ?? reference.grid_latitude,
+          start_year: period.start_year,
+          end_year: period.end_year,
+          climate_load_source: 'precomputed-yearly',
+          precomputed_profile_id: reference.profile_id,
+          precomputed_distance_m: reference.distance_m ?? null,
+        },
+        assumptions: {
+          heating_limit_c: HEATING_LIMIT_C,
+          duration_curve_hours: NORMALIZED_HOURS,
+          frequency_bin_width_c: Number(manifest.frequency_bin_width_c ?? 1),
+          hot_day_definition: 'Tagesmaximum aus Stundenwerten mindestens 30 °C',
+          extreme_hot_day_definition: 'Tagesmaximum aus Stundenwerten mindestens 35 °C',
+          tropical_night_definition: 'Minimum der Stundenwerte 18–06 UTC mindestens 20 °C',
+          full_load_hours_formula: 'Σ max(0, (15 - Außentemperatur) / (15 - NAT))',
+          note: 'Jahresweise vorberechnete INCA-Pakete. NAT-abhängige Kennzahlen werden beim Seitenaufruf für die konkrete Katastralgemeinde neu berechnet.',
+        },
+        data: {
+          source: 'GeoSphere Austria, INCA-v1-1h-1km, T2M · jahresweise vorberechnete Klimaprofile',
+          license: 'CC BY 4.0',
+          years: [...period.years],
+          year_count: period.year_count,
+          precomputed: true,
+          yearly_packages: true,
+        },
+        metrics: buildSummary(annualPublic),
+        annual_metrics: annualPublic,
+        temperature_frequency: aggregateFrequency(annual, temperatureBins),
+        duration_curve: {
+          hour_rank: Array.from({ length: NORMALIZED_HOURS }, (_, index) => index + 1),
+          p10_c: curves.p10_c,
+          median_c: curves.median_c,
+          p90_c: curves.p90_c,
+        },
+      },
+    };
+  }
+
   function buildClimateResult(
     manifest,
     profile,
@@ -631,45 +820,33 @@
 
   async function loadForLocation(location) {
     const manifest = await loadManifest();
-    const reference =
-      findProfileReference(
-        manifest,
-        location
-      );
 
-    if (!reference) {
-      return null;
+    if (manifest?.yearly_packages?.enabled) {
+      return buildYearlyClimateResult(manifest, location);
     }
 
-    const tile = await loadTile(
-      manifest,
-      reference.tile_id
-    );
+    const reference = findProfileReference(manifest, location);
+    if (!reference) return null;
 
-    const profile =
-      tile?.[reference.profile_id] ?? null;
-
-    if (!profile) {
-      return null;
-    }
+    const tile = await loadTile(manifest, reference.tile_id);
+    const profile = tile?.[reference.profile_id] ?? null;
+    if (!profile) return null;
 
     return {
       manifest,
       profile,
       reference,
-      result: buildClimateResult(
-        manifest,
-        profile,
-        location,
-        reference
-      ),
+      result: buildClimateResult(manifest, profile, location, reference),
     };
   }
 
   global.PrecomputedClimateCore = {
     loadManifest,
+    getAvailableYears,
+    periodInfo,
     findProfileReference,
     buildClimateResult,
+    buildYearlyClimateResult,
     loadForLocation,
     expandDurationCurve,
   };

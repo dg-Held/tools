@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-27T13:55:59.291622+00:00",
+  "generated_at": "2026-07-31T00:00:00+00:00",
   "inca": {
     "source": "GeoSphere Austria INCA-v1-1h-1km",
     "parameter": "T2M",
@@ -20,7 +20,9 @@
     "projection": "MGI / Austria Lambert (EPSG:31287)",
     "license_url": "https://creativecommons.org/licenses/by/4.0/",
     "runtime_mode": "Live-Timeseries für beliebige Standorte; vorberechnete Profile derzeit nur als optionale Performance-Schicht.",
-    "annual_update_policy": "Nach Abschluss eines vollständigen Kalenderjahres Zeitraum um dieses Jahr erweitern."
+    "annual_update_policy": "Ein abgeschlossenes Kalenderjahr wird separat aus den Monatsdateien aufbereitet. Nach vollständiger Jahrespaket-Migration erkennt das Tool neue Jahre über manifest.json automatisch.",
+    "yearly_package_status": "vorbereitet, noch nicht aktiviert",
+    "yearly_package_structure": "data/climate-precomputed/yearly/{year}.json + yearly/{year}/{tile}.json"
   },
   "oib_nat": {
     "source": "OIB Normaußentemperaturen",
@@ -48,14 +50,14 @@
   },
   "tool": {
     "name": "Klima & Heizlast",
-    "version": "1.1.0",
-    "release_date": "2026-07-30",
+    "version": "1.2.0",
+    "release_date": "2026-07-31",
     "scope": "Tirol",
     "method": "Vereinfachte Beratungsschätzung; keine Norm-Heizlastberechnung"
   },
   "documentation": {
-    "methodology_version": "1.0",
-    "last_verified": "2026-07-30"
+    "methodology_version": "1.2",
+    "last_verified": "2026-07-31"
   },
   "shared_data_reference": "../../shared/data/datenstand.json"
 }

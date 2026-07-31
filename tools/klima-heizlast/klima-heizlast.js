@@ -1,9 +1,30 @@
 'use strict';
 
 const API_URL = 'https://dataset.api.hub.geosphere.at/v1/timeseries/historical/inca-v1-1h-1km';
-const START_YEAR = 2012;
-const END_YEAR = 2025;
+let START_YEAR = 2012;
+let END_YEAR = 2025;
 const REQUEST_DELAY_MS = 260;
+
+function climatePeriodLabel() {
+  return `${START_YEAR}–${END_YEAR}`;
+}
+
+async function initializeClimatePeriod() {
+  try {
+    if (typeof PrecomputedClimateCore === 'undefined') return;
+    const manifest = await PrecomputedClimateCore.loadManifest();
+    const period = PrecomputedClimateCore.periodInfo?.(manifest);
+    if (period?.start_year && period?.end_year) {
+      START_YEAR = Number(period.start_year);
+      END_YEAR = Number(period.end_year);
+    }
+    document.querySelectorAll('[data-climate-period]').forEach((node) => {
+      node.textContent = climatePeriodLabel();
+    });
+  } catch (error) {
+    console.warn('Klimazeitraum konnte nicht aus dem Manifest gelesen werden. Fallback 2012–2025 bleibt aktiv.', error);
+  }
+}
 
 const LOCATIONS = {
   terfens: {
@@ -307,9 +328,16 @@ function hydrateSharedProject(project = projectStore?.get()) {
 const addressProviders =
   new AddressProviderCore.AddressProviderRegistry();
 
-const bevAddressProvider = addressProviders.register(
-  new BevLocalAddressProvider({
-    baseUrl: '../../shared/data/addresses',
+const bevSuggestionProvider = new BevLocalAddressProvider({
+  baseUrl: '../../shared/data/addresses',
+});
+
+const tirisLiveAddressProvider = new TirisLiveAddressProvider();
+
+const hybridAddressProvider = addressProviders.register(
+  new HybridAddressProvider({
+    suggestionProvider: bevSuggestionProvider,
+    liveProvider: tirisLiveAddressProvider,
   })
 );
 
@@ -882,6 +910,33 @@ function applyAddressResult(address) {
   syncSharedLocation(address);
 }
 
+async function resolveAndApplyAddressResult(address) {
+  elements.addressSearchStatus.textContent =
+    'BEV-Vorschlag gewählt · TIRIS wird live abgeglichen …';
+
+  const provider = addressProviders.active();
+
+  if (typeof provider.resolve !== 'function') {
+    applyAddressResult(address);
+    return;
+  }
+
+  try {
+    const resolved = await provider.resolve(address);
+    applyAddressResult(resolved.address);
+
+    if (resolved.usedFallback && resolved.warning) {
+      elements.addressSearchStatus.textContent +=
+        ` ${resolved.warning}`;
+    }
+  } catch (error) {
+    console.warn('TIRIS-Live-Abgleich fehlgeschlagen.', error);
+    applyAddressResult(address);
+    elements.addressSearchStatus.textContent +=
+      ' TIRIS-Live-Abgleich war nicht verfügbar; BEV-Stichtagsadresse wird verwendet.';
+  }
+}
+
 function suggestionButton(address, index) {
   const button = document.createElement('button');
   button.type = 'button';
@@ -895,12 +950,14 @@ function suggestionButton(address, index) {
   const meta = document.createElement('span');
   meta.textContent = address.is_demo
     ? 'Demonstrationspunkt'
-    : `${address.source} · Adresscode ${address.source_id}`;
+    : address.source?.includes('TIRIS')
+      ? `${address.source} · Adresscode ${address.source_id}`
+      : `BEV-Vorschlag · TIRIS-Live-Check beim Auswählen · Adresscode ${address.source_id}`;
 
   button.append(label, meta);
   button.addEventListener(
     'click',
-    () => applyAddressResult(address)
+    () => resolveAndApplyAddressResult(address)
   );
 
   return button;
@@ -970,7 +1027,9 @@ async function initializeAddressProvider() {
   try {
     if (
       typeof AddressProviderCore === 'undefined' ||
-      typeof BevLocalAddressProvider === 'undefined'
+      typeof BevLocalAddressProvider === 'undefined' ||
+      typeof TirisLiveAddressProvider === 'undefined' ||
+      typeof HybridAddressProvider === 'undefined'
     ) {
       throw new Error(
         'Adressprovider-Dateien fehlen oder wurden nicht geladen.'
@@ -984,15 +1043,15 @@ async function initializeAddressProvider() {
 
     elements.addressProviderLabel.textContent =
       info.dataset_mode === 'demo'
-        ? 'BEV-Modul · Demoindex'
-        : `BEV-Stichtagsdaten · ${info.dataset_date ?? 'Datenstand unbekannt'}`;
+        ? 'BEV-Demo · TIRIS Live-Check'
+        : `BEV-Vorschläge ${info.dataset_date ?? '–'} · TIRIS live`;
 
     elements.addressSearchStatus.textContent =
       info.warning ||
       (
         info.dataset_mode === 'demo'
-          ? 'Im aktuellen Paket sind zunächst nur die drei technischen Testpunkte enthalten.'
-          : `${formatNumber(info.address_count)} offizielle Tiroler Adressen lokal verfügbar · Datenstand ${info.dataset_date ?? '–'}.`
+          ? 'Im aktuellen Paket sind zunächst nur die technischen BEV-Testpunkte enthalten; ausgewählte Treffer werden live mit TIRIS geprüft.'
+          : `${formatNumber(info.address_count)} BEV-Adressen für schnelle Vorschläge · Datenstand ${info.dataset_date ?? '–'} · ausgewählte Adressen werden live mit TIRIS verifiziert.`
       );
   } catch (error) {
     console.error(error);
@@ -1533,7 +1592,7 @@ async function loadLocation(location, progressState) {
       setProgress(
         progressState.done,
         progressState.total,
-        `${location.name}: Klimaprofil 2012–2025 sofort geladen`
+        `${location.name}: Klimaprofil ${climatePeriodLabel()} sofort geladen`
       );
     }
   } catch (precomputedError) {
@@ -1557,7 +1616,7 @@ async function loadLocation(location, progressState) {
       setProgress(
         progressState.done,
         progressState.total,
-        `${location.name}: Klimadaten 2012–2025 werden live geladen …`
+        `${location.name}: Klimadaten ${climatePeriodLabel()} werden live geladen …`
       );
 
       const periodResult =
@@ -1581,7 +1640,7 @@ async function loadLocation(location, progressState) {
       setProgress(
         progressState.done,
         progressState.total,
-        `${location.name}: 2012–2025 ${sourceText}`
+        `${location.name}: ${climatePeriodLabel()} ${sourceText}`
       );
     } catch (periodError) {
       console.warn(
@@ -2780,7 +2839,7 @@ function downloadJson() {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download =
-    `klima_heizlast_${state.currentResult.location.id}_2012-2025.json`;
+    `klima_heizlast_${state.currentResult.location.id}_${START_YEAR}-${END_YEAR}.json`;
   link.click();
   URL.revokeObjectURL(link.href);
 }
@@ -3044,9 +3103,16 @@ window.addEventListener('energy-tools:project-reset', () => {
   updateAnalyzeAvailability();
 });
 
-populateLocationInputs(elements.locationSelect.value);
-resetProductionLocationFields();
-initializeAddressProvider()
-  .then(() => hydrateSharedProject())
-  .catch(() => hydrateSharedProject());
-updateAnalyzeAvailability();
+async function initializeTool() {
+  await initializeClimatePeriod();
+  populateLocationInputs(elements.locationSelect.value);
+  resetProductionLocationFields();
+  try {
+    await initializeAddressProvider();
+  } finally {
+    hydrateSharedProject();
+    updateAnalyzeAvailability();
+  }
+}
+
+initializeTool();
