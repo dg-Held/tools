@@ -1,3 +1,5 @@
+@import url("shared/css/tokens.css");
+
 @font-face {
   font-family: "Nunito";
   src: url("assets/fonts/Nunito/static/Nunito-Light.ttf") format("truetype");
@@ -29,54 +31,7 @@
    Änderungen an diesen Werten wirken sich auf die ganze Seite aus.
 ========================================================= */
 
-:root {
-  /* Hauptfarben */
-  --turquoise: #34ab9f;
-  --berry: #b3446c;
-
-  /* Helle Akzente */
-  --turquoise-light: #d8f3f0;
-  --berry-light: #f1dae2;
-
-  /* Sehr helle Flächen */
-  --turquoise-soft: #ebf9f8;
-  --berry-soft: #f8edf1;
-
-  /* Dunkle Akzente */
-  --turquoise-dark: #24756d;
-  --berry-dark: #6f2a43;
-
-  /* Textfarben */
-  --text-dark: #0c2724;
-  --text-light: #ebf9f8;
-  --text-muted: #526562;
-
-  /* Neutrale Farben */
-  --white: #ffffff;
-  --page-background: #f9fbfa;
-  --line: rgba(12, 39, 36, 0.12);
-
-  /* Schrift */
-  --font-body: "Nunito", sans-serif;
-
-  /* Abstände */
-  --space-1: 0.5rem;
-  --space-2: 1rem;
-  --space-3: 1.5rem;
-  --space-4: 2rem;
-  --space-5: 3rem;
-  --space-6: 4.5rem;
-
-  /* Rundungen */
-  --radius-small: 10px;
-  --radius-medium: 18px;
-  --radius-large: 28px;
-  --radius-round: 50%;
-
-  /* Schatten */
-  --shadow-soft: 0 12px 35px rgba(12, 39, 36, 0.08);
-  --shadow-hover: 0 16px 42px rgba(12, 39, 36, 0.13);
-}
+/* Werte siehe shared/css/tokens.css */
 
 
 /* =========================================================

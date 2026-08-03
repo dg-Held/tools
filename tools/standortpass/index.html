@@ -1,510 +1,536 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standortpass Energie & Gebäude | Tools für Energieberatung</title>
-  <meta name="description" content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten.">
-
-  <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="standortpass.css?v=7">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Standortpass Energie &amp; Gebäude | Tools für Energieberatung</title>
+<meta content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten." name="description"/>
+<link href="../../styles.css" rel="stylesheet"/>
+<link href="standortpass.css?v=7" rel="stylesheet"/><link href="../../shared/css/components.css?v=1" rel="stylesheet"/><link href="../../shared/css/print.css?v=1" rel="stylesheet"/>
 </head>
 <body>
-
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="../../index.html" class="circle-btn logo-circle" aria-label="Zur Startseite">
-        <img src="../../assets/svg/logo/logo_48.svg" alt="Tools für Energieberatung" width="74" height="74">
-      </a>
-
-      <nav aria-label="Hauptnavigation">
-        <ul class="nav-list">
-          <li><a class="circle-btn nav-circle" href="../../index.html" aria-label="Startseite"><img src="../../assets/svg/icons/icon-home-48.svg" class="nav-icon" alt=""></a></li>
-          <li><a class="circle-btn nav-circle active" href="../../pages/tools.html" aria-label="Tools"><img src="../../assets/svg/icons/icon-tools-48.svg" class="nav-icon" alt=""></a></li>
-          <li><a class="circle-btn nav-circle" href="../../pages/about.html" aria-label="Über mich"><img src="../../assets/svg/icons/icon-about-48.svg" class="nav-icon" alt=""></a></li>
-          <li><a class="circle-btn nav-circle" href="../../pages/kontakt.html" aria-label="Kontakt"><img src="../../assets/svg/icons/icon-mail-48.svg" class="nav-icon" alt=""></a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-
-  <main class="standortpass-page">
-    <section class="container test-intro report-title-block">
-      <p class="eyebrow">Beratungsvorbereitung · Tirol</p>
-      <h1>Standortpass Energie &amp; Gebäude</h1>
-      <p class="test-lead">
+<header class="site-header">
+<div class="container header-inner">
+<a aria-label="Zur Startseite" class="circle-btn logo-circle" href="../../index.html">
+<img alt="Tools für Energieberatung" height="74" src="../../assets/svg/logo/logo_48.svg" width="74"/>
+</a>
+<nav aria-label="Hauptnavigation">
+<ul class="nav-list">
+<li><a aria-label="Startseite" class="circle-btn nav-circle" href="../../index.html"><img alt="" class="nav-icon" src="../../assets/svg/icons/icon-home-48.svg"/></a></li>
+<li><a aria-label="Tools" class="circle-btn nav-circle active" href="../../pages/tools.html"><img alt="" class="nav-icon" src="../../assets/svg/icons/icon-tools-48.svg"/></a></li>
+<li><a aria-label="Über mich" class="circle-btn nav-circle" href="../../pages/about.html"><img alt="" class="nav-icon" src="../../assets/svg/icons/icon-about-48.svg"/></a></li>
+<li><a aria-label="Kontakt" class="circle-btn nav-circle" href="../../pages/kontakt.html"><img alt="" class="nav-icon" src="../../assets/svg/icons/icon-mail-48.svg"/></a></li>
+</ul>
+</nav>
+</div>
+</header>
+<main class="standortpass-page">
+<section class="container test-intro report-title-block">
+<p class="eyebrow">Beratungsvorbereitung · Tirol</p>
+<h1>Standortpass Energie &amp; Gebäude</h1>
+<p class="test-lead">
         Amtliche Standortinformationen, bewusst überschlägige Gebäudeableitungen und klare Prüfhilfen in einer gemeinsamen Projektbasis.
       </p>
-      <p class="test-disclaimer">
+<p class="test-disclaimer">
         Der Standortpass ersetzt keine Detailplanung. Amtliche Daten, Ableitungen und manuelle Angaben bleiben unterscheidbar; automatische Gebäudegrößen sind Orientierungswerte und können später korrigiert werden.
       </p>
-    </section>
-
-    <section class="container project-header-card" aria-label="Gemeinsame Projektkopfzeile">
-      <div class="project-header-row project-header-row--top">
-        <label class="project-title-field"><span>Projekttitel</span><input id="projectTitle" type="text" placeholder="z. B. Energieberatung Musterhaus"></label>
-        <label class="project-id-field"><span>Projekt-ID</span><input id="projectId" type="text" placeholder="optional"></label>
-      </div>
-      <div class="project-header-row">
-        <div class="project-address-field"><span>Adresse</span><strong id="projectAddress">Noch kein Standort gewählt</strong></div>
-        <div class="project-date-field"><span>Datum / Ausdruck</span><strong id="projectPrintDate">–</strong></div>
-      </div>
-      <div class="project-actions no-print">
-        <button class="secondary-button" id="printReportButton" type="button">Drucken / PDF</button>
-        <button class="quiet-button" id="exportProjectButton" type="button">Projekt exportieren</button>
-        <button class="quiet-button" id="importProjectButton" type="button">Projekt importieren</button>
-        <button class="quiet-button quiet-button--danger" id="resetProjectButton" type="button">Projekt zurücksetzen</button>
-        <input id="importProjectInput" type="file" accept="application/json,.json" hidden>
-      </div>
-    </section>
-
-    <section class="container overview-panel" aria-labelledby="overview-title">
-      <div class="panel-heading"><div><p class="eyebrow">Projektübersicht</p><h2 id="overview-title">Prüfstatus</h2><p>Die Übersicht aktualisiert sich während der Standortprüfung automatisch.</p></div></div>
-      <div class="project-overview-grid" id="projectOverviewGrid"></div>
-    </section>
-
-    <section class="container test-panel" aria-labelledby="live-address-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">1 · Projektstandort</p>
-          <h2 id="live-address-title">Standort auswählen</h2>
-          <p>
+</section>
+<div data-project-header=""></div>
+<section aria-labelledby="overview-title" class="container overview-panel">
+<div class="panel-heading"><div><p class="eyebrow">Projektübersicht</p><h2 id="overview-title">Prüfstatus</h2><p>Die Übersicht aktualisiert sich während der Standortprüfung automatisch.</p></div></div>
+<div class="project-overview-grid" id="projectOverviewGrid"></div>
+</section>
+<section aria-labelledby="live-address-title" class="container test-panel" data-address-section="">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">1 · Projektstandort</p>
+<h2 id="live-address-title">Standort auswählen</h2>
+<p>
             Adresse suchen und als gemeinsame Projektadresse übernehmen.
           </p>
-        </div>
-        <span class="status-chip status-chip--muted" id="tirisLiveAddressStatus">nicht geprüft</span>
-      </div>
-
-      <label class="search-field">
-        <span>Adresse – schnelle BEV-Vorschläge, anschließend TIRIS-Live-Abgleich</span>
-        <input id="tirisLiveAddressInput" type="search" autocomplete="off" placeholder="z. B. 6112 w oder 6020 Bürgerstraße 1" aria-controls="tirisLiveAddressResults" aria-expanded="false">
-      </label>
-      <div class="action-row address-action-row">
-        <button class="primary-button" id="searchTirisLiveAddressButton" type="button">Adresse suchen</button>
-        <span class="action-note" id="tirisParsedAddress">Mindestens drei Zeichen eingeben. Die gewählte Adresse wird live mit TIRIS abgeglichen.</span>
-      </div>
-      <div class="suggestions" id="tirisLiveAddressResults" role="listbox" hidden></div>
-
-      <details class="location-data-details no-print">
-        <summary><span>Standortdetails & Datenabgleich</span><small>Ausgewählte Adresse, Katastralgemeinde und BEV-Vergleich</small></summary>
-        <div class="location-data-details__content">
-          <article class="selected-card selected-card--compact" id="selectedAddressCard" hidden>
-            <div>
-              <span class="mini-label">Ausgewählte Adresse</span>
-              <strong id="selectedAddressLabel">–</strong>
-              <small id="selectedAddressMeta">–</small>
-            </div>
-            <button class="quiet-button" id="clearAddressButton" type="button">Auswahl löschen</button>
-          </article>
-
-          <div class="two-column-test" id="liveAddressChecks" hidden>
-            <article class="mini-test-card">
-              <span class="mini-label">Katastralgemeinde</span>
-              <h3>TIRIS-Punkt → KG-Polygon</h3>
-              <div id="kgResult" class="compact-result">wird geprüft …</div>
-            </article>
-
-            <article class="mini-test-card">
-              <span class="mini-label">Datenabgleich</span>
-              <h3>TIRIS ↔ BEV</h3>
-              <div id="bevComparisonResult" class="compact-result">BEV-Modul wird initialisiert …</div>
-            </article>
-          </div>
-
-
-        </div>
-      </details>
-
-      <div class="report-run-card no-print" id="reportRunCard">
-        <div>
-          <span class="mini-label">Automatischer Ablauf</span>
-          <strong>Standortbericht in einem Durchlauf erstellen</strong>
-          <p id="reportRunMessage">Nach der Adressauswahl werden Gebäude, Höhenlage, Solar, Umweltwärme, Naturgefahren, Schutzstatus und Radon nacheinander geprüft.</p>
-          <div class="report-progress" id="reportProgress" hidden>
-            <div class="report-progress-bar"><span id="reportProgressBar"></span></div>
-            <small id="reportProgressText">Bereit.</small>
-          </div>
-        </div>
-        <div class="report-run-actions">
-          <span class="status-chip status-chip--muted" id="reportRunStatus">Adresse fehlt</span>
-          <button class="primary-button" id="runReportButton" type="button" disabled>Bericht erstellen</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="container test-panel dev-only" aria-labelledby="basis-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Technische Datenkontrolle</p>
-          <h2 id="basis-title">TIRIS-Dienste kontrollieren</h2>
-          <p>
+</div>
+<span class="status-chip status-chip--muted" id="tirisLiveAddressStatus">nicht geprüft</span>
+</div>
+<label class="search-field">
+<span>Adresse – schnelle BEV-Vorschläge, anschließend TIRIS-Live-Abgleich</span>
+<input aria-controls="tirisLiveAddressResults" aria-expanded="false" autocomplete="off" id="tirisLiveAddressInput" placeholder="z. B. 6112 w oder 6020 Bürgerstraße 1" type="search"/>
+</label>
+<div class="action-row address-action-row">
+<button class="primary-button" id="searchTirisLiveAddressButton" type="button">Adresse suchen</button>
+<span class="action-note" id="tirisParsedAddress">Mindestens drei Zeichen eingeben. Die gewählte Adresse wird live mit TIRIS abgeglichen.</span>
+</div>
+<div class="suggestions" hidden="" id="tirisLiveAddressResults" role="listbox"></div>
+<details class="location-data-details no-print">
+<summary><span>Standortdetails &amp; Datenabgleich</span><small>Ausgewählte Adresse, Katastralgemeinde und BEV-Vergleich</small></summary>
+<div class="location-data-details__content">
+<article class="selected-card selected-card--compact" hidden="" id="selectedAddressCard">
+<div>
+<span class="mini-label">Ausgewählte Adresse</span>
+<strong id="selectedAddressLabel">–</strong>
+<small id="selectedAddressMeta">–</small>
+</div>
+<button class="quiet-button" id="clearAddressButton" type="button">Auswahl löschen</button>
+</article>
+<div class="two-column-test" hidden="" id="liveAddressChecks">
+<article class="mini-test-card">
+<span class="mini-label">Katastralgemeinde</span>
+<h3>TIRIS-Punkt → KG-Polygon</h3>
+<div class="compact-result" id="kgResult">wird geprüft …</div>
+</article>
+<article class="mini-test-card">
+<span class="mini-label">Datenabgleich</span>
+<h3>TIRIS ↔ BEV</h3>
+<div class="compact-result" id="bevComparisonResult">BEV-Modul wird initialisiert …</div>
+</article>
+</div>
+</div>
+</details>
+<div class="report-run-card no-print" id="reportRunCard">
+<div>
+<span class="mini-label">Automatischer Ablauf</span>
+<strong>Standortbericht in einem Durchlauf erstellen</strong>
+<p id="reportRunMessage">Nach der Adressauswahl werden Gebäude, Höhenlage, Solar, Umweltwärme, Naturgefahren, Schutzstatus und Radon nacheinander geprüft.</p>
+<div class="report-progress" hidden="" id="reportProgress">
+<div class="report-progress-bar"><span id="reportProgressBar"></span></div>
+<small id="reportProgressText">Bereit.</small>
+</div>
+</div>
+<div class="report-run-actions">
+<span class="status-chip status-chip--muted" id="reportRunStatus">Adresse fehlt</span>
+<button class="primary-button" disabled="" id="runReportButton" type="button">Bericht erstellen</button>
+</div>
+</div>
+</section>
+<section aria-labelledby="basis-title" class="container test-panel dev-only">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">Technische Datenkontrolle</p>
+<h2 id="basis-title">TIRIS-Dienste kontrollieren</h2>
+<p>
             Die bisherigen Metadaten- und Umkreistests bleiben erhalten. So sehen wir, ob sich Layer, Felder oder Browserzugriff verändern.
           </p>
-        </div>
-        <span class="status-chip status-chip--muted" id="basisStatus">nicht geprüft</span>
-      </div>
-
-      <div class="action-row">
-        <button class="secondary-button" id="testBasisButton" type="button">TIRIS BASIS prüfen</button>
-        <button class="secondary-button" id="testTirisAddressLayersButton" type="button" disabled>Adress-Layer am Standort prüfen</button>
-      </div>
-
-      <div id="basisResult" class="service-result" hidden></div>
-      <div id="tirisAddressLayerResult" class="service-result" hidden></div>
-    </section>
-
-
-
-    <section class="container main-tool-area" id="area-building" aria-labelledby="area-building-title">
-      <div class="main-area-heading"><div><p class="eyebrow">1 · Gebäude</p><h2 id="area-building-title">Gebäude & Standort</h2><p>Amtliche Gebäude- und Höhendaten plus bewusst überschlägige, manuell korrigierbare Beratungswerte.</p></div></div>
-    <section class="tool-subpanel" aria-labelledby="building-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Gebäudegeometrie</p>
-          <h2 id="building-title">Gebäude automatisch zuordnen</h2>
-          <p>
+</div>
+<span class="status-chip status-chip--muted" id="basisStatus">nicht geprüft</span>
+</div>
+<div class="action-row">
+<button class="secondary-button" id="testBasisButton" type="button">TIRIS BASIS prüfen</button>
+<button class="secondary-button" disabled="" id="testTirisAddressLayersButton" type="button">Adress-Layer am Standort prüfen</button>
+</div>
+<div class="service-result" hidden="" id="basisResult"></div>
+<div class="service-result" hidden="" id="tirisAddressLayerResult"></div>
+</section>
+<section aria-labelledby="area-building-title" class="container main-tool-area" id="area-building">
+<div class="main-area-heading"><div><p class="eyebrow">1 · Gebäude</p><h2 id="area-building-title">Gebäude &amp; Standort</h2><p>Amtliche Gebäude- und Höhendaten plus bewusst überschlägige, manuell korrigierbare Beratungswerte.</p></div></div>
+<section aria-labelledby="building-title" class="tool-subpanel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">Gebäudegeometrie</p>
+<h2 id="building-title">Gebäude automatisch zuordnen</h2>
+<p>
             Zuerst wird der Adresspunkt direkt gegen die TIRIS-Dachpolygone geprüft. Nur bei fehlendem oder mehrdeutigem Treffer wird die Umgebung geladen.
           </p>
-        </div>
-        <span class="status-chip status-chip--muted" id="buildingStatus">Adresse fehlt</span>
-      </div>
-
-      <div class="action-row manual-step-action" id="buildingManualAction">
-        <button class="primary-button" id="loadBuildingButton" type="button" disabled>Gebäude automatisch zuordnen</button>
-        <button class="quiet-button" id="loadBuildingAreaButton" type="button" disabled>Umgebung laden</button>
-        <label class="compact-field">
-          <span>Umkreis</span>
-          <select id="buildingRadius">
-            <option value="15">15 m</option>
-            <option value="30" selected>30 m</option>
-            <option value="50">50 m</option>
-          </select>
-        </label>
-      </div>
-      <p class="field-status" id="buildingMatchInfo">Zuerst eine Adresse auswählen.</p>
-
-      <div class="building-layout" id="buildingResults" hidden>
-        <div>
-          <div class="building-edit-heading">
-            <h3>Gebäudeauswahl</h3>
-            <button class="quiet-button" id="changeBuildingButton" type="button">Gebäude bearbeiten</button>
-          </div>
-          <div class="candidate-list" id="buildingCandidateList"></div>
-          <button class="quiet-button no-building-choice" id="noSuitableBuildingButton" type="button" hidden>Keines davon · ohne Geometrie weiter</button>
-        </div>
-
-        <div>
-          <div class="geometry-heading-row">
-            <h3>Orthofoto + TIRIS-Polygon</h3>
-            <label class="compact-field orthophoto-scale-field">
-              <span>Ausschnitt</span>
-              <select id="orthophotoScale">
-                <option value="250">ca. 1:250 · 40 m</option>
-                <option value="500" selected>ca. 1:500 · 80 m</option>
-                <option value="750">ca. 1:750 · 120 m</option>
-              </select>
-            </label>
-          </div>
-          <div class="geometry-stage" id="geometryStage">
-            <img id="orthophotoImage" class="orthophoto-image" alt="TIRIS Orthofoto des Gebäudestandorts" hidden>
-            <svg id="buildingSvg" viewBox="0 0 520 360" role="img" aria-label="Gefundene Gebäudegeometrien"></svg>
-          </div>
-          <p class="geometry-note" id="orthophotoStatus">Orthofoto wird mit der Geometrie geladen.</p>
-        </div>
-      </div>
-
-      <article class="selected-building" id="selectedBuildingPanel" hidden>
-        <div class="selected-building-heading">
-          <div>
-            <span class="mini-label">Gewähltes Gebäude</span>
-            <h3 id="selectedBuildingTitle">–</h3>
-          </div>
-          <div class="selected-building-actions">
-            <span class="origin-label">Amtlich · TIRIS</span>
-          </div>
-        </div>
-
-        <div class="metric-grid-test metric-grid-test--compact">
-          <div class="metric metric--summary" id="terrainResult" hidden>
-            <div class="compact-card-heading"><span>Höhenlage</span><details class="metric-info"><summary class="info-tip" aria-label="Info zur Höhenlage">i</summary><div class="metric-info-popover">Amtliche Geländehöhe am Standort aus dem TIRIS-DGM.<br><span id="terrainMeta">–</span></div></details></div>
-            <strong id="terrainHeight">–</strong>
-          </div>
-          <div class="metric metric--summary">
-            <div class="compact-card-heading"><span>Dachprojektion</span><details class="metric-info"><summary class="info-tip" aria-label="Info zur Dachprojektion">i</summary><div class="metric-info-popover">Gerundeter Beratungswert aus TIRIS <code>Shape__Area</code>.<br>Exakter Rohwert: <strong id="metricAreaRaw">–</strong></div></details></div>
-            <strong id="metricAreaRounded">–</strong>
-          </div>
-          <div class="metric metric--summary">
-            <div class="compact-card-heading"><span>Dachumfang</span><details class="metric-info"><summary class="info-tip" aria-label="Info zum Dachumfang">i</summary><div class="metric-info-popover">Umfang des TIRIS-Dachpolygons; nicht identisch mit dem thermisch relevanten Fassadenumfang.<br>Exakter Rohwert: <strong id="metricLengthRaw">–</strong></div></details></div>
-            <strong id="metricLengthRounded">–</strong>
-          </div>
-          <div class="metric metric--summary">
-            <div class="compact-card-heading"><span>Gebäudehöhe Median</span><details class="metric-info"><summary class="info-tip" aria-label="Info zur Gebäudehöhe">i</summary><div class="metric-info-popover">Robuste typische Gebäude-/Dachhöhe aus TIRIS. Die Maximalhöhe bleibt ein Vergleichswert.<br>Maximum: <strong id="metricHeightMax">–</strong></div></details></div>
-            <strong id="metricHeightMedian">–</strong>
-          </div>
-          <div class="metric metric--summary">
-            <div class="compact-card-heading"><span>Datenstand Gebäude</span><details class="metric-info"><summary class="info-tip" aria-label="Info zum Datenstand">i</summary><div class="metric-info-popover">Datenstand des TIRIS-Gebäudeobjekts.<br>Technisch aktualisiert: <strong id="metricUpdated">–</strong></div></details></div>
-            <strong id="metricStand">–</strong>
-          </div>
-        </div>
-
-        <div class="action-row manual-step-action terrain-inline-action" id="terrainManualAction">
-          <button class="primary-button" id="loadTerrainButton" type="button" disabled>Höhenlage erneut prüfen</button>
-          <span class="status-chip status-chip--muted" id="terrainStatus">Adresse fehlt</span>
-        </div>
-
-        <div class="derived-preview dev-only">
-          <div><span class="mini-label">Orientierungsableitung</span><strong id="wallPreview">–</strong></div>
-          <p>Brutto-Außenwand = Dachpolygon-Umfang × Medianhöhe.</p>
-        </div>
-
-        <div class="estimate-block">
-          <div class="validation-heading">
-            <div>
-              <span class="mini-label">Beratungsentwurf</span>
-              <h3>Überschlägige Gebäudegrößen</h3>
-            </div>
-          </div>
-          <p class="geometry-note">Automatikwerte bleiben als Referenz erhalten. Ein manueller Wert ersetzt nur den verwendeten Beratungswert. Mit <strong>Auto</strong> wird die manuelle Korrektur wieder gelöscht.</p>
-
-          <div class="estimate-settings">
-            <label>
-              <span>Fensterflächenanteil</span>
-              <input id="windowSharePercent" type="number" min="0" max="100" step="1" value="20">
-              <small>% der Brutto-Außenwand als grobe Erstannahme</small>
-            </label>
-          </div>
-
-          <div class="estimate-table-wrap">
-            <table class="estimate-table">
-              <thead><tr><th>Bauteil / Größe</th><th>Automatik</th><th>Manuell</th><th>Verwendet</th></tr></thead>
-              <tbody>
-                <tr><th>Außenwandfläche</th><td id="autoExteriorWallValue">–</td><td><div class="manual-value-control"><input id="manualExteriorWallValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualExteriorWallValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveExteriorWallValue">–</td></tr>
-                <tr><th>Fensterfläche</th><td id="autoWindowAreaValue">–</td><td><div class="manual-value-control"><input id="manualWindowAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualWindowAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveWindowAreaValue">–</td></tr>
-                <tr><th>Oberste Geschoßfläche</th><td id="autoTopFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualTopFloorAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualTopFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveTopFloorAreaValue">–</td></tr>
-                <tr><th>Kellerdecke / unterste Geschoßfläche</th><td id="autoBasementAreaValue">–</td><td><div class="manual-value-control"><input id="manualBasementAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualBasementAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveBasementAreaValue">–</td></tr>
-                <tr><th>Dachneigung</th><td id="autoRoofPitchValue">–</td><td><div class="manual-value-control"><input id="manualRoofPitchValue" type="number" min="0" max="89" step="1" placeholder="Grad"><button type="button" class="estimate-reset" data-reset-id="manualRoofPitchValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveRoofPitchValue">–</td></tr>
-                <tr><th>Dachschrägefläche</th><td id="autoRoofSlopeAreaValue">–</td><td><div class="manual-value-control"><input id="manualRoofSlopeAreaValue" type="number" min="0" step="1" placeholder="ganze m²"><button type="button" class="estimate-reset" data-reset-id="manualRoofSlopeAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveRoofSlopeAreaValue">–</td></tr>
-                <tr><th>Gebäudevolumen</th><td id="autoVolumeValue">–</td><td><div class="manual-value-control"><input id="manualVolumeValue" type="number" min="0" step="1" placeholder="ganze m³"><button type="button" class="estimate-reset" data-reset-id="manualVolumeValue" title="Manuelle Eingabe löschen und Automatikwert verwenden">↺ Auto</button></div></td><td id="effectiveVolumeValue">–</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="geometry-note estimate-method-note">Kurzmethodik: Außenwand ≈ Dachpolygon-Umfang × Medianhöhe · Fenster = Außenwand × Fensteranteil · oberste/unterste Fläche ≈ Dachprojektion · Dachschräge = Dachprojektion / cos(Dachneigung) · Volumen ≈ Dachprojektion × Medianhöhe. Details unten unter „Methodik & Datenbasis“.</p>
-        </div>
-
-        <div class="validation-block dev-only">
-          <div class="validation-heading"><div><span class="mini-label">Nur Entwicklung</span><h3>Mit bekannten Gebäudeabmessungen vergleichen</h3></div><button class="quiet-button" id="clearValidationButton" type="button">Werte leeren</button></div>
-          <div class="validation-input-grid validation-input-grid--four">
-            <label><span>Grund-/EG-Fläche</span><input id="knownFootprint" type="number" min="0" step="1" placeholder="z. B. 205"><small>m²</small></label>
-            <label><span>Fassadenumfang</span><input id="knownPerimeter" type="number" min="0" step="1" placeholder="z. B. 58"><small>m</small></label>
-            <label><span>mittlere Gebäudehöhe</span><input id="knownHeight" type="number" min="0" step="0.1" placeholder="z. B. 8,9"><small>m</small></label>
-            <label><span>Außenwand brutto</span><input id="knownWallArea" type="number" min="0" step="1" placeholder="z. B. 522"><small>m²</small></label>
-          </div>
-          <button class="secondary-button" id="compareBuildingButton" type="button">Vergleich berechnen</button>
-          <div id="buildingComparisonResult" class="comparison-result" hidden></div>
-        </div>
-      </article>
-
-      <article class="no-building-note" id="noBuildingNote" hidden>
-        <span class="mini-label">Kein Gebäudepolygon</span>
-        <h3>Standortprüfung bleibt möglich</h3>
-        <p>
+</div>
+<span class="status-chip status-chip--muted" id="buildingStatus">Adresse fehlt</span>
+</div>
+<div class="action-row manual-step-action" id="buildingManualAction">
+<button class="primary-button" disabled="" id="loadBuildingButton" type="button">Gebäude automatisch zuordnen</button>
+<button class="quiet-button" disabled="" id="loadBuildingAreaButton" type="button">Umgebung laden</button>
+<label class="compact-field">
+<span>Umkreis</span>
+<select id="buildingRadius">
+<option value="15">15 m</option>
+<option selected="" value="30">30 m</option>
+<option value="50">50 m</option>
+</select>
+</label>
+</div>
+<p class="field-status" id="buildingMatchInfo">Zuerst eine Adresse auswählen.</p>
+<div class="building-layout" hidden="" id="buildingResults">
+<div>
+<div class="building-edit-heading">
+<h3>Gebäudeauswahl</h3>
+<button class="quiet-button" id="changeBuildingButton" type="button">Gebäude bearbeiten</button>
+</div>
+<div class="candidate-list" id="buildingCandidateList"></div>
+<button class="quiet-button no-building-choice" hidden="" id="noSuitableBuildingButton" type="button">Keines davon · ohne Geometrie weiter</button>
+</div>
+<div>
+<div class="geometry-heading-row">
+<h3>Orthofoto + TIRIS-Polygon</h3>
+<label class="compact-field orthophoto-scale-field">
+<span>Ausschnitt</span>
+<select id="orthophotoScale">
+<option value="250">ca. 1:250 · 40 m</option>
+<option selected="" value="500">ca. 1:500 · 80 m</option>
+<option value="750">ca. 1:750 · 120 m</option>
+</select>
+</label>
+</div>
+<div class="geometry-stage" id="geometryStage">
+<img alt="TIRIS Orthofoto des Gebäudestandorts" class="orthophoto-image" hidden="" id="orthophotoImage"/>
+<svg aria-label="Gefundene Gebäudegeometrien" id="buildingSvg" role="img" viewbox="0 0 520 360"></svg>
+</div>
+<p class="geometry-note" id="orthophotoStatus">Orthofoto wird mit der Geometrie geladen.</p>
+</div>
+</div>
+<article class="selected-building" hidden="" id="selectedBuildingPanel">
+<div class="selected-building-heading">
+<div>
+<span class="mini-label">Gewähltes Gebäude</span>
+<h3 id="selectedBuildingTitle">–</h3>
+</div>
+<div class="selected-building-actions">
+<span class="origin-label">Amtlich · TIRIS</span>
+</div>
+</div>
+<div class="metric-grid-test metric-grid-test--compact">
+<div class="metric metric--summary" hidden="" id="terrainResult">
+<div class="compact-card-heading"><span>Höhenlage</span><details class="metric-info"><summary aria-label="Info zur Höhenlage" class="info-tip">i</summary><div class="metric-info-popover">Amtliche Geländehöhe am Standort aus dem TIRIS-DGM.<br/><span id="terrainMeta">–</span></div></details></div>
+<strong id="terrainHeight">–</strong>
+</div>
+<div class="metric metric--summary">
+<div class="compact-card-heading"><span>Dachprojektion</span><details class="metric-info"><summary aria-label="Info zur Dachprojektion" class="info-tip">i</summary><div class="metric-info-popover">Gerundeter Beratungswert aus TIRIS <code>Shape__Area</code>.<br/>Exakter Rohwert: <strong id="metricAreaRaw">–</strong></div></details></div>
+<strong id="metricAreaRounded">–</strong>
+</div>
+<div class="metric metric--summary">
+<div class="compact-card-heading"><span>Dachumfang</span><details class="metric-info"><summary aria-label="Info zum Dachumfang" class="info-tip">i</summary><div class="metric-info-popover">Umfang des TIRIS-Dachpolygons; nicht identisch mit dem thermisch relevanten Fassadenumfang.<br/>Exakter Rohwert: <strong id="metricLengthRaw">–</strong></div></details></div>
+<strong id="metricLengthRounded">–</strong>
+</div>
+<div class="metric metric--summary">
+<div class="compact-card-heading"><span>Gebäudehöhe Median</span><details class="metric-info"><summary aria-label="Info zur Gebäudehöhe" class="info-tip">i</summary><div class="metric-info-popover">Robuste typische Gebäude-/Dachhöhe aus TIRIS. Die Maximalhöhe bleibt ein Vergleichswert.<br/>Maximum: <strong id="metricHeightMax">–</strong></div></details></div>
+<strong id="metricHeightMedian">–</strong>
+</div>
+<div class="metric metric--summary">
+<div class="compact-card-heading"><span>Datenstand Gebäude</span><details class="metric-info"><summary aria-label="Info zum Datenstand" class="info-tip">i</summary><div class="metric-info-popover">Datenstand des TIRIS-Gebäudeobjekts.<br/>Technisch aktualisiert: <strong id="metricUpdated">–</strong></div></details></div>
+<strong id="metricStand">–</strong>
+</div>
+</div>
+<div class="action-row manual-step-action terrain-inline-action" id="terrainManualAction">
+<button class="primary-button" disabled="" id="loadTerrainButton" type="button">Höhenlage erneut prüfen</button>
+<span class="status-chip status-chip--muted" id="terrainStatus">Adresse fehlt</span>
+</div>
+<div class="derived-preview dev-only">
+<div><span class="mini-label">Orientierungsableitung</span><strong id="wallPreview">–</strong></div>
+<p>Brutto-Außenwand = Dachpolygon-Umfang × Medianhöhe.</p>
+</div>
+<div class="estimate-block">
+<div class="validation-heading">
+<div>
+<span class="mini-label">Beratungsentwurf</span>
+<h3>Überschlägige Gebäudegrößen</h3>
+</div>
+</div>
+<p class="geometry-note">Automatikwerte bleiben als Referenz erhalten. Ein manueller Wert ersetzt nur den verwendeten Beratungswert. Mit <strong>Auto</strong> wird die manuelle Korrektur wieder gelöscht.</p>
+<div class="estimate-settings">
+<label>
+<span>Fensterflächenanteil</span>
+<input id="windowSharePercent" max="100" min="0" step="1" type="number" value="20"/>
+<small>% der Brutto-Außenwand als grobe Erstannahme</small>
+</label>
+</div>
+<div class="estimate-table-wrap">
+<table class="estimate-table">
+<thead><tr><th>Bauteil / Größe</th><th>Automatik</th><th>Manuell</th><th>Verwendet</th></tr></thead>
+<tbody>
+<tr><th>Außenwandfläche</th><td id="autoExteriorWallValue">–</td><td><div class="manual-value-control"><input id="manualExteriorWallValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualExteriorWallValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveExteriorWallValue">–</td></tr>
+<tr><th>Fensterfläche</th><td id="autoWindowAreaValue">–</td><td><div class="manual-value-control"><input id="manualWindowAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualWindowAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveWindowAreaValue">–</td></tr>
+<tr><th>Oberste Geschoßfläche</th><td id="autoTopFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualTopFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualTopFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveTopFloorAreaValue">–</td></tr>
+<tr><th>Kellerdecke / unterste Geschoßfläche</th><td id="autoBasementAreaValue">–</td><td><div class="manual-value-control"><input id="manualBasementAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualBasementAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveBasementAreaValue">–</td></tr>
+<tr><th>Dachneigung</th><td id="autoRoofPitchValue">–</td><td><div class="manual-value-control"><input id="manualRoofPitchValue" max="89" min="0" placeholder="Grad" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualRoofPitchValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveRoofPitchValue">–</td></tr>
+<tr><th>Dachschrägefläche</th><td id="autoRoofSlopeAreaValue">–</td><td><div class="manual-value-control"><input id="manualRoofSlopeAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualRoofSlopeAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveRoofSlopeAreaValue">–</td></tr>
+<tr><th>Gebäudevolumen</th><td id="autoVolumeValue">–</td><td><div class="manual-value-control"><input id="manualVolumeValue" min="0" placeholder="ganze m³" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualVolumeValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveVolumeValue">–</td></tr>
+</tbody>
+</table>
+</div>
+<p class="geometry-note estimate-method-note">Kurzmethodik: Außenwand ≈ Dachpolygon-Umfang × Medianhöhe · Fenster = Außenwand × Fensteranteil · oberste/unterste Fläche ≈ Dachprojektion · Dachschräge = Dachprojektion / cos(Dachneigung) · Volumen ≈ Dachprojektion × Medianhöhe. Details unten unter „Methodik &amp; Datenbasis“.</p>
+</div>
+<div class="validation-block dev-only">
+<div class="validation-heading"><div><span class="mini-label">Nur Entwicklung</span><h3>Mit bekannten Gebäudeabmessungen vergleichen</h3></div><button class="quiet-button" id="clearValidationButton" type="button">Werte leeren</button></div>
+<div class="validation-input-grid validation-input-grid--four">
+<label><span>Grund-/EG-Fläche</span><input id="knownFootprint" min="0" placeholder="z. B. 205" step="1" type="number"/><small>m²</small></label>
+<label><span>Fassadenumfang</span><input id="knownPerimeter" min="0" placeholder="z. B. 58" step="1" type="number"/><small>m</small></label>
+<label><span>mittlere Gebäudehöhe</span><input id="knownHeight" min="0" placeholder="z. B. 8,9" step="0.1" type="number"/><small>m</small></label>
+<label><span>Außenwand brutto</span><input id="knownWallArea" min="0" placeholder="z. B. 522" step="1" type="number"/><small>m²</small></label>
+</div>
+<button class="secondary-button" id="compareBuildingButton" type="button">Vergleich berechnen</button>
+<div class="comparison-result" hidden="" id="buildingComparisonResult"></div>
+</div>
+</article>
+<article class="no-building-note" hidden="" id="noBuildingNote">
+<span class="mini-label">Kein Gebäudepolygon</span>
+<h3>Standortprüfung bleibt möglich</h3>
+<p>
           Für diese Adresse wurde kein geeignetes TIRIS-Gebäudepolygon gefunden. Geometrie und Bauteilflächen bleiben daher leer; Geländehöhe sowie die späteren Solar-, Wärme- und Risikoprüfungen können trotzdem durchgeführt werden.
         </p>
-      </article>
-    </section>
-    </section>
-
-    <section class="container main-tool-area" id="area-heat" aria-labelledby="area-heat-title">
-      <div class="main-area-heading"><div><p class="eyebrow">2 · Wärmeversorgung</p><h2 id="area-heat-title">Wärmeversorgung</h2><p>Wärmenetz-Check sowie Hinweise zu Erdsonden, Grundwasser und wasserrechtlichen Randbedingungen.</p></div></div>
-    <section class="tool-subpanel" aria-labelledby="heat-v1-title">
-      <div class="panel-heading"><div><p class="eyebrow">Wärmenetz</p><h2 id="heat-v1-title">Wärmenetz</h2><p>Die TIRIS-Daten sind identifiziert; ein stabiler öffentlicher Datenzugang ist beim Land Tirol angefragt.</p></div><span class="status-chip status-chip--warning">manueller Check</span></div>
-      <div class="manual-check-card"><div><strong>Automatische Prüfung derzeit nicht verfügbar</strong><p>Bis zur Klärung der Schnittstelle wird das Wärmenetz direkt in tirisMaps kontrolliert.</p></div><a class="external-action-link" id="heatTirisLink" href="https://maps.tirol.gv.at/" target="_blank" rel="noopener noreferrer">Wärmenetz am Standort in TIRIS prüfen ↗</a></div>
-    </section>
-    <section class="tool-subpanel" aria-labelledby="environmental-heat-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Umweltwärme</p>
-          <h2 id="environmental-heat-title">Wasser & Untergrund – Standortinformationen</h2>
-          <p>Bestehende Erdsonden, Grundwassernutzungen, Messstellen sowie wasserrechtliche Hinweise im Standortumfeld.</p>
-        </div>
-        <span class="status-chip status-chip--muted" id="environmentalHeatStatus">Adresse fehlt</span>
-      </div>
-
-      <div class="action-row manual-step-action" id="environmentalHeatManualAction">
-        <button class="primary-button" id="testEnvironmentalHeatButton" type="button" disabled>Umweltwärme-Daten prüfen</button>
-        <span class="action-note">500-m-Umkreis für Anlagen/Beobachtungspunkte · Flächenhinweise direkt am Standort · mit TIRIS- und WIS-Links.</span>
-      </div>
-
-      <div class="service-result" id="environmentalHeatResult" hidden></div>
-    </section>
-    </section>
-
-    <section class="container main-tool-area" id="area-solar" aria-labelledby="area-solar-title">
-      <div class="main-area-heading"><div><p class="eyebrow">3 · Solar</p><h2 id="area-solar-title">Solar</h2></div></div>
-    <section class="tool-subpanel" aria-labelledby="solar-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Solar</p>
-          <h2 id="solar-title">Sonnenbahn & Verschattung</h2>
-          <p>
+</article>
+</section>
+</section>
+<section aria-labelledby="area-heat-title" class="container main-tool-area" id="area-heat">
+<div class="main-area-heading"><div><p class="eyebrow">2 · Wärmeversorgung</p><h2 id="area-heat-title">Wärmeversorgung</h2><p>Wärmenetz-Check sowie Hinweise zu Erdsonden, Grundwasser und wasserrechtlichen Randbedingungen.</p></div></div>
+<section aria-labelledby="heat-v1-title" class="tool-subpanel">
+<div class="panel-heading"><div><p class="eyebrow">Wärmenetz</p><h2 id="heat-v1-title">Wärmenetz</h2><p>Die TIRIS-Daten sind identifiziert; ein stabiler öffentlicher Datenzugang ist beim Land Tirol angefragt.</p></div><span class="status-chip status-chip--warning">manueller Check</span></div>
+<div class="manual-check-card"><div><strong>Automatische Prüfung derzeit nicht verfügbar</strong><p>Bis zur Klärung der Schnittstelle wird das Wärmenetz direkt in tirisMaps kontrolliert.</p></div><a class="external-action-link" href="https://maps.tirol.gv.at/" id="heatTirisLink" rel="noopener noreferrer" target="_blank">Wärmenetz am Standort in TIRIS prüfen ↗</a></div>
+</section>
+<section aria-labelledby="environmental-heat-title" class="tool-subpanel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">Umweltwärme</p>
+<h2 id="environmental-heat-title">Wasser &amp; Untergrund – Standortinformationen</h2>
+<p>Bestehende Erdsonden, Grundwassernutzungen, Messstellen sowie wasserrechtliche Hinweise im Standortumfeld.</p>
+</div>
+<span class="status-chip status-chip--muted" id="environmentalHeatStatus">Adresse fehlt</span>
+</div>
+<div class="action-row manual-step-action" id="environmentalHeatManualAction">
+<button class="primary-button" disabled="" id="testEnvironmentalHeatButton" type="button">Umweltwärme-Daten prüfen</button>
+<span class="action-note">500-m-Umkreis für Anlagen/Beobachtungspunkte · Flächenhinweise direkt am Standort · mit TIRIS- und WIS-Links.</span>
+</div>
+<div class="service-result" hidden="" id="environmentalHeatResult"></div>
+</section>
+</section>
+<section aria-labelledby="area-solar-title" class="container main-tool-area" id="area-solar">
+<div class="main-area-heading"><div><p class="eyebrow">3 · Solar</p><h2 id="area-solar-title">Solar</h2></div></div>
+<section aria-labelledby="solar-title" class="tool-subpanel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">Solar</p>
+<h2 id="solar-title">Sonnenbahn &amp; Verschattung</h2>
+<p>
             Sonnenbahn und Verschattung aus GeoLand-Daten – Gelände sowie zusätzliche Verschattung durch Gebäude und Vegetation.
           </p>
-        </div>
-        <span class="status-chip status-chip--muted" id="solarStatus">Adresse fehlt</span>
-      </div>
-
-      <div class="solar-control-row">
-        <button class="primary-button manual-step-button" id="loadSolarButton" type="button" disabled>Solarprofil laden</button>
-        <span class="action-note" id="solarHeightHint"><strong>Standard:</strong> mit Gebäude TIRIS-Medianhöhe · ohne Gebäude 2 m.</span>
-      </div>
-
-      <details class="solar-detail-controls">
-        <summary>Detailvergleich: Bezugshöhe ändern</summary>
-        <div class="solar-detail-controls__inner">
-          <label class="compact-field solar-height-field">
-            <span>Bezugshöhe</span>
-            <select id="solarObserverMode">
-              <option value="auto" selected>Standard automatisch</option>
-              <option value="ground">Vergleich: 2 m über Gelände</option>
-            </select>
-          </label>
-          <p>Die 2-m-Ansicht ist bei vorhandener Gebäudegeometrie nur ein technischer Vergleich. Ohne Gebäude bleibt 2 m der automatische Fallback.</p>
-        </div>
-      </details>
-
-      <div class="solar-chart-card" id="solarChartCard" hidden>
-        <div class="solar-chart-heading">
-          <div>
-            <span class="mini-label">Eigene Darstellung · GeoLand-Daten</span>
-            <h3>Sonnenbahnen und Horizont</h3>
-          </div>
-          <span class="origin-label" id="solarChartHeight">–</span>
-        </div>
-
-        <svg id="solarChart" class="solar-chart" viewBox="0 0 820 430" role="img" aria-label="Sonnenbahn- und Horizontdiagramm"></svg>
-
-        <div class="solar-legend" aria-label="Legende">
-          <span><i class="legend-swatch legend-swatch--dtm"></i>Gelände / Fernverschattung</span>
-          <span><i class="legend-swatch legend-swatch--dsm"></i>Gebäude / Vegetation</span>
-          <span><i class="legend-line legend-line--summer"></i>Sommer</span>
-          <span><i class="legend-line legend-line--equinox"></i>Frühling / Herbst</span>
-          <span><i class="legend-line legend-line--winter"></i>Winter</span>
-        </div>
-        <p class="geometry-note solar-user-note"><strong>Lesart:</strong> Grau zeigt die Geländeabschattung. Türkis zeigt nur die zusätzliche Abschattung oberhalb des Geländehorizonts – typischerweise durch Gebäude und Vegetation.</p>
-        <p class="geometry-note" id="solarChartNote">–</p>
-      </div>
-
-      <div class="service-result" id="solarResult" hidden></div>
-
-      <div class="subtest-block solar-subtest-block">
-        <div class="subtest-heading">
-          <div>
-            <span class="mini-label">Zusatzdarstellung · Solar</span>
-            <h3>Solarstrahlung im Standortumfeld</h3>
-          </div>
-          <span class="status-chip status-chip--muted" id="solarMapStatus">Adresse fehlt</span>
-        </div>
-        <div class="action-row manual-step-action" id="solarMapManualAction">
-          <button class="secondary-button" id="testSolarMapButton" type="button" disabled>Solarstrahlung-Karte prüfen</button>
-        </div>
-        <div class="service-result" id="solarMapResult" hidden></div>
-      </div>
-    </section>
-    </section>
-
-    <section class="container main-tool-area" id="area-risks" aria-labelledby="area-risks-title">
-      <div class="main-area-heading"><div><p class="eyebrow">4 · Standort & Risiken</p><h2 id="area-risks-title">Standort & Risiken</h2></div></div>
-    <section class="tool-subpanel" aria-labelledby="heritage-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Kultur & Schutzstatus</p>
-          <h2 id="heritage-title">Denkmalschutz & baukultureller Kontext</h2>
-          <p>BDA-Denkmalliste sowie TIRIS-Hinweise zu Kunstkataster, Ensemble und Archäologie.</p>
-        </div>
-        <span class="status-chip status-chip--muted" id="heritageStatus">Adresse fehlt</span>
-      </div>
-      <div class="action-row manual-step-action" id="heritageManualAction">
-        <button class="primary-button" id="testHeritageButton" type="button" disabled>Kultur & Denkmalschutz prüfen</button>
-        <span class="action-note">BDA-Denkmalliste + öffentliche TIRIS-Layer SPORT/KULTUR.</span>
-      </div>
-      <div class="service-result" id="heritageResult" hidden></div>
-    </section>
-    <section class="tool-subpanel" aria-labelledby="hazards-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Hochwasser & Naturgefahren</p>
-          <h2 id="hazards-title">Hochwasser & Naturgefahren</h2>
-          <p>HQ30, HQ100, HQ300 sowie weitere amtliche Gefahren- und Hinweisbereiche. Mit Gebäude wird das gesamte Polygon geprüft.</p>
-        </div>
-        <span class="status-chip status-chip--muted" id="hazardStatus">Adresse fehlt</span>
-      </div>
-
-      <div class="action-row manual-step-action" id="hazardManualAction">
-        <button class="primary-button" id="testHazardButton" type="button" disabled>Hochwasser & Naturgefahren prüfen</button>
-        <span class="action-note">Amtliche Standortindikation · kein Treffer bedeutet nicht „risikofrei“.</span>
-      </div>
-
-      <div class="service-result" id="hazardResult" hidden></div>
-    </section>
-    <section class="tool-subpanel" aria-labelledby="radon-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Radon</p>
-          <h2 id="radon-title">Radon · Gebietsstatus</h2>
-          <p>Amtlicher Gebietsstatus über die Gemeindekennziffer: Radonvorsorgegebiet und zusätzlich ausgewiesenes Radonschutzgebiet.</p>
-        </div>
-        <span class="status-chip status-chip--muted" id="radonStatus">Adresse fehlt</span>
-      </div>
-      <div class="action-row manual-step-action" id="radonManualAction">
-        <button class="primary-button" id="testRadonButton" type="button" disabled>Radonstatus prüfen</button>
-        <span class="action-note">Amtliche Gemeindezuordnung über GKZ · Radonschutzverordnung Anlage 1.</span>
-      </div>
-      <div class="service-result" id="radonResult" hidden></div>
-    </section>
-    </section>
-
-    <section class="container test-panel dev-only" aria-labelledby="heat-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">5 · Wärmeversorgung · WebOffice-Zugriff</p>
-          <h2 id="heat-title">Wärmenetz &amp; Gebäude-Solarpotential</h2>
-          <p>
+</div>
+<span class="status-chip status-chip--muted" id="solarStatus">Adresse fehlt</span>
+</div>
+<div class="solar-control-row">
+<button class="primary-button manual-step-button" disabled="" id="loadSolarButton" type="button">Solarprofil laden</button>
+<span class="action-note" id="solarHeightHint"><strong>Standard:</strong> mit Gebäude TIRIS-Medianhöhe · ohne Gebäude 2 m.</span>
+</div>
+<details class="solar-detail-controls">
+<summary>Detailvergleich: Bezugshöhe ändern</summary>
+<div class="solar-detail-controls__inner">
+<label class="compact-field solar-height-field">
+<span>Bezugshöhe</span>
+<select id="solarObserverMode">
+<option selected="" value="auto">Standard automatisch</option>
+<option value="ground">Vergleich: 2 m über Gelände</option>
+</select>
+</label>
+<p>Die 2-m-Ansicht ist bei vorhandener Gebäudegeometrie nur ein technischer Vergleich. Ohne Gebäude bleibt 2 m der automatische Fallback.</p>
+</div>
+</details>
+<div class="solar-chart-card" hidden="" id="solarChartCard">
+<div class="solar-chart-heading">
+<div>
+<span class="mini-label">Eigene Darstellung · GeoLand-Daten</span>
+<h3>Sonnenbahnen und Horizont</h3>
+</div>
+<span class="origin-label" id="solarChartHeight">–</span>
+</div>
+<svg aria-label="Sonnenbahn- und Horizontdiagramm" class="solar-chart" id="solarChart" role="img" viewbox="0 0 820 430"></svg>
+<div aria-label="Legende" class="solar-legend">
+<span><i class="legend-swatch legend-swatch--dtm"></i>Gelände / Fernverschattung</span>
+<span><i class="legend-swatch legend-swatch--dsm"></i>Gebäude / Vegetation</span>
+<span><i class="legend-line legend-line--summer"></i>Sommer</span>
+<span><i class="legend-line legend-line--equinox"></i>Frühling / Herbst</span>
+<span><i class="legend-line legend-line--winter"></i>Winter</span>
+</div>
+<p class="geometry-note solar-user-note"><strong>Lesart:</strong> Grau zeigt die Geländeabschattung. Türkis zeigt nur die zusätzliche Abschattung oberhalb des Geländehorizonts – typischerweise durch Gebäude und Vegetation.</p>
+<p class="geometry-note" id="solarChartNote">–</p>
+</div>
+<div class="service-result" hidden="" id="solarResult"></div>
+<div class="subtest-block solar-subtest-block">
+<div class="subtest-heading">
+<div>
+<span class="mini-label">Zusatzdarstellung · Solar</span>
+<h3>Solarstrahlung im Standortumfeld</h3>
+</div>
+<span class="status-chip status-chip--muted" id="solarMapStatus">Adresse fehlt</span>
+</div>
+<div class="action-row manual-step-action" id="solarMapManualAction">
+<button class="secondary-button" disabled="" id="testSolarMapButton" type="button">Solarstrahlung-Karte prüfen</button>
+</div>
+<div class="service-result" hidden="" id="solarMapResult"></div>
+</div>
+</section>
+</section>
+<section aria-labelledby="area-risks-title" class="container main-tool-area" id="area-risks">
+<div class="main-area-heading"><div><p class="eyebrow">4 · Standort &amp; Risiken</p><h2 id="area-risks-title">Standort &amp; Risiken</h2></div></div>
+<section aria-labelledby="heritage-title" class="tool-subpanel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">Kultur &amp; Schutzstatus</p>
+<h2 id="heritage-title">Denkmalschutz &amp; baukultureller Kontext</h2>
+<p>BDA-Denkmalliste sowie TIRIS-Hinweise zu Kunstkataster, Ensemble und Archäologie.</p>
+</div>
+<span class="status-chip status-chip--muted" id="heritageStatus">Adresse fehlt</span>
+</div>
+<div class="action-row manual-step-action" id="heritageManualAction">
+<button class="primary-button" disabled="" id="testHeritageButton" type="button">Kultur &amp; Denkmalschutz prüfen</button>
+<span class="action-note">BDA-Denkmalliste + öffentliche TIRIS-Layer SPORT/KULTUR.</span>
+</div>
+<div class="service-result" hidden="" id="heritageResult"></div>
+</section>
+<section aria-labelledby="hazards-title" class="tool-subpanel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">Hochwasser &amp; Naturgefahren</p>
+<h2 id="hazards-title">Hochwasser &amp; Naturgefahren</h2>
+<p>HQ30, HQ100, HQ300 sowie weitere amtliche Gefahren- und Hinweisbereiche. Mit Gebäude wird das gesamte Polygon geprüft.</p>
+</div>
+<span class="status-chip status-chip--muted" id="hazardStatus">Adresse fehlt</span>
+</div>
+<div class="action-row manual-step-action" id="hazardManualAction">
+<button class="primary-button" disabled="" id="testHazardButton" type="button">Hochwasser &amp; Naturgefahren prüfen</button>
+<span class="action-note">Amtliche Standortindikation · kein Treffer bedeutet nicht „risikofrei“.</span>
+</div>
+<div class="service-result" hidden="" id="hazardResult"></div>
+</section>
+<section aria-labelledby="radon-title" class="tool-subpanel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">Radon</p>
+<h2 id="radon-title">Radon · Gebietsstatus</h2>
+<p>Amtlicher Gebietsstatus über die Gemeindekennziffer: Radonvorsorgegebiet und zusätzlich ausgewiesenes Radonschutzgebiet.</p>
+</div>
+<span class="status-chip status-chip--muted" id="radonStatus">Adresse fehlt</span>
+</div>
+<div class="action-row manual-step-action" id="radonManualAction">
+<button class="primary-button" disabled="" id="testRadonButton" type="button">Radonstatus prüfen</button>
+<span class="action-note">Amtliche Gemeindezuordnung über GKZ · Radonschutzverordnung Anlage 1.</span>
+</div>
+<div class="service-result" hidden="" id="radonResult"></div>
+</section>
+</section>
+<section aria-labelledby="heat-title" class="container test-panel dev-only">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">5 · Wärmeversorgung · WebOffice-Zugriff</p>
+<h2 id="heat-title">Wärmenetz &amp; Gebäude-Solarpotential</h2>
+<p>
             Die drei gesuchten tirisMaps-Themen sind nun intern eindeutig identifiziert. Test 17 prüft nicht mehr den ArcGIS-Servicebaum, sondern ausschließlich die dokumentierte <strong>WebOffice Service API (synservice)</strong>. Dabei werden bekannte interne IDs und Datencontainer nur als Kandidaten für eine öffentliche Abfrage getestet – ohne Session-ID und ohne private Cookies.
           </p>
-        </div>
-        <span class="status-chip status-chip--muted" id="heatDiscoveryStatus">nicht geprüft</span>
-      </div>
+</div>
+<span class="status-chip status-chip--muted" id="heatDiscoveryStatus">nicht geprüft</span>
+</div>
+<div class="target-fingerprint-grid">
+<article class="mini-test-card">
+<span class="mini-label">Wärmenetz-Gebiete</span>
+<strong>TOC 16274_1 · Query intern 16341</strong>
+<small>Datencontainer: Wärmenetz-Gebiet · TYP · NAME · STAND · EMASST · URL_BIOWAERM</small>
+</article>
+<article class="mini-test-card">
+<span class="mini-label">Wärmeerzeugungsanlagen</span>
+<strong>TOC 16274_0 · Query intern 16632</strong>
+<small>Datencontainer: Wärmeerzeugungsanlage · OBJEKT · ANLAGENNR · NAME · KONTAKT · Betreiberadresse · Stand</small>
+</article>
+<article class="mini-test-card">
+<span class="mini-label">Solarpotential pro Jahr – Gebäude</span>
+<strong>TOC 2976_1 · Query intern 3077</strong>
+<small>Datencontainer: Solarpotenzial / Jahr (Gebäudeumriss) · sechs SOLYEAR-Flächenklassen · Stand · Erfassungsmaßstab</small>
+</article>
+</div>
+<div class="environment-review-note">
+<strong>Wichtig:</strong>
+<span>Die TOC-/Query-IDs stammen aus der laufenden tirisMaps-WebOffice-Sitzung. Sie sind noch keine bestätigten öffentlichen API-IDs. Produktionsziel bleibt eine dokumentierte, sessionfreie Abfrage.</span>
+</div>
+<div class="action-row">
+<button class="primary-button" id="discoverHeatButton" type="button">WebOffice Service API prüfen</button>
+<span class="action-note">Prüft zuerst synservice/Projektzugriff und danach wenige gezielte Query-Kandidaten. Keine Session-ID, keine Cookies und kein automatisches Nachbauen von synserver.</span>
+</div>
+<div class="service-result" hidden="" id="heatDiscoveryResult"></div>
+</section>
+<section aria-labelledby="climate-analysis-title" class="container test-panel dev-only">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">11 · Zusatzprüfung</p>
+<h2 id="climate-analysis-title">Sommerklima &amp; Lokalklima · Erkundung</h2>
+<p>Dieser Block ist bewusst noch keine feste Standortpass-Ausgabe. Wir prüfen, welche amtlichen Inhalte der regionalen Klimaanalyse Inntal am Standort verfügbar sind und ob daraus ein echter Mehrwert für die Vorberatung entsteht. Detailkennwerte zu heißen Tagen und Nächten gehören voraussichtlich eher ins spätere Klimablatt.</p>
+</div>
+<span class="status-chip status-chip--muted" id="climateAnalysisStatus">Adresse fehlt</span>
+</div>
+<div class="action-row">
+<button class="primary-button" disabled="" id="testClimateAnalysisButton" type="button">Klimakarten Inntal prüfen</button>
+<span class="action-note">TIRIS KLIMAKARTEN INNTAL · Tag/Nacht · Wärmebelastung · Kaltluft · Planhinweise.</span>
+</div>
+<div class="service-result" hidden="" id="climateAnalysisResult"></div>
+</section>
+<section aria-labelledby="methodology-title" class="container methodology-panel no-print">
+<details>
+<summary><span><strong id="methodology-title">Methodik &amp; Datenbasis</strong><small>Formeln, Rundungen, Datenquellen und Grenzen nachvollziehbar dokumentiert.</small></span></summary>
+<div class="methodology-content">
+<div>
+<h3>Gebäudeableitungen</h3>
+<ul>
+<li><strong>Außenwandfläche:</strong> Dachpolygon-Umfang × TIRIS-Medianhöhe. Bewusst ohne universellen Korrekturfaktor.</li>
+<li><strong>Fensterfläche:</strong> Brutto-Außenwand × eingestellter Fensterflächenanteil; Standard 20 %, jederzeit manuell ersetzbar. Die opake Außenwand wird für die gemeinsame Datennutzung intern als Außenwand minus Fenster mitgeführt.</li>
+<li><strong>Oberste / unterste Geschoßfläche:</strong> zunächst Dachprojektion als Orientierungswert.</li>
+<li><strong>Dachschräge:</strong> Dachprojektion / cos(Dachneigung), sobald eine Dachneigung angegeben wurde.</li>
+<li><strong>Gebäudevolumen:</strong> Dachprojektion × Medianhöhe; geometrischer Orientierungswert, kein konditioniertes Volumen.</li>
+</ul>
+</div>
+<div>
+<h3>Rundung &amp; Priorität</h3>
+<p>Automatische große Flächen werden bewusst grob gerundet: meist 10 m², Fenster 5 m². Manuelle Werte bleiben exakt und haben Vorrang vor Automatikwerten. 0 löscht bei Flächen/Volumen die manuelle Korrektur; bei Dachneigung ist 0° als Flachdach zulässig.</p>
+<p>Priorität: manuell bestätigt → amtlich automatisch → abgeleiteter Orientierungswert → Fallback.</p>
+</div>
+<div>
+<h3>Datenquellen</h3>
+<p>TIRIS/Land Tirol: Adresse, Katastralgemeinde, Gebäude, DGM, Orthofoto, Wasser/Umweltwärme, Hochwasser/Naturgefahren und Kulturkontext. GeoLand/voibos: Sonnenbahn, Gelände- und Oberflächenhorizont sowie theoretische Sonnenscheindauer. BDA: veröffentlichte Denkmalliste. RIS: Radonschutzverordnung.</p>
+</div>
+<div>
+<h3>Grenzen</h3>
+<p>Der Standortpass ist eine Vorprüfung. Orthofotos können erhöhte Dächer lageversetzt darstellen. Das digitale Geländemodell beschreibt das Gelände; das Oberflächenmodell berücksichtigt zusätzlich Gebäude und Vegetation. Kein Treffer in einer ausgewerteten Gefahrenfläche ist keine Sicherheitsbestätigung. Wasser-/Erdwärmehinweise sind keine Eignungszusage.</p>
+</div>
+</div>
+</details>
+</section>
+<section class="container technical-panel dev-only">
+<details>
+<summary>Technische Testdaten und Rohantworten</summary>
+<p>Diese Ausgabe ist nur für die Entwicklung gedacht.</p>
+<div class="raw-grid">
+<div><h3>Gemeinsame Adresse</h3><pre id="rawAddress">–</pre></div>
+<div><h3>TIRIS Live-Suche</h3><pre id="rawTirisLiveAddress">–</pre></div>
+<div><h3>Katastralgemeinde</h3><pre id="rawKg">–</pre></div>
+<div><h3>BEV-Vergleich</h3><pre id="rawBevComparison">–</pre></div>
+<div><h3>TIRIS BASIS</h3><pre id="rawBasis">–</pre></div>
+<div><h3>TIRIS Adress-Layer</h3><pre id="rawTirisAddresses">–</pre></div>
+<div><h3>Gebäude</h3><pre id="rawBuildings">–</pre></div>
+<div><h3>Orthofoto</h3><pre id="rawOrthophoto">–</pre></div>
+<div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
+<div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
+<div><h3>TIRIS Solarpotenzial-WMS</h3><pre id="rawSolarMap">–</pre></div>
+<div><h3>TIRIS Energie-Layer-Tiefenscan</h3><pre id="rawHeatDiscovery">–</pre></div>
+<div><h3>TIRIS Umweltwärme / WASSER</h3><pre id="rawEnvironmentalHeat">–</pre></div>
+<div><h3>Hochwasser &amp; Naturgefahren</h3><pre id="rawHazards">–</pre></div>
+<div><h3>Kultur &amp; Denkmalschutz</h3><pre id="rawHeritage">–</pre></div>
+<div><h3>Radon</h3><pre id="rawRadon">–</pre></div>
+<div><h3>TIRIS Klimakarten Inntal</h3><pre id="rawClimateAnalysis">–</pre></div>
+</div>
+</details>
+</section>
+<section aria-label="Kompakter Standortbericht" class="container print-report-only" id="printReportSummary">
+<div class="print-report-grid" id="printReportGrid"></div>
+</section>
+<section class="container bottom-report-actions no-print">
+<button class="secondary-button" id="printReportButtonBottom" type="button">Drucken / PDF</button>
+<span>Der Ausdruck verwendet eine verdichtete Beratungsansicht statt der vollständigen Arbeitsoberfläche.</span>
+</section>
+</main>
+<footer class="site-footer">
+<div class="container footer-inner">
+<div>
+<p class="footer-name">Tools</p>
+<p class="footer-note">Standortpass V1.0 · gemeinsame Datenbasis</p>
+</div>
+<nav aria-label="Rechtliche Informationen" class="footer-links">
+<a href="../../pages/kontakt.html#impressum">Impressum</a>
+<a href="../../pages/kontakt.html#datenschutz">Datenschutz</a>
+</nav>
+<p class="copyright">© <span id="year">2026</span></p>
+</div>
+</footer>
+<!-- Allgemeine Projekt-, Adress- und Standortdienste kommen ausschließlich aus shared/. -->
 
-      <div class="target-fingerprint-grid">
-        <article class="mini-test-card">
-          <span class="mini-label">Wärmenetz-Gebiete</span>
-          <strong>TOC 16274_1 · Query intern 16341</strong>
-          <small>Datencontainer: Wärmenetz-Gebiet · TYP · NAME · STAND · EMASST · URL_BIOWAERM</small>
-        </article>
-        <article class="mini-test-card">
-          <span class="mini-label">Wärmeerzeugungsanlagen</span>
-          <strong>TOC 16274_0 · Query intern 16632</strong>
-          <small>Datencontainer: Wärmeerzeugungsanlage · OBJEKT · ANLAGENNR · NAME · KONTAKT · Betreiberadresse · Stand</small>
-        </article>
-        <article class="mini-test-card">
-          <span class="mini-label">Solarpotential pro Jahr – Gebäude</span>
-          <strong>TOC 2976_1 · Query intern 3077</strong>
-          <small>Datencontainer: Solarpotenzial / Jahr (Gebäudeumriss) · sechs SOLYEAR-Flächenklassen · Stand · Erfassungsmaßstab</small>
-        </article>
-      </div>
-
-      <div class="environment-review-note">
-        <strong>Wichtig:</strong>
-        <span>Die TOC-/Query-IDs stammen aus der laufenden tirisMaps-WebOffice-Sitzung. Sie sind noch keine bestätigten öffentlichen API-IDs. Produktionsziel bleibt eine dokumentierte, sessionfreie Abfrage.</span>
-      </div>
-
-      <div class="action-row">
-        <button class="primary-button" id="discoverHeatButton" type="button">WebOffice Service API prüfen</button>
-        <span class="action-note">Prüft zuerst synservice/Projektzugriff und danach wenige gezielte Query-Kandidaten. Keine Session-ID, keine Cookies und kein automatisches Nachbauen von synserver.</span>
-      </div>
-
-      <div class="service-result" id="heatDiscoveryResult" hidden></div>
-    </section>
 
 
 
@@ -512,115 +538,7 @@
 
 
 
-
-    <section class="container test-panel dev-only" aria-labelledby="climate-analysis-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">11 · Zusatzprüfung</p>
-          <h2 id="climate-analysis-title">Sommerklima &amp; Lokalklima · Erkundung</h2>
-          <p>Dieser Block ist bewusst noch keine feste Standortpass-Ausgabe. Wir prüfen, welche amtlichen Inhalte der regionalen Klimaanalyse Inntal am Standort verfügbar sind und ob daraus ein echter Mehrwert für die Vorberatung entsteht. Detailkennwerte zu heißen Tagen und Nächten gehören voraussichtlich eher ins spätere Klimablatt.</p>
-        </div>
-        <span class="status-chip status-chip--muted" id="climateAnalysisStatus">Adresse fehlt</span>
-      </div>
-      <div class="action-row">
-        <button class="primary-button" id="testClimateAnalysisButton" type="button" disabled>Klimakarten Inntal prüfen</button>
-        <span class="action-note">TIRIS KLIMAKARTEN INNTAL · Tag/Nacht · Wärmebelastung · Kaltluft · Planhinweise.</span>
-      </div>
-      <div class="service-result" id="climateAnalysisResult" hidden></div>
-    </section>
-
-    <section class="container methodology-panel no-print" aria-labelledby="methodology-title">
-      <details>
-        <summary><span><strong id="methodology-title">Methodik & Datenbasis</strong><small>Formeln, Rundungen, Datenquellen und Grenzen nachvollziehbar dokumentiert.</small></span></summary>
-        <div class="methodology-content">
-          <div>
-            <h3>Gebäudeableitungen</h3>
-            <ul>
-              <li><strong>Außenwandfläche:</strong> Dachpolygon-Umfang × TIRIS-Medianhöhe. Bewusst ohne universellen Korrekturfaktor.</li>
-              <li><strong>Fensterfläche:</strong> Brutto-Außenwand × eingestellter Fensterflächenanteil; Standard 20 %, jederzeit manuell ersetzbar. Die opake Außenwand wird für die gemeinsame Datennutzung intern als Außenwand minus Fenster mitgeführt.</li>
-              <li><strong>Oberste / unterste Geschoßfläche:</strong> zunächst Dachprojektion als Orientierungswert.</li>
-              <li><strong>Dachschräge:</strong> Dachprojektion / cos(Dachneigung), sobald eine Dachneigung angegeben wurde.</li>
-              <li><strong>Gebäudevolumen:</strong> Dachprojektion × Medianhöhe; geometrischer Orientierungswert, kein konditioniertes Volumen.</li>
-            </ul>
-          </div>
-          <div>
-            <h3>Rundung & Priorität</h3>
-            <p>Automatische große Flächen werden bewusst grob gerundet: meist 10 m², Fenster 5 m². Manuelle Werte bleiben exakt und haben Vorrang vor Automatikwerten. 0 löscht bei Flächen/Volumen die manuelle Korrektur; bei Dachneigung ist 0° als Flachdach zulässig.</p>
-            <p>Priorität: manuell bestätigt → amtlich automatisch → abgeleiteter Orientierungswert → Fallback.</p>
-          </div>
-          <div>
-            <h3>Datenquellen</h3>
-            <p>TIRIS/Land Tirol: Adresse, Katastralgemeinde, Gebäude, DGM, Orthofoto, Wasser/Umweltwärme, Hochwasser/Naturgefahren und Kulturkontext. GeoLand/voibos: Sonnenbahn, Gelände- und Oberflächenhorizont sowie theoretische Sonnenscheindauer. BDA: veröffentlichte Denkmalliste. RIS: Radonschutzverordnung.</p>
-          </div>
-          <div>
-            <h3>Grenzen</h3>
-            <p>Der Standortpass ist eine Vorprüfung. Orthofotos können erhöhte Dächer lageversetzt darstellen. Das digitale Geländemodell beschreibt das Gelände; das Oberflächenmodell berücksichtigt zusätzlich Gebäude und Vegetation. Kein Treffer in einer ausgewerteten Gefahrenfläche ist keine Sicherheitsbestätigung. Wasser-/Erdwärmehinweise sind keine Eignungszusage.</p>
-          </div>
-        </div>
-      </details>
-    </section>
-
-    <section class="container technical-panel dev-only">
-      <details>
-        <summary>Technische Testdaten und Rohantworten</summary>
-        <p>Diese Ausgabe ist nur für die Entwicklung gedacht.</p>
-        <div class="raw-grid">
-          <div><h3>Gemeinsame Adresse</h3><pre id="rawAddress">–</pre></div>
-          <div><h3>TIRIS Live-Suche</h3><pre id="rawTirisLiveAddress">–</pre></div>
-          <div><h3>Katastralgemeinde</h3><pre id="rawKg">–</pre></div>
-          <div><h3>BEV-Vergleich</h3><pre id="rawBevComparison">–</pre></div>
-          <div><h3>TIRIS BASIS</h3><pre id="rawBasis">–</pre></div>
-          <div><h3>TIRIS Adress-Layer</h3><pre id="rawTirisAddresses">–</pre></div>
-          <div><h3>Gebäude</h3><pre id="rawBuildings">–</pre></div>
-          <div><h3>Orthofoto</h3><pre id="rawOrthophoto">–</pre></div>
-          <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
-          <div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
-          <div><h3>TIRIS Solarpotenzial-WMS</h3><pre id="rawSolarMap">–</pre></div>
-          <div><h3>TIRIS Energie-Layer-Tiefenscan</h3><pre id="rawHeatDiscovery">–</pre></div>
-          <div><h3>TIRIS Umweltwärme / WASSER</h3><pre id="rawEnvironmentalHeat">–</pre></div>
-          <div><h3>Hochwasser & Naturgefahren</h3><pre id="rawHazards">–</pre></div>
-          <div><h3>Kultur & Denkmalschutz</h3><pre id="rawHeritage">–</pre></div>
-          <div><h3>Radon</h3><pre id="rawRadon">–</pre></div>
-          <div><h3>TIRIS Klimakarten Inntal</h3><pre id="rawClimateAnalysis">–</pre></div>
-        </div>
-      </details>
-    </section>
-
-    <section class="container print-report-only" id="printReportSummary" aria-label="Kompakter Standortbericht">
-      <div class="print-report-grid" id="printReportGrid"></div>
-    </section>
-
-    <section class="container bottom-report-actions no-print">
-      <button class="secondary-button" id="printReportButtonBottom" type="button">Drucken / PDF</button>
-      <span>Der Ausdruck verwendet eine verdichtete Beratungsansicht statt der vollständigen Arbeitsoberfläche.</span>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <div>
-        <p class="footer-name">Tools</p>
-        <p class="footer-note">Standortpass V1.0 · gemeinsame Datenbasis</p>
-      </div>
-      <nav class="footer-links" aria-label="Rechtliche Informationen">
-        <a href="../../pages/kontakt.html#impressum">Impressum</a>
-        <a href="../../pages/kontakt.html#datenschutz">Datenschutz</a>
-      </nav>
-      <p class="copyright">© <span id="year">2026</span></p>
-    </div>
-  </footer>
-
-  <!-- Allgemeine Projekt-, Adress- und Standortdienste kommen ausschließlich aus shared/. -->
-  <script src="../../shared/js/data-model.js?v=1"></script>
-  <script src="../../shared/js/project-store.js?v=1"></script>
-  <script src="../../shared/js/project-header.js?v=1"></script>
-  <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
-  <script src="../../shared/js/services/address-provider-bev-local.js?v=2"></script>
-  <script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
-  <script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
-  <script src="../../shared/js/services/location-core.js?v=1"></script>
-
-  <script src="standortpass.js?v=7"></script>
-  <script src="standortpass-v1.js?v=7"></script>
+<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=2"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="standortpass.js?v=7"></script>
+<script src="standortpass-v1.js?v=7"></script>
 </body>
 </html>

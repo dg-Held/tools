@@ -1,0 +1,76 @@
+/* =========================================================
+   GEMEINSAME DESIGN-TOKENS
+   Eine Änderung hier wirkt auf Homepage und alle Tools.
+========================================================= */
+
+:root {
+  /* Marke */
+  --turquoise: #34ab9f;
+  --berry: #b3446c;
+  --turquoise-light: #d8f3f0;
+  --berry-light: #f1dae2;
+  --turquoise-soft: #ebf9f8;
+  --berry-soft: #f8edf1;
+  --turquoise-dark: #24756d;
+  --berry-dark: #6f2a43;
+
+  /* Semantische Farben */
+  --color-primary: var(--turquoise);
+  --color-primary-light: var(--turquoise-light);
+  --color-primary-soft: var(--turquoise-soft);
+  --color-primary-dark: var(--turquoise-dark);
+  --color-secondary: var(--berry);
+  --color-secondary-light: var(--berry-light);
+  --color-secondary-soft: var(--berry-soft);
+  --color-secondary-dark: var(--berry-dark);
+
+  --color-success: #24756d;
+  --color-success-soft: #ebf9f8;
+  --color-warning: #9a6a16;
+  --color-warning-dark: #6f4b0e;
+  --color-warning-soft: #fff5df;
+  --color-danger: #7a1f2d;
+  --color-danger-soft: #fde8ec;
+  --color-info: #324542;
+  --color-info-soft: #eef8f6;
+
+  /* Text und Flächen */
+  --text-dark: #0c2724;
+  --text-light: #ebf9f8;
+  --text-muted: #526562;
+  --text-subtle: #60716f;
+  --white: #ffffff;
+  --page-background: #f9fbfa;
+  --surface-card: #ffffff;
+  --surface-muted: #f8fbfa;
+  --surface-subtle: #f3f7f6;
+  --line: rgba(12, 39, 36, 0.12);
+  --line-strong: #d7e3e1;
+
+  /* Schrift */
+  --font-body: "Nunito", sans-serif;
+
+  /* Abstände */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3rem;
+  --space-6: 4.5rem;
+
+  /* Rundungen */
+  --radius-small: 10px;
+  --radius-medium: 18px;
+  --radius-large: 28px;
+  --radius-round: 50%;
+
+  /* Schatten */
+  --shadow-soft: 0 12px 35px rgba(12, 39, 36, 0.08);
+  --shadow-hover: 0 16px 42px rgba(12, 39, 36, 0.13);
+  --shadow-card: 0 12px 32px rgba(28, 75, 71, 0.08);
+
+  /* Layout */
+  --content-width: 820px;
+  --project-header-main-ratio: 2fr;
+  --project-header-side-ratio: 1fr;
+}

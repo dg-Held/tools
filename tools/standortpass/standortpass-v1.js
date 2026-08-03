@@ -4,7 +4,8 @@
   const store = window.EnergyToolsProjectStore;
   const model = window.EnergyToolsDataModel;
   const core = window.StandortpassCore;
-  if (!store || !model || !core) return;
+  const valueResolver = window.EnergyToolsValueResolver;
+  if (!store || !model || !core || !valueResolver) return;
 
   const $ = (id) => document.getElementById(id);
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -63,33 +64,38 @@
     const attrs = feature.attributes || {};
     const perimeter = Number(attrs.Shape__Length);
     const medianHeight = Number(attrs.GEB_HOEHE_MEDIAN);
+    const footprintArea = Number(attrs.Shape__Area);
     const wallRaw = Number.isFinite(perimeter) && Number.isFinite(medianHeight)
       ? perimeter * medianHeight
       : null;
 
     return {
-      objectId: attrs.OBJECTID ?? null,
-      municipalityCode: attrs.GEMNR ?? null,
-      geometryWgs84: feature.geometry ? clone(feature.geometry) : null,
-      roofProjection: field(Number.isFinite(Number(attrs.Shape__Area)) ? Number(attrs.Shape__Area) : null, {
-        unit: 'm²', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS Gebäude', method: 'Shape__Area',
-      }),
-      roofPerimeter: field(Number.isFinite(perimeter) ? perimeter : null, {
-        unit: 'm', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS Gebäude', method: 'Shape__Length',
-      }),
-      heightMedian: field(Number.isFinite(medianHeight) ? medianHeight : null, {
-        unit: 'm', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS Gebäude', method: 'GEB_HOEHE_MEDIAN',
-      }),
-      heightMax: field(Number.isFinite(Number(attrs.GEB_HOEHE_MAX)) ? Number(attrs.GEB_HOEHE_MAX) : null, {
-        unit: 'm', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS Gebäude', method: 'GEB_HOEHE_MAX',
-      }),
-      exteriorWallGrossOrienting: field(wallRaw, {
-        unit: 'm²', origin: model.ORIGIN.DERIVED, source: 'Standortpass',
-        method: 'Shape__Length × GEB_HOEHE_MEDIAN', quality: 'Orientierungswert',
-        automaticValue: wallRaw,
-      }),
-      dataDate: attrs.STAND ?? null,
-      updatedAtSource: attrs.UPDATETIMESTAMP ?? null,
+      identity: {
+        objectId: attrs.OBJECTID ?? null,
+        municipalityCode: attrs.GEMNR ?? null,
+        source: 'TIRIS Gebäude',
+        dataDate: attrs.STAND ?? null,
+        updatedAtSource: attrs.UPDATETIMESTAMP ?? null,
+      },
+      geometry: {
+        geometryWgs84: feature.geometry ? clone(feature.geometry) : null,
+        footprintArea: field(Number.isFinite(footprintArea) ? footprintArea : null, {
+          unit: 'm²', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS Gebäude', method: 'Shape__Area',
+        }),
+        perimeter: field(Number.isFinite(perimeter) ? perimeter : null, {
+          unit: 'm', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS Gebäude', method: 'Shape__Length',
+        }),
+        heightMedian: field(Number.isFinite(medianHeight) ? medianHeight : null, {
+          unit: 'm', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS Gebäude', method: 'GEB_HOEHE_MEDIAN',
+        }),
+        heightMaximum: field(Number.isFinite(Number(attrs.GEB_HOEHE_MAX)) ? Number(attrs.GEB_HOEHE_MAX) : null, {
+          unit: 'm', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS Gebäude', method: 'GEB_HOEHE_MAX',
+        }),
+        exteriorWallGrossArea: field(wallRaw, {
+          unit: 'm²', origin: model.ORIGIN.DERIVED, source: 'Standortpass',
+          method: 'Gebäudeumfang × Medianhöhe', quality: 'Orientierungswert',
+        }),
+      },
     };
   }
 
@@ -228,38 +234,73 @@
 
   function geometryEstimatesShared() {
     const data = currentGeometryEstimates();
-    const out = { windowSharePercent: data.windowSharePercent, updatedAt: new Date().toISOString() };
-    Object.entries(data.fields).forEach(([key, item]) => {
-      out[key] = clone(item);
-    });
-    const exterior = data.fields.exteriorWall?.effective;
-    const windows = data.fields.windowArea?.effective;
-    const exteriorAuto = data.fields.exteriorWall?.automatic;
-    const windowsAuto = data.fields.windowArea?.automatic;
-    out.opaqueExteriorWall = {
-      automatic: exteriorAuto !== null && windowsAuto !== null ? Math.max(0, exteriorAuto - windowsAuto) : null,
-      manual: null,
-      effective: exterior !== null && windows !== null ? Math.max(0, exterior - windows) : null,
-      unit: 'm²',
-      source: 'derived',
-      method: 'Außenwandfläche - Fensterfläche',
+    const fieldMap = {
+      exteriorWall: ['exteriorWallGrossArea', 'm²', 'Gebäudeumfang × Medianhöhe'],
+      windowArea: ['windowArea', 'm²', 'Außenwandfläche × Fensteranteil'],
+      topFloorArea: ['topFloorArea', 'm²', 'Gebäudegrundfläche'],
+      basementArea: ['basementCeilingArea', 'm²', 'Gebäudegrundfläche'],
+      roofPitch: ['roofPitch', '°', 'manuelle Orientierung'],
+      roofSlopeArea: ['roofSlopeArea', 'm²', 'Dachprojektion / cos(Dachneigung)'],
+      volume: ['grossVolume', 'm³', 'Gebäudegrundfläche × Medianhöhe'],
     };
-    return out;
+
+    const geometry = {
+      windowSharePercent: field(data.windowSharePercent, {
+        unit: '%', origin: model.ORIGIN.MANUAL, source: 'Standortpass',
+      }),
+    };
+
+    Object.entries(data.fields).forEach(([key, item]) => {
+      const [targetKey, unit, method] = fieldMap[key];
+      geometry[targetKey] = field(item.automatic, {
+        unit,
+        origin: model.ORIGIN.DERIVED,
+        source: 'Standortpass',
+        method,
+        quality: 'Orientierungswert',
+        manualValue: item.manual,
+        manualSource: 'Nutzereingabe Standortpass',
+      });
+    });
+
+    const exteriorAuto = data.fields.exteriorWall?.automatic;
+    const windowAuto = data.fields.windowArea?.automatic;
+    const exteriorManual = data.fields.exteriorWall?.manual;
+    const windowManual = data.fields.windowArea?.manual;
+    const opaqueAuto = exteriorAuto !== null && windowAuto !== null
+      ? Math.max(0, exteriorAuto - windowAuto)
+      : null;
+    const opaqueManual = exteriorManual !== null || windowManual !== null
+      ? Math.max(0, (data.fields.exteriorWall?.effective ?? 0) - (data.fields.windowArea?.effective ?? 0))
+      : null;
+
+    geometry.opaqueExteriorWallArea = field(opaqueAuto, {
+      unit: 'm²',
+      origin: model.ORIGIN.DERIVED,
+      source: 'Standortpass',
+      method: 'Außenwandfläche brutto − Fensterfläche',
+      manualValue: opaqueManual,
+      manualSource: 'aus manuellen Geometriekorrekturen',
+    });
+
+    return geometry;
   }
 
-  function restoreGeometryEstimates(saved) {
-    if (!saved) return;
-    setInputValue('windowSharePercent', saved.windowSharePercent ?? 20);
+  function restoreGeometryEstimates(savedGeometry) {
+    if (!savedGeometry) return;
+    setInputValue('windowSharePercent', valueResolver.value(savedGeometry.windowSharePercent, 20));
     const mapping = {
-      exteriorWall: 'manualExteriorWallValue',
+      exteriorWallGrossArea: 'manualExteriorWallValue',
       windowArea: 'manualWindowAreaValue',
       topFloorArea: 'manualTopFloorAreaValue',
-      basementArea: 'manualBasementAreaValue',
+      basementCeilingArea: 'manualBasementAreaValue',
       roofPitch: 'manualRoofPitchValue',
       roofSlopeArea: 'manualRoofSlopeAreaValue',
-      volume: 'manualVolumeValue',
+      grossVolume: 'manualVolumeValue',
     };
-    Object.entries(mapping).forEach(([key, id]) => setInputValue(id, saved[key]?.manual ?? null));
+    Object.entries(mapping).forEach(([key, id]) => {
+      setInputValue(id, valueResolver.manualValue(savedGeometry[key], null));
+    });
     renderGeometryEstimates();
   }
 
@@ -349,8 +390,11 @@
       updatedAt: new Date().toISOString(),
     };
 
-    const sharedBuilding = buildingFeature ? selectedBuildingShared(buildingFeature) : {};
-    sharedBuilding.estimates = geometryEstimatesShared();
+    const sharedBuilding = buildingFeature ? selectedBuildingShared(buildingFeature) : { geometry: {} };
+    sharedBuilding.geometry = {
+      ...(sharedBuilding.geometry || {}),
+      ...geometryEstimatesShared(),
+    };
 
     store.patch({
       project: addressRecord ? { addressLabel } : {},
@@ -731,7 +775,7 @@
         $('tirisLiveAddressInput').value = label;
         $('reportRunMessage').textContent = 'Projektadresse übernommen. Bitte die Adresse einmal suchen und bestätigen, da im älteren Projekt keine Koordinate gespeichert war.';
       }
-      restoreGeometryEstimates(projectState.building?.estimates || projectState.modules?.standortpass?.geometryEstimates);
+      restoreGeometryEstimates(projectState.building?.geometry || projectState.modules?.standortpass?.geometryEstimates);
       if (restored && options.autoRun) await runFullReport({ source: 'import' });
     } finally {
       hydrationRunning = false;

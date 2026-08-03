@@ -48,7 +48,7 @@
   class BevLocalAddressProvider {
     constructor({
       id = 'bev-local',
-      baseUrl = 'data/addresses',
+      baseUrl = global.EnergyToolsPaths?.addresses ?? 'data/addresses',
       fetchImpl = global.fetch?.bind(global),
       embeddedData = global.BEV_DEMO_ADDRESS_DATA ?? null,
     } = {}) {

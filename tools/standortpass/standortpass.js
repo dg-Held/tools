@@ -635,7 +635,7 @@ async function initAddressModule() {
     }
 
     bevSuggestionProvider = new window.BevLocalAddressProvider({
-      baseUrl: '../../shared/data/addresses',
+      baseUrl: window.EnergyToolsPaths?.addresses ?? '../../shared/data/addresses',
     });
     tirisLiveAddressProvider = new window.TirisLiveAddressProvider();
     hybridAddressProvider = new window.HybridAddressProvider({

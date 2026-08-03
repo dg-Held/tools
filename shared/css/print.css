@@ -1,0 +1,81 @@
+/* =========================================================
+   GEMEINSAME DRUCKREGELN ALLER TOOLS
+========================================================= */
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print,
+  .project-actions,
+  .shared-report-actions {
+    display: none !important;
+  }
+
+  .project-header-card {
+    display: block !important;
+    width: 194mm !important;
+    max-width: none !important;
+    margin: 0 0 3mm !important;
+    padding: 2.6mm 3.2mm !important;
+    border: 0.25mm solid var(--line-strong) !important;
+    border-radius: 2.5mm !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  .project-header-row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
+    gap: 2.5mm !important;
+    align-items: start !important;
+  }
+
+  .project-header-row + .project-header-row {
+    margin-top: 1.7mm !important;
+    padding-top: 1.7mm !important;
+  }
+
+  .project-header-card label > span,
+  .project-address-field > span,
+  .project-date-field > span {
+    font-size: 6.2pt !important;
+  }
+
+  .project-header-card input {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    font-size: 9.5pt !important;
+    font-weight: 600 !important;
+    background: transparent !important;
+  }
+
+  .project-address-field strong,
+  .project-date-field strong {
+    min-height: 0 !important;
+    font-size: 9.5pt !important;
+  }
+
+  .print-report-header {
+    display: block !important;
+    margin: 0 0 2.5mm !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  .print-report-header .print-kicker,
+  .print-report-header .print-meta-grid {
+    display: none !important;
+  }
+
+  .print-report-header h1 {
+    margin: 0 !important;
+    font-size: 12pt !important;
+    line-height: 1.1 !important;
+  }
+}

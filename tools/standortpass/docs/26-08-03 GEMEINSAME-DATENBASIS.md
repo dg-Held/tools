@@ -4,20 +4,33 @@ Stand: 03.08.2026
 
 ## Ziel
 
-Der Standortpass ist eigenständig nutzbar, verwendet für allgemeine Funktionen
-aber dieselbe technische Basis wie Klima & Heizlast. Es gibt keine direkten
-Dateiverweise vom Standortpass in den Ordner `tools/klima-heizlast/` mehr.
+Der Standortpass bleibt eigenständig nutzbar. Adresse, Gebäudeidentität,
+Geometrie und manuelle Korrekturen liegen jedoch im gemeinsamen Projektmodell.
+Klima, Heizlast und später Energiefluss V4 greifen auf dieselben Werte und
+Dienste zu. Keine Tool-Seite muss zuvor geöffnet worden sein.
 
-## Gemeinsame Dateien
+## Gemeinsame Struktur
 
 ```text
 shared/
 ├── data/
-│   └── addresses/
+│   ├── addresses/
+│   ├── climate/
+│   │   └── inca/
+│   └── standards/
+│       └── oib/
+├── css/
+│   ├── tokens.css
+│   ├── components.css
+│   └── print.css
 └── js/
+    ├── paths.js
     ├── data-model.js
+    ├── project-migrations.js
+    ├── value-resolver.js
     ├── project-store.js
     ├── project-header.js
+    ├── project-value-field.js
     └── services/
         ├── address-provider-core.js
         ├── address-provider-bev-local.js
@@ -30,21 +43,20 @@ shared/
 
 ### `shared/`
 
-- Projektstruktur und Herkunftsfelder
+- Projektstruktur, Migration und Wertpriorität
 - Speicherung, Import und Export
-- gemeinsame Projektkopfzeile
-- lokaler BEV-Adressindex
-- TIRIS-Live-Abgleich
-- Höhenabfrage aus dem TIRIS-DGM
+- gemeinsamer Projektkopf und gemeinsame Eingabemuster
+- lokaler BEV-Adressindex und TIRIS-Live-Abgleich
+- gemeinsam verwendete Datenpfade
+- Herkunft, Datenstand und manuelle Korrekturen
 
 ### `tools/standortpass/`
 
-- Gebäudegeometrie und Gebäudeauswahl
-- Gebäudeabschätzungen
+- Gebäudeauswahl und ausführliche Geometriedarstellung
 - Orthofoto und Kartendarstellungen
-- Solar, Umweltwärme und Wärmenetz-Hinweis
+- Solar, Umweltwärme und Wärmenetz-Hinweise
 - Naturgefahren, Kultur und Radon
-- Standortpass-Bericht und Drucklayout
+- Standortpass-Bericht und dessen fachliches Drucklayout
 
 ## Adresspriorität
 
@@ -56,27 +68,36 @@ TIRIS-Live-Abgleich
       └── nicht verfügbar/nicht eindeutig → BEV-Fallback
 ```
 
-Die gespeicherte Adresse behält ihre Quelle und ihren Datenstand. Dadurch können
-andere Werkzeuge erkennen, ob der Projektstandort aus TIRIS oder aus dem
-BEV-Fallback stammt.
+Die Adresse behält Quelle und Datenstand. Dadurch können alle Tools erkennen,
+ob der Projektstandort aus TIRIS oder aus dem BEV-Fallback stammt.
+
+## Automatische und manuelle Geometriewerte
+
+Automatische Ausgangswerte und manuelle Korrekturen werden getrennt gespeichert.
+Ein manuell bestätigter Wert hat Vorrang, ohne den automatischen Ursprungswert
+zu löschen. Nach dem Zurücksetzen wird der aktuelle automatische Wert wieder
+wirksam.
+
+Beispiel:
+
+```text
+Nutzfläche wirksam:       165 m² – manuell bestätigt
+Automatische Abschätzung: 150 m² – aus Gebäudegeometrie
+```
+
+Ändert der Nutzer die Nutzfläche später im Energiefluss oder Heizlast-Tool,
+erscheint derselbe wirksame Projektwert auch im Standortpass.
 
 ## Eigenständige Verwendung
 
-Der Standortpass benötigt kein vorher ausgefülltes anderes Werkzeug. Ohne
-bestehendes Projekt kann eine Adresse normal gesucht und ein vollständiger
-Standortbericht erstellt werden. Vorhandene Projektdaten werden nur als Komfort
-übernommen.
+Ohne bestehendes Projekt kann im Standortpass normal eine Adresse gesucht und
+ein vollständiger Bericht erstellt werden. Umgekehrt dürfen andere Tools die
+gemeinsamen Adress- und Geometriedienste selbst aufrufen, ohne dass der
+Standortpass vorher geöffnet wurde.
 
-## Übergangsbrücken
+## Alte kombinierte Toolstruktur
 
-Die folgenden Dateien sind nach erfolgreichem Abschlusstest nicht mehr nötig:
-
-```text
-tools/klima-heizlast/address-provider-core.js
-tools/klima-heizlast/address-provider-bev-local.js
-tools/klima-heizlast/location-core.js
-tools/klima-heizlast/data/addresses/
-```
-
-Sie werden erst in einem eigenen Aufräumschritt gelöscht, nachdem beide Tools
-alle Einzel- und Übergabetests bestanden haben.
+Nach erfolgreichem Gesamttest wird der frühere Ordner
+`tools/klima-heizlast/` vollständig entfernt. Der Standortpass besitzt keine
+Abhängigkeit mehr zu diesem Ordner. Die großen Adressdateien bleiben unter
+`shared/data/addresses/`.
