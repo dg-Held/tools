@@ -49,7 +49,7 @@
       'label', 'postal_code', 'municipality', 'municipality_code', 'locality', 'street', 'house_number',
       'latitude', 'longitude', 'coordinate_kind', 'dataset_date', 'updated_at', 'address_code', 'subcode',
       'object_number', 'property', 'cadastral_municipality_number', 'cadastral_municipality_numbers',
-      'source_id', 'tiris_layer_id', 'tiris_layer_label', 'license',
+      'source', 'fallback_source', 'source_id', 'tiris_layer_id', 'tiris_layer_label', 'license',
     ];
     const out = {};
     keys.forEach((key) => {
@@ -313,13 +313,13 @@
     const locationPatch = addressRecord ? {
       address: field(addressLabel, {
         origin: model.ORIGIN.OFFICIAL,
-        source: String(addressRecord.tiris_layer_label || '').includes('TIRIS') || addressRecord.tiris_layer_id ? 'TIRIS ogd_basis' : 'Adressquelle',
+        source: addressRecord.source || 'Gemeinsame Adresssuche',
         dataDate: addressRecord.dataset_date ?? null,
       }),
-      latitude: field(Number(addressRecord.latitude), { unit: '°', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS/BEV Adresse' }),
-      longitude: field(Number(addressRecord.longitude), { unit: '°', origin: model.ORIGIN.OFFICIAL, source: 'TIRIS/BEV Adresse' }),
-      municipality: field(addressRecord.municipality ?? null, { origin: model.ORIGIN.OFFICIAL, source: 'TIRIS/BEV Adresse' }),
-      municipalityCode: field(addressRecord.municipality_code ?? null, { origin: model.ORIGIN.OFFICIAL, source: 'TIRIS/BEV Adresse' }),
+      latitude: field(Number(addressRecord.latitude), { unit: '°', origin: model.ORIGIN.OFFICIAL, source: addressRecord.source || 'Gemeinsame Adresssuche' }),
+      longitude: field(Number(addressRecord.longitude), { unit: '°', origin: model.ORIGIN.OFFICIAL, source: addressRecord.source || 'Gemeinsame Adresssuche' }),
+      municipality: field(addressRecord.municipality ?? null, { origin: model.ORIGIN.OFFICIAL, source: addressRecord.source || 'Gemeinsame Adresssuche' }),
+      municipalityCode: field(addressRecord.municipality_code ?? null, { origin: model.ORIGIN.OFFICIAL, source: addressRecord.source || 'Gemeinsame Adresssuche' }),
       cadastralMunicipalityNumber: field(addressRecord.cadastral_municipality_number ?? null, { origin: model.ORIGIN.OFFICIAL, source: 'TIRIS ogd_basis' }),
       addressRecord: compactAddressRecord(addressRecord),
       metadataText: text('selectedAddressMeta'),
@@ -344,6 +344,8 @@
       radonStatus: statusText('radonStatus'),
       reportStatus: statusText('reportRunStatus'),
       solar: compactSolarShared(),
+      version: '1.0.0',
+      sharedArchitecture: '1.0',
       updatedAt: new Date().toISOString(),
     };
 

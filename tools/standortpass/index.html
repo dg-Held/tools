@@ -7,7 +7,7 @@
   <meta name="description" content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten.">
 
   <link rel="stylesheet" href="../../styles.css">
-  <link rel="stylesheet" href="standortpass.css?v=6">
+  <link rel="stylesheet" href="standortpass.css?v=7">
 </head>
 <body>
 
@@ -76,12 +76,12 @@
       </div>
 
       <label class="search-field">
-        <span>Adresse – Reihenfolge, Groß-/Kleinschreibung und Komma sind egal</span>
-        <input id="tirisLiveAddressInput" type="search" autocomplete="off" placeholder="z. B. 6020 Bürgerstraße 1">
+        <span>Adresse – schnelle BEV-Vorschläge, anschließend TIRIS-Live-Abgleich</span>
+        <input id="tirisLiveAddressInput" type="search" autocomplete="off" placeholder="z. B. 6112 w oder 6020 Bürgerstraße 1" aria-controls="tirisLiveAddressResults" aria-expanded="false">
       </label>
       <div class="action-row address-action-row">
-        <button class="primary-button" id="searchTirisLiveAddressButton" type="button">TIRIS live suchen</button>
-        <span class="action-note" id="tirisParsedAddress">Noch keine Adresse zerlegt.</span>
+        <button class="primary-button" id="searchTirisLiveAddressButton" type="button">Adresse suchen</button>
+        <span class="action-note" id="tirisParsedAddress">Mindestens drei Zeichen eingeben. Die gewählte Adresse wird live mit TIRIS abgeglichen.</span>
       </div>
       <div class="suggestions" id="tirisLiveAddressResults" role="listbox" hidden></div>
 
@@ -111,22 +111,7 @@
             </article>
           </div>
 
-          <details class="fallback-details">
-            <summary>BEV-Fallback / Vergleich manuell öffnen</summary>
-            <div class="fallback-content">
-              <div class="fallback-heading">
-                <p>Die lokale BEV-Suche bleibt als Rückfallweg und technischer Vergleich erhalten.</p>
-                <span class="status-chip" id="addressModuleStatus">lädt …</span>
-              </div>
 
-              <label class="search-field">
-                <span>PLZ, Gemeinde, Straße und Hausnummer</span>
-                <input id="addressSearchInput" type="search" autocomplete="off" placeholder="z. B. 6020 Adele-Obermayr-Straße 2" aria-controls="addressSuggestions" aria-expanded="false">
-              </label>
-              <div class="suggestions" id="addressSuggestions" role="listbox" hidden></div>
-              <p class="field-status" id="addressSearchStatus">Adressmodul wird initialisiert …</p>
-            </div>
-          </details>
         </div>
       </details>
 
@@ -615,7 +600,7 @@
     <div class="container footer-inner">
       <div>
         <p class="footer-name">Tools</p>
-        <p class="footer-note">Standortpass V1.1 · Prototyp</p>
+        <p class="footer-note">Standortpass V1.0 · gemeinsame Datenbasis</p>
       </div>
       <nav class="footer-links" aria-label="Rechtliche Informationen">
         <a href="../../pages/kontakt.html#impressum">Impressum</a>
@@ -625,15 +610,17 @@
     </div>
   </footer>
 
-  <!-- Bestehende Module bleiben als Fallback und Vergleich unverändert. -->
-  <script src="../../shared/js/data-model.js"></script>
-  <script src="../../shared/js/project-store.js"></script>
-  <script src="../klima-heizlast/address-provider-core.js"></script>
-  <script src="../klima-heizlast/address-provider-bev-local.js"></script>
-  <script src="../klima-heizlast/location-core.js"></script>
+  <!-- Allgemeine Projekt-, Adress- und Standortdienste kommen ausschließlich aus shared/. -->
+  <script src="../../shared/js/data-model.js?v=1"></script>
+  <script src="../../shared/js/project-store.js?v=1"></script>
+  <script src="../../shared/js/project-header.js?v=1"></script>
+  <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
+  <script src="../../shared/js/services/address-provider-bev-local.js?v=2"></script>
+  <script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
+  <script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
+  <script src="../../shared/js/services/location-core.js?v=1"></script>
 
-  <script src="standortpass.js?v=6"></script>
-  <script src="../../shared/js/project-header.js"></script>
-  <script src="standortpass-v1.js?v=6"></script>
+  <script src="standortpass.js?v=7"></script>
+  <script src="standortpass-v1.js?v=7"></script>
 </body>
 </html>

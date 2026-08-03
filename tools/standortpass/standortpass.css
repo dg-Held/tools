@@ -805,39 +805,6 @@
   overflow-wrap: anywhere;
 }
 
-.fallback-details {
-  margin-top: var(--space-3);
-  padding-top: var(--space-2);
-  border-top: 1px dashed var(--line);
-}
-
-.fallback-details > summary {
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--turquoise-dark);
-}
-
-.fallback-content {
-  margin-top: var(--space-2);
-  padding: var(--space-2);
-  border-radius: var(--radius-medium);
-  background: var(--page-background);
-}
-
-.fallback-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
-}
-
-.fallback-heading p {
-  margin-bottom: 0;
-  font-size: 0.86rem;
-  color: var(--text-muted);
-}
-
 .no-live-result strong,
 .no-live-result small {
   display: block;
@@ -915,7 +882,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .fallback-heading,
   .selected-building-actions {
     align-items: stretch;
     flex-direction: column;
@@ -1860,7 +1826,6 @@
   .site-footer,
   .no-print,
   .action-row,
-  .fallback-details,
   .quiet-button,
   .primary-button,
   .secondary-button,

@@ -1,12 +1,12 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – SCHNITTSTELLENTEST 17
+   STANDORTPASS – V1.6 · GEMEINSAME DATENBASIS
 
    Testet bewusst:
-   1) flexible TIRIS Live-Adresssuche als mögliche gemeinsame Primärquelle
+   1) gemeinsame Hybrid-Adresssuche: BEV-Vorschläge + TIRIS-Live-Abgleich
    2) TIRIS Katastralgemeinde aus der Standortkoordinate
-   3) bestehenden BEV-Bestand nur als Vergleich/Fallback
+   3) BEV und TIRIS technisch vergleichen
    4) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
    5) TIRIS Orthofoto als visuelle Kontrolle
    6) bestehende TIRIS-DGM-Höhenfunktion
@@ -21,7 +21,7 @@
    15) WebOffice-interne IDs der drei Energiethemen dokumentieren
    16) dokumentierte WebOffice Service API (synservice) sessionfrei auf öffentliche Abfragemöglichkeit prüfen
 
-   Noch KEINE freigegebene Standortpass-Berechnungslogik.
+   Standortpass-spezifische Logik; allgemeine Projekt-, Adress- und Höhenfunktionen liegen unter shared/.
 ========================================================= */
 
 const $ = (id) => document.getElementById(id);
@@ -219,12 +219,6 @@ const RADON_RIS_URL =
 const RADON_INFO_ENERGIE_TIROL_URL =
   'https://www.energieagentur.tirol/uploads/tx_bh/608/infoblatt_radon_web_nov_2020.pdf';
 
-const TIRIS_LIVE_ADDRESS_LAYERS = [
-  { id: 19, kind: 'building', label: 'AGWR Gebäudeadresse' },
-  { id: 22, kind: 'address', label: 'AGWR Grundstücksadresse' },
-  { id: 13, kind: 'address', label: 'TIRIS Adresse' },
-];
-
 const BUILDING_FIELDS = [
   'OBJECTID',
   'GEMNR',
@@ -239,12 +233,16 @@ const BUILDING_FIELDS = [
 ].join(',');
 
 let addressRegistry = null;
+let bevSuggestionProvider = null;
+let tirisLiveAddressProvider = null;
+let hybridAddressProvider = null;
 let selectedAddress = null;
 let buildingFeatures = [];
 let selectedBuildingId = null;
 let addressSearchTimer = null;
+let addressSearchSequence = 0;
+let addressModuleReadyPromise = null;
 let selectedKgResult = null;
-let selectedAddressProvider = null;
 let buildingMapDrawToken = 0;
 
 const number0 = new Intl.NumberFormat('de-AT', {
@@ -342,10 +340,18 @@ async function fetchJson(url, timeoutMs = 18000) {
 }
 
 /* ---------------------------------------------------------
-   1. TIRIS Live-Adresse + gemeinsames Standortformat
+   1. Gemeinsame Hybrid-Adresssuche
+
+   - BEV lokal liefert schnelle Vorschläge während der Eingabe.
+   - Erst nach Auswahl wird die Adresse live mit TIRIS abgeglichen.
+   - Ist TIRIS nicht erreichbar oder kein eindeutiger Treffer vorhanden,
+     bleibt der BEV-Datensatz als dokumentierter Fallback verwendbar.
 --------------------------------------------------------- */
 
 function normalizeText(value) {
+  if (window.AddressProviderCore?.normalizeText) {
+    return window.AddressProviderCore.normalizeText(value);
+  }
   return String(value ?? '')
     .trim()
     .toLocaleLowerCase('de-AT')
@@ -356,280 +362,136 @@ function sqlLiteral(value) {
   return String(value ?? '').replaceAll("'", "''");
 }
 
-function dateToIso(value) {
-  if (value === null || value === undefined || value === '') return null;
-  const numeric = Number(value);
-  const date = Number.isFinite(numeric) ? new Date(numeric) : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toISOString().slice(0, 10);
+function closeSharedAddressSuggestions() {
+  const box = $('tirisLiveAddressResults');
+  box.hidden = true;
+  box.innerHTML = '';
+  $('tirisLiveAddressInput').setAttribute('aria-expanded', 'false');
 }
 
-function normalizeSearchText(value) {
-  return normalizeText(value)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9äöüß/-]+/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+function addressSourceLabel(record, provider = '') {
+  const source = String(record?.source ?? '').trim();
+  if (source) return source;
+  if (String(provider).includes('tiris')) return 'Land Tirol / TIRIS live';
+  if (String(provider).includes('bev')) return 'BEV – lokaler Adressindex';
+  return 'Gemeinsame Adresssuche';
 }
 
-function searchTokens(value) {
-  return normalizeSearchText(value)
-    .split(' ')
-    .filter(Boolean);
-}
+async function resolveAndSelectAddress(record, options = {}) {
+  if (!record) return false;
 
-function extractTirisSearchKeys(input) {
-  const text = String(input ?? '').trim();
-  const postalMatch = text.match(/\b(\d{4})\b/);
-
-  if (!postalMatch) {
-    return {
-      ok: false,
-      message: 'Bitte eine vierstellige PLZ mit angeben. Reihenfolge, Groß-/Kleinschreibung und Komma sind egal.',
-    };
-  }
-
-  const postalCode = postalMatch[1];
-  const rawTokens = text
-    .replace(/[;,]+/g, ' ')
-    .split(/\s+/)
-    .map((token) => token.trim())
-    .filter(Boolean);
-
-  const housePattern = /^\d+[A-Za-z]?(?:[\/-][A-Za-z0-9]+)?$/;
-  const houseCandidates = [...new Set(
-    rawTokens
-      .filter((token) => token !== postalCode && housePattern.test(token))
-      .flatMap((token) => [token, token.toLocaleLowerCase('de-AT'), token.toLocaleUpperCase('de-AT')])
-  )];
-
-  if (houseCandidates.length === 0) {
-    return {
-      ok: false,
-      message: 'Keine Hausnummer erkannt. Beispiel: Karwendelweg 9 6123 Terfens.',
-    };
-  }
-
-  return {
-    ok: true,
-    original: text,
-    postal_code: postalCode,
-    house_candidates: houseCandidates,
-    normalized: normalizeSearchText(text),
-    tokens: searchTokens(text),
-  };
-}
-
-function scoreTirisAddressCandidate(item, search) {
-  const candidate = normalizeSearchText(
-    `${item.street ?? ''} ${item.house_number ?? ''} ${item.postal_code ?? ''} ${item.municipality ?? ''} ${item.locality ?? ''}`
-  );
-  const candidateTokens = new Set(searchTokens(candidate));
-  let matched = 0;
-
-  search.tokens.forEach((token) => {
-    if (candidateTokens.has(token)) matched += 1;
-  });
-
-  const coverage = search.tokens.length > 0 ? matched / search.tokens.length : 0;
-  const exactBonus = candidate === search.normalized ? 2 : 0;
-  const streetBonus = item.street && search.normalized.includes(normalizeSearchText(item.street)) ? 1 : 0;
-  const municipalityBonus = item.municipality && search.normalized.includes(normalizeSearchText(item.municipality)) ? 0.5 : 0;
-
-  return coverage * 10 + exactBonus + streetBonus + municipalityBonus;
-}
-
-function liveLayerFields(layerId) {
-  if (layerId === 13) {
-    return {
-      street: 'SNAME',
-      house: 'HNR',
-      postal: 'PLZ',
-      municipality: 'GEMNAME',
-    };
-  }
-  return {
-    street: 'STRASSENNAME',
-    house: 'HNR_ADR_ZUSAMMEN',
-    postal: 'PLZ',
-    municipality: 'GEMEINDENAME',
-  };
-}
-
-function buildTirisLiveAddressQueryUrl(layerId, search) {
-  const fields = liveLayerFields(layerId);
-  const houseClauses = search.house_candidates.map(
-    (house) => `${fields.house}='${sqlLiteral(house)}'`
-  );
-  const clauses = [
-    `${fields.postal}='${sqlLiteral(search.postal_code)}'`,
-    `(${houseClauses.join(' OR ')})`,
-  ];
-
-  const params = new URLSearchParams({
-    f: 'json',
-    where: clauses.join(' AND '),
-    outFields: '*',
-    returnGeometry: 'true',
-    outSR: '4326',
-    returnZ: 'false',
-    returnM: 'false',
-    resultRecordCount: '2000',
-  });
-
-  return `${TIRIS_BASIS_URL}/${layerId}/query?${params.toString()}`;
-}
-
-function normalizeTirisAddressFeature(feature, layer) {
-  const attrs = feature?.attributes ?? {};
-  const geometry = feature?.geometry ?? {};
-  const isLayer13 = layer.id === 13;
-
-  const street = isLayer13 ? attrs.SNAME : attrs.STRASSENNAME;
-  const house = isLayer13 ? attrs.HNR : attrs.HNR_ADR_ZUSAMMEN;
-  const municipality = isLayer13 ? attrs.GEMNAME : attrs.GEMEINDENAME;
-  const municipalityCode = isLayer13 ? attrs.GEMOESTAT : attrs.GEMOESTAT;
-  const subcode = attrs.SUBCD ?? null;
-  const addressCode = attrs.ADRCD ?? null;
-  const latitude = finiteNumber(geometry.y);
-  const longitude = finiteNumber(geometry.x);
-
-  if (latitude === null || longitude === null) return null;
-
-  return {
-    id: `tiris-${addressCode ?? attrs.OBJECTID ?? 'address'}-${subcode ?? '0'}`,
-    label: `${street ?? '–'} ${house ?? ''}, ${attrs.PLZ ?? ''} ${municipality ?? ''}`.replace(/\s+/g, ' ').trim(),
-    street: street ?? '',
-    house_number: String(house ?? ''),
-    postal_code: String(attrs.PLZ ?? ''),
-    municipality: municipality ?? '',
-    delivery_locality: municipality ?? '',
-    municipality_code: municipalityCode ? String(municipalityCode) : null,
-    locality: isLayer13 ? (attrs.ORTSTEIL ?? null) : (attrs.BEZ_ORTSTEIL ?? null),
-    latitude,
-    longitude,
-    address_latitude: latitude,
-    address_longitude: longitude,
-    building: layer.kind === 'building'
-      ? { latitude, longitude, subcode, object_number: null, property: null }
-      : null,
-    cadastral_municipality_number: null,
-    cadastral_municipality_numbers: [],
-    source: 'Land Tirol / TIRIS',
-    source_id: addressCode ? String(addressCode) : String(attrs.OBJECTID ?? ''),
-    address_code: addressCode ? String(addressCode) : null,
-    subcode: subcode ? String(subcode) : null,
-    coordinate_kind: layer.kind,
-    dataset_date: dateToIso(attrs.STAND),
-    updated_at: dateToIso(attrs.UPDATETIMESTAMP),
-    license: 'OGD Land Tirol',
-    is_demo: false,
-    tiris_layer_id: layer.id,
-    tiris_layer_label: layer.label,
-    raw_attributes: attrs,
-  };
-}
-
-async function searchTirisLiveAddress(options = {}) {
-  const input = $('tirisLiveAddressInput');
-  const resultBox = $('tirisLiveAddressResults');
-  const search = extractTirisSearchKeys(input.value);
-
-  if (!search.ok) {
-    $('tirisParsedAddress').textContent = search.message;
-    setStatus($('tirisLiveAddressStatus'), 'Eingabe prüfen', 'error');
-    resultBox.hidden = true;
-    return;
-  }
-
-  $('tirisParsedAddress').textContent =
-    `Erkannt: PLZ ${search.postal_code} · Hausnummer ${search.house_candidates[0]} · Straße/Gemeinde werden aus den TIRIS-Treffern abgeglichen.`;
-  setStatus($('tirisLiveAddressStatus'), 'sucht …', 'working');
-  resultBox.hidden = true;
-  resultBox.innerHTML = '';
-
-  const attempts = [];
-  const collected = [];
+  const status = $('tirisLiveAddressStatus');
+  const note = $('tirisParsedAddress');
+  setStatus(status, 'TIRIS-Abgleich …', 'working');
+  note.textContent = 'BEV-Vorschlag gewählt · Adresse und Koordinate werden live mit TIRIS abgeglichen.';
 
   try {
-    for (const layer of TIRIS_LIVE_ADDRESS_LAYERS) {
-      const url = buildTirisLiveAddressQueryUrl(layer.id, search);
-      const payload = await fetchJson(url);
-      const features = Array.isArray(payload?.features) ? payload.features : [];
+    const resolved = typeof hybridAddressProvider?.resolve === 'function'
+      ? await hybridAddressProvider.resolve(record)
+      : { address: record, mode: 'shared-address', usedFallback: false };
 
-      attempts.push({ layer, url, count: features.length, response: payload });
+    selectAddress(resolved.address, resolved.mode || options.provider || 'shared-address');
 
-      features.forEach((feature) => {
-        const item = normalizeTirisAddressFeature(feature, layer);
-        if (!item) return;
-        collected.push({ item, layer, feature, score: scoreTirisAddressCandidate(item, search) });
-      });
-
-      if (layer.kind === 'building' && collected.some((entry) => entry.score >= 8)) break;
+    if (resolved.usedFallback) {
+      setStatus(status, 'BEV-Fallback', 'error');
+      note.textContent = resolved.warning || 'Kein eindeutiger TIRIS-Live-Treffer. Die BEV-Stichtagsadresse wird verwendet.';
+    } else {
+      setStatus(status, 'TIRIS bestätigt', 'success');
+      note.textContent = 'Adresse und Koordinate wurden live mit TIRIS bestätigt.';
     }
-
-    const deduped = new Map();
-    collected.forEach((entry) => {
-      const item = entry.item;
-      const key = `${item.address_code ?? ''}|${item.subcode ?? ''}|${item.latitude.toFixed(7)}|${item.longitude.toFixed(7)}`;
-      const previous = deduped.get(key);
-      if (!previous || entry.score > previous.score) deduped.set(key, entry);
-    });
-
-    const ranked = [...deduped.values()]
-      .sort((a, b) => b.score - a.score || a.item.label.localeCompare(b.item.label, 'de'));
-
-    $('rawTirisLiveAddress').textContent = pretty({ search, attempts, ranked });
-
-    if (ranked.length === 0) {
-      setStatus($('tirisLiveAddressStatus'), 'kein Treffer', 'error');
-      resultBox.innerHTML = '<p class="empty-result">Keine passende TIRIS-Adresse gefunden. Der BEV-Fallback bleibt unten verfügbar.</p>';
-      resultBox.hidden = false;
-      return [];
-    }
-
-    const bestScore = ranked[0].score;
-    const visible = ranked
-      .filter((entry) => entry.score >= Math.max(3, bestScore - 3))
-      .slice(0, 12);
-
-    resultBox.innerHTML = visible.map(({ item, layer, score }, index) => `
-      <button class="suggestion-item" type="button" data-tiris-result-index="${index}">
-        <strong>${escapeHtml(item.label)}</strong>
-        <small>${escapeHtml(layer.label)} · ADRCD ${escapeHtml(item.address_code ?? '–')} · Trefferrang ${number1.format(score)}</small>
-      </button>
-    `).join('');
-
-    resultBox.hidden = false;
-    setStatus(
-      $('tirisLiveAddressStatus'),
-      visible.length === 1 ? '1 guter Treffer' : `${visible.length} passende Treffer`,
-      'success'
-    );
-
-    if (options.autoSelectBest) {
-      const expected = normalizeSearchText(options.expectedLabel || input.value);
-      const exact = visible.find((entry) => normalizeSearchText(entry.item.label) === expected);
-      const chosen = exact || (visible.length === 1 ? visible[0] : null);
-      if (chosen) {
-        selectAddress(chosen.item, options.provider || 'tiris-live');
-        return visible;
-      }
-    }
-
-    resultBox.querySelectorAll('[data-tiris-result-index]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const entry = visible[Number(button.dataset.tirisResultIndex)];
-        if (entry) selectAddress(entry.item, 'tiris-live');
-      });
-    });
-    return visible;
+    return true;
   } catch (error) {
+    console.warn('TIRIS-Live-Abgleich fehlgeschlagen.', error);
+    selectAddress(record, options.provider || 'bev-fallback');
+    setStatus(status, 'BEV-Fallback', 'error');
+    note.textContent = `TIRIS-Live-Abgleich nicht verfügbar: ${error.message}. Die BEV-Stichtagsadresse wird verwendet.`;
+    return true;
+  }
+}
+
+function renderSharedAddressSuggestions(searchResult, options = {}) {
+  const resultBox = $('tirisLiveAddressResults');
+  const records = searchResult?.results ?? [];
+  resultBox.innerHTML = '';
+
+  if (records.length === 0) {
+    resultBox.hidden = true;
+    $('tirisLiveAddressInput').setAttribute('aria-expanded', 'false');
+    $('tirisParsedAddress').textContent = searchResult?.guidance || 'Keine passende Adresse gefunden.';
+    setStatus($('tirisLiveAddressStatus'), 'kein Treffer', 'error');
+    return [];
+  }
+
+  records.forEach((record, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'suggestion-button';
+    button.setAttribute('role', 'option');
+    button.dataset.sharedAddressIndex = String(index);
+
+    const sourceText = String(record.source ?? '').includes('TIRIS')
+      ? `${record.source} · Adresscode ${record.source_id || record.address_code || '–'}`
+      : `BEV-Vorschlag · TIRIS-Live-Check beim Auswählen · Adresscode ${record.source_id || '–'}`;
+
+    button.innerHTML = `
+      <strong>${escapeHtml(record.label)}</strong>
+      <small>${escapeHtml(sourceText)}</small>
+    `;
+    button.addEventListener('click', () => resolveAndSelectAddress(record));
+    resultBox.appendChild(button);
+  });
+
+  resultBox.hidden = false;
+  $('tirisLiveAddressInput').setAttribute('aria-expanded', 'true');
+  setStatus(
+    $('tirisLiveAddressStatus'),
+    records.length === 1 ? '1 Vorschlag' : `${records.length} Vorschläge`,
+    'success'
+  );
+
+  if (options.autoSelectBest) {
+    const expected = normalizeText(options.expectedLabel || $('tirisLiveAddressInput').value);
+    const exact = records.find((record) => normalizeText(record.label) === expected);
+    const chosen = exact || (records.length === 1 ? records[0] : null);
+    if (chosen) return resolveAndSelectAddress(chosen, { provider: options.provider });
+  }
+
+  return records;
+}
+
+async function searchSharedAddress(options = {}) {
+  if (!addressRegistry) {
+    try { await initAddressModule(); } catch { return []; }
+  }
+  if (!addressRegistry) return [];
+
+  const sequence = ++addressSearchSequence;
+  const input = $('tirisLiveAddressInput');
+  const query = String(options.query ?? input.value).trim();
+  input.value = query;
+
+  if (query.length < 3) {
+    closeSharedAddressSuggestions();
+    $('tirisParsedAddress').textContent = 'Mindestens drei Zeichen eingeben. Die gewählte Adresse wird live mit TIRIS abgeglichen.';
+    setStatus($('tirisLiveAddressStatus'), 'bereit');
+    return [];
+  }
+
+  setStatus($('tirisLiveAddressStatus'), 'sucht …', 'working');
+  $('tirisParsedAddress').textContent = 'Schnelle Vorschläge aus dem lokalen BEV-Index werden gesucht …';
+
+  try {
+    const result = await addressRegistry.search(query, { limit: 12 });
+    if (sequence !== addressSearchSequence) return [];
+    $('rawTirisLiveAddress').textContent = pretty({ query, result });
+    const rendered = renderSharedAddressSuggestions(result, options);
+    return await Promise.resolve(rendered);
+  } catch (error) {
+    if (sequence !== addressSearchSequence) return [];
+    closeSharedAddressSuggestions();
     setStatus($('tirisLiveAddressStatus'), 'Fehler', 'error');
-    resultBox.innerHTML = `<p class="empty-result">TIRIS-Live-Suche fehlgeschlagen: ${escapeHtml(error.message)}. Der lokale BEV-Fallback bleibt verfügbar.</p>`;
-    resultBox.hidden = false;
-    $('rawTirisLiveAddress').textContent = pretty({ search, attempts, error: error.message });
+    $('tirisParsedAddress').textContent = `Adresssuche nicht verfügbar: ${error.message}`;
+    $('rawTirisLiveAddress').textContent = pretty({ query, error: error.message });
     return [];
   }
 }
@@ -707,13 +569,13 @@ async function loadKatastralgemeinde(address) {
 async function compareSelectedAddressWithBev(address) {
   $('liveAddressChecks').hidden = false;
 
-  if (!addressRegistry) {
+  if (!bevSuggestionProvider) {
     $('bevComparisonResult').innerHTML = '<strong>BEV noch nicht bereit</strong><small>Vergleich wird nach Initialisierung möglich.</small>';
     return;
   }
 
   try {
-    const result = await addressRegistry.search(address.label, { limit: 12 });
+    const result = await bevSuggestionProvider.search(address.label, { limit: 12 });
     const records = result.results ?? [];
     const match = records.find((record) =>
       address.address_code && String(record.source_id) === String(address.address_code)
@@ -755,118 +617,64 @@ async function compareSelectedAddressWithBev(address) {
 }
 
 /* ---------------------------------------------------------
-   1d. Bestehendes BEV-Adressmodul – nur Fallback/Vergleich
+   1d. Gemeinsame Adressmodule initialisieren
 --------------------------------------------------------- */
 
 async function initAddressModule() {
-  const status = $('addressModuleStatus');
+  if (addressModuleReadyPromise) return addressModuleReadyPromise;
 
-  try {
-    if (!window.AddressProviderCore || !window.BevLocalAddressProvider) {
-      throw new Error(
-        'Die bestehenden Adressmodule wurden nicht geladen. ' +
-        'Liegt dieser Testordner neben tools/klima-heizlast/?'
-      );
+  addressModuleReadyPromise = (async () => {
+    try {
+    if (
+      !window.AddressProviderCore ||
+      !window.BevLocalAddressProvider ||
+      !window.TirisLiveAddressProvider ||
+      !window.HybridAddressProvider
+    ) {
+      throw new Error('Gemeinsame Adressprovider-Dateien fehlen oder wurden nicht geladen.');
     }
 
-    addressRegistry = new window.AddressProviderCore.AddressProviderRegistry();
-    addressRegistry.register(
-      new window.BevLocalAddressProvider({
-        baseUrl: '../klima-heizlast/data/addresses',
-      })
-    );
-
-    await addressRegistry.init();
-    const info = addressRegistry.info();
-
-    setStatus(status, 'BEV Fallback bereit', 'success');
-    $('addressSearchStatus').textContent =
-      `${number0.format(info.address_count)} Adressen · Stand ${info.dataset_date ?? '–'} · nur Fallback/Vergleich`;
-
-    if (selectedAddress && isTirisProvider(selectedAddressProvider)) {
-      compareSelectedAddressWithBev(selectedAddress);
-    }
-  } catch (error) {
-    setStatus(status, 'Adressmodul Fehler', 'error');
-    $('addressSearchStatus').textContent = error.message;
-    console.error(error);
-  }
-}
-
-async function runAddressSearch() {
-  if (!addressRegistry) return;
-
-  const input = $('addressSearchInput');
-  const query = input.value.trim();
-  const suggestions = $('addressSuggestions');
-
-  if (query.length < 3) {
-    suggestions.hidden = true;
-    suggestions.innerHTML = '';
-    return;
-  }
-
-  try {
-    const result = await addressRegistry.search(query, { limit: 8 });
-    const records = result.results ?? [];
-
-    suggestions.innerHTML = '';
-
-    if (records.length === 0) {
-      suggestions.hidden = true;
-      $('addressSearchStatus').textContent = result.guidance || 'Keine Adresse gefunden.';
-      return;
-    }
-
-    records.forEach((record) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'suggestion-button';
-      button.setAttribute('role', 'option');
-
-      const coordinateInfo = record.coordinate_kind === 'building'
-        ? 'Gebäudekoordinate'
-        : 'Zugangskoordinate';
-
-      button.innerHTML = `
-        <strong>${escapeHtml(record.label)}</strong>
-        <small>${escapeHtml(coordinateInfo)} · ${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)}</small>
-      `;
-
-      button.addEventListener('click', () => selectAddress(record, 'bev'));
-      suggestions.appendChild(button);
+    bevSuggestionProvider = new window.BevLocalAddressProvider({
+      baseUrl: '../../shared/data/addresses',
+    });
+    tirisLiveAddressProvider = new window.TirisLiveAddressProvider();
+    hybridAddressProvider = new window.HybridAddressProvider({
+      suggestionProvider: bevSuggestionProvider,
+      liveProvider: tirisLiveAddressProvider,
     });
 
-    suggestions.hidden = false;
-    input.setAttribute('aria-expanded', 'true');
-    $('addressSearchStatus').textContent = `${records.length} Vorschläge gefunden.`;
-  } catch (error) {
-    suggestions.hidden = true;
-    $('addressSearchStatus').textContent = `Adresssuche fehlgeschlagen: ${error.message}`;
-  }
-}
+    addressRegistry = new window.AddressProviderCore.AddressProviderRegistry();
+    addressRegistry.register(hybridAddressProvider);
+    await addressRegistry.init();
 
-function isTirisProvider(provider) {
-  return String(provider ?? '').startsWith('tiris');
+    const info = addressRegistry.info();
+    setStatus($('tirisLiveAddressStatus'), 'bereit', 'success');
+    $('tirisParsedAddress').textContent =
+      `${number0.format(info.address_count)} BEV-Adressen · Stand ${info.dataset_date ?? '–'} · ausgewählte Adressen werden live mit TIRIS bestätigt.`;
+
+    if (selectedAddress) compareSelectedAddressWithBev(selectedAddress);
+    } catch (error) {
+      addressModuleReadyPromise = null;
+      setStatus($('tirisLiveAddressStatus'), 'Adressmodul Fehler', 'error');
+      $('tirisParsedAddress').textContent = error.message;
+      console.error(error);
+      return null;
+    }
+  })();
+
+  return addressModuleReadyPromise;
 }
 
 function selectAddress(record, provider = 'bev') {
   selectedAddress = record;
-  selectedAddressProvider = provider;
   buildingFeatures = [];
   selectedBuildingId = null;
   if ($('solarObserverMode')) $('solarObserverMode').value = 'auto';
 
-  if (!isTirisProvider(provider)) {
-    $('addressSearchInput').value = record.label;
-    $('addressSuggestions').hidden = true;
-    $('addressSearchInput').setAttribute('aria-expanded', 'false');
-  } else {
-    $('tirisLiveAddressInput').value = record.label;
-    $('tirisLiveAddressResults').hidden = true;
-  }
+  $('tirisLiveAddressInput').value = record.label;
+  closeSharedAddressSuggestions();
 
-  const sourceLabel = isTirisProvider(provider) ? 'TIRIS live' : 'BEV Fallback';
+  const sourceLabel = addressSourceLabel(record, provider);
   const stand = record.dataset_date ? ` · Stand ${record.dataset_date}` : '';
   const updated = record.updated_at ? ` · aktualisiert ${record.updated_at}` : '';
 
@@ -921,14 +729,13 @@ function selectAddress(record, provider = 'bev') {
 }
 
 function clearAddress() {
+  addressSearchSequence += 1;
   selectedAddress = null;
-  selectedAddressProvider = null;
   selectedKgResult = null;
-  $('addressSearchInput').value = '';
   $('tirisLiveAddressInput').value = '';
   $('selectedAddressCard').hidden = true;
   $('liveAddressChecks').hidden = true;
-  $('tirisLiveAddressResults').hidden = true;
+  closeSharedAddressSuggestions();
   $('rawAddress').textContent = '–';
   $('rawTirisLiveAddress').textContent = '–';
   $('rawKg').textContent = '–';
@@ -953,8 +760,8 @@ function clearAddress() {
   setStatus($('heritageStatus'), 'Adresse fehlt');
   setStatus($('radonStatus'), 'Adresse fehlt');
   setStatus($('climateAnalysisStatus'), 'Adresse fehlt');
-  setStatus($('tirisLiveAddressStatus'), 'nicht geprüft');
-  $('tirisParsedAddress').textContent = 'Noch keine Adresse zerlegt.';
+  setStatus($('tirisLiveAddressStatus'), addressRegistry ? 'bereit' : 'nicht geprüft', addressRegistry ? 'success' : 'muted');
+  $('tirisParsedAddress').textContent = 'Mindestens drei Zeichen eingeben. Die gewählte Adresse wird live mit TIRIS abgeglichen.';
   resetBuildingOutput();
   resetTirisAddressLayerOutput();
   resetTerrainOutput();
@@ -1854,7 +1661,7 @@ async function loadTerrain() {
 
   try {
     if (!window.LocationCore?.fetchElevation) {
-      throw new Error('Bestehendes location-core.js wurde nicht geladen.');
+      throw new Error('Gemeinsamer Standortservice wurde nicht geladen.');
     }
 
     const result = await window.LocationCore.fetchElevation(
@@ -4340,18 +4147,17 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+$('tirisLiveAddressInput').addEventListener('input', () => {
+  window.clearTimeout(addressSearchTimer);
+  addressSearchTimer = window.setTimeout(() => searchSharedAddress(), 180);
+});
 $('tirisLiveAddressInput').addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
     event.preventDefault();
-    searchTirisLiveAddress();
+    searchSharedAddress();
   }
 });
-$('searchTirisLiveAddressButton').addEventListener('click', searchTirisLiveAddress);
-
-$('addressSearchInput').addEventListener('input', () => {
-  window.clearTimeout(addressSearchTimer);
-  addressSearchTimer = window.setTimeout(runAddressSearch, 180);
-});
+$('searchTirisLiveAddressButton').addEventListener('click', () => searchSharedAddress());
 
 $('clearAddressButton').addEventListener('click', clearAddress);
 $('testBasisButton').addEventListener('click', testBasisService);
@@ -4399,13 +4205,13 @@ window.StandortpassCore = Object.freeze({
   },
   async searchAndSelectAddress(label) {
     if (!label) return false;
-    $('tirisLiveAddressInput').value = label;
-    const results = await searchTirisLiveAddress({
+    const result = await searchSharedAddress({
+      query: label,
       autoSelectBest: true,
       expectedLabel: label,
-      provider: 'tiris-live',
+      provider: 'hybrid-project-import',
     });
-    return Boolean(selectedAddress && Array.isArray(results));
+    return Boolean(selectedAddress && result);
   },
   clearAddress,
   loadBuildings,
@@ -4423,4 +4229,4 @@ window.StandortpassCore = Object.freeze({
   },
 });
 
-initAddressModule();
+initAddressModule().catch(() => {});
