@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Energiefluss V4 | Tools für Energieberatung</title>
+  <meta name="description" content="Verbrauchsbasierter Energiefluss mit gemeinsamer Projektbasis, Gebäudegeometrie und nachvollziehbarer Bauteilverteilung.">
+  <link rel="stylesheet" href="../../styles.css">
+  <link rel="stylesheet" href="../../shared/css/tokens.css">
+  <link rel="stylesheet" href="../../shared/css/components.css">
+  <link rel="stylesheet" href="../../shared/css/print.css">
+  <link rel="stylesheet" href="energiefluss-v4.css">
+</head>
+<body data-tool-mode="energy-flow-v4">
+  <header class="site-header no-print">
+    <div class="container header-inner">
+      <a href="../../index.html" class="circle-btn logo-circle" aria-label="Zur Startseite">
+        <img src="../../assets/svg/logo/logo_48.svg" alt="Tools für Energieberatung" width="74" height="74">
+      </a>
+      <nav aria-label="Hauptnavigation">
+        <ul class="nav-list">
+          <li><a class="circle-btn nav-circle" href="../../index.html" aria-label="Startseite"><img src="../../assets/svg/icons/icon-home-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle active" href="../../pages/tools.html" aria-label="Tools" aria-current="page"><img src="../../assets/svg/icons/icon-tools-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle" href="../../pages/about.html" aria-label="Über mich"><img src="../../assets/svg/icons/icon-about-48.svg" class="nav-icon" alt=""></a></li>
+          <li><a class="circle-btn nav-circle" href="../../pages/kontakt.html" aria-label="Kontakt"><img src="../../assets/svg/icons/icon-mail-48.svg" class="nav-icon" alt=""></a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="energy-v4-page">
+    <section class="container tool-intro no-print">
+      <p class="eyebrow">Tool · V4</p>
+      <h1>Energiefluss im Gebäude</h1>
+      <p>Verbrauch, Nutzung und gemeinsame Gebäudegeometrie werden zu einer nachvollziehbaren Energiebilanz verbunden. Bekannte Projektwerte werden übernommen; nur unsichere Werte müssen geprüft oder überschrieben werden.</p>
+    </section>
+
+    <div data-project-header></div>
+
+    <section class="container address-card no-print" data-address-section>
+      <div class="section-heading section-heading--compact">
+        <div>
+          <p class="eyebrow">Standort</p>
+          <h2>Adresse und Gebäudegeometrie</h2>
+        </div>
+        <span class="status-chip" id="geometryStatus">Projektwerte werden geprüft</span>
+      </div>
+      <p class="section-note">Ist bereits ein Standortpass vorhanden, wird dessen bestätigte Geometrie direkt verwendet. Ohne Standortpass kann das Gebäude hier selbstständig über dieselbe gemeinsame TIRIS-Abfrage zugeordnet werden.</p>
+      <div class="address-search-row">
+        <label>
+          <span>Adresse suchen</span>
+          <input id="v4AddressInput" type="search" autocomplete="off" placeholder="z. B. 6123 Dorfstraße 1">
+        </label>
+        <button class="quiet-button" id="v4UseProjectAddress" type="button">Projektadresse übernehmen</button>
+      </div>
+      <small id="v4AddressStatus">Die Eingabe bleibt während des Tippens unverändert; gesucht wird nach einer kurzen Pause.</small>
+      <div class="address-results" id="v4AddressResults" hidden></div>
+      <div class="building-candidates" id="v4BuildingCandidates" hidden></div>
+    </section>
+
+    <section class="container v4-workspace no-print" aria-label="Arbeitsoberfläche Energiefluss V4">
+      <div class="v4-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">1 · Gebäudebasis</p>
+            <h2>Werte prüfen, nicht neu erfassen</h2>
+          </div>
+          <a class="tool-link" href="../standortpass/index.html">Geometrie im Standortpass vertiefen →</a>
+        </div>
+        <p class="section-note">Manuelle Angaben gelten projektweit. Der automatische Ursprungswert bleibt erhalten und kann jederzeit wieder verwendet werden.</p>
+        <div class="value-grid value-grid--four">
+          <div class="v4-value-field" data-project-path="building.geometry.heatedFloorArea" data-kind="number" data-unit="m²" data-digits="0" data-label="Beheizte Nutzfläche"></div>
+          <div class="v4-value-field" data-project-path="building.geometry.grossFloorArea" data-kind="number" data-unit="m²" data-digits="0" data-label="Bruttogeschoßfläche"></div>
+          <div class="v4-value-field" data-project-path="building.geometry.grossVolume" data-kind="number" data-unit="m³" data-digits="0" data-label="Gebäudevolumen"></div>
+          <div class="v4-value-field" data-project-path="usage.household.persons" data-kind="number" data-unit="Personen" data-digits="0" data-label="Personen"></div>
+        </div>
+      </div>
+
+      <div class="v4-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">2 · Verbrauch und Nutzung</p>
+            <h2>Verbrauchsbasierte Ausgangslage</h2>
+          </div>
+          <a class="tool-link" href="../heizlast/index.html">Zur Heizlastabschätzung →</a>
+        </div>
+        <div class="value-grid value-grid--four">
+          <div class="v4-value-field" data-project-path="consumption.heating.annualEnergy" data-kind="number" data-unit="kWh/a" data-digits="0" data-label="Heizenergieverbrauch"></div>
+          <div class="v4-value-field" data-project-path="systems.heating.usefulHeatFactor" data-kind="number" data-unit="" data-digits="2" data-step="0.01" data-min="0.01" data-max="1" data-label="Jahresnutzungsgrad"></div>
+          <div class="v4-value-field" data-project-path="systems.heating.hotWaterIncluded" data-kind="boolean-select" data-label="Warmwasser im Verbrauch"></div>
+          <div class="v4-value-field" data-project-path="building.thermal.indoorTemperature" data-kind="number" data-unit="°C" data-digits="1" data-step="0.5" data-min="10" data-max="30" data-label="Raumtemperatur"></div>
+          <div class="v4-value-field" data-project-path="building.thermal.heatedSharePercent" data-kind="number" data-unit="%" data-digits="0" data-step="1" data-min="0" data-max="100" data-label="Beheizter Anteil"></div>
+          <div class="v4-value-field" data-project-path="building.thermal.condition" data-kind="condition-select" data-label="Gebäudezustand / U-Wert-Fallback"></div>
+        </div>
+      </div>
+
+      <div class="v4-card v4-card--envelope">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">3 · Gebäudehülle</p>
+            <h2>Flächen und Bestands-U-Werte</h2>
+          </div>
+          <span class="section-badge">Bestand</span>
+        </div>
+        <p class="section-note">Die U-Werte verteilen den verbrauchsbasierten Bauteilverlust auf die Hüllflächen. Sie ersetzen keine Schichtberechnung. OGD und Dach beziehungsweise Kellerdecke und Boden dürfen gemeinsam aktiv sein, wenn sie tatsächlich unterschiedliche Teilflächen bilden.</p>
+        <div class="envelope-table-wrap">
+          <table class="envelope-table">
+            <thead>
+              <tr>
+                <th>Aktiv</th>
+                <th>Bauteil</th>
+                <th>Fläche</th>
+                <th>U-Wert</th>
+                <th>UA-Anteil</th>
+                <th>Verlust</th>
+              </tr>
+            </thead>
+            <tbody id="envelopeRows"></tbody>
+          </table>
+        </div>
+        <div class="envelope-summary">
+          <span>Summe UA: <strong id="totalUa">–</strong></span>
+          <span>Kalibrierfaktor: <strong id="calibrationFactor">–</strong></span>
+          <span>Bauteilverluste: <strong id="componentLossTotal">–</strong></span>
+        </div>
+      </div>
+
+      <div class="v4-card v4-card--results">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">4 · Ergebnis</p>
+            <h2>Energiefluss und Verbrauchscheck</h2>
+          </div>
+          <span class="section-badge section-badge--berry" id="balanceBadge">Bilanz wird berechnet</span>
+        </div>
+
+        <div class="result-kpis">
+          <article><span>HWB aus Verbrauch</span><strong id="hwbConsumption">–</strong><small>Raumwärme / BGF</small></article>
+          <article><span>HWB korrigiert</span><strong id="hwbCorrected">–</strong><small>Raumtemperatur und beheizter Anteil</small></article>
+          <article><span>Spezifischer Verbrauch</span><strong id="specificDelivered">–</strong><small>Endenergie / beheizte Fläche</small></article>
+          <article><span>Raumwärme</span><strong id="roomHeatTotal">–</strong><small>Nutzwärme nach Warmwasserabzug</small></article>
+        </div>
+
+        <div class="flow-layout">
+          <div class="flow-column">
+            <h3>Einträge</h3>
+            <div id="gainFlow"></div>
+          </div>
+          <div class="flow-house">
+            <img src="../../shared/assets/energy-flow-house.svg" alt="Stilisierte Darstellung eines Gebäudes">
+            <div class="flow-house-total"><span>Bilanzsumme</span><strong id="flowTotal">–</strong></div>
+          </div>
+          <div class="flow-column">
+            <h3>Verluste</h3>
+            <div id="lossFlow"></div>
+          </div>
+        </div>
+
+        <div class="warnings" id="v4Warnings" hidden></div>
+        <p class="calibration-note">Die Bestandsbilanz wird am eingegebenen Verbrauch kalibriert. Dadurch bleibt der gemessene Gesamtverbrauch erhalten; Flächen und U-Werte bestimmen die nachvollziehbare Aufteilung und bilden die Grundlage für spätere Maßnahmenvarianten.</p>
+      </div>
+
+      <details class="v4-methodology">
+        <summary>Methodik, Annahmen und Grenzen</summary>
+        <div class="methodology-grid">
+          <div><h3>Verbrauchsbilanz</h3><p>Heizenergie × Jahresnutzungsgrad ergibt die Nutzwärme. Ist Warmwasser enthalten, werden derzeit 1.000 kWh je Person und Jahr abgezogen. Die übrige Raumwärme wird auf BGF beziehungsweise beheizte Nutzfläche bezogen.</p></div>
+          <div><h3>Bauteilverteilung</h3><p>Nach Lüftung, Anlage und Warmwasser verbleibt der verbrauchsbasierte Hüllverlust. Er wird über U × A auf die aktivierten Bauteile verteilt. Wärmebrücken werden als 7,5 % der Bauteilverluste angesetzt.</p></div>
+          <div><h3>Sichtbare Fallbacks</h3><p>Fehlen Projektwerte, verwendet V4 austauschbare Annahmen aus einer zentralen Datendatei. Sie bleiben sichtbar, können überschrieben werden und werden nie als amtliche Daten dargestellt.</p></div>
+          <div><h3>Abgrenzung</h3><p>Das Tool ist eine überschlägige Beratungshilfe und kein Energieausweis. Die Bestands-U-Werte kalibrieren die Verlustaufteilung; eine Sanierungsmaßnahme wird später als eigenes Szenario mit unverändertem Kalibrierfaktor gerechnet.</p></div>
+        </div>
+      </details>
+    </section>
+
+    <section class="container v4-print-report print-only" id="v4PrintReport" aria-label="Druckbericht Energiefluss V4"></section>
+    <div data-report-actions data-report-actions-label="Drucken / PDF"></div>
+  </main>
+
+  <footer class="site-footer no-print">
+    <div class="container footer-inner">
+      <div><p class="footer-name">Tools</p><p class="footer-note">Energiefluss V4 · gemeinsame Projektbasis</p></div>
+      <nav class="footer-links" aria-label="Rechtliche Informationen"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav>
+      <p class="copyright">© <span id="year">2026</span></p>
+    </div>
+  </footer>
+
+  <script src="../../script.js"></script>
+  <script src="../../shared/js/paths.js?v=1"></script>
+  <script src="../../shared/js/data-model.js?v=2"></script>
+  <script src="../../shared/js/project-migrations.js?v=1"></script>
+  <script src="../../shared/js/value-resolver.js?v=1"></script>
+  <script src="../../shared/js/project-store.js?v=2"></script>
+  <script src="../../shared/js/project-header.js?v=2"></script>
+  <script src="../../shared/js/project-address-manager.js?v=1"></script>
+  <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
+  <script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script>
+  <script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
+  <script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
+  <script src="../../shared/js/services/building-geometry-service.js?v=1"></script>
+  <script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=1"></script>
+  <script src="energiefluss-v4.js?v=1"></script>
+</body>
+</html>

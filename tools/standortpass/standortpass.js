@@ -31,8 +31,9 @@ const TIRIS_BASIS_URL =
   'Service_Public/ogd_basis/MapServer';
 
 const TIRIS_BUILDING_QUERY_URL =
-  'https://services3.arcgis.com/hG7UfxX49PQ8XkXh/' +
-  'arcgis/rest/services/Gebaeude/FeatureServer/0/query';
+  window.EnergyToolsBuildingGeometryService?.QUERY_URL ||
+  ('https://services3.arcgis.com/hG7UfxX49PQ8XkXh/' +
+  'arcgis/rest/services/Gebaeude/FeatureServer/0/query');
 
 const TIRIS_ADDRESS_TEST_LAYERS = [
   { id: 13, label: 'Adressen · NS ADR_PT' },
@@ -219,18 +220,19 @@ const RADON_RIS_URL =
 const RADON_INFO_ENERGIE_TIROL_URL =
   'https://www.energieagentur.tirol/uploads/tx_bh/608/infoblatt_radon_web_nov_2020.pdf';
 
-const BUILDING_FIELDS = [
-  'OBJECTID',
-  'GEMNR',
-  'STAND',
-  'GEB_HOEHE_MAX',
-  'GEB_HOEHE_MEDIAN',
-  'DOM_MAX',
-  'DOM_MEDIAN',
-  'UPDATETIMESTAMP',
-  'Shape__Area',
-  'Shape__Length',
-].join(',');
+const BUILDING_FIELDS =
+  window.EnergyToolsBuildingGeometryService?.BUILDING_FIELDS || [
+    'OBJECTID',
+    'GEMNR',
+    'STAND',
+    'GEB_HOEHE_MAX',
+    'GEB_HOEHE_MEDIAN',
+    'DOM_MAX',
+    'DOM_MEDIAN',
+    'UPDATETIMESTAMP',
+    'Shape__Area',
+    'Shape__Length',
+  ].join(',');
 
 let addressRegistry = null;
 let bevSuggestionProvider = null;
@@ -977,6 +979,17 @@ function buildBuildingQueryUrl(address, radiusM = null) {
 }
 
 async function fetchBuildingsAtRadius(radiusM = null) {
+  const service = window.EnergyToolsBuildingGeometryService;
+  if (service?.query) {
+    const result = await service.query(selectedAddress, { radiusM });
+    return {
+      radius_m: radiusM,
+      request_url: result.requestUrl,
+      response: result.payload,
+      features: result.features,
+    };
+  }
+
   const url = buildBuildingQueryUrl(selectedAddress, radiusM);
   const payload = await fetchJson(url);
   return {

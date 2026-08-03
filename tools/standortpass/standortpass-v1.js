@@ -61,6 +61,10 @@
 
   function selectedBuildingShared(feature, selectionMode = core.getSelectedBuildingSelectionMode?.() || 'manual') {
     if (!feature) return null;
+    const geometryService = window.EnergyToolsBuildingGeometryService;
+    if (geometryService?.toProjectBuilding) {
+      return geometryService.toProjectBuilding(feature, selectionMode);
+    }
     const attrs = feature.attributes || {};
     const perimeter = Number(attrs.Shape__Length);
     const medianHeight = Number(attrs.GEB_HOEHE_MEDIAN);
@@ -103,6 +107,43 @@
         }),
       },
     };
+  }
+
+  function preserveManualFields(next, previous) {
+    if (Array.isArray(next)) return clone(next);
+    if (!next || typeof next !== 'object') return clone(next);
+    const output = clone(next);
+    Object.entries(previous ?? {}).forEach(([key, oldValue]) => {
+      if (valueResolver.isField(oldValue)) {
+        const manual = oldValue.candidates?.[model.ORIGIN.MANUAL];
+        if (!manual) return;
+        const base = valueResolver.isField(output[key])
+          ? output[key]
+          : model.field(null, { unit: oldValue.unit ?? null });
+        base.candidates = { ...(base.candidates ?? {}), [model.ORIGIN.MANUAL]: clone(manual) };
+        output[key] = model.finalizeField(base);
+      } else if (oldValue && typeof oldValue === 'object' && !Array.isArray(oldValue)) {
+        output[key] = preserveManualFields(output[key] ?? {}, oldValue);
+      }
+    });
+    return output;
+  }
+
+  function mergeSelectedBuilding(feature, selectionMode) {
+    const previous = store.get().building || {};
+    const selected = selectedBuildingShared(feature, selectionMode) || { identity: {}, geometry: {} };
+    const merged = preserveManualFields(selected, previous);
+    // Die thermische Bestandsbeschreibung gehört nicht der Gebäudezuordnung.
+    // Sie bleibt deshalb bei einer anderen TIRIS-Auswahl vollständig erhalten.
+    merged.thermal = clone(previous.thermal || merged.thermal || { envelope: {} });
+    return merged;
+  }
+
+  function clearSelectedBuildingPreservingProjectValues() {
+    const previous = store.get().building || {};
+    const cleared = preserveManualFields({ identity: {}, geometry: {} }, previous);
+    cleared.thermal = clone(previous.thermal || { envelope: {} });
+    return cleared;
   }
 
   function compactSolarShared() {
@@ -956,7 +997,7 @@
   window.addEventListener('standortpass:building-selected', (event) => {
     const feature = event.detail?.feature;
     const selectionMode = event.detail?.selectionMode || 'manual';
-    if (feature && !hydrationRunning) store.setPath('building', selectedBuildingShared(feature, selectionMode));
+    if (feature && !hydrationRunning) store.setPath('building', mergeSelectedBuilding(feature, selectionMode));
     renderGeometryEstimates();
     if (reportHasRun && !reportRunning) {
       setReportStatus('aktualisieren');
@@ -967,7 +1008,7 @@
   });
 
   window.addEventListener('standortpass:building-cleared', () => {
-    if (!hydrationRunning) store.setPath('building', {});
+    if (!hydrationRunning) store.setPath('building', clearSelectedBuildingPreservingProjectValues());
     renderGeometryEstimates();
     syncProjectFromUi();
   });

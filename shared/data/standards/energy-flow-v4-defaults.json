@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "data_date": "2026-08-03",
+  "title": "Sichtbare Fallbackannahmen Energiefluss V4",
+  "note": "Die Werte sind bewusst grobe, austauschbare Beratungsannahmen. Sie sind keine Bauteilberechnung, kein Energieausweis und keine normative Zuordnung nach Baujahr.",
+  "assumptions": {
+    "heated_floor_area_m2": 120,
+    "persons": 4,
+    "annual_heating_energy_kwh": 25000,
+    "useful_heat_factor": 0.85,
+    "hot_water_included": true,
+    "indoor_temperature_c": 22,
+    "heated_share_percent": 100,
+    "storeys": 2,
+    "usable_floor_area_factor_percent": 75,
+    "window_share_percent": 20,
+    "storey_height_m": 3.2,
+    "internal_gains_w_m2": 2.7,
+    "solar_radiation_factor_kwh_m2a": 175,
+    "glazing_share": 0.7,
+    "solar_utilization_factor": 1.0,
+    "ventilation_loss_kwh_m3a": 10,
+    "hot_water_kwh_person_a": 1000,
+    "thermal_bridge_share": 0.075
+  },
+  "u_value_profiles": {
+    "unsanierter_altbau": {
+      "label": "Unsanierter Altbau",
+      "exteriorWall": 1.4,
+      "windows": 2.8,
+      "topFloorCeiling": 1.0,
+      "roof": 1.0,
+      "basementCeiling": 1.2,
+      "groundFloor": 1.0
+    },
+    "teilsanierter_bestand": {
+      "label": "Teilsanierter Bestand",
+      "exteriorWall": 0.7,
+      "windows": 1.6,
+      "topFloorCeiling": 0.4,
+      "roof": 0.4,
+      "basementCeiling": 0.7,
+      "groundFloor": 0.7
+    },
+    "sanierter_bestand": {
+      "label": "Sanierter Bestand",
+      "exteriorWall": 0.3,
+      "windows": 1.1,
+      "topFloorCeiling": 0.2,
+      "roof": 0.2,
+      "basementCeiling": 0.35,
+      "groundFloor": 0.35
+    },
+    "neuerer_standard": {
+      "label": "Neuerer Standard / Neubau",
+      "exteriorWall": 0.2,
+      "windows": 0.9,
+      "topFloorCeiling": 0.15,
+      "roof": 0.15,
+      "basementCeiling": 0.25,
+      "groundFloor": 0.25
+    }
+  }
+}
