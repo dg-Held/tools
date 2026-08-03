@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "profile_schema_version": 1,
-  "coverage_mode": "demo",
-  "status": "demo_profiles_only",
+  "coverage_mode": "full",
+  "status": "yearly_packages_active",
   "source": "GeoSphere Austria INCA-v1-1h-1km T2M",
   "license": "CC BY 4.0",
   "years": [
@@ -24,7 +24,7 @@
   "parameter": "T2M",
   "grid_crs": "EPSG:31287",
   "grid_spacing_m": 1000,
-  "lookup_max_distance_m": 180,
+  "lookup_max_distance_m": 850,
   "frequency_min_c": -35,
   "frequency_max_c": 40,
   "frequency_bin_width_c": 1,
@@ -1062,7 +1062,7 @@
   ],
   "duration_temperature_scale": 100,
   "frequency_scale": 10,
-  "profile_count": 3,
+  "profile_count": 4907,
   "tiles": {
     "demo": "tiles/demo.json"
   },
@@ -1095,7 +1095,7 @@
       ]
     ]
   ],
-  "note": "Stufe 15 enthält zunächst drei reale Referenzprofile. Nach dem Vollauf schreibt das Precompute-Skript denselben Ordner mit vollständiger Tirol-Abdeckung neu.",
+  "note": "Vollständige Tirol-Abdeckung über jahresweise vorberechnete INCA-Pakete. Fehlende Einzeljahre werden im Browser gezielt live ergänzt.",
   "yearly_packages": {
     "schema_version": 1,
     "enabled": true,

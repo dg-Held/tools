@@ -366,14 +366,14 @@
     };
   }
 
-  function analyzeLocation(config, yearlyData) {
+  function analyzeYearlyData(config, yearlyData) {
     if (!Array.isArray(yearlyData) || yearlyData.length === 0) {
       throw new Error('Es wurden keine Jahresdaten übergeben.');
     }
 
     const tropicalNightsByYear = analyzeTropicalNights(yearlyData);
 
-    const annual = yearlyData
+    return yearlyData
       .map((yearData) =>
         analyzeYear(
           yearData,
@@ -382,7 +382,20 @@
         )
       )
       .sort((a, b) => a.year - b.year);
+  }
 
+  function buildResultFromAnnualAnalyses(
+    config,
+    annualAnalyses,
+    options = {}
+  ) {
+    if (!Array.isArray(annualAnalyses) || annualAnalyses.length === 0) {
+      throw new Error('Es wurden keine auswertbaren Jahreskennwerte übergeben.');
+    }
+
+    const annual = [...annualAnalyses].sort(
+      (a, b) => a.year - b.year
+    );
     const durationCurve = aggregateCurves(annual);
     const frequencyDistribution = aggregateFrequency(annual);
 
@@ -455,8 +468,9 @@
     };
 
     return {
-      schema_version: 4,
-      generated_at: new Date().toISOString(),
+      schema_version: Number(options.schema_version ?? 4),
+      generated_at:
+        options.generated_at ?? new Date().toISOString(),
       location: config,
       assumptions: {
         heating_limit_c: HEATING_LIMIT_C,
@@ -471,13 +485,17 @@
         full_load_hours_formula:
           'Σ max(0, (15 - Außentemperatur) / (15 - NAT))',
         note:
+          options.note ??
           'Hitze- und Nachtkennzahlen sind aus stündlichen INCA-Rasterwerten abgeleitet.',
       },
       data: {
-        source: 'GeoSphere Austria, INCA-v1-1h-1km, T2M',
-        license: 'CC BY 4.0',
+        source:
+          options.source ??
+          'GeoSphere Austria, INCA-v1-1h-1km, T2M',
+        license: options.license ?? 'CC BY 4.0',
         years: annual.map((item) => item.year),
         year_count: annual.length,
+        ...(options.data_extra ?? {}),
       },
       metrics: summary,
       annual_metrics: annual.map(
@@ -496,12 +514,21 @@
     };
   }
 
+  function analyzeLocation(config, yearlyData) {
+    return buildResultFromAnnualAnalyses(
+      config,
+      analyzeYearlyData(config, yearlyData)
+    );
+  }
+
   global.ClimateCore = {
     HEATING_LIMIT_C,
     NORMALIZED_HOURS,
     FREQUENCY_MIN_C,
     FREQUENCY_MAX_C,
     analyzeLocation,
+    analyzeYearlyData,
+    buildResultFromAnnualAnalyses,
     analyzeYear,
     interpolateSorted,
     quantile,

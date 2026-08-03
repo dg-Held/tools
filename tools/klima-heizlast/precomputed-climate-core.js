@@ -543,12 +543,24 @@
   }
 
   function findYearlyProfileReference(manifest, indexPayload, location) {
+    const gridSpacing = Number(
+      indexPayload?.grid_spacing_m ?? manifest.grid_spacing_m ?? 1000
+    );
+    const geometricMaximum = Number.isFinite(gridSpacing)
+      ? Math.ceil((gridSpacing * Math.SQRT2) / 2 + 100)
+      : 850;
+    const lookupMaximum = Math.max(
+      850,
+      geometricMaximum,
+      Number(indexPayload?.lookup_max_distance_m ?? 0),
+      Number(manifest.lookup_max_distance_m ?? 0)
+    );
+
     return findProfileReference({
       ...manifest,
       coverage_mode: 'full',
       index: indexPayload?.index ?? [],
-      lookup_max_distance_m:
-        indexPayload?.lookup_max_distance_m ?? manifest.lookup_max_distance_m,
+      lookup_max_distance_m: lookupMaximum,
     }, location);
   }
 
@@ -569,6 +581,120 @@
       throw new Error(`Jahrespaket ${year}: Profil ${profileId} fehlt.`);
     }
     return { yearManifest, profile };
+  }
+
+
+  async function loadYearlyParts(manifest, location) {
+    const period = periodInfo(manifest);
+    if (!period.years.length) {
+      return {
+        manifest,
+        period,
+        reference: null,
+        loadedYears: [],
+        missingYears: [],
+        errors: [],
+        annualAnalyses: [],
+      };
+    }
+
+    const indexPayload = await loadYearlyIndex(manifest);
+    const reference = findYearlyProfileReference(
+      manifest,
+      indexPayload,
+      location
+    );
+
+    if (!reference) {
+      return {
+        manifest,
+        period,
+        reference: null,
+        loadedYears: [],
+        missingYears: [...period.years],
+        errors: [{
+          year: null,
+          message: 'Für den Standort wurde kein INCA-Rasterpunkt innerhalb der zulässigen Distanz gefunden.',
+        }],
+        annualAnalyses: [],
+      };
+    }
+
+    const natC = Number(location.nat_c);
+    if (!finite(natC)) {
+      throw new Error('Für das vorberechnete Klimaprofil fehlt die NAT.');
+    }
+
+    const temperatureBins = Array.from(
+      {
+        length:
+          Number(manifest.frequency_max_c) -
+          Number(manifest.frequency_min_c) +
+          1,
+      },
+      (_, index) => Number(manifest.frequency_min_c) + index
+    );
+    const durationScale = Number(
+      manifest.duration_temperature_scale ?? 100
+    );
+
+    const loadedYears = [];
+    const missingYears = [];
+    const errors = [];
+    const annualAnalyses = [];
+
+    for (const year of period.years) {
+      try {
+        const loaded = await loadYearPackage(
+          manifest,
+          year,
+          reference.tile_id,
+          reference.profile_id
+        );
+        loadedYears.push({ year, ...loaded });
+
+        const annual = unpackAnnual(
+          manifest,
+          loaded.profile.annual_row,
+          natC,
+          temperatureBins
+        );
+        const normalizedCurve = expandDurationCurve(
+          manifest.duration_sample_indices,
+          (loaded.profile.duration_q100 ?? []).map(
+            (value) => Number(value) / durationScale
+          ),
+          NORMALIZED_HOURS
+        );
+
+        annualAnalyses.push({
+          ...annual,
+          normalized_curve: normalizedCurve,
+          frequency_hours: annual._frequency_hours,
+        });
+        delete annualAnalyses.at(-1)._frequency_hours;
+      } catch (error) {
+        missingYears.push(year);
+        errors.push({ year, message: error.message });
+      }
+    }
+
+    return {
+      manifest,
+      period,
+      reference,
+      loadedYears,
+      loadedYearNumbers: loadedYears.map((item) => item.year),
+      missingYears,
+      errors,
+      annualAnalyses: annualAnalyses.sort((a, b) => a.year - b.year),
+      generatedAt:
+        loadedYears
+          .map(({ yearManifest }) => yearManifest.generated_at)
+          .filter(Boolean)
+          .sort()
+          .at(-1) ?? null,
+    };
   }
 
   function aggregateDurationSamples(manifest, samplesByYear) {
@@ -822,7 +948,18 @@
     const manifest = await loadManifest();
 
     if (manifest?.yearly_packages?.enabled) {
-      return buildYearlyClimateResult(manifest, location);
+      const parts = await loadYearlyParts(manifest, location);
+      if (!parts.reference) return { manifest, parts, result: null };
+      if (parts.missingYears.length) {
+        return {
+          manifest,
+          reference: parts.reference,
+          parts,
+          result: null,
+        };
+      }
+      const complete = await buildYearlyClimateResult(manifest, location);
+      return { ...complete, parts };
     }
 
     const reference = findProfileReference(manifest, location);
@@ -847,6 +984,7 @@
     findProfileReference,
     buildClimateResult,
     buildYearlyClimateResult,
+    loadYearlyParts,
     loadForLocation,
     expandDurationCurve,
   };

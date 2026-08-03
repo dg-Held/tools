@@ -452,7 +452,7 @@ def update_yearly_index(climate_dir: Path, targets: list[TargetPoint], manifest:
     write_json(climate_dir / "yearly" / "index.json", index_payload, pretty=False)
 
 
-def update_global_manifest(climate_dir: Path, manifest: dict, year: int):
+def update_global_manifest(climate_dir: Path, manifest: dict, year: int, profile_count: int):
     baseline_years = sorted(int(value) for value in manifest.get("years", []))
     yearly = manifest.setdefault("yearly_packages", {})
     yearly.setdefault("schema_version", 1)
@@ -480,6 +480,13 @@ def update_global_manifest(climate_dir: Path, manifest: dict, year: int):
 
     if baseline_complete:
         manifest["years"] = contiguous
+        manifest["coverage_mode"] = "full"
+        manifest["status"] = "yearly_packages_active"
+        manifest["profile_count"] = int(profile_count)
+        manifest["note"] = (
+            "Vollständige Tirol-Abdeckung über jahresweise vorberechnete INCA-Pakete. "
+            "Fehlende Einzeljahre werden im Browser gezielt live ergänzt."
+        )
         pending = sorted(set(generated) - set(contiguous))
         if pending:
             yearly["note"] = (
@@ -538,6 +545,14 @@ def main() -> int:
         raise SystemExit(f"Eingabeordner fehlt: {input_dir}")
 
     manifest = load_json(manifest_path)
+    # Bei einem 1-km-Raster kann ein beliebiger Standort geometrisch bis
+    # rund 707 m vom nächstgelegenen Rasterzentrum entfernt liegen. 180 m
+    # war nur für die frühere Demoabdeckung geeignet und würde reale
+    # Standorte unnötig in den Live-Fallback schicken.
+    manifest["lookup_max_distance_m"] = max(
+        850,
+        int(manifest.get("lookup_max_distance_m", 0) or 0),
+    )
     targets, tile_positions = discover_targets(climate_dir)
     files = discover_input_files(input_dir)
     if not files:
@@ -606,7 +621,7 @@ def main() -> int:
     }
     write_json(climate_dir / "yearly" / f"{args.year}.json", year_manifest, pretty=True)
     update_yearly_index(climate_dir, targets, manifest)
-    update_global_manifest(climate_dir, manifest, args.year)
+    update_global_manifest(climate_dir, manifest, args.year, len(targets))
     update_tool_datenstand(climate_dir, manifest)
 
     print()

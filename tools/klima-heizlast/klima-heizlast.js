@@ -1563,18 +1563,19 @@ async function loadLocation(location, progressState) {
   let climateResult = null;
   let yearlyData = [];
   let climateLoadSource = 'yearly-fallback';
+  let precomputedParts = null;
 
   /*
-    Stufe 15:
-    Zuerst wird ein statisch vorbereitetes Klimaprofil gesucht.
-    Ist für den Standort noch keines vorhanden, bleibt die komplette
-    Live-GeoSphere-Kette aus Stufe 14 als Rückfallebene erhalten.
+    Stufe 16:
+    Jahrespakete werden zuerst einzeln geprüft. Sind nur einzelne Jahre
+    nicht verfügbar, werden ausschließlich diese Jahre live geladen und
+    anschließend mit den vorberechneten Jahresanalysen kombiniert.
   */
   try {
     setProgress(
       progressState.done,
       progressState.total,
-      `${location.name}: vorbereitetes Klimaprofil wird gesucht …`
+      `${location.name}: vorberechnete Jahrespakete werden gesucht …`
     );
 
     const precomputed =
@@ -1582,9 +1583,11 @@ async function loadLocation(location, progressState) {
         location
       );
 
+    precomputedParts = precomputed?.parts ?? null;
+
     if (precomputed?.result) {
       climateResult = precomputed.result;
-      climateLoadSource = 'precomputed';
+      climateLoadSource = 'precomputed-yearly';
 
       progressState.done +=
         END_YEAR - START_YEAR + 1;
@@ -1594,6 +1597,98 @@ async function loadLocation(location, progressState) {
         progressState.total,
         `${location.name}: Klimaprofil ${climatePeriodLabel()} sofort geladen`
       );
+    } else if (
+      precomputedParts?.reference &&
+      precomputedParts.annualAnalyses?.length
+    ) {
+      const preparedYears =
+        precomputedParts.loadedYearNumbers ??
+        precomputedParts.annualAnalyses.map((item) => item.year);
+      const missingYears =
+        precomputedParts.missingYears ?? [];
+
+      progressState.done += preparedYears.length;
+      setProgress(
+        progressState.done,
+        progressState.total,
+        `${location.name}: ${preparedYears.length} Jahre vorbereitet · ${missingYears.length} Jahre werden live ergänzt …`
+      );
+
+      const liveYearlyData = [];
+      for (const year of missingYears) {
+        const result = await loadYear(location, year);
+        liveYearlyData.push(result.data);
+        progressState.done += 1;
+
+        setProgress(
+          progressState.done,
+          progressState.total,
+          `${location.name}: ${year} ${result.fromCache ? 'aus Zwischenspeicher' : 'live geladen'}`
+        );
+      }
+
+      const liveAnalyses = liveYearlyData.length
+        ? ClimateCore.analyzeYearlyData(
+            location,
+            liveYearlyData
+          )
+        : [];
+      const allAnalyses = [
+        ...precomputedParts.annualAnalyses,
+        ...liveAnalyses,
+      ].sort((a, b) => a.year - b.year);
+
+      const liveGridCoordinates =
+        liveYearlyData.find((item) => item.grid_coordinates)
+          ?.grid_coordinates ?? null;
+      const reference = precomputedParts.reference;
+
+      climateResult =
+        ClimateCore.buildResultFromAnnualAnalyses(
+          {
+            ...location,
+            grid_longitude:
+              liveGridCoordinates?.[0] ??
+              reference.grid_longitude ?? null,
+            grid_latitude:
+              liveGridCoordinates?.[1] ??
+              reference.grid_latitude ?? null,
+            start_year: START_YEAR,
+            end_year: END_YEAR,
+            climate_load_source:
+              'precomputed-yearly+live-years',
+            precomputed_profile_id:
+              reference.profile_id,
+            precomputed_distance_m:
+              reference.distance_m ?? null,
+          },
+          allAnalyses,
+          {
+            schema_version: 5,
+            generated_at:
+              precomputedParts.generatedAt ??
+              new Date().toISOString(),
+            source:
+              'GeoSphere Austria, INCA-v1-1h-1km, T2M · vorberechnete Jahrespakete mit Live-Ergänzung',
+            license: 'CC BY 4.0',
+            note:
+              'Vorhandene Jahre wurden aus statischen Jahrespaketen geladen. Ausschließlich fehlende oder beschädigte Jahre wurden live über GeoSphere ergänzt.',
+            data_extra: {
+              precomputed: true,
+              yearly_packages: true,
+              mixed_sources: true,
+              precomputed_years: [...preparedYears],
+              live_years: [...missingYears],
+            },
+          }
+        );
+      climateLoadSource = 'precomputed-yearly+live-years';
+
+      setProgress(
+        progressState.done,
+        progressState.total,
+        `${location.name}: ${climatePeriodLabel()} aus Jahrespaketen und ${missingYears.length} Live-Jahr(en) kombiniert`
+      );
     }
   } catch (precomputedError) {
     /*
@@ -1601,16 +1696,16 @@ async function loadLocation(location, progressState) {
       Beratungstool niemals blockieren.
     */
     console.warn(
-      'Vorberechnetes Klimaprofil nicht verfügbar. ' +
-      'Live-GeoSphere wird verwendet.',
+      'Vorberechnete Klimadaten nicht vollständig verfügbar. ' +
+      'Live-GeoSphere bleibt als Rückfallebene aktiv.',
       precomputedError
     );
   }
 
   if (!climateResult) {
     /*
-      Bewährter Live-Schnellweg aus Stufe 12–14:
-      zuerst Gesamtzeitraum in einer Anfrage, danach Jahres-Fallback.
+      Falls gar kein vorberechnetes Profil zugeordnet werden konnte,
+      bleibt der bewährte Live-Schnellweg für den Gesamtzeitraum erhalten.
     */
     try {
       setProgress(
