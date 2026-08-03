@@ -1,7 +1,9 @@
 'use strict';
 
 (function initHeatingCore(global) {
-  const HEATING_LIMIT_C = 15;
+  const DEFAULT_HEATING_LIMIT_C = 15;
+  const MIN_HEATING_LIMIT_C = 8;
+  const MAX_HEATING_LIMIT_C = 18;
 
   const BUILDING_RANGES = {
     unsanierter_altbau: {
@@ -36,6 +38,32 @@
     return Math.max(number, 0);
   }
 
+
+  function clamp(value, minimum, maximum) {
+    return Math.min(maximum, Math.max(minimum, value));
+  }
+
+  function suggestHeatingLimitFromSpecificHeat(specificHeatKwhM2a) {
+    const value = finite(specificHeatKwhM2a);
+    if (value === null || value < 0) return DEFAULT_HEATING_LIMIT_C;
+    if (value > 150) return 16;
+    if (value >= 100) return 15;
+    if (value >= 50) return 14;
+    if (value >= 25) return 13;
+    return 12;
+  }
+
+  function equivalentFullLoadHours(medianTemperatures, heatingLimitC, natC) {
+    if (!(natC < heatingLimitC)) return 0;
+    return medianTemperatures.reduce((sum, temperature) => {
+      const relativeLoad = Math.max(
+        0,
+        (heatingLimitC - temperature) / (heatingLimitC - natC)
+      );
+      return sum + relativeLoad;
+    }, 0);
+  }
+
   function quantileSorted(sortedValues, probability) {
     if (!Array.isArray(sortedValues) || sortedValues.length === 0) {
       return null;
@@ -61,17 +89,53 @@
       throw new Error('Für die Heizlastabschätzung fehlen Klimadaten.');
     }
 
-    const fullLoadHours = positive(
+    const baselineFullLoadHours = positive(
       climateResult.metrics.average_full_load_hours
     );
 
-    if (!(fullLoadHours > 0)) {
-      throw new Error('Die klimatischen Vollbenutzungsstunden sind ungültig.');
+    const natC = finite(climateResult.location?.nat_c);
+    const requestedHeatingLimitC = finite(
+      inputs.heating_limit_c,
+      DEFAULT_HEATING_LIMIT_C
+    );
+    const heatingLimitC = clamp(
+      requestedHeatingLimitC,
+      MIN_HEATING_LIMIT_C,
+      MAX_HEATING_LIMIT_C
+    );
+
+    if (!(natC < heatingLimitC)) {
+      throw new Error('Normaußentemperatur und Heizgrenztemperatur sind nicht plausibel.');
     }
 
-    const natC = finite(climateResult.location?.nat_c);
-    if (!(natC < HEATING_LIMIT_C)) {
-      throw new Error('Die Normaußentemperatur ist ungültig.');
+    const medianTemperatures =
+      climateResult.duration_curve.median_c
+        .map((value) => Number(value))
+        .filter(Number.isFinite);
+
+    const baselineCurveHours = equivalentFullLoadHours(
+      medianTemperatures,
+      DEFAULT_HEATING_LIMIT_C,
+      natC
+    );
+    const selectedCurveHours = equivalentFullLoadHours(
+      medianTemperatures,
+      heatingLimitC,
+      natC
+    );
+
+    /*
+      Der bisherige Wert bei 15 °C bleibt exakt erhalten. Bei einer manuellen
+      Heizgrenze wird er mit dem Verhältnis der medianen Temperaturkennlinien
+      skaliert. So bleiben bestehende Projekte vergleichbar, während Heizstunden,
+      Dauerlinie und Verbrauchsmethode dieselbe Heizgrenze verwenden.
+    */
+    const fullLoadHours = baselineFullLoadHours > 0 && baselineCurveHours > 0
+      ? baselineFullLoadHours * selectedCurveHours / baselineCurveHours
+      : selectedCurveHours;
+
+    if (!(fullLoadHours > 0)) {
+      throw new Error('Die klimatischen Vollbenutzungsstunden sind ungültig.');
     }
 
     const annualConsumptionKwh = positive(inputs.annual_consumption_kwh);
@@ -91,6 +155,12 @@
     const consumptionLoadKw = roomHeatKwh / fullLoadHours;
 
     const heatedAreaM2 = positive(inputs.heated_area_m2);
+    const specificRoomHeatKwhM2a = heatedAreaM2 > 0
+      ? roomHeatKwh / heatedAreaM2
+      : null;
+    const suggestedHeatingLimitC = suggestHeatingLimitFromSpecificHeat(
+      specificRoomHeatKwhM2a
+    );
     const buildingRange =
       BUILDING_RANGES[inputs.building_condition] ??
       BUILDING_RANGES.teilsanierter_bestand;
@@ -146,20 +216,15 @@
 
     const theoreticalFullLoadTemperatureC =
       dimensioningFactor !== null
-        ? HEATING_LIMIT_C -
-          dimensioningFactor * (HEATING_LIMIT_C - natC)
+        ? heatingLimitC -
+          dimensioningFactor * (heatingLimitC - natC)
         : null;
-
-    const medianTemperatures =
-      climateResult.duration_curve.median_c
-        .map((value) => Number(value))
-        .filter(Number.isFinite);
 
     const requiredPowerCurveKw = medianTemperatures.map((temperature) => {
       const relativeLoad = Math.max(
         0,
-        (HEATING_LIMIT_C - temperature) /
-          (HEATING_LIMIT_C - natC)
+        (heatingLimitC - temperature) /
+          (heatingLimitC - natC)
       );
       return referenceLoadKw * relativeLoad;
     });
@@ -209,9 +274,9 @@
 
     const minimumPowerThresholdTemperatureC =
       installedMinimumKw !== null && referenceLoadKw > 0
-        ? HEATING_LIMIT_C -
+        ? heatingLimitC -
           (installedMinimumKw / referenceLoadKw) *
-            (HEATING_LIMIT_C - natC)
+            (heatingLimitC - natC)
         : null;
 
     const warnings = [];
@@ -234,7 +299,10 @@
 
     return {
       assumptions: {
-        heating_limit_c: HEATING_LIMIT_C,
+        heating_limit_c: heatingLimitC,
+        default_heating_limit_c: DEFAULT_HEATING_LIMIT_C,
+        suggested_heating_limit_c: suggestedHeatingLimitC,
+        specific_room_heat_kwh_m2a: specificRoomHeatKwhM2a,
         hot_water_kwh_per_person: 1000,
         full_load_hours: fullLoadHours,
         nat_c: natC,
@@ -246,6 +314,8 @@
         hot_water_kwh: hotWaterKwh,
         room_heat_raw_kwh: roomHeatRawKwh,
         room_heat_kwh: roomHeatKwh,
+        specific_room_heat_kwh_m2a: specificRoomHeatKwhM2a,
+        suggested_heating_limit_c: suggestedHeatingLimitC,
         heat_load_kw: consumptionLoadKw,
       },
       area_method: {
@@ -299,7 +369,11 @@
 
   global.HeatingCore = {
     BUILDING_RANGES,
-    HEATING_LIMIT_C,
+    HEATING_LIMIT_C: DEFAULT_HEATING_LIMIT_C,
+    DEFAULT_HEATING_LIMIT_C,
+    MIN_HEATING_LIMIT_C,
+    MAX_HEATING_LIMIT_C,
+    suggestHeatingLimitFromSpecificHeat,
     calculateHeatingLoad,
   };
 })(window);

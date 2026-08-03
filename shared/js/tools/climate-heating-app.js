@@ -88,10 +88,13 @@ const state = {
   addressProviderReady: false,
   addressSearchSequence: 0,
   busy: false,
+  heatingLimitSuggestionC: 15,
+  heatingLimitManual: false,
 };
 
 const projectStore = window.EnergyToolsProjectStore ?? null;
 const projectModel = window.EnergyToolsDataModel ?? null;
+const projectValueResolver = window.EnergyToolsValueResolver ?? null;
 let projectHydrating = false;
 
 function sharedValue(value) {
@@ -193,6 +196,43 @@ function syncSharedManualLocation(location) {
   });
 }
 
+const HEATING_LIMIT_PATH = 'systems.heating.heatingLimitTemperature';
+
+function heatingLimitInfo(project = projectStore?.get()) {
+  const field = project?.systems?.heating?.heatingLimitTemperature;
+  return projectValueResolver?.describe(field) ?? {
+    value: null,
+    manualValue: null,
+    automaticValue: null,
+    isManual: false,
+  };
+}
+
+function specificRoomHeatFromInputs(inputs) {
+  const consumption = Math.max(Number(inputs?.annualConsumptionKwh) || 0, 0);
+  const factor = Math.max(Number(inputs?.usefulHeatFactor) || 0, 0);
+  const persons = Math.max(Number(inputs?.persons) || 0, 0);
+  const area = Math.max(Number(inputs?.heatedAreaM2) || 0, 0);
+  const hotWater = inputs?.hotWaterIncluded ? persons * 1000 : 0;
+  const roomHeat = Math.max(consumption * factor - hotWater, 0);
+  return area > 0 ? roomHeat / area : null;
+}
+
+function suggestedHeatingLimit(inputs) {
+  return HeatingCore.suggestHeatingLimitFromSpecificHeat(
+    specificRoomHeatFromInputs(inputs)
+  );
+}
+
+function clampHeatingLimit(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return HeatingCore.DEFAULT_HEATING_LIMIT_C ?? 15;
+  return Math.min(
+    HeatingCore.MAX_HEATING_LIMIT_C ?? 18,
+    Math.max(HeatingCore.MIN_HEATING_LIMIT_C ?? 8, number)
+  );
+}
+
 function heatingInputsForProject() {
   if (!elements?.annualConsumption) return null;
   return {
@@ -206,7 +246,42 @@ function heatingInputsForProject() {
     installedMinimumKw: elements.installedMinimum.value === '' ? null : Number(elements.installedMinimum.value),
     hwbKwhM2a: elements.hwbValue.value === '' ? null : Number(elements.hwbValue.value),
     bgfM2: elements.hwbBgf.value === '' ? null : Number(elements.hwbBgf.value),
+    heatingLimitC: elements.heatingLimitTemperature
+      ? clampHeatingLimit(elements.heatingLimitTemperature.value)
+      : 15,
   };
+}
+
+function syncHeatingLimitCandidates(inputs, suggestionC) {
+  if (!projectStore || projectHydrating || IS_CLIMATE_TOOL) return;
+  const fallback = projectModel.ORIGIN.FALLBACK;
+  const derived = projectModel.ORIGIN.DERIVED;
+  projectStore.setFieldCandidates([
+    {
+      path: HEATING_LIMIT_PATH,
+      origin: fallback,
+      value: 15,
+      options: {
+        unit: '°C',
+        source: 'Heizlast Standardannahme',
+        method: 'Fallback ohne verwertbare Gebäudeeinschätzung',
+      },
+    },
+    {
+      path: HEATING_LIMIT_PATH,
+      origin: derived,
+      value: suggestionC,
+      options: {
+        unit: '°C',
+        source: 'Heizlast',
+        method: 'Faustwert aus verbrauchsbezogenem Raumwärmewert',
+        quality: 'Beratungsvorschlag',
+        note: Number.isFinite(specificRoomHeatFromInputs(inputs))
+          ? `${specificRoomHeatFromInputs(inputs).toFixed(1)} kWh/m²a`
+          : null,
+      },
+    },
+  ]);
 }
 
 function syncSharedInputs() {
@@ -269,6 +344,8 @@ function syncSharedResult(result = state.currentResult) {
         hwbHeatLoadKw: calculation.hwb_method?.heat_load_kw ?? null,
         installedMaximumKw: calculation.comparison?.installed_maximum_kw ?? null,
         installedMinimumKw: calculation.comparison?.installed_minimum_kw ?? null,
+        heatingLimitC: calculation.assumptions?.heating_limit_c ?? null,
+        specificRoomHeatKwhM2a: calculation.assumptions?.specific_room_heat_kwh_m2a ?? null,
       },
       updatedAt: new Date().toISOString(),
     };
@@ -299,10 +376,12 @@ function restoreSharedInputs(project) {
   const installedMinimum = sharedValue(project?.systems?.heating?.installedMinimum);
   const hwb = sharedValue(project?.building?.thermal?.independentHwb);
   const bgf = sharedValue(project?.building?.geometry?.grossFloorArea);
+  const limitInfo = heatingLimitInfo(project);
 
   const hasSavedInputs = [
     persons, heatedArea, annualConsumption, usefulHeatFactor, hotWaterIncluded,
     buildingCondition, installedMaximum, installedMinimum, hwb, bgf,
+    limitInfo.value,
   ].some((value) => value !== undefined && value !== null) || Object.keys(legacyInputs).length > 0;
 
   if (!hasSavedInputs) {
@@ -316,6 +395,10 @@ function restoreSharedInputs(project) {
     elements.installedMinimum.value = '';
     elements.hwbValue.value = '';
     elements.hwbBgf.value = '';
+    if (elements.heatingLimitTemperature) {
+      elements.heatingLimitTemperature.value = '15';
+      state.heatingLimitManual = false;
+    }
     return;
   }
 
@@ -328,6 +411,7 @@ function restoreSharedInputs(project) {
     [elements.installedMinimum, installedMinimum ?? legacyInputs.installedMinimumKw],
     [elements.hwbValue, hwb ?? legacyInputs.hwbKwhM2a],
     [elements.hwbBgf, bgf ?? legacyInputs.bgfM2],
+    [elements.heatingLimitTemperature, limitInfo.value ?? 15],
   ];
   assignments.forEach(([element, value]) => {
     if (element && value !== undefined && value !== null && Number.isFinite(Number(value))) element.value = String(value);
@@ -337,6 +421,7 @@ function restoreSharedInputs(project) {
   if (typeof hotWater === 'boolean') elements.hotWaterIncluded.value = hotWater ? 'yes' : 'no';
   const condition = buildingCondition ?? legacyInputs.buildingCondition;
   if (condition) elements.buildingCondition.value = condition;
+  state.heatingLimitManual = Boolean(limitInfo.isManual);
 }
 function hydrateSharedProject(project = projectStore?.get()) {
   if (!projectStore || !project) return;
@@ -420,6 +505,10 @@ const elements = {
   buildingCondition: document.getElementById('buildingCondition'),
   installedMaximum: document.getElementById('installedMaximum'),
   installedMinimum: document.getElementById('installedMinimum'),
+  heatingLimitTemperature: document.getElementById('heatingLimitTemperature'),
+  heatingLimitSuggestion: document.getElementById('heatingLimitSuggestion'),
+  useHeatingLimitSuggestion: document.getElementById('useHeatingLimitSuggestion'),
+  heatingLimitMethodText: document.getElementById('heatingLimitMethodText'),
   hwbValue: document.getElementById('hwbValue'),
   hwbBgf: document.getElementById('hwbBgf'),
   consumptionMainResult: document.getElementById('consumptionMainResult'),
@@ -2501,6 +2590,9 @@ function getHeatingInputs() {
     building_condition: elements.buildingCondition.value,
     installed_maximum_kw: Number(elements.installedMaximum.value),
     installed_minimum_kw: readOptionalNumber(elements.installedMinimum),
+    heating_limit_c: elements.heatingLimitTemperature
+      ? clampHeatingLimit(elements.heatingLimitTemperature.value)
+      : 15,
     hwb_kwh_m2a: readOptionalNumber(elements.hwbValue),
     bgf_m2: readOptionalNumber(elements.hwbBgf),
   };
@@ -2716,6 +2808,54 @@ function renderHeatingChart(calculation) {
   elements.heatingChartWrap.replaceChildren(svg);
 }
 
+function updateHeatingLimitUi(inputs) {
+  if (IS_CLIMATE_TOOL || !elements.heatingLimitTemperature) return inputs;
+  const suggestionC = suggestedHeatingLimit({
+    annualConsumptionKwh: inputs.annual_consumption_kwh,
+    usefulHeatFactor: inputs.useful_heat_factor,
+    hotWaterIncluded: inputs.hot_water_included,
+    persons: inputs.persons,
+    heatedAreaM2: inputs.heated_area_m2,
+  });
+  const specific = specificRoomHeatFromInputs({
+    annualConsumptionKwh: inputs.annual_consumption_kwh,
+    usefulHeatFactor: inputs.useful_heat_factor,
+    hotWaterIncluded: inputs.hot_water_included,
+    persons: inputs.persons,
+    heatedAreaM2: inputs.heated_area_m2,
+  });
+  state.heatingLimitSuggestionC = suggestionC;
+
+  const info = heatingLimitInfo();
+  state.heatingLimitManual = Boolean(info.isManual);
+  if (!state.heatingLimitManual) {
+    elements.heatingLimitTemperature.value = String(suggestionC);
+    inputs.heating_limit_c = suggestionC;
+  }
+
+  if (elements.heatingLimitSuggestion) {
+    elements.heatingLimitSuggestion.textContent = Number.isFinite(specific)
+      ? `Vorschlag: ${formatNumber(suggestionC, 1)} °C aus ca. ${formatNumber(specific, 0)} kWh/m²a verbrauchsbezogener Raumwärme.`
+      : 'Fallback: 15 °C. Für einen Vorschlag werden Verbrauch und beheizte Nutzfläche benötigt.';
+  }
+  if (elements.useHeatingLimitSuggestion) {
+    elements.useHeatingLimitSuggestion.hidden = !state.heatingLimitManual;
+  }
+  if (elements.heatingLimitMethodText) {
+    elements.heatingLimitMethodText.textContent =
+      `Heizgrenze ${formatNumber(inputs.heating_limit_c, 1)} °C`;
+  }
+
+  syncHeatingLimitCandidates({
+    annualConsumptionKwh: inputs.annual_consumption_kwh,
+    usefulHeatFactor: inputs.useful_heat_factor,
+    hotWaterIncluded: inputs.hot_water_included,
+    persons: inputs.persons,
+    heatedAreaM2: inputs.heated_area_m2,
+  }, suggestionC);
+  return inputs;
+}
+
 function renderHeatingCalculation() {
   if (IS_CLIMATE_TOOL || !state.currentResult) return;
 
@@ -2723,9 +2863,10 @@ function renderHeatingCalculation() {
     elements.hotWaterIncluded.value !== 'yes';
 
   try {
+    const heatingInputs = updateHeatingLimitUi(getHeatingInputs());
     const calculation = HeatingCore.calculateHeatingLoad(
       state.currentResult,
-      getHeatingInputs()
+      heatingInputs
     );
     state.heatingCalculation = calculation;
 
@@ -2890,6 +3031,13 @@ function renderHeatingCalculation() {
           )} h/a</dd>
         </div>
         <div>
+          <dt>Heizgrenztemperatur</dt>
+          <dd>${formatNumber(
+            calculation.assumptions.heating_limit_c,
+            1
+          )} °C</dd>
+        </div>
+        <div>
           <dt>Rechnerische Reserve</dt>
           <dd>${
             comparison.reserve_percent !== null
@@ -2953,7 +3101,8 @@ function renderResult(result) {
       <div><span>Normaußentemperatur</span><strong>${formatNumber(result.location?.nat_c, 1)} °C</strong></div>
       <div><span>Klimazeitraum</span><strong>${START_YEAR}–${END_YEAR}</strong></div>
       <div><span>Geländehöhe</span><strong>${elevationLabel(result.location?.location_check?.building?.elevation_m)}</strong></div>
-      <div><span>Datenbasis</span><strong>${validYears || '–'} vollständige Jahre</strong></div>`;
+      <div><span>Datenbasis</span><strong>${validYears || '–'} vollständige Jahre</strong></div>
+      ${IS_HEATING_TOOL ? `<div><span>Heizgrenze</span><strong>${formatNumber(Number(elements.heatingLimitTemperature?.value ?? 15), 1)} °C</strong></div>` : ''}`;
   }
 
   elements.heatingLoadCard.hidden = IS_CLIMATE_TOOL;
@@ -3050,6 +3199,34 @@ async function runLocations(locations) {
     renderHeatingCalculation();
     syncSharedInputs();
   });
+});
+
+if (elements.heatingLimitTemperature) {
+  const commitHeatingLimitManual = () => {
+    const rawValue = Number(elements.heatingLimitTemperature.value);
+    if (!Number.isFinite(rawValue)) return;
+    const value = clampHeatingLimit(rawValue);
+    elements.heatingLimitTemperature.value = String(value);
+    state.heatingLimitManual = true;
+    projectStore?.setFieldCandidate(
+      HEATING_LIMIT_PATH,
+      projectModel.ORIGIN.MANUAL,
+      value,
+      { unit: '°C', source: 'Nutzereingabe Heizlast' }
+    );
+    renderHeatingCalculation();
+  };
+  elements.heatingLimitTemperature.addEventListener('change', commitHeatingLimitManual);
+  elements.heatingLimitTemperature.addEventListener('blur', commitHeatingLimitManual);
+}
+
+elements.useHeatingLimitSuggestion?.addEventListener('click', () => {
+  projectStore?.clearFieldCandidate(HEATING_LIMIT_PATH, projectModel.ORIGIN.MANUAL);
+  state.heatingLimitManual = false;
+  if (elements.heatingLimitTemperature) {
+    elements.heatingLimitTemperature.value = String(state.heatingLimitSuggestionC ?? 15);
+  }
+  renderHeatingCalculation();
 });
 
 

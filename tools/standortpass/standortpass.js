@@ -239,6 +239,8 @@ let hybridAddressProvider = null;
 let selectedAddress = null;
 let buildingFeatures = [];
 let selectedBuildingId = null;
+let selectedBuildingSelectionMode = null;
+let naturalHazardsServiceMetadataCache = null;
 let addressSearchTimer = null;
 let addressSearchSequence = 0;
 let addressModuleReadyPromise = null;
@@ -669,6 +671,7 @@ function selectAddress(record, provider = 'bev') {
   selectedAddress = record;
   buildingFeatures = [];
   selectedBuildingId = null;
+  selectedBuildingSelectionMode = null;
   if ($('solarObserverMode')) $('solarObserverMode').value = 'auto';
 
   $('tirisLiveAddressInput').value = record.label;
@@ -983,7 +986,7 @@ function showBuildingFeatures(features, matchText, options = {}) {
   );
 
   if (buildingFeatures.length === 1 && options.autoSelectSingle !== false) {
-    selectBuilding(buildingFeatures[0].attributes?.OBJECTID);
+    selectBuilding(buildingFeatures[0].attributes?.OBJECTID, 'automatic');
   }
 }
 
@@ -1114,12 +1117,12 @@ function renderBuildingCandidates() {
       <strong>Gebäude ${index + 1}${attrs.OBJECTID ? ` · ID ${attrs.OBJECTID}` : ''}</strong>
       <small>${area !== null ? `ca. ${number0.format(roundTo(area, 10))} m²` : 'Fläche –'}${distance !== null ? ` · Mittelpunkt ca. ${number0.format(distance)} m` : ''}</small>
     `;
-    button.addEventListener('click', () => selectBuilding(attrs.OBJECTID));
+    button.addEventListener('click', () => selectBuilding(attrs.OBJECTID, 'manual'));
     list.appendChild(button);
   });
 }
 
-function selectBuilding(objectId) {
+function selectBuilding(objectId, selectionMode = 'manual') {
   const feature = buildingFeatures.find(
     (item) => String(item.attributes?.OBJECTID) === String(objectId)
   );
@@ -1127,6 +1130,7 @@ function selectBuilding(objectId) {
   if (!feature) return;
 
   selectedBuildingId = feature.attributes?.OBJECTID;
+  selectedBuildingSelectionMode = selectionMode;
   if ($('solarObserverMode')) $('solarObserverMode').value = 'auto';
 
   document.querySelectorAll('.candidate-button').forEach((button) => {
@@ -1149,8 +1153,26 @@ function selectBuilding(objectId) {
   resetSolarOutput();
   if (selectedAddress) setStatus($('solarStatus'), 'bereit');
   window.dispatchEvent(new CustomEvent('standortpass:building-selected', {
-    detail: { feature: JSON.parse(JSON.stringify(feature)) }
+    detail: {
+      feature: JSON.parse(JSON.stringify(feature)),
+      selectionMode: selectedBuildingSelectionMode,
+    }
   }));
+}
+
+function restoreBuildingSnapshot(snapshot) {
+  const feature = snapshot?.feature || snapshot;
+  if (!feature?.attributes || !feature?.geometry) return false;
+
+  showBuildingFeatures(
+    [JSON.parse(JSON.stringify(feature))],
+    'Gespeicherte Gebäudeauswahl aus dem gemeinsamen Projekt wiederhergestellt.',
+    { autoSelectSingle: false, allowNoBuilding: true }
+  );
+  const objectId = feature.attributes?.OBJECTID;
+  selectBuilding(objectId, snapshot?.selectionMode || 'restored');
+  setStatus($('buildingStatus'), 'gespeichert', 'success');
+  return Boolean(selectedBuildingId !== null && selectedBuildingId !== undefined);
 }
 
 function showSelectedBuilding(feature) {
@@ -1193,6 +1215,7 @@ function showSelectedBuilding(feature) {
 function resetBuildingOutput(clearRaw = true) {
   buildingFeatures = [];
   selectedBuildingId = null;
+  selectedBuildingSelectionMode = null;
   $('buildingResults').hidden = true;
   $('buildingResults').classList.remove('has-selection', 'is-editing');
   $('selectedBuildingPanel').hidden = true;
@@ -1620,6 +1643,7 @@ function clearValidation() {
 
 function continueWithoutBuildingGeometry() {
   selectedBuildingId = null;
+  selectedBuildingSelectionMode = null;
   if ($('solarObserverMode')) $('solarObserverMode').value = 'auto';
   document.querySelectorAll('.candidate-button').forEach((button) => {
     button.classList.remove('is-selected');
@@ -3740,6 +3764,34 @@ function dedupeScaleVariantLayers(items) {
   return result;
 }
 
+async function mapWithConcurrency(items, concurrency, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.max(1, Math.min(Number(concurrency) || 1, items.length || 1));
+
+  async function runWorker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await worker(items[index], index);
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+  return results;
+}
+
+async function naturalHazardsServiceMetadata() {
+  if (!naturalHazardsServiceMetadataCache) {
+    naturalHazardsServiceMetadataCache = fetchJson(`${TIRIS_NATURAL_HAZARDS_URL}?f=pjson`)
+      .catch((error) => {
+        naturalHazardsServiceMetadataCache = null;
+        throw error;
+      });
+  }
+  return naturalHazardsServiceMetadataCache;
+}
+
 async function testHazards() {
   if (!selectedAddress) return;
   const status = $('hazardStatus');
@@ -3759,31 +3811,26 @@ async function testHazards() {
   };
 
   try {
-    const floodResults = [];
-    for (const service of FLOOD_HQ_SERVICES) {
+    const floodResults = await Promise.all(FLOOD_HQ_SERVICES.map(async (service) => {
       try {
-        const result = await queryFloodScenario(service, reference);
-        floodResults.push(result);
-        raw.flood.push(result);
+        return await queryFloodScenario(service, reference);
       } catch (error) {
-        const failed = { ...service, error: error.message, count: 0 };
-        floodResults.push(failed);
-        raw.flood.push(failed);
+        return { ...service, error: error.message, count: 0 };
       }
-    }
+    }));
+    raw.flood = floodResults;
 
-    const service = await fetchJson(`${TIRIS_NATURAL_HAZARDS_URL}?f=pjson`);
+    const service = await naturalHazardsServiceMetadata();
     raw.natural_hazards_metadata = service;
     const candidates = naturalHazardCandidateLayers(service).slice(0, 24);
-    const hazardResults = [];
-
-    for (const layer of candidates) {
+    let completedHazardLayers = 0;
+    const hazardResults = await mapWithConcurrency(candidates, 5, async (layer) => {
       const layerUrl = `${TIRIS_NATURAL_HAZARDS_URL}/${layer.id}`;
       const queryUrl = buildHazardSpatialQueryUrl(layerUrl, reference, { returnGeometry: false });
       try {
         const response = await fetchJson(queryUrl);
         const features = Array.isArray(response?.features) ? response.features : [];
-        const item = {
+        return {
           id: layer.id,
           name: layer.name,
           path: layer.path,
@@ -3792,14 +3839,14 @@ async function testHazards() {
           query_url: queryUrl,
           response,
         };
-        hazardResults.push(item);
-        raw.natural_hazard_layers.push(item);
       } catch (error) {
-        const item = { id: layer.id, name: layer.name, path: layer.path, count: 0, query_url: queryUrl, error: error.message };
-        hazardResults.push(item);
-        raw.natural_hazard_layers.push(item);
+        return { id: layer.id, name: layer.name, path: layer.path, count: 0, query_url: queryUrl, error: error.message };
+      } finally {
+        completedHazardLayers += 1;
+        setStatus(status, `prüft ${completedHazardLayers}/${candidates.length} …`, 'working');
       }
-    }
+    });
+    raw.natural_hazard_layers = hazardResults;
 
     const projectedPoint = await fetchProjectedTirisAddressPoint(selectedAddress).catch(() => null);
     const tirisMapUrl = buildTirisMapUrl(projectedPoint, 500);
@@ -4197,6 +4244,12 @@ window.StandortpassCore = Object.freeze({
   getSelectedBuilding() {
     const feature = selectedBuildingFeature();
     return feature ? JSON.parse(JSON.stringify(feature)) : null;
+  },
+  getSelectedBuildingSelectionMode() {
+    return selectedBuildingSelectionMode;
+  },
+  restoreBuildingSnapshot(snapshot) {
+    return restoreBuildingSnapshot(JSON.parse(JSON.stringify(snapshot)));
   },
   selectAddressRecord(record, provider = 'tiris-project-import') {
     if (!record) return false;

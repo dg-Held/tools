@@ -6,7 +6,7 @@
 <title>Heizlast abschätzen – Energieberatung Tirol</title>
 <meta content="Verbrauchs- und flächenbasierte Heizlastorientierung mit automatisch geladener Klimagrundlage für Tirol." name="description"/>
 <link href="../../styles.css" rel="stylesheet"/>
-<link href="../../shared/css/climate-heating.css?v=1" rel="stylesheet"/><link href="../../shared/css/components.css?v=1" rel="stylesheet"/><link href="../../shared/css/print.css?v=1" rel="stylesheet"/>
+<link href="../../shared/css/climate-heating.css?v=2" rel="stylesheet"/><link href="../../shared/css/components.css?v=1" rel="stylesheet"/><link href="../../shared/css/print.css?v=2" rel="stylesheet"/>
 </head>
 <body data-tool-mode="heating">
 <header class="site-header">
@@ -305,6 +305,14 @@
 <input id="installedMinimum" min="0" placeholder="z. B. 3" step="0.1" type="number"/>
 <small>Bei einem Leistungsbereich wie 3–15 kW hier 3 kW eintragen.</small>
 </label>
+<label class="heating-field heating-limit-field">
+<span>Heizgrenztemperatur (°C)</span>
+<div class="heating-limit-control">
+<input id="heatingLimitTemperature" max="18" min="8" step="0.5" type="number" value="15"/>
+<button class="estimate-reset heating-limit-reset" id="useHeatingLimitSuggestion" title="Automatischen Vorschlag verwenden" type="button">↺ Vorschlag</button>
+</div>
+<small id="heatingLimitSuggestion">Fallback: 15 °C. Nach der Verbrauchsauswertung erscheint hier ein Vorschlag.</small>
+</label>
 <div class="column-main-result">
 <div class="compact-card-heading">
 <span>Installierte Leistung</span>
@@ -397,7 +405,7 @@
 <h4>Klimadaten</h4>
 <p>
                 GeoSphere Austria INCA-v1, stündliche Rasterwerte <span data-climate-period="">2012–2025</span>.
-                Heizgrenze 15 °C; NAT und TNAT,13 gemäß OIB-Referenz der
+                <span id="heatingLimitMethodText">Heizgrenze 15 °C</span>; NAT und TNAT,13 gemäß OIB-Referenz der
                 zugeordneten Katastralgemeinde.
               </p>
 </section>
@@ -544,7 +552,7 @@
       }
     }, 4000);
   </script>
-<script src="../../script.js"></script><script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=2"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/data/standards/oib/nat-tirol.js?v=1"></script><script src="../../shared/data/standards/oib/tnat13-tirol.js?v=1"></script><script src="../../shared/js/domain/climate/oib-nat-core.js?v=1"></script><script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script><script src="../../shared/js/domain/climate/climate-core.js?v=1"></script><script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=1"></script><script src="../../shared/js/domain/heating/heating-core.js?v=1"></script><script src="../../shared/js/tools/climate-heating-app.js?v=1"></script>
+<script src="../../script.js"></script><script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=2"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/data/standards/oib/nat-tirol.js?v=1"></script><script src="../../shared/data/standards/oib/tnat13-tirol.js?v=1"></script><script src="../../shared/js/domain/climate/oib-nat-core.js?v=1"></script><script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script><script src="../../shared/js/domain/climate/climate-core.js?v=1"></script><script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=1"></script><script src="../../shared/js/domain/heating/heating-core.js?v=2"></script><script src="../../shared/js/tools/climate-heating-app.js?v=2"></script>
 <!-- Gemeinsame Projekt- und Standortbasis -->
 <!-- Klima-&-Heizlast-spezifische Daten und Berechnungen -->
 </body>

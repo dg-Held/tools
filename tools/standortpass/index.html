@@ -6,7 +6,7 @@
 <title>Standortpass Energie &amp; Gebäude | Tools für Energieberatung</title>
 <meta content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten." name="description"/>
 <link href="../../styles.css" rel="stylesheet"/>
-<link href="standortpass.css?v=7" rel="stylesheet"/><link href="../../shared/css/components.css?v=1" rel="stylesheet"/><link href="../../shared/css/print.css?v=1" rel="stylesheet"/>
+<link href="standortpass.css?v=8" rel="stylesheet"/><link href="../../shared/css/components.css?v=1" rel="stylesheet"/><link href="../../shared/css/print.css?v=1" rel="stylesheet"/>
 </head>
 <body>
 <header class="site-header">
@@ -221,7 +221,17 @@
 </div>
 </div>
 <p class="geometry-note">Automatikwerte bleiben als Referenz erhalten. Ein manueller Wert ersetzt nur den verwendeten Beratungswert. Mit <strong>Auto</strong> wird die manuelle Korrektur wieder gelöscht.</p>
-<div class="estimate-settings">
+<div class="estimate-settings estimate-settings--three">
+<label>
+<span>Höhenmodul je Geschoß</span>
+<input id="storeyHeightModule" max="5" min="2.3" step="0.1" type="number" value="3.2"/>
+<small>m je oberirdischem Geschoß</small>
+</label>
+<label>
+<span>Nutzflächenfaktor</span>
+<input id="usableFloorAreaFactor" max="100" min="40" step="1" type="number" value="75"/>
+<small>% der BGF als Erstannahme</small>
+</label>
 <label>
 <span>Fensterflächenanteil</span>
 <input id="windowSharePercent" max="100" min="0" step="1" type="number" value="20"/>
@@ -232,6 +242,10 @@
 <table class="estimate-table">
 <thead><tr><th>Bauteil / Größe</th><th>Automatik</th><th>Manuell</th><th>Verwendet</th></tr></thead>
 <tbody>
+<tr><th>Oberirdische Geschoße</th><td id="autoStoreysValue">–</td><td><div class="manual-value-control"><input id="manualStoreysValue" min="1" placeholder="ganze Zahl" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualStoreysValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveStoreysValue">–</td></tr>
+<tr><th>Bruttogeschoßfläche (BGF)</th><td id="autoGrossFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualGrossFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualGrossFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveGrossFloorAreaValue">–</td></tr>
+<tr><th>Nutzfläche (NFL)</th><td id="autoUsableFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualUsableFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualUsableFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveUsableFloorAreaValue">–</td></tr>
+<tr><th>Beheizte Nutzfläche</th><td id="autoHeatedFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualHeatedFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualHeatedFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveHeatedFloorAreaValue">–</td></tr>
 <tr><th>Außenwandfläche</th><td id="autoExteriorWallValue">–</td><td><div class="manual-value-control"><input id="manualExteriorWallValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualExteriorWallValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveExteriorWallValue">–</td></tr>
 <tr><th>Fensterfläche</th><td id="autoWindowAreaValue">–</td><td><div class="manual-value-control"><input id="manualWindowAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualWindowAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveWindowAreaValue">–</td></tr>
 <tr><th>Oberste Geschoßfläche</th><td id="autoTopFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualTopFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualTopFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveTopFloorAreaValue">–</td></tr>
@@ -242,7 +256,7 @@
 </tbody>
 </table>
 </div>
-<p class="geometry-note estimate-method-note">Kurzmethodik: Außenwand ≈ Dachpolygon-Umfang × Medianhöhe · Fenster = Außenwand × Fensteranteil · oberste/unterste Fläche ≈ Dachprojektion · Dachschräge = Dachprojektion / cos(Dachneigung) · Volumen ≈ Dachprojektion × Medianhöhe. Details unten unter „Methodik &amp; Datenbasis“.</p>
+<p class="geometry-note estimate-method-note">Kurzmethodik: Geschoße = Medianhöhe / 3,2 m, auf ganze Zahlen gerundet · BGF ≈ Dachprojektion × Geschoße · NFL ≈ BGF × 0,75 · beheizte Nutzfläche zunächst ≈ NFL · Außenwand ≈ Umfang × Medianhöhe · Fenster = Außenwand × Fensteranteil · oberste/unterste Fläche ≈ Dachprojektion · Dachschräge = Dachprojektion / cos(Dachneigung) · Volumen ≈ Dachprojektion × Medianhöhe. Details unten unter „Methodik &amp; Datenbasis“.</p>
 </div>
 <div class="validation-block dev-only">
 <div class="validation-heading"><div><span class="mini-label">Nur Entwicklung</span><h3>Mit bekannten Gebäudeabmessungen vergleichen</h3></div><button class="quiet-button" id="clearValidationButton" type="button">Werte leeren</button></div>
@@ -460,6 +474,10 @@
 <div>
 <h3>Gebäudeableitungen</h3>
 <ul>
+<li><strong>Oberirdische Geschoße:</strong> TIRIS-Medianhöhe / Höhenmodul; Standard 3,2 m. Das Ergebnis wird bewusst auf eine ganze Geschoßzahl gerundet, Halbgeschoße bleiben außerhalb dieser Orientierung.</li>
+<li><strong>Bruttogeschoßfläche (BGF):</strong> Dachprojektion × oberirdische Geschoße.</li>
+<li><strong>Nutzfläche (NFL):</strong> BGF × Nutzflächenfaktor; Standard 75 %, weil von der Dachprojektion als Grundfläche ausgegangen wird.</li>
+<li><strong>Beheizte Nutzfläche:</strong> zunächst gleich NFL. Ein manueller Projektwert – etwa aus Heizlast oder Energieausweis – hat Vorrang.</li>
 <li><strong>Außenwandfläche:</strong> Dachpolygon-Umfang × TIRIS-Medianhöhe. Bewusst ohne universellen Korrekturfaktor.</li>
 <li><strong>Fensterfläche:</strong> Brutto-Außenwand × eingestellter Fensterflächenanteil; Standard 20 %, jederzeit manuell ersetzbar. Die opake Außenwand wird für die gemeinsame Datennutzung intern als Außenwand minus Fenster mitgeführt.</li>
 <li><strong>Oberste / unterste Geschoßfläche:</strong> zunächst Dachprojektion als Orientierungswert.</li>
@@ -469,7 +487,7 @@
 </div>
 <div>
 <h3>Rundung &amp; Priorität</h3>
-<p>Automatische große Flächen werden bewusst grob gerundet: meist 10 m², Fenster 5 m². Manuelle Werte bleiben exakt und haben Vorrang vor Automatikwerten. 0 löscht bei Flächen/Volumen die manuelle Korrektur; bei Dachneigung ist 0° als Flachdach zulässig.</p>
+<p>Automatische Geschoße werden auf ganze Zahlen gerundet. Große Flächen werden bewusst grob gerundet: meist 10 m², NFL 5 m² und Fenster 5 m². Manuelle Werte bleiben exakt und haben Vorrang vor Automatikwerten. 0 löscht bei Flächen/Volumen die manuelle Korrektur; bei Dachneigung ist 0° als Flachdach zulässig.</p>
 <p>Priorität: manuell bestätigt → amtlich automatisch → abgeleiteter Orientierungswert → Fallback.</p>
 </div>
 <div>
@@ -538,7 +556,7 @@
 
 
 
-<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=2"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="standortpass.js?v=7"></script>
-<script src="standortpass-v1.js?v=7"></script>
+<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=2"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="standortpass.js?v=8"></script>
+<script src="standortpass-v1.js?v=8"></script>
 </body>
 </html>

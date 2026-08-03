@@ -2384,3 +2384,154 @@ body[data-tool-mode="heating"] .climate-view {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   STABILISIERUNG 1.1 – HEIZGRENZE UND KOMPAKTER DRUCK
+========================================================= */
+.heating-limit-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: stretch;
+}
+
+.heating-limit-reset {
+  min-width: 6.6rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  color: var(--color-primary-dark);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: var(--color-primary-soft);
+  cursor: pointer;
+}
+
+.heating-limit-reset:hover,
+.heating-limit-reset:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--surface-card);
+}
+
+.heating-climate-summary {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 820px) {
+  .heating-climate-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media print {
+  /* Klima: keine angehängte Leerseite und sauberer Abstand zum Projektkopf. */
+  body[data-tool-mode="climate"] .results-section {
+    display: block !important;
+    break-after: auto !important;
+    page-break-after: auto !important;
+    overflow: visible !important;
+  }
+
+  body[data-tool-mode="climate"] .print-report-header {
+    margin-top: 3mm !important;
+    margin-bottom: 2mm !important;
+  }
+
+  body[data-tool-mode="climate"] .climate-print-title {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.15 !important;
+  }
+
+  body[data-tool-mode="climate"] .chart-card {
+    margin-top: 2mm !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body[data-tool-mode="climate"] .chart-wrap .duration-chart {
+    height: 118mm !important;
+  }
+
+  body[data-tool-mode="climate"] .print-source-note {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  /* Heizlast: Heizlast ist der Hauptbericht; Klimagrundlage folgt kompakt am Ende. */
+  body[data-tool-mode="heating"] .results-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2mm !important;
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-load-card {
+    order: 1 !important;
+    break-before: auto !important;
+    page-break-before: auto !important;
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-climate-context {
+    order: 2 !important;
+    display: block !important;
+    margin: 1.5mm 0 0 !important;
+    padding: 1.5mm 2mm !important;
+    border-width: .2mm !important;
+    border-radius: 1.5mm !important;
+    background: #fff !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-climate-context__heading {
+    display: none !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-climate-summary {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 1mm !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-climate-summary > div {
+    min-height: 0 !important;
+    padding: 1mm 1.2mm !important;
+    border: .15mm solid var(--line) !important;
+    border-radius: 1mm !important;
+    background: #fff !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-climate-summary span {
+    font-size: 5.2pt !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-climate-summary strong {
+    font-size: 7pt !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-input-group {
+    min-height: 46mm !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-limit-control {
+    display: block !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-limit-reset {
+    display: none !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-chart-wrap .duration-chart {
+    height: 63mm !important;
+  }
+
+  body[data-tool-mode="heating"] .heating-interpretation {
+    margin-top: 1.2mm !important;
+    padding: 1.2mm 1.8mm !important;
+  }
+}
