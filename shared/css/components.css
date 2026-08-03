@@ -287,3 +287,106 @@ button:disabled,
     flex-wrap: wrap;
   }
 }
+
+/* Gemeinsamer Entscheidungsdialog beim Wechsel der Projektadresse */
+.shared-choice-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg, 22px);
+  background: var(--surface-card, #fff);
+  color: var(--text-primary, #243434);
+  box-shadow: 0 24px 70px rgba(23, 48, 47, 0.28);
+}
+
+.shared-choice-dialog::backdrop {
+  background: rgba(20, 42, 41, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.shared-choice-dialog__panel {
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+}
+
+.shared-choice-dialog__head h2 {
+  margin: 3px 0 0;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+
+.shared-choice-dialog__eyebrow {
+  color: var(--color-secondary, #b3446c);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.shared-choice-dialog__text {
+  margin: 0;
+  color: var(--text-secondary, #5d6c6b);
+}
+
+.shared-choice-dialog__addresses {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 7px 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line, #dce7e5);
+  border-radius: var(--radius-md, 14px);
+  background: var(--surface-muted, #f4f8f7);
+}
+
+.shared-choice-dialog__addresses span {
+  color: var(--text-secondary, #5d6c6b);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.shared-choice-dialog__addresses strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.shared-choice-dialog__options {
+  display: grid;
+  gap: 10px;
+}
+
+.shared-choice-dialog__options button {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.shared-choice-dialog__options button small {
+  font-weight: 500;
+  line-height: 1.4;
+  opacity: 0.82;
+}
+
+.shared-choice-dialog__danger {
+  border: 1px solid color-mix(in srgb, var(--color-secondary, #b3446c) 45%, transparent);
+  border-radius: var(--radius-md, 14px);
+  background: color-mix(in srgb, var(--color-secondary, #b3446c) 9%, white);
+  color: var(--color-secondary, #b3446c);
+  cursor: pointer;
+}
+
+.shared-choice-dialog__danger:hover {
+  background: color-mix(in srgb, var(--color-secondary, #b3446c) 15%, white);
+}
+
+.shared-choice-dialog__cancel {
+  justify-self: end;
+}
+
+@media (max-width: 560px) {
+  .shared-choice-dialog__panel { padding: 20px; }
+  .shared-choice-dialog__addresses { grid-template-columns: 1fr; }
+  .shared-choice-dialog__addresses span:not(:first-child) { margin-top: 5px; }
+}

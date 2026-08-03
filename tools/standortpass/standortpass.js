@@ -244,6 +244,7 @@ let naturalHazardsServiceMetadataCache = null;
 let addressSearchTimer = null;
 let addressSearchSequence = 0;
 let addressModuleReadyPromise = null;
+let pendingAddressChangeAction = 'initial';
 let selectedKgResult = null;
 let buildingMapDrawToken = 0;
 
@@ -387,28 +388,49 @@ async function resolveAndSelectAddress(record, options = {}) {
   setStatus(status, 'TIRIS-Abgleich …', 'working');
   note.textContent = 'BEV-Vorschlag gewählt · Adresse und Koordinate werden live mit TIRIS abgeglichen.';
 
-  try {
-    const resolved = typeof hybridAddressProvider?.resolve === 'function'
-      ? await hybridAddressProvider.resolve(record)
-      : { address: record, mode: 'shared-address', usedFallback: false };
+  let resolved = {
+    address: record,
+    mode: options.provider || 'shared-address',
+    usedFallback: false,
+    warning: null,
+  };
 
-    selectAddress(resolved.address, resolved.mode || options.provider || 'shared-address');
-
-    if (resolved.usedFallback) {
-      setStatus(status, 'BEV-Fallback', 'error');
-      note.textContent = resolved.warning || 'Kein eindeutiger TIRIS-Live-Treffer. Die BEV-Stichtagsadresse wird verwendet.';
-    } else {
-      setStatus(status, 'TIRIS bestätigt', 'success');
-      note.textContent = 'Adresse und Koordinate wurden live mit TIRIS bestätigt.';
+  if (typeof hybridAddressProvider?.resolve === 'function') {
+    try {
+      resolved = await hybridAddressProvider.resolve(record);
+    } catch (error) {
+      console.warn('TIRIS-Live-Abgleich fehlgeschlagen.', error);
+      resolved = {
+        address: record,
+        mode: options.provider || 'bev-fallback',
+        usedFallback: true,
+        warning: `TIRIS-Live-Abgleich nicht verfügbar: ${error.message}. Die BEV-Stichtagsadresse wird verwendet.`,
+      };
     }
-    return true;
-  } catch (error) {
-    console.warn('TIRIS-Live-Abgleich fehlgeschlagen.', error);
-    selectAddress(record, options.provider || 'bev-fallback');
-    setStatus(status, 'BEV-Fallback', 'error');
-    note.textContent = `TIRIS-Live-Abgleich nicht verfügbar: ${error.message}. Die BEV-Stichtagsadresse wird verwendet.`;
-    return true;
   }
+
+  const addressDecision = await window.EnergyToolsAddressManager?.requestSelection(resolved.address)
+    ?? { allowed: true, action: 'initial' };
+  if (!addressDecision.allowed) {
+    const current = window.EnergyToolsAddressManager?.currentAddress();
+    if (current?.label) $('tirisLiveAddressInput').value = current.label;
+    closeSharedAddressSuggestions();
+    setStatus(status, 'unverändert', 'success');
+    note.textContent = 'Adresswechsel abgebrochen. Das bisherige Projekt bleibt unverändert.';
+    return false;
+  }
+
+  pendingAddressChangeAction = addressDecision.action || 'initial';
+  selectAddress(resolved.address, resolved.mode || options.provider || 'shared-address');
+
+  if (resolved.usedFallback) {
+    setStatus(status, 'BEV-Fallback', 'error');
+    note.textContent = resolved.warning || 'Kein eindeutiger TIRIS-Live-Treffer. Die BEV-Stichtagsadresse wird verwendet.';
+  } else {
+    setStatus(status, 'TIRIS bestätigt', 'success');
+    note.textContent = 'Adresse und Koordinate wurden live mit TIRIS bestätigt.';
+  }
+  return true;
 }
 
 function renderSharedAddressSuggestions(searchResult, options = {}) {
@@ -469,8 +491,9 @@ async function searchSharedAddress(options = {}) {
 
   const sequence = ++addressSearchSequence;
   const input = $('tirisLiveAddressInput');
+  // Nur die Suchkopie normalisieren. Der sichtbare Text bleibt während des Tippens unverändert,
+  // damit insbesondere ein Leerzeichen nach der Postleitzahl nicht verschwindet.
   const query = String(options.query ?? input.value).trim();
-  input.value = query;
 
   if (query.length < 3) {
     closeSharedAddressSuggestions();
@@ -723,8 +746,10 @@ function selectAddress(record, provider = 'bev') {
   resetRadonOutput();
   resetClimateAnalysisOutput();
 
+  const addressChangeAction = pendingAddressChangeAction;
+  pendingAddressChangeAction = 'initial';
   window.dispatchEvent(new CustomEvent('standortpass:address-selected', {
-    detail: { record: JSON.parse(JSON.stringify(record)), provider }
+    detail: { record: JSON.parse(JSON.stringify(record)), provider, addressChangeAction }
   }));
 
   loadKatastralgemeinde(record);
@@ -4196,7 +4221,7 @@ function escapeHtml(value) {
 
 $('tirisLiveAddressInput').addEventListener('input', () => {
   window.clearTimeout(addressSearchTimer);
-  addressSearchTimer = window.setTimeout(() => searchSharedAddress(), 180);
+  addressSearchTimer = window.setTimeout(() => searchSharedAddress(), 250);
 });
 $('tirisLiveAddressInput').addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {

@@ -538,8 +538,11 @@ function sleep(milliseconds) {
 
 
 function hasResolvedAutomaticLocation() {
+  const visibleAddressMatches = !state.selectedAddress ||
+    elements.addressSearchInput.value.trim() === state.selectedAddress.label;
   return Boolean(
     state.selectedAddress &&
+    visibleAddressMatches &&
     state.selectedNatReference &&
     state.selectedTnat13Reference
   );
@@ -706,7 +709,7 @@ async function cacheClear() {
 
 
 
-function debounce(callback, delay = 220) {
+function debounce(callback, delay = 250) {
   let timeoutId = null;
 
   return (...args) => {
@@ -1028,30 +1031,59 @@ function applyAddressResult(address) {
   syncSharedLocation(address);
 }
 
+function invalidateResultsForAddressChange() {
+  state.results = {};
+  state.currentResult = null;
+  state.heatingCalculation = null;
+  if (elements.resultsSection) elements.resultsSection.hidden = true;
+  if (elements.heatingLoadCard) elements.heatingLoadCard.hidden = true;
+}
+
+async function approveAddressSelection(address) {
+  const decision = await window.EnergyToolsAddressManager?.requestSelection(address)
+    ?? { allowed: true, action: 'initial' };
+  if (!decision.allowed) {
+    const current = window.EnergyToolsAddressManager?.currentAddress();
+    if (current?.label) elements.addressSearchInput.value = current.label;
+    closeAddressSuggestions();
+    elements.addressSearchStatus.textContent =
+      'Adresswechsel abgebrochen. Das bisherige Projekt bleibt unverändert.';
+    return decision;
+  }
+  if (decision.action !== 'same') invalidateResultsForAddressChange();
+  return decision;
+}
+
 async function resolveAndApplyAddressResult(address) {
   elements.addressSearchStatus.textContent =
     'BEV-Vorschlag gewählt · TIRIS wird live abgeglichen …';
 
   const provider = addressProviders.active();
+  let resolved = {
+    address,
+    usedFallback: false,
+    warning: null,
+  };
 
-  if (typeof provider.resolve !== 'function') {
-    applyAddressResult(address);
-    return;
+  if (typeof provider.resolve === 'function') {
+    try {
+      resolved = await provider.resolve(address);
+    } catch (error) {
+      console.warn('TIRIS-Live-Abgleich fehlgeschlagen.', error);
+      resolved = {
+        address,
+        usedFallback: true,
+        warning: 'TIRIS-Live-Abgleich war nicht verfügbar; BEV-Stichtagsadresse wird verwendet.',
+      };
+    }
   }
 
-  try {
-    const resolved = await provider.resolve(address);
-    applyAddressResult(resolved.address);
+  const decision = await approveAddressSelection(resolved.address);
+  if (!decision.allowed) return;
 
-    if (resolved.usedFallback && resolved.warning) {
-      elements.addressSearchStatus.textContent +=
-        ` ${resolved.warning}`;
-    }
-  } catch (error) {
-    console.warn('TIRIS-Live-Abgleich fehlgeschlagen.', error);
-    applyAddressResult(address);
-    elements.addressSearchStatus.textContent +=
-      ' TIRIS-Live-Abgleich war nicht verfügbar; BEV-Stichtagsadresse wird verwendet.';
+  applyAddressResult(resolved.address);
+  if (resolved.usedFallback && resolved.warning) {
+    elements.addressSearchStatus.textContent += ` ${resolved.warning}`;
   }
 }
 
@@ -3256,21 +3288,17 @@ const debouncedAddressSearch = debounce(runAddressSearch);
 elements.addressSearchInput.addEventListener(
   'input',
   () => {
+    // Die bisherige Projektadresse bleibt aktiv, bis tatsächlich ein anderer Treffer
+    // ausgewählt und im gemeinsamen Dialog bestätigt wurde. So kann jederzeit gesucht
+    // werden, ohne das laufende Projekt bereits während des Tippens zu verändern.
     if (
       state.selectedAddress &&
-      elements.addressSearchInput.value !==
-        state.selectedAddress.label
+      elements.addressSearchInput.value !== state.selectedAddress.label
     ) {
-      state.selectedAddress = null;
-      state.selectedNatReference = null;
-      state.selectedTnat13Reference = null;
-      clearMultiKgChoice();
-      elements.selectedAddressCard.hidden = true;
-      elements.natInput.value = '';
-      elements.natReferenceHeightInput.value = '';
-      updateAnalyzeAvailability();
+      elements.addressSearchStatus.textContent =
+        'Andere Adresse suchen – das aktuelle Projekt bleibt bis zur Auswahl unverändert.';
     }
-
+    updateAnalyzeAvailability();
     debouncedAddressSearch();
   }
 );

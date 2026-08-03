@@ -196,47 +196,7 @@
     const usableFloorAreaFactor = Math.max(40, Math.min(100, parseInputValue('usableFloorAreaFactor') ?? 75));
     const windowShare = Math.max(0, Math.min(100, parseInputValue('windowSharePercent') ?? 20));
 
-    // Geschoße werden bewusst nur als ganze Zahl geführt. Halbgeschoße bleiben außerhalb der Orientierungsschätzung.
-    const autoStoreys = medianHeight !== null
-      ? Math.max(1, Math.round(medianHeight / storeyHeightModule))
-      : null;
-    const autoGrossFloorArea = roofArea !== null && autoStoreys !== null
-      ? roundToStep(roofArea * autoStoreys, 10)
-      : null;
-    const autoUsableFloorArea = autoGrossFloorArea !== null
-      ? roundToStep((autoGrossFloorArea * usableFloorAreaFactor) / 100, 5)
-      : null;
-    const autoHeatedFloorArea = autoUsableFloorArea;
-    const autoExteriorWall = perimeter !== null && medianHeight !== null ? roundToStep(perimeter * medianHeight, 10) : null;
-    const autoTopFloor = roofArea !== null ? roundToStep(roofArea, 10) : null;
-    const autoBasement = roofArea !== null ? roundToStep(roofArea, 10) : null;
-    const autoWindowArea = autoExteriorWall !== null ? roundToStep((autoExteriorWall * windowShare) / 100, 5) : null;
-    const effectiveRoofPitch = parseInputValue('manualRoofPitchValue');
-    const autoRoofSlopeArea = roofArea !== null && effectiveRoofPitch !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
-      ? roundToStep(roofArea / Math.cos((effectiveRoofPitch * Math.PI) / 180), 10)
-      : null;
-    const autoVolume = roofArea !== null && medianHeight !== null ? roundToStep(roofArea * medianHeight, 10) : null;
-
-    const auto = {
-      storeys: autoStoreys,
-      grossFloorArea: autoGrossFloorArea,
-      usableFloorArea: autoUsableFloorArea,
-      heatedFloorArea: autoHeatedFloorArea,
-      exteriorWall: autoExteriorWall,
-      windowArea: autoWindowArea,
-      topFloorArea: autoTopFloor,
-      basementArea: autoBasement,
-      roofPitch: null,
-      roofSlopeArea: autoRoofSlopeArea,
-      volume: autoVolume,
-    };
-
-    const result = {
-      storeyHeightModule,
-      usableFloorAreaFactor,
-      windowSharePercent: windowShare,
-      fields: {},
-    };
+    const manuals = {};
     estimateFieldConfig().forEach((config) => {
       let manual = parseInputValue(config.manualId);
       if (config.key === 'storeys' && manual !== null) {
@@ -246,11 +206,78 @@
       // Bei Flächen/Volumen bedeutet 0: manuelle Korrektur verwerfen und Automatik verwenden.
       // Bei Dachneigung bleibt 0° ein gültiger manueller Wert (Flachdach).
       if (config.key !== 'roofPitch' && manual !== null && manual <= 0) manual = null;
-      const automatic = auto[config.key] ?? null;
+      manuals[config.key] = manual;
+    });
+
+    // Geschoße werden bewusst nur als ganze Zahl geführt. Halbgeschoße bleiben außerhalb der Orientierungsschätzung.
+    const baseAutomaticStoreys = medianHeight !== null
+      ? Math.max(1, Math.round(medianHeight / storeyHeightModule))
+      : null;
+    const effectiveStoreys = manuals.storeys ?? baseAutomaticStoreys;
+
+    // Nachgelagerte automatische Werte folgen dem jeweils verwendeten vorgelagerten Wert.
+    // Eine manuelle BGF unterbricht daher die Kette erst ab BGF; eine manuelle NFL erst ab NFL.
+    const automaticGrossFloorArea = roofArea !== null && effectiveStoreys !== null
+      ? roundToStep(roofArea * effectiveStoreys, 10)
+      : null;
+    const effectiveGrossFloorArea = manuals.grossFloorArea ?? automaticGrossFloorArea;
+    const automaticUsableFloorArea = effectiveGrossFloorArea !== null
+      ? roundToStep((effectiveGrossFloorArea * usableFloorAreaFactor) / 100, 5)
+      : null;
+
+    // Die beheizte Nutzfläche bleibt vorerst eine unabhängige Orientierungsschätzung.
+    // Sie reagiert bewusst noch nicht auf manuelle Änderungen von Geschoßen, BGF oder NFL.
+    const baseAutomaticGrossFloorArea = roofArea !== null && baseAutomaticStoreys !== null
+      ? roundToStep(roofArea * baseAutomaticStoreys, 10)
+      : null;
+    const automaticHeatedFloorArea = baseAutomaticGrossFloorArea !== null
+      ? roundToStep((baseAutomaticGrossFloorArea * usableFloorAreaFactor) / 100, 5)
+      : null;
+
+    const automaticExteriorWall = perimeter !== null && medianHeight !== null
+      ? roundToStep(perimeter * medianHeight, 10)
+      : null;
+    const automaticTopFloor = roofArea !== null ? roundToStep(roofArea, 10) : null;
+    const automaticBasement = roofArea !== null ? roundToStep(roofArea, 10) : null;
+    const automaticWindowArea = automaticExteriorWall !== null
+      ? roundToStep((automaticExteriorWall * windowShare) / 100, 5)
+      : null;
+    const effectiveRoofPitch = manuals.roofPitch;
+    const automaticRoofSlopeArea = roofArea !== null && effectiveRoofPitch !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
+      ? roundToStep(roofArea / Math.cos((effectiveRoofPitch * Math.PI) / 180), 10)
+      : null;
+    const automaticVolume = roofArea !== null && medianHeight !== null
+      ? roundToStep(roofArea * medianHeight, 10)
+      : null;
+
+    const automatic = {
+      storeys: baseAutomaticStoreys,
+      grossFloorArea: automaticGrossFloorArea,
+      usableFloorArea: automaticUsableFloorArea,
+      heatedFloorArea: automaticHeatedFloorArea,
+      exteriorWall: automaticExteriorWall,
+      windowArea: automaticWindowArea,
+      topFloorArea: automaticTopFloor,
+      basementArea: automaticBasement,
+      roofPitch: null,
+      roofSlopeArea: automaticRoofSlopeArea,
+      volume: automaticVolume,
+    };
+
+    const result = {
+      storeyHeightModule,
+      usableFloorAreaFactor,
+      windowSharePercent: windowShare,
+      fields: {},
+    };
+
+    estimateFieldConfig().forEach((config) => {
+      const manual = manuals[config.key];
+      const automaticValue = automatic[config.key] ?? null;
       result.fields[config.key] = {
-        automatic,
+        automatic: automaticValue,
         manual,
-        effective: manual ?? automatic,
+        effective: manual ?? automaticValue,
         unit: config.unit,
         source: manual !== null ? 'manual' : 'automatic',
       };
@@ -276,9 +303,9 @@
     const data = currentGeometryEstimates();
     const fieldMap = {
       storeys: ['storeysAboveGround', 'Geschoße', 'Medianhöhe / Höhenmodul, ganzzahlig gerundet'],
-      grossFloorArea: ['grossFloorArea', 'm²', 'Dachprojektion × oberirdische Geschoße'],
-      usableFloorArea: ['usableFloorArea', 'm²', 'BGF × Nutzflächenfaktor'],
-      heatedFloorArea: ['heatedFloorArea', 'm²', 'Nutzfläche als automatische Erstannahme'],
+      grossFloorArea: ['grossFloorArea', 'm²', 'Dachprojektion × verwendete oberirdische Geschoße'],
+      usableFloorArea: ['usableFloorArea', 'm²', 'verwendete BGF × Nutzflächenfaktor'],
+      heatedFloorArea: ['heatedFloorArea', 'm²', 'ursprüngliche automatische Nutzfläche als unabhängige Erstannahme'],
       exteriorWall: ['exteriorWallGrossArea', 'm²', 'Gebäudeumfang × Medianhöhe'],
       windowArea: ['windowArea', 'm²', 'Außenwandfläche × Fensteranteil'],
       topFloorArea: ['topFloorArea', 'm²', 'Gebäudegrundfläche'],
@@ -391,6 +418,15 @@
     };
     const value = text(ids[key]);
     return value && value !== '–' ? value : fallback;
+  }
+
+  function printEstimateText(key, fallback = '–') {
+    const data = currentGeometryEstimates();
+    const config = estimateFieldConfig().find((item) => item.key === key);
+    const item = data.fields[key];
+    if (!config || !item || item.effective === null) return fallback;
+    const formatted = config.format(item.effective);
+    return item.manual !== null ? `${formatted} · manuell` : `ca. ${formatted}`;
   }
 
   function syncProjectFromUi() {
@@ -735,10 +771,10 @@
       { label: 'Höhenlage', value: text('terrainHeight') },
       { label: 'Dachprojektion', value: text('metricAreaRounded') },
       { label: 'Gebäudehöhe Median', value: text('metricHeightMedian') },
-      { label: 'Oberirdische Geschoße', value: effectiveEstimateText('storeys') },
-      { label: 'Bruttogeschoßfläche', value: effectiveEstimateText('grossFloorArea') },
-      { label: 'Nutzfläche', value: effectiveEstimateText('usableFloorArea') },
-      { label: 'Beheizte Nutzfläche', value: effectiveEstimateText('heatedFloorArea') },
+      { label: 'Oberirdische Geschoße', value: printEstimateText('storeys') },
+      { label: 'Bruttogeschoßfläche', value: printEstimateText('grossFloorArea') },
+      { label: 'Nutzfläche', value: printEstimateText('usableFloorArea') },
+      { label: 'Beheizte Nutzfläche', value: printEstimateText('heatedFloorArea') },
       { label: 'Außenwandfläche', value: effectiveEstimateText('exteriorWall') },
       { label: 'Fensterfläche', value: effectiveEstimateText('windowArea') },
       { label: 'Oberste Geschoßfläche', value: effectiveEstimateText('topFloorArea') },
@@ -869,10 +905,12 @@
 
   window.addEventListener('standortpass:address-selected', async (event) => {
     const record = event.detail?.record;
+    const addressChangeAction = event.detail?.addressChangeAction || 'initial';
     if (record && !hydrationRunning) {
-      // Neuer Standort = keine alten standortabhängigen Ergebnisse weiterverwenden.
+      // Bei einer Adresskorrektur bleiben manuelle Gebäudeangaben aus dem gemeinsamen
+      // Adressmanager erhalten. Bei einem wirklich neuen Projekt beginnt die Geometrie leer.
       store.setPath('location', { addressRecord: compactAddressRecord(record) });
-      store.setPath('building', {});
+      if (!['correct', 'same'].includes(addressChangeAction)) store.setPath('building', {});
       store.setPath('modules.standortpass', {});
       store.setPath('project.addressLabel', record.label || '');
     }
@@ -884,7 +922,13 @@
     button.textContent = 'Bericht erstellen';
     setReportStatus('bereit', 'success');
     $('reportRunMessage').textContent = 'Standort ist gewählt. Mit „Bericht erstellen“ werden alle verfügbaren Prüfungen automatisch nacheinander ausgeführt.';
-    if (!hydrationRunning) resetGeometryEstimatesInputs();
+    if (!hydrationRunning) {
+      if (addressChangeAction === 'correct') {
+        restoreGeometryEstimates(store.get().building?.geometry);
+      } else if (addressChangeAction !== 'same') {
+        resetGeometryEstimatesInputs();
+      }
+    }
     await updateLocationLinks();
     if (!hydrationRunning) syncProjectFromUi();
   });
