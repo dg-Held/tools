@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "data_date": "2026-08-03",
-  "title": "Sichtbare Fallbackannahmen Energiefluss V4.1",
+  "title": "Sichtbare Fallbackannahmen Energiefluss V4.2",
   "note": "Die Werte sind bewusst grobe, austauschbare Beratungsannahmen. Sie sind keine Bauteilberechnung, kein Energieausweis und keine normative Zuordnung nach Baujahr.",
   "assumptions": {
     "heated_floor_area_m2": 120,

@@ -8,6 +8,10 @@
   const geometryService = global.EnergyToolsBuildingGeometryService;
   const core = global.EnergyFlowCore;
   const paths = global.EnergyToolsPaths;
+  const addressCore = global.AddressProviderCore;
+  const oibNatCore = global.OibNatCore;
+  const oibTnat13Core = global.OibTnat13Core;
+  const precomputedClimateCore = global.PrecomputedClimateCore;
 
   if (!store || !model || !resolver || !addressManager || !geometryService || !core) {
     console.error('Energiefluss V4: gemeinsame Basis oder Rechenkern fehlt.');
@@ -63,6 +67,7 @@
       uPath: 'building.thermal.envelope.exteriorWall.uValue',
       enabledPath: 'building.thermal.envelope.exteriorWall.enabled',
       defaultEnabled: true,
+      areaStep: 10,
     },
     {
       id: 'windows', label: 'Fenster', note: 'gesamte Fensterfläche',
@@ -70,6 +75,7 @@
       uPath: 'building.thermal.envelope.windows.uValue',
       enabledPath: 'building.thermal.envelope.windows.enabled',
       defaultEnabled: true,
+      areaStep: 5,
     },
     {
       id: 'topFloorCeiling', label: 'Oberste Geschoßdecke', note: 'aktiv bei unbeheiztem Dachraum',
@@ -77,6 +83,7 @@
       uPath: 'building.thermal.envelope.topFloorCeiling.uValue',
       enabledPath: 'building.thermal.envelope.topFloorCeiling.enabled',
       defaultEnabled: true,
+      areaStep: 10,
     },
     {
       id: 'roof', label: 'Dach', note: 'aktiv bei ausgebautem Dach oder Teilfläche',
@@ -84,6 +91,7 @@
       uPath: 'building.thermal.envelope.roof.uValue',
       enabledPath: 'building.thermal.envelope.roof.enabled',
       defaultEnabled: false,
+      areaStep: 10,
     },
     {
       id: 'basementCeiling', label: 'Kellerdecke / UG-Decke', note: 'Abschluss gegen unbeheizten Bereich',
@@ -91,6 +99,7 @@
       uPath: 'building.thermal.envelope.basementCeiling.uValue',
       enabledPath: 'building.thermal.envelope.basementCeiling.enabled',
       defaultEnabled: true,
+      areaStep: 10,
     },
     {
       id: 'groundFloor', label: 'Boden / unterste Geschoßdecke', note: 'gegen Erdreich oder Außenluft',
@@ -98,6 +107,7 @@
       uPath: 'building.thermal.envelope.groundFloor.uValue',
       enabledPath: 'building.thermal.envelope.groundFloor.enabled',
       defaultEnabled: false,
+      areaStep: 10,
     },
   ];
 
@@ -109,6 +119,7 @@
   let lastResult = null;
   let lastResultFingerprint = '';
   let fallbackUpdateRunning = false;
+  let climateCalculationRunning = false;
 
   function clone(value) {
     return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
@@ -156,6 +167,18 @@
     const factor = 10 ** digits;
     const rounded = Math.round(Number(value) * factor) / factor;
     return String(rounded);
+  }
+
+  function roundToStep(value, step = 1) {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Number(value);
+    const increment = Number(step);
+    if (!Number.isFinite(number) || !Number.isFinite(increment) || increment <= 0) return null;
+    return Math.round(number / increment) * increment;
+  }
+
+  function roundedComponentArea(project, component) {
+    return roundToStep(valueAt(project, component.areaPath, 0), component.areaStep ?? 10) ?? 0;
   }
 
   function formatSignedPercent(value) {
@@ -315,7 +338,7 @@
       else if (kind === 'condition-select') value = input.value;
       else value = input.value.trim() === '' ? null : Number(input.value);
       if (kind === 'number' && value !== null && !Number.isFinite(value)) return;
-      store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4' });
+      store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.2' });
     });
     reset.addEventListener('click', () => store.clearFieldCandidate(path, model.ORIGIN.MANUAL));
   }
@@ -350,7 +373,7 @@
       <tr data-component-id="${component.id}">
         <td class="envelope-active"><input type="checkbox" data-component-enabled aria-label="${component.label} aktiv"></td>
         <td class="envelope-label"><strong>${component.label}</strong><small>${component.note}</small></td>
-        <td><div class="envelope-field"><input class="envelope-input" type="number" step="any" min="0" data-component-area><button class="envelope-reset" type="button" data-reset-area>↺</button><small data-area-detail></small></div></td>
+        <td><div class="envelope-field"><input class="envelope-input" type="number" step="${component.areaStep}" min="0" data-component-area><button class="envelope-reset" type="button" data-reset-area>↺</button><small data-area-detail></small></div></td>
         <td><div class="envelope-field"><input class="envelope-input" type="number" step="0.01" min="0" data-component-u><button class="envelope-reset" type="button" data-reset-u>↺</button><small data-u-detail></small></div></td>
         <td class="envelope-result" data-component-ua>–</td>
         <td class="envelope-result" data-component-loss>–</td>
@@ -366,19 +389,21 @@
 
       enabled.addEventListener('change', () => {
         if (rendering) return;
-        store.setFieldCandidate(component.enabledPath, model.ORIGIN.MANUAL, enabled.checked, { source: 'Energiefluss V4' });
+        store.setFieldCandidate(component.enabledPath, model.ORIGIN.MANUAL, enabled.checked, { source: 'Energiefluss V4.2' });
       });
       area.addEventListener('change', () => {
         if (rendering) return;
-        const value = area.value.trim() === '' ? null : Number(area.value);
-        if (value !== null && !Number.isFinite(value)) return;
-        store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4' });
+        const rawValue = area.value.trim() === '' ? null : Number(area.value);
+        if (rawValue !== null && !Number.isFinite(rawValue)) return;
+        const value = rawValue === null ? null : roundToStep(rawValue, component.areaStep);
+        area.value = value === null ? '' : String(value);
+        store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.2', method: `bewusst auf ${component.areaStep} m² gerundet` });
       });
       uValue.addEventListener('change', () => {
         if (rendering) return;
         const value = uValue.value.trim() === '' ? null : Number(uValue.value);
         if (value !== null && !Number.isFinite(value)) return;
-        store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4' });
+        store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4.2' });
       });
       resetArea.addEventListener('click', () => store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL));
       resetU.addEventListener('click', () => store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL));
@@ -394,11 +419,12 @@
       const componentResult = result?.envelope?.components?.find((item) => item.id === component.id);
 
       row.querySelector('[data-component-enabled]').checked = Boolean(enabledInfo.value);
-      row.querySelector('[data-component-area]').value = formatEditableNumber(areaInfo.value, 1);
+      const roundedArea = roundedComponentArea(project, component);
+      row.querySelector('[data-component-area]').value = formatEditableNumber(roundedArea, 0);
       row.querySelector('[data-component-u]').value = formatEditableNumber(uInfo.value, 2);
       row.querySelector('[data-reset-area]').hidden = !areaInfo.isManual;
       row.querySelector('[data-reset-u]').hidden = !uInfo.isManual;
-      row.querySelector('[data-area-detail]').textContent = `${ORIGIN_LABELS[areaInfo.origin] ?? 'offen'}${areaInfo.isManual && areaInfo.automaticValue !== null ? ` · Automatik ${formatNumber(areaInfo.automaticValue, 0)} m²` : ''}`;
+      row.querySelector('[data-area-detail]').textContent = `${ORIGIN_LABELS[areaInfo.origin] ?? 'offen'}${areaInfo.isManual && areaInfo.automaticValue !== null ? ` · Automatik ca. ${formatNumber(roundToStep(areaInfo.automaticValue, component.areaStep), 0)} m²` : ''}`;
       row.querySelector('[data-u-detail]').textContent = `${ORIGIN_LABELS[uInfo.origin] ?? 'offen'}${uInfo.isManual && uInfo.automaticValue !== null ? ` · Fallback ${formatNumber(uInfo.automaticValue, 2)}` : ''}`;
       row.querySelector('[data-component-ua]').textContent = componentResult ? `${formatNumber(componentResult.uaWK, 0)} W/K` : '–';
       row.querySelector('[data-component-loss]').textContent = componentResult ? formatEnergy(componentResult.lossKwh) : '–';
@@ -437,7 +463,7 @@
         id: component.id,
         label: component.label,
         enabled: valueAt(project, component.enabledPath, component.defaultEnabled),
-        areaM2: valueAt(project, component.areaPath, 0),
+        areaM2: roundedComponentArea(project, component),
         uValue: valueAt(project, component.uPath, 0),
       })),
       assumptions: {
@@ -474,7 +500,7 @@
       $('calculatedDelivered').textContent = '–';
       $('modelDeviation').textContent = '–';
       $('modelDeviationNote').textContent = 'Klima einmal berechnen';
-      $('comparisonText').textContent = 'Der Verbrauchsvergleich benötigt die standortbezogenen INCA-Klimakennwerte. Energiefluss funktioniert weiterhin eigenständig; nach einer Klimaauswertung erscheint hier automatisch der unabhängige Hüllvergleich.';
+      $('comparisonText').textContent = 'Für den unabhängigen Hüllvergleich fehlen noch die standortbezogenen INCA-Klimakennwerte. Sie können direkt hier berechnet werden; die ausführliche Klimaauswertung ist dafür nicht erforderlich.';
       return;
     }
 
@@ -571,10 +597,10 @@
     const roomHeatField = project.consumption?.heating?.usefulRoomHeatAnnual;
     const updates = [];
     if (!sameCandidate(hwbField, model.ORIGIN.DERIVED, result.consumption.hwbCorrectedKwhM2a)) {
-      updates.push({ path: 'building.thermal.consumptionHwb', origin: model.ORIGIN.DERIVED, value: result.consumption.hwbCorrectedKwhM2a, options: { unit: 'kWh/m²a', source: 'Energiefluss V4', method: 'verbrauchsbasiert, raumtemperatur- und flächenkorrigiert' } });
+      updates.push({ path: 'building.thermal.consumptionHwb', origin: model.ORIGIN.DERIVED, value: result.consumption.hwbCorrectedKwhM2a, options: { unit: 'kWh/m²a', source: 'Energiefluss V4.2', method: 'verbrauchsbasiert, raumtemperatur- und flächenkorrigiert' } });
     }
     if (!sameCandidate(roomHeatField, model.ORIGIN.DERIVED, result.consumption.roomHeatKwh)) {
-      updates.push({ path: 'consumption.heating.usefulRoomHeatAnnual', origin: model.ORIGIN.DERIVED, value: result.consumption.roomHeatKwh, options: { unit: 'kWh/a', source: 'Energiefluss V4', method: 'Verbrauch × Nutzungsgrad − Warmwasser' } });
+      updates.push({ path: 'consumption.heating.usefulRoomHeatAnnual', origin: model.ORIGIN.DERIVED, value: result.consumption.roomHeatKwh, options: { unit: 'kWh/a', source: 'Energiefluss V4.2', method: 'Verbrauch × Nutzungsgrad − Warmwasser' } });
     }
     if (updates.length) store.setFieldCandidates(updates);
     if (existing !== fingerprint) store.patch({ modules: { energiefluss: resultSnapshot(result, fingerprint) } });
@@ -798,7 +824,7 @@
       return {
         calculated: '–',
         deviation: '–',
-        note: 'Klimadaten fehlen; Klima-Tool einmal ausführen.',
+        note: 'Klimadaten fehlen; direkt im Energiefluss berechnen.',
       };
     }
     const assessment = comparisonAssessment(plausibility.deviationPercent);
@@ -852,7 +878,7 @@
 
     $('v4PrintReport').innerHTML = `
       <div class="v4-print-page">
-        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.1</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
+        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.2</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
         <div class="print-flow">
           <div><h2>Einträge</h2>${gainsHtml}</div>
           <div class="print-house"><img src="../../shared/assets/energy-flow-house.svg" alt=""><strong>${formatEnergy(result.gains.totalKwh)}</strong></div>
@@ -871,8 +897,124 @@
         <div class="print-title"><div><h1>Gebäudehülle und Datenbasis</h1><small>${address}</small></div><p>Automatische, abgeleitete und manuelle Werte bleiben unterscheidbar.</p></div>
         <section class="print-section"><h2>Bauteile</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>UA</th><th>Verlust</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
         <section class="print-section"><h2>Zusammenfassung</h2><div class="print-data-grid"><div><span>Summe UA</span><strong>${formatNumber(result.envelope.totalUaWK)} W/K</strong></div><div><span>Kalibrierfaktor</span><strong>${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a</strong></div><div><span>Gebäudehülle</span><strong>${formatEnergy(result.losses.componentsKwh)}</strong></div><div><span>Wärmebrücken</span><strong>${formatEnergy(result.losses.thermalBridgesKwh)}</strong></div></div></section>
-        <p class="print-footer-note">Modell ${core.MODEL_VERSION} · Fallback-Datenstand ${config.data_date ?? '–'} · U-Wert-Profile aus shared/data/standards/energy-flow-v4-defaults.json · Hüllvergleich mit INCA-Heizgradstunden zur Bilanztemperatur 15 °C, sofern im Projekt vorhanden.</p>
+        <p class="print-footer-note">Modell ${core.MODEL_VERSION} · Fallback-Datenstand ${config.data_date ?? '–'} · U-Wert-Profile aus shared/data/standards/energy-flow-v4-defaults.json · Hüllvergleich mit INCA-Heizgradstunden zur Bilanztemperatur 15 °C; Klimawerte können direkt im Energiefluss berechnet werden.</p>
       </div>`;
+  }
+
+  function normalizedProjectAddress(project) {
+    const record = project?.location?.addressRecord ?? {};
+    const latitude = finite(record.latitude ?? valueAt(project, 'location.latitude'), null);
+    const longitude = finite(record.longitude ?? valueAt(project, 'location.longitude'), null);
+    const label = record.label ?? project?.project?.addressLabel ?? valueAt(project, 'location.address', '');
+    if (!label || latitude === null || longitude === null) return null;
+
+    const projectKg = valueAt(project, 'location.cadastralMunicipalityNumber', null);
+    const kgNumber = projectKg ?? record.cadastral_municipality_number ?? null;
+    const sourceRecord = {
+      ...record,
+      id: record.id ?? record.source_id ?? `project-${latitude}-${longitude}`,
+      label,
+      latitude,
+      longitude,
+      cadastral_municipality_number: kgNumber ? String(kgNumber) : null,
+      cadastral_municipality_numbers: kgNumber
+        ? [String(kgNumber)]
+        : (Array.isArray(record.cadastral_municipality_numbers) ? record.cadastral_municipality_numbers : []),
+      source: record.source ?? 'Gemeinsames Projekt',
+      coordinate_kind: record.coordinate_kind ?? 'building',
+    };
+    return addressCore?.standardizeAddress
+      ? addressCore.standardizeAddress(sourceRecord, 'Gemeinsames Projekt')
+      : sourceRecord;
+  }
+
+  function climateLocationFromProject(project) {
+    const address = normalizedProjectAddress(project);
+    if (!address) throw new Error('Bitte zuerst eine bestätigte Adresse mit Koordinaten auswählen.');
+    if (!oibNatCore || !precomputedClimateCore) {
+      throw new Error('OIB- oder INCA-Klimamodul wurde nicht geladen.');
+    }
+
+    const natLookup = oibNatCore.lookupAddress(address);
+    if (natLookup?.status !== 'exact' || !natLookup.reference) {
+      const reason = natLookup?.message ?? 'Die Katastralgemeinde konnte nicht eindeutig bestimmt werden.';
+      throw new Error(`${reason} Bitte die KG im Klima-Tool einmal eindeutig auswählen.`);
+    }
+    const nat = natLookup.reference;
+    const tnatLookup = oibTnat13Core?.lookupAddress(address);
+    const tnat = tnatLookup?.status === 'exact' ? tnatLookup.reference : null;
+
+    return {
+      id: address.id ?? `project-${address.latitude}-${address.longitude}`,
+      name: project.project?.title || address.label,
+      address_label: address.label,
+      address,
+      latitude: Number(address.latitude),
+      longitude: Number(address.longitude),
+      kg_number: nat.kg_number ?? address.cadastral_municipality_number ?? null,
+      kg_name: nat.kg_name ?? valueAt(project, 'location.cadastralMunicipalityName', null),
+      nat_c: Number(nat.nat_at_elevation_min_c),
+      nat_reference_height_m: Number(nat.elevation_min_m),
+      nat_reference_max_height_m: Number(nat.elevation_max_m),
+      climate_region: nat.climate_region ?? null,
+      tnat13_c: tnat ? Number(tnat.tnat13_at_elevation_min_c ?? tnat.tnat13_c) : null,
+    };
+  }
+
+  async function calculateClimateHere() {
+    if (climateCalculationRunning) return;
+    const button = $('calculateClimateHere');
+    climateCalculationRunning = true;
+    button.disabled = true;
+    button.textContent = 'Klimawerte werden berechnet …';
+    $('comparisonPanel').dataset.level = 'missing';
+    $('comparisonStatus').textContent = 'INCA-Klimadaten werden geladen';
+    $('comparisonText').textContent = 'Die vorhandenen Jahrespakete werden für die Projektadresse ausgewertet. Große Klimadateien werden dabei nur bei Bedarf geladen.';
+
+    try {
+      const project = store.get();
+      const location = climateLocationFromProject(project);
+      const loaded = await precomputedClimateCore.loadForLocation(location);
+      const result = loaded?.result;
+      if (!result) {
+        const missingYears = loaded?.parts?.missingYears ?? [];
+        const detail = missingYears.length
+          ? `Es fehlen Jahrespakete: ${missingYears.join(', ')}.`
+          : (loaded?.parts?.errors?.[0]?.message ?? 'Für den Standort wurde kein vollständiges INCA-Profil gefunden.');
+        throw new Error(detail);
+      }
+
+      const years = Array.isArray(result.data?.years) ? result.data.years.map(Number).filter(Number.isFinite) : [];
+      const period = years.length ? `${Math.min(...years)}–${Math.max(...years)}` : null;
+      store.patch({
+        modules: {
+          klima: {
+            climateSummary: {
+              period,
+              source: result.data?.source ?? null,
+              natC: result.location?.nat_c ?? location.nat_c,
+              tnat13C: result.location?.tnat13_c ?? location.tnat13_c,
+              metrics: clone(result.metrics ?? {}),
+              gridLatitude: result.location?.grid_latitude ?? null,
+              gridLongitude: result.location?.grid_longitude ?? null,
+              precomputedDistanceM: result.location?.precomputed_distance_m ?? null,
+              calculationMode: 'energiefluss-v4-direct',
+              updatedAt: new Date().toISOString(),
+            },
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Energiefluss V4: Klimawerte konnten nicht berechnet werden.', error);
+      $('comparisonPanel').dataset.level = 'warning';
+      $('comparisonStatus').textContent = 'Klimaberechnung nicht möglich';
+      $('comparisonText').textContent = error.message;
+    } finally {
+      climateCalculationRunning = false;
+      button.disabled = false;
+      button.textContent = 'Klimawerte berechnen';
+    }
   }
 
   async function loadConfig() {
@@ -888,11 +1030,40 @@
     }
   }
 
+  function initInfoTips() {
+    const tips = [...document.querySelectorAll('.info-tip')];
+    const closeAll = (except = null) => tips.forEach((tip) => {
+      if (tip === except) return;
+      tip.classList.remove('is-open');
+      tip.setAttribute('aria-expanded', 'false');
+    });
+
+    tips.forEach((tip) => {
+      tip.setAttribute('aria-expanded', 'false');
+      tip.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const opening = !tip.classList.contains('is-open');
+        closeAll(tip);
+        tip.classList.toggle('is-open', opening);
+        tip.setAttribute('aria-expanded', String(opening));
+      });
+      tip.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        tip.classList.remove('is-open');
+        tip.setAttribute('aria-expanded', 'false');
+        tip.blur();
+      });
+    });
+    document.addEventListener('click', () => closeAll());
+  }
+
   async function init() {
+    initInfoTips();
     document.querySelectorAll('.v4-value-field').forEach(buildValueField);
     buildEnvelopeRows();
     await loadConfig();
     await initAddressSearch();
+    $('calculateClimateHere').addEventListener('click', calculateClimateHere);
     store.subscribe(renderProject);
     global.addEventListener('energy-tools:prepare-print', () => {
       if (lastResult) buildPrintReport(store.get(), lastResult);
@@ -910,6 +1081,6 @@
   init().catch((error) => {
     console.error(error);
     $('v4Warnings').hidden = false;
-    $('v4Warnings').innerHTML = `<p>Energiefluss V4 konnte nicht initialisiert werden: ${error.message}</p>`;
+    $('v4Warnings').innerHTML = `<p>Energiefluss V4.2 konnte nicht initialisiert werden: ${error.message}</p>`;
   });
 })(window);

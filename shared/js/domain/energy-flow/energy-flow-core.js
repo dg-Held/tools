@@ -1,7 +1,7 @@
 'use strict';
 
 (function initEnergyFlowCore(global) {
-  const MODEL_VERSION = '4.1.0';
+  const MODEL_VERSION = '4.2.0';
 
   function finite(value, fallback = 0) {
     const number = Number(value);

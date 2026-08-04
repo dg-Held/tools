@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Energiefluss V4.1 | Tools für Energieberatung</title>
+  <title>Energiefluss V4.2 | Tools für Energieberatung</title>
   <meta name="description" content="Verbrauchsbasierter Energiefluss mit gemeinsamer Projektbasis, Gebäudegeometrie und nachvollziehbarer Bauteilverteilung.">
   <link rel="stylesheet" href="../../styles.css">
   <link rel="stylesheet" href="../../shared/css/tokens.css">
   <link rel="stylesheet" href="../../shared/css/components.css">
   <link rel="stylesheet" href="../../shared/css/print.css">
-  <link rel="stylesheet" href="energiefluss-v4.css">
+  <link rel="stylesheet" href="energiefluss-v4.css?v=4">
 </head>
 <body data-tool-mode="energy-flow-v4">
   <header class="site-header no-print">
@@ -30,7 +30,7 @@
 
   <main class="energy-v4-page">
     <section class="container tool-intro no-print">
-      <p class="eyebrow">Tool · V4.1</p>
+      <p class="eyebrow">Tool · V4.2</p>
       <h1>Energiefluss im Gebäude</h1>
       <p>Verbrauch, Nutzung und gemeinsame Gebäudegeometrie werden zu einer nachvollziehbaren Energiebilanz verbunden. Bekannte Projektwerte werden übernommen; nur unsichere Werte müssen geprüft oder überschrieben werden.</p>
     </section>
@@ -58,7 +58,7 @@
       <div class="building-candidates" id="v4BuildingCandidates" hidden></div>
     </section>
 
-    <section class="container v4-workspace no-print" aria-label="Arbeitsoberfläche Energiefluss V4.1">
+    <section class="container v4-workspace no-print" aria-label="Arbeitsoberfläche Energiefluss V4.2">
       <div class="v4-card v4-card--basis">
         <div class="section-heading">
           <div>
@@ -103,7 +103,7 @@
           </div>
           <span class="section-badge">Bestand</span>
         </div>
-        <p class="section-note">Die Flächen werden übersichtlich gerundet angezeigt. U-Wert-Fallbacks stammen aus der zentralen Datendatei und sind grobe Beratungsannahmen; bestätigte U-Werte haben immer Vorrang.</p>
+        <p class="section-note">Die Flächen werden wie im Standortpass bewusst grob dargestellt: Fenster auf 5 m², alle übrigen Hüllflächen auf 10 m² gerundet. U-Wert-Fallbacks stammen aus der zentralen Datendatei; bestätigte U-Werte haben immer Vorrang.</p>
         <div class="envelope-table-wrap">
           <table class="envelope-table">
             <thead>
@@ -151,10 +151,10 @@
         </div>
 
         <div class="result-kpis">
-          <article><span>HWB aus Verbrauch</span><strong id="hwbConsumption">–</strong><small>Raumwärme / BGF</small></article>
-          <article><span>HWB korrigiert</span><strong id="hwbCorrected">–</strong><small>Raumtemperatur und beheizter Anteil</small></article>
-          <article><span>Rechnerischer Verbrauch</span><strong id="calculatedDelivered">–</strong><small>U × A + Klima</small></article>
-          <article><span>Abweichung</span><strong id="modelDeviation">–</strong><small id="modelDeviationNote">Plausibilitätsvergleich</small></article>
+          <article><div class="kpi-heading"><span>HWB aus Verbrauch</span><button class="info-tip" type="button" aria-label="Information zum HWB aus Verbrauch" data-tooltip="Nutzwärme für Raumheizung geteilt durch die Bruttogeschoßfläche. Verbrauchsbasierter Orientierungswert, kein Energieausweis-HWB." title="Nutzwärme für Raumheizung geteilt durch die Bruttogeschoßfläche.">i</button></div><strong id="hwbConsumption">–</strong></article>
+          <article><div class="kpi-heading"><span>HWB korrigiert</span><button class="info-tip" type="button" aria-label="Information zum korrigierten HWB" data-tooltip="Verbrauchs-HWB, überschlägig auf 20 °C Raumtemperatur und 100 % beheizten Flächenanteil korrigiert." title="Verbrauchs-HWB mit Temperatur- und Flächenkorrektur.">i</button></div><strong id="hwbCorrected">–</strong></article>
+          <article><div class="kpi-heading"><span>Rechnerischer Verbrauch</span><button class="info-tip" type="button" aria-label="Information zum rechnerischen Verbrauch" data-tooltip="Unabhängige Abschätzung aus Summe U × A, INCA-Heizgradstunden, Lüftung, Wärmebrücken, Gewinnen, Warmwasser und Jahresnutzungsgrad." title="U × A + Klima + Lüftung − Gewinne.">i</button></div><strong id="calculatedDelivered">–</strong></article>
+          <article><div class="kpi-heading"><span>Abweichung</span><button class="info-tip" type="button" aria-label="Information zur Abweichung" data-tooltip="Prozentuale Differenz zwischen rechnerischem und eingegebenem Heizenergieverbrauch. Dient als Plausibilitätscheck der Eingaben." title="Plausibilitätsvergleich zwischen Modell und Verbrauch.">i</button></div><strong id="modelDeviation">–</strong><span class="kpi-status" id="modelDeviationNote">Plausibilitätsvergleich</span></article>
         </div>
 
         <div class="comparison-panel" id="comparisonPanel">
@@ -162,7 +162,10 @@
             <span class="comparison-status" id="comparisonStatus">Klimadaten werden geprüft</span>
             <p id="comparisonText">Für den unabhängigen Hüllvergleich werden vorhandene INCA-Klimakennwerte aus dem gemeinsamen Projekt verwendet.</p>
           </div>
-          <a class="tool-link" href="../klima/index.html">Klima am Standort ansehen →</a>
+          <div class="comparison-actions">
+            <button class="quiet-button" id="calculateClimateHere" type="button">Klimawerte berechnen</button>
+            <a class="tool-link" href="../klima/index.html">Klima im Detail ansehen →</a>
+          </div>
         </div>
 
         <div class="warnings" id="v4Warnings" hidden></div>
@@ -170,12 +173,16 @@
       </div>
 
       <details class="v4-methodology">
-        <summary>Methodik, Annahmen und Grenzen</summary>
+        <summary>Methodik, Formeln, Annahmen und Grenzen</summary>
         <div class="methodology-grid">
-          <div><h3>Verbrauchsbilanz</h3><p>Heizenergie × Jahresnutzungsgrad ergibt die Nutzwärme. Ist Warmwasser enthalten, werden derzeit 1.000 kWh je Person und Jahr abgezogen. Die übrige Raumwärme wird auf BGF beziehungsweise beheizte Nutzfläche bezogen.</p></div>
-          <div><h3>Gebäudehülle</h3><p>Nach Lüftung, Anlage und Warmwasser verbleibt der verbrauchsbasierte Verlust der Gebäudehülle. Er wird über U × A auf die aktivierten Bauteile verteilt. Die Bauteile werden als eingerückte Detailinformation unter der Gesamtsumme dargestellt.</p></div>
-          <div><h3>Rechnerischer Vergleich</h3><p>Sind gemeinsame Klimadaten vorhanden, wird aus U × A und den INCA-Heizgradstunden ein unabhängiger rechnerischer Verbrauch abgeschätzt. Die Abweichung dient nur der Plausibilisierung und ist kein Energieausweis.</p></div>
-          <div><h3>Abgrenzung</h3><p>Das Tool ist eine überschlägige Beratungshilfe und kein Energieausweis. Die Bestands-U-Werte kalibrieren die Verlustaufteilung; eine Sanierungsmaßnahme wird später als eigenes Szenario mit unverändertem Kalibrierfaktor gerechnet.</p></div>
+          <div><h3>1 · Nutzwärme und Raumwärme</h3><p><code>Q<sub>Nutz</sub> = HEB × η</code><br><code>Q<sub>WW</sub> = Personen × 1.000 kWh/a</code>, sofern Warmwasser enthalten ist.<br><code>Q<sub>Raum</sub> = Q<sub>Nutz</sub> − Q<sub>WW</sub></code>.</p></div>
+          <div><h3>2 · Verbrauchsbezogener HWB</h3><p><code>HWB<sub>Verbrauch</sub> = Q<sub>Raum</sub> / BGF</code>.<br>Korrektur: <code>K<sub>T</sub> = 1 + (T<sub>Raum</sub> − 20) × 0,06</code> und <code>K<sub>beheizt</sub> = 1 + (Anteil − 100) × 0,005</code>.</p></div>
+          <div><h3>3 · Gewinne und Lüftung</h3><p><code>Q<sub>intern</sub> = 2,7 W/m² × NFL × 8,76</code>.<br><code>Q<sub>solar</sub> = 175 kWh/m²a × A<sub>Fenster</sub> × 0,70</code>.<br><code>Q<sub>Lüftung</sub> = 10 kWh/m³a × V<sub>konditioniert</sub></code>.</p></div>
+          <div><h3>4 · Gebäudehülle in der Verbrauchsbilanz</h3><p>Nach Anlage, Warmwasser und Lüftung verbleibt die Gebäudehülle inklusive Wärmebrücken. Wärmebrücken werden mit 7,5 % der Bauteilverluste angesetzt. Die Aufteilung erfolgt proportional zu <code>U × A</code>.</p></div>
+          <div><h3>5 · Unabhängiger Hüllvergleich</h3><p><code>HGT = Vollbenutzungsstunden × (15 °C − NAT)</code>.<br><code>Q<sub>Transmission</sub> = Σ(U × A) × HGT / 1.000</code>.<br>Danach werden Wärmebrücken und Lüftung addiert sowie interne und solare Gewinne abgezogen.</p></div>
+          <div><h3>6 · Rechnerischer Heizenergieverbrauch</h3><p><code>HEB<sub>rechnerisch</sub> = (Q<sub>Raum,rech</sub> + Q<sub>WW</sub>) / η</code>.<br><code>Abweichung = (HEB<sub>rechnerisch</sub> − HEB<sub>gemessen</sub>) / HEB<sub>gemessen</sub></code>.</p></div>
+          <div><h3>7 · Datenpriorität und Rundung</h3><p>Manuell bestätigt → amtlich → abgeleitet → Fallback. Automatische Hüllflächen werden für Anzeige und Rechnung bewusst gerundet: Fenster auf 5 m², übrige Flächen auf 10 m².</p></div>
+          <div><h3>8 · Grenzen</h3><p>Überschlägige Beratungshilfe, kein Energieausweis, keine normgemäße Bauteil- oder Heizlastberechnung. Solare Gewinne, Lüftung, Warmwasser und U-Wert-Fallbacks sind vereinfachte Annahmen. Vollständige Methodik: <code>tools/energiefluss-v4/docs/</code>.</p></div>
         </div>
       </details>
     </section>
@@ -186,7 +193,7 @@
 
   <footer class="site-footer no-print">
     <div class="container footer-inner">
-      <div><p class="footer-name">Tools</p><p class="footer-note">Energiefluss V4.1 · gemeinsame Projektbasis</p></div>
+      <div><p class="footer-name">Tools</p><p class="footer-note">Energiefluss V4.2 · gemeinsame Projektbasis</p></div>
       <nav class="footer-links" aria-label="Rechtliche Informationen"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav>
       <p class="copyright">© <span id="year">2026</span></p>
     </div>
@@ -205,7 +212,12 @@
   <script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
   <script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
   <script src="../../shared/js/services/building-geometry-service.js?v=1"></script>
-  <script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=2"></script>
-  <script src="energiefluss-v4.js?v=2"></script>
+  <script src="../../shared/data/standards/oib/nat-tirol.js?v=1"></script>
+  <script src="../../shared/data/standards/oib/tnat13-tirol.js?v=1"></script>
+  <script src="../../shared/js/domain/climate/oib-nat-core.js?v=1"></script>
+  <script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script>
+  <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
+  <script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=4"></script>
+  <script src="energiefluss-v4.js?v=4"></script>
 </body>
 </html>

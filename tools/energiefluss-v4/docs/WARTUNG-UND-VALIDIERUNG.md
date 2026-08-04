@@ -1,6 +1,9 @@
-# Energiefluss V4 – Wartung und Validierung
+# Energiefluss V4.2 – Wartung und Validierung
 
-## Trennung der Zuständigkeiten
+**Modellversion:** 4.2.0  
+**Stand:** 04.08.2026
+
+## Zuständigkeiten
 
 ### Rechenkern
 
@@ -8,7 +11,7 @@
 shared/js/domain/energy-flow/energy-flow-core.js
 ```
 
-Enthält ausschließlich die Berechnung. Keine DOM-Zugriffe, keine Speicherung und keine Adressabfrage.
+Enthält Berechnung ohne DOM, Speicherung oder Adressabfrage.
 
 ### Veränderliche Fallbackdaten
 
@@ -16,36 +19,42 @@ Enthält ausschließlich die Berechnung. Keine DOM-Zugriffe, keine Speicherung u
 shared/data/standards/energy-flow-v4-defaults.json
 ```
 
-Enthält Startwerte, U-Wert-Profile und sichtbare Beratungsannahmen.
+Enthält Geometrie-, Nutzungs-, Bilanz- und U-Wert-Fallbacks.
 
-### Gemeinsame Gebäudegeometrie
+### Gemeinsame Klima- und Geometriedienste
 
 ```text
 shared/js/services/building-geometry-service.js
+shared/js/domain/climate/precomputed-climate-core.js
+shared/js/domain/climate/oib-nat-core.js
+shared/js/domain/climate/oib-tnat13-core.js
 ```
 
-Wird von Standortpass und Energiefluss V4 gemeinsam verwendet.
-
-### Oberfläche und Projektaustausch
+### Oberfläche
 
 ```text
+tools/energiefluss-v4/index.html
 tools/energiefluss-v4/energiefluss-v4.js
+tools/energiefluss-v4/energiefluss-v4.css
 ```
 
-Bindet Projektwerte, Eingaben, Rechenkern, Anzeige und Druck zusammen.
+## Pflichtprüfungen
 
-## Pflichtprüfungen nach Änderungen
-
-1. JavaScript-Syntax prüfen.
-2. Projekt ohne vorherigen Standortpass öffnen.
-3. Projekt mit Standortpass-Geometrie öffnen.
-4. Nutzfläche, Verbrauch und U-Werte manuell ändern.
-5. Seite neu laden und Werte kontrollieren.
-6. Einen Wert zurücksetzen und automatischen Ursprung kontrollieren.
-7. JSON exportieren und erneut importieren.
-8. Klima und Heizlast öffnen und gemeinsame Werte vergleichen.
-9. Druckvorschau auf zwei A4-Seiten prüfen.
-10. V3 öffnen und sicherstellen, dass sie unverändert funktioniert.
+1. V4 ohne bestehenden Standortpass öffnen.
+2. Adresse und TIRIS-Gebäude direkt in V4 auswählen.
+3. Projekt mit vorhandener Standortpass-Geometrie öffnen.
+4. Automatische Flächen prüfen: Fenster 5-m²-Schritte, übrige Hülle 10-m²-Schritte.
+5. Manuelle Fläche eingeben; sie muss auf die jeweilige Schrittweite gerundet und projektweit gespeichert werden.
+6. U-Werte ändern; UA und Verlustverteilung müssen reagieren.
+7. Gemessener Verbrauch darf durch U-Wert-Änderung nicht verändert werden.
+8. „Klimawerte berechnen“ direkt in V4 ausführen.
+9. Klima-Seite öffnen: Zeitraum/NAT müssen denselben Projektkontext verwenden.
+10. Rechnerischen Verbrauch und Abweichung prüfen.
+11. Info-Symbole mit Maus, Tastatur und Antippen prüfen.
+12. Wert zurücksetzen und automatischen Ursprung kontrollieren.
+13. JSON exportieren/importieren.
+14. Druckvorschau auf zwei A4-Seiten prüfen.
+15. V3 öffnen und unveränderte Funktion bestätigen.
 
 ## Fachliche Kontrollfälle
 
@@ -55,36 +64,63 @@ Bindet Projektwerte, Eingaben, Rechenkern, Anzeige und Druck zusammen.
 Gesamteinträge − Gesamtverluste ≈ 0 kWh/a
 ```
 
-Rundungsabweichungen unter 1 kWh/a sind unkritisch.
+Abweichungen unter 1 kWh/a sind rundungsbedingt unkritisch.
 
-### U-Wert-Verteilung
+### Flächenrundung
+
+Beispiele:
+
+```text
+Außenwand automatisch 281,83 m² → verwendet 280 m²
+Fenster automatisch 37,4 m²     → verwendet 35 m²
+Fenster automatisch 38,1 m²     → verwendet 40 m²
+```
+
+Der feinere Quellenwert muss als automatischer Kandidat erhalten bleiben.
+
+### Verbrauchsbilanz
 
 Bei unverändertem Verbrauch muss eine U-Wert-Änderung:
 
-- die UA-Summe verändern,
-- die Verlustverteilung verändern,
-- den gemessenen Gesamtverbrauch nicht verändern.
+- UA-Summe ändern,
+- Aufteilung der Gebäudehülle ändern,
+- gemessene Bilanzsumme unverändert lassen.
+
+### Unabhängiger Hüllvergleich
+
+Bei vorhandenen Klimawerten muss eine U-Wert- oder Flächenänderung den rechnerischen Verbrauch verändern. Der gemessene Verbrauch bleibt unverändert.
 
 ### Manuelle Priorität
 
-Ein manueller Wert muss nach einer automatischen Geometrieaktualisierung erhalten bleiben. Der automatische Wert muss weiterhin als Ursprungswert sichtbar sein.
+Manuelle Werte müssen nach Gebäudeaktualisierung erhalten bleiben. Der automatische Ursprungswert bleibt sichtbar und kann mit „↺“ reaktiviert werden.
 
-### Oberer und unterer Abschluss
+### Oberer/unterer Abschluss
 
 Bei gleichzeitig aktiver OGD und Dach beziehungsweise Kellerdecke und Boden muss eine Warnung erscheinen.
 
+## Direkte Klimaberechnung
+
+Testfälle:
+
+- eindeutige Katastralgemeinde: Berechnung erfolgreich,
+- mehrere KG ohne bestätigte Auswahl: verständliche Fehlermeldung und Link zum Klima-Tool,
+- fehlende Adresse/Koordinaten: Berechnung nicht starten,
+- fehlendes Jahrespaket: fehlende Jahre nennen,
+- erneute Berechnung: Projekt-Snapshot aktualisieren.
+
 ## Versionspflege
 
-Bei einer fachlichen Änderung des Rechenkerns:
+Bei fachlicher Änderung:
 
 1. `MODEL_VERSION` erhöhen,
-2. Methodikdokument aktualisieren,
-3. Kontrollfälle erneut durchführen,
-4. Datenstand im Ausdruck kontrollieren.
+2. Methodikbereich in `index.html` aktualisieren,
+3. Methodik- und Wartungsdokumente aktualisieren,
+4. Regressionstests durchführen,
+5. Ausdruck und Snapshot kontrollieren.
 
-Bei einer reinen Aktualisierung von Fallbackdaten:
+Bei reiner Fallbackdaten-Aktualisierung:
 
-1. JSON-Datei ändern,
+1. JSON ändern,
 2. `data_date` aktualisieren,
-3. fachliche Quelle beziehungsweise Begründung dokumentieren,
-4. kein JavaScript ändern, sofern die Struktur gleich bleibt.
+3. Quelle und Begründung dokumentieren,
+4. Regressionsfälle wiederholen.

@@ -297,7 +297,7 @@
   .print-footer-note { margin-top: 3mm; font-size: 6.5pt; color: var(--text-muted); }
 }
 
-/* V4.1 – kompakte gemeinsame Ausgangslage */
+/* V4.2 – kompakte gemeinsame Ausgangslage */
 .section-links {
   display: flex;
   flex-wrap: wrap;
@@ -323,7 +323,7 @@
 }
 .basis-details[open] summary { margin-bottom: 0.75rem; }
 
-/* V4.1 – Gebäudehülle als Hauptverlust, Bauteile als Detail */
+/* V4.2 – Gebäudehülle als Hauptverlust, Bauteile als Detail */
 .flow-entry--group {
   margin-top: 0.15rem;
   margin-bottom: 0.48rem;
@@ -404,4 +404,105 @@
   .print-flow-entry--detail .print-flow-bar { height: 1.3mm; }
   .print-detail-note { display: block; margin: 0.5mm 0 1mm 3mm; font-size: 5.5pt; color: var(--text-muted); }
   .print-house { min-height: 60mm; }
+}
+
+/* V4.2 – kompakte KPI-Hinweise und direkte Klimaberechnung */
+.kpi-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 1.4rem;
+}
+.kpi-heading > span {
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.kpi-status {
+  display: block;
+  min-height: 1.2em;
+  font-size: 0.64rem;
+  opacity: 0.86;
+}
+.info-tip {
+  position: relative;
+  z-index: 8;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 50%;
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.10);
+  cursor: help;
+}
+.info-tip:hover,
+.info-tip:focus-visible {
+  color: var(--text-dark);
+  background: #fff;
+  border-color: #fff;
+  outline: none;
+}
+.info-tip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: -4px;
+  top: calc(100% + 8px);
+  z-index: 80;
+  width: min(285px, 78vw);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--text-light);
+  background: var(--text-dark);
+  box-shadow: var(--shadow-card);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+}
+.info-tip:hover::after,
+.info-tip:focus-visible::after,
+.info-tip.is-open::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.comparison-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+}
+.comparison-actions .quiet-button:disabled {
+  opacity: 0.62;
+  cursor: progress;
+}
+.methodology-grid code {
+  font-family: inherit;
+  font-weight: 750;
+  color: var(--text-dark);
+  background: transparent;
+}
+
+@media (max-width: 760px) {
+  .comparison-actions { justify-content: flex-start; }
+}
+
+@media print {
+  .info-tip { display: none !important; }
 }
