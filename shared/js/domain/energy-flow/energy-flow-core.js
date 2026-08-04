@@ -1,11 +1,17 @@
 'use strict';
 
 (function initEnergyFlowCore(global) {
-  const MODEL_VERSION = '4.0.0';
+  const MODEL_VERSION = '4.1.0';
 
   function finite(value, fallback = 0) {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
+  }
+
+  function optionalFinite(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
   }
 
   function positive(value, fallback = 0) {
@@ -96,12 +102,82 @@
     const specificDeliveredKwhM2a = safeHeatedArea ? annualEnergyKwh / safeHeatedArea : null;
     const specificRoomHeatKwhM2a = safeHeatedArea ? roomHeatKwh / safeHeatedArea : null;
 
+    /*
+     * Unabhängige Hüllplausibilität:
+     * Das gemeinsame Klimatool speichert die mittleren Vollbenutzungsstunden nach
+     * Σ max(0, (15 - Ta) / (15 - NAT)). Daraus lassen sich die Heizgradstunden
+     * zur Bilanztemperatur 15 °C exakt zurückrechnen.
+     *
+     * Der Vergleich ist bewusst überschlägig: Transmission + Wärmebrücken +
+     * Lüftungsannahme minus interne/solare Gewinne. Er kalibriert sich NICHT am
+     * gemessenen Verbrauch und eignet sich deshalb zur Plausibilisierung.
+     */
+    const climate = inputs.climate ?? {};
+    const natC = optionalFinite(climate.natC);
+    const averageFullLoadHours = optionalFinite(climate.averageFullLoadHours);
+    const balanceTemperatureC = optionalFinite(climate.balanceTemperatureC) ?? 15;
+    const climateAvailable = natC !== null
+      && averageFullLoadHours !== null
+      && averageFullLoadHours > 0
+      && balanceTemperatureC > natC
+      && totalUaWK > 0;
+
+    let plausibility = {
+      available: false,
+      natC,
+      averageFullLoadHours,
+      balanceTemperatureC,
+      period: climate.period ?? null,
+      source: climate.source ?? null,
+      heatingDegreeHoursKh: null,
+      transmissionKwh: null,
+      thermalBridgesKwh: null,
+      ventilationKwh: ventilationLossKwh,
+      gainsKwh: internalGainsKwh + solarGainsKwh,
+      calculatedRoomHeatKwh: null,
+      calculatedDeliveredKwh: null,
+      calculatedHwbKwhM2a: null,
+      deviationKwh: null,
+      deviationPercent: null,
+    };
+
+    if (climateAvailable) {
+      const heatingDegreeHoursKh = averageFullLoadHours * (balanceTemperatureC - natC);
+      const calculatedTransmissionKwh = totalUaWK * heatingDegreeHoursKh / 1000;
+      const calculatedThermalBridgesKwh = calculatedTransmissionKwh * thermalBridgeShare;
+      const calculatedGrossHeatLossKwh = calculatedTransmissionKwh
+        + calculatedThermalBridgesKwh
+        + ventilationLossKwh;
+      const calculatedRoomHeatKwh = Math.max(
+        calculatedGrossHeatLossKwh - internalGainsKwh - solarGainsKwh,
+        0
+      );
+      const calculatedDeliveredKwh = (calculatedRoomHeatKwh + hotWaterKwh) / usefulHeatFactor;
+      const deviationKwh = calculatedDeliveredKwh - annualEnergyKwh;
+      const deviationPercent = annualEnergyKwh > 0
+        ? deviationKwh / annualEnergyKwh * 100
+        : null;
+
+      plausibility = {
+        ...plausibility,
+        available: true,
+        heatingDegreeHoursKh,
+        transmissionKwh: calculatedTransmissionKwh,
+        thermalBridgesKwh: calculatedThermalBridgesKwh,
+        calculatedRoomHeatKwh,
+        calculatedDeliveredKwh,
+        calculatedHwbKwhM2a: safeBgf ? calculatedRoomHeatKwh / safeBgf : null,
+        deviationKwh,
+        deviationPercent,
+      };
+    }
+
     const warnings = [];
     if (roomHeatRawKwh < 0) {
       warnings.push('Der Warmwasserabzug ist größer als die berechnete Nutzwärme. Verbrauch, Nutzungsgrad oder Personenzahl prüfen.');
     }
     if (residualEnvelopeWithBridgesKwh < 0) {
-      warnings.push('Die gewählten Eingaben ergeben negative Bauteilverluste. Verbrauch, Volumen, Lüftungsannahme oder Nutzungsgrad prüfen.');
+      warnings.push('Die gewählten Eingaben ergeben negative Verluste der Gebäudehülle. Verbrauch, Volumen, Lüftungsannahme oder Nutzungsgrad prüfen.');
     }
     if (!activeComponents.length) {
       warnings.push('Es ist kein Bauteil mit positiver Fläche und positivem U-Wert aktiviert.');
@@ -162,6 +238,7 @@
         calibrationKwhPerWK,
         components: componentResults,
       },
+      plausibility,
       balanceDifferenceKwh: totalInputsKwh - totalLossesKwh,
       warnings,
     };
