@@ -113,3 +113,25 @@ Der auf der Bildschirmseite unsichtbare Block `renovationPrintReport` ist aussch
 ## 12. Aussagegrenzen
 
 Beratungshilfe, kein Energieausweis, keine Ausführungsplanung, Förderzusage oder Rechtsauskunft. Ergebnisse hängen wesentlich von Kosten, Nutzungsdauer, Zinssatz, Preisentwicklung, Energiepreis und Ausgangslage ab. Sensitivitäten, Quellen und Datenstände sind im endgültigen Bericht zu dokumentieren.
+
+
+## Ergänzungen V0.3
+
+### Eigenständiger Standortzugang
+Die Adresse kann direkt im Tool gewählt werden. Adressauflösung und TIRIS-Gebäudezuordnung verwenden
+die gemeinsamen Services der Toolsammlung. Manuelle Projektwerte werden durch eine neue amtliche
+Geometrie nicht überschrieben.
+
+### HGT-Fallback
+Wenn kein projektspezifischer HGT-22/14-Wert vorliegt, wird für die zusätzliche analytische Orientierung
+ein sichtbarer Fallback von 3.500 Kd/a verwendet. Der normale Variantenvergleich verwendet vorrangig
+den aus dem Energiefluss übernommenen Bauteilverlust oder die gemeinsame Standortklimaberechnung.
+
+### Diagramme
+Das Gesamtkostendiagramm sucht die niedrigsten Barwert-Gesamtkosten über den Betrachtungszeitraum.
+Die dynamische Amortisation sucht den Zeitpunkt des Kostenausgleichs. Beide Kennwerte verfolgen
+unterschiedliche Ziele und können bei unterschiedlichen Varianten liegen.
+
+### Infografik
+Die Infografik verwendet ausschließlich bereits berechnete Ergebnisse. Sie rechnet keine zusätzlichen
+Kennwerte und zeigt bewusst gerundete Energie-, Kosten-, CO2- und Komfortwirkungen.

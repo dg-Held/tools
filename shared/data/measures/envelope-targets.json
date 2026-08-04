@@ -1,23 +1,19 @@
 {
   "schema": "energy-tools-envelope-targets",
-  "version": "2026-08-04-template-v1",
+  "version": "2026-08-04-v0.3",
   "data_date": "2026-08-04",
-  "status": "Arbeitsstand aus BAUTEIL_DATEN_MASTER_V1",
-  "notice": "Rechtliche Werte sind nur versionierte Prüfhinweise. Empfehlung und ambitionierter Standard sind keine Rechtsauskunft.",
+  "status": "advisory-targets",
+  "notice": "Beratungsempfehlung und ambitionierter Standard. Rechtliche OIB-Prüfdaten liegen getrennt unter shared/data/standards/oib/envelope-u-values.json.",
   "components": {
     "wall_external": {
       "label": "Außenwand gegen Außenluft",
-      "legal_with_concept": 0.35,
-      "legal_without_concept": 0.266,
-      "funding_reference": 0.20,
-      "recommended": 0.20,
+      "funding_reference": 0.2,
+      "recommended": 0.2,
       "ambitious": 0.15,
       "source_id": "SRC_UVALUES_2026"
     },
     "roof_top_ceiling": {
       "label": "Dach / oberste Geschoßdecke",
-      "legal_with_concept": 0.20,
-      "legal_without_concept": 0.152,
       "funding_reference": 0.15,
       "recommended": 0.15,
       "ambitious": 0.13,
@@ -25,50 +21,40 @@
     },
     "ceiling_unheated": {
       "label": "Decke gegen unbeheizten Gebäudeteil",
-      "legal_with_concept": 0.40,
-      "legal_without_concept": 0.304,
       "funding_reference": 0.28,
       "recommended": 0.28,
-      "ambitious": 0.20,
+      "ambitious": 0.2,
       "source_id": "SRC_UVALUES_2026"
     },
     "floor_ground": {
       "label": "Boden gegen Erdreich",
-      "legal_with_concept": 0.40,
-      "legal_without_concept": 0.304,
       "funding_reference": 0.28,
       "recommended": 0.28,
-      "ambitious": 0.20,
+      "ambitious": 0.2,
       "source_id": "SRC_UVALUES_2026",
       "analytic_optimum_allowed": false
     },
     "wall_ground": {
       "label": "Erdberührte Wand",
-      "legal_with_concept": 0.40,
-      "legal_without_concept": 0.304,
       "funding_reference": 0.28,
       "recommended": 0.28,
-      "ambitious": 0.20,
+      "ambitious": 0.2,
       "source_id": "SRC_UVALUES_2026",
       "analytic_optimum_allowed": false
     },
     "window_external": {
       "label": "Fenster und Fenstertüren",
-      "legal_with_concept": 1.40,
-      "legal_without_concept": 1.064,
-      "funding_reference": 1.00,
-      "recommended": 1.00,
-      "ambitious": 0.90,
+      "funding_reference": 1.0,
+      "recommended": 1.0,
+      "ambitious": 0.9,
       "source_id": "SRC_UVALUES_2026",
       "measure_type": "exchange"
     },
     "door_external": {
       "label": "Außentür",
-      "legal_with_concept": 1.70,
-      "legal_without_concept": 1.292,
-      "funding_reference": 1.10,
-      "recommended": 1.10,
-      "ambitious": 1.00,
+      "funding_reference": 1.1,
+      "recommended": 1.1,
+      "ambitious": 1.0,
       "source_id": "SRC_UVALUES_2026",
       "measure_type": "exchange"
     }

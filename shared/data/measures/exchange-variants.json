@@ -1,0 +1,48 @@
+{
+  "schema": "energy-tools-envelope-exchange-variants",
+  "version": "2026-08-04-prepared-v0.3",
+  "status": "prepared-not-yet-active",
+  "notice": "Datenstruktur für diskrete Fenster- und Türvarianten. Werte vor Aktivierung mit Kosten- und Produktdaten der Masterdatei abgleichen.",
+  "components": {
+    "window_external": {
+      "label": "Fenster",
+      "area_path": "building.geometry.windowArea",
+      "u_value_path": "building.thermal.envelope.windows.uValue",
+      "cost_model_id": "window_replace",
+      "variants": [
+        {
+          "id": "window_recommended",
+          "label": "Empfehlung",
+          "u_value": 1.0,
+          "active": true
+        },
+        {
+          "id": "window_ambitious",
+          "label": "Ambitioniert",
+          "u_value": 0.9,
+          "active": true
+        }
+      ]
+    },
+    "door_external": {
+      "label": "Außentür",
+      "area_path": "building.geometry.doorArea",
+      "u_value_path": "building.thermal.envelope.doors.uValue",
+      "cost_model_id": "door_replace",
+      "variants": [
+        {
+          "id": "door_recommended",
+          "label": "Empfehlung",
+          "u_value": 1.1,
+          "active": true
+        },
+        {
+          "id": "door_ambitious",
+          "label": "Ambitioniert",
+          "u_value": 1.0,
+          "active": true
+        }
+      ]
+    }
+  }
+}

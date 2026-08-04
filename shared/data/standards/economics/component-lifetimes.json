@@ -1,0 +1,70 @@
+{
+  "schema": "energy-tools-component-lifetimes",
+  "version": "2026-08-04-transition-v0.3",
+  "data_date": "2026-08-04",
+  "status": "temporary-fallback-pending-readable-standard-excerpt",
+  "notice": "Die Nutzungsdauern werden nicht mehr in der pflegbaren Master-Excel geführt. Die bereitgestellte PDF-Datei mit Anhang D enthielt beim technischen Auslesen nur leere Seiten/Platzhalter. Die bisherigen Prototypwerte bleiben daher vorübergehend als transparent überschreibbare Fallbacks aktiv und dürfen nicht als bestätigte Normwerte bezeichnet werden.",
+  "intended_source": {
+    "title": "ÖNORM EN 15459-1:2017, Anhang D",
+    "source_id": "SRC_EN15459_D",
+    "status": "pending-readable-excerpt"
+  },
+  "items": [
+    {
+      "id": "wall_wdvs",
+      "cost_model_id": "wall_wdvs",
+      "years": 40,
+      "active": true,
+      "status": "temporary-fallback"
+    },
+    {
+      "id": "wall_ventilated",
+      "cost_model_id": "wall_ventilated",
+      "years": 50,
+      "active": true,
+      "status": "temporary-fallback"
+    },
+    {
+      "id": "top_ceiling",
+      "cost_model_id": "top_ceiling",
+      "years": 50,
+      "active": true,
+      "status": "temporary-fallback"
+    },
+    {
+      "id": "roof",
+      "cost_model_id": "roof",
+      "years": 40,
+      "active": true,
+      "status": "temporary-fallback"
+    },
+    {
+      "id": "basement_ceiling",
+      "cost_model_id": "basement_ceiling",
+      "years": 50,
+      "active": true,
+      "status": "temporary-fallback"
+    },
+    {
+      "id": "ground_floor",
+      "cost_model_id": "ground_floor",
+      "years": 50,
+      "active": true,
+      "status": "temporary-fallback"
+    },
+    {
+      "id": "window_replace",
+      "cost_model_id": "window_replace",
+      "years": 35,
+      "active": true,
+      "status": "temporary-fallback"
+    },
+    {
+      "id": "door_replace",
+      "cost_model_id": "door_replace",
+      "years": 30,
+      "active": true,
+      "status": "temporary-fallback"
+    }
+  ]
+}

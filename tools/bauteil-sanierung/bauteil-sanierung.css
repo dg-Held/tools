@@ -718,3 +718,303 @@
     display: block;
   }
 }
+
+
+/* V0.3 – eigenständiger Einstieg, Erklärungen und Ergebnisinfografik */
+.address-card {
+  margin-bottom: 1rem;
+  padding: 1.15rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+
+.section-heading--compact { margin-bottom: .45rem; }
+.status-chip.is-working { color: var(--color-warning-dark); background: var(--color-warning-soft); }
+.status-chip.is-error { color: var(--color-danger); background: var(--color-danger-soft); }
+.status-chip.is-success { color: var(--color-success); background: var(--color-success-soft); }
+
+.address-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .75rem;
+  align-items: end;
+}
+.address-search-row label { display: grid; gap: .3rem; }
+.address-search-row label > span { font-size: .78rem; font-weight: 800; color: var(--text-muted); }
+.address-search-row input {
+  width: 100%;
+  min-height: 44px;
+  padding: .7rem .8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  font: inherit;
+  color: var(--text-dark);
+  background: var(--surface-card);
+}
+.address-search-row input:focus { outline: 3px solid var(--color-primary-light); border-color: var(--color-primary); }
+.address-card > small { display: block; margin-top: .5rem; color: var(--text-muted); }
+
+.address-results,
+.building-candidates {
+  display: grid;
+  gap: .55rem;
+  margin-top: .8rem;
+  padding: .7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 15px;
+  background: var(--surface-muted);
+}
+.address-results button,
+.building-candidates button {
+  display: grid;
+  gap: .15rem;
+  width: 100%;
+  padding: .72rem .8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--text-dark);
+  background: var(--surface-card);
+  cursor: pointer;
+}
+.address-results button:hover,
+.address-results button:focus-visible,
+.building-candidates button:hover,
+.building-candidates button:focus-visible {
+  border-color: var(--color-primary);
+  outline: 3px solid var(--color-primary-light);
+}
+.address-results small,
+.building-candidates small { color: var(--text-muted); }
+
+.selected-kpis small {
+  display: block;
+  margin-top: .22rem;
+  color: var(--color-primary-dark);
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+.chart-explanation {
+  margin: .6rem 0 0;
+  color: var(--text-muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.comparison-explainer {
+  margin-top: .9rem;
+  padding: .85rem 1rem;
+  border-left: 4px solid var(--color-secondary);
+  border-radius: 0 14px 14px 0;
+  background: var(--color-secondary-soft);
+}
+.comparison-explainer strong { color: var(--color-secondary-dark); }
+.comparison-explainer p { margin: .25rem 0 0; color: var(--text-muted); }
+
+.impact-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 19px;
+  background: var(--surface-card);
+}
+.impact-panel__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+}
+.impact-panel__head h3 { margin: 0; }
+.impact-panel__head small { max-width: 330px; color: var(--text-muted); text-align: right; }
+
+.impact-infographic {
+  display: grid;
+  grid-template-columns: minmax(150px, .8fr) minmax(240px, 1.5fr) minmax(150px, .8fr);
+  gap: .85rem;
+  align-items: stretch;
+  margin-top: .9rem;
+}
+.impact-house,
+.impact-benefits {
+  border-radius: 17px;
+}
+.impact-house {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  padding: .8rem;
+  text-align: center;
+}
+.impact-house svg {
+  width: 105px;
+  max-width: 80%;
+  margin-bottom: .25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.impact-house span,
+.impact-house strong,
+.impact-house small { display: block; }
+.impact-house span { font-size: .76rem; font-weight: 800; }
+.impact-house strong { margin-top: .22rem; }
+.impact-house small { margin-top: .15rem; opacity: .82; }
+.impact-house--before { color: var(--color-secondary-dark); background: var(--color-secondary-soft); }
+.impact-house--after { color: var(--color-primary-dark); background: var(--color-primary-soft); }
+.impact-wave { stroke-dasharray: 7 7; }
+.impact-shield { fill: rgba(52, 171, 159, .15); }
+
+.impact-benefits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+  padding: .55rem;
+  background: var(--surface-subtle);
+}
+.impact-benefits > div {
+  display: grid;
+  place-content: center;
+  min-height: 82px;
+  padding: .65rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 13px;
+  text-align: center;
+  background: var(--surface-card);
+}
+.impact-benefits span { color: var(--text-muted); font-size: .72rem; font-weight: 800; }
+.impact-benefits strong { margin-top: .18rem; font-size: .96rem; }
+
+@media (max-width: 820px) {
+  .address-search-row,
+  .impact-infographic { grid-template-columns: 1fr; }
+  .impact-panel__head { display: grid; }
+  .impact-panel__head small { max-width: none; text-align: left; }
+  .impact-house svg { width: 82px; }
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .renovation-print-report {
+    color: #16312e;
+  }
+
+  .print-hero {
+    margin-bottom: 4mm;
+    padding: 4mm 5mm;
+    border-radius: 4mm;
+    color: #153d38;
+    background: #e4f5f2;
+  }
+
+  .print-summary-grid > div,
+  .print-kpi-grid > div {
+    background: #f4faf9;
+  }
+
+  .print-selected,
+  .print-impact,
+  .print-cost-section,
+  .print-charts,
+  .print-all-variants,
+  .print-method-note {
+    break-inside: avoid;
+    margin-top: 5mm;
+  }
+
+  .print-kpi-grid > div:nth-child(2n) {
+    background: #f8eaf0;
+  }
+
+  .print-kpi-grid small {
+    display: block;
+    margin-top: .8mm;
+    color: #3a7069;
+    font-size: 7.5pt;
+  }
+
+  .print-impact-grid {
+    display: grid;
+    grid-template-columns: .8fr 1.5fr .8fr;
+    gap: 3mm;
+  }
+  .print-impact-house,
+  .print-impact-benefits {
+    padding: 3mm;
+    border-radius: 3mm;
+  }
+  .print-impact-house {
+    display: grid;
+    place-content: center;
+    text-align: center;
+  }
+  .print-impact-house span,
+  .print-impact-house strong,
+  .print-impact-house small { display: block; }
+  .print-impact-house--before { color: #7d294a; background: #f6e2ea; }
+  .print-impact-house--after { color: #176f66; background: #e2f4f1; }
+  .print-impact-benefits {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2mm;
+    background: #f2f7f6;
+  }
+  .print-impact-benefits > div {
+    padding: 2.5mm;
+    border: .2mm solid #d7e3e1;
+    border-radius: 2mm;
+    text-align: center;
+    background: #fff;
+  }
+  .print-impact-benefits span,
+  .print-impact-benefits strong { display: block; }
+  .print-impact-benefits span { color: #526562; font-size: 7.5pt; }
+  .print-impact-benefits strong { margin-top: .7mm; font-size: 8.5pt; }
+
+  .print-cost-bridge .is-total { font-weight: 800; }
+  .print-cost-bridge .is-highlight {
+    margin-top: 1mm;
+    padding: 2mm 2.5mm;
+    border: 0;
+    border-radius: 2.5mm;
+    color: #762b4a;
+    background: #f3d9e4;
+  }
+
+  .print-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4mm;
+  }
+  .print-charts-grid > div {
+    padding: 3mm;
+    border: .2mm solid #d7e3e1;
+    border-radius: 3mm;
+    background: #fff;
+  }
+  .print-charts-grid svg { width: 100%; height: auto; }
+  .print-charts-grid p { margin: 1mm 0 0; color: #526562; font-size: 7.5pt; }
+
+  .print-all-variants {
+    break-before: auto;
+  }
+  .print-all-variants .print-variants tr.is-selected {
+    background: #e2f4f1;
+    font-weight: 800;
+  }
+
+  .chart-grid line { stroke: rgba(12,39,36,.14); }
+  .chart-line { stroke: #176f66; }
+  .chart-marker--recommendation { fill: #34ab9f; }
+  .chart-marker--economic { fill: #b3446c; }
+  .chart-marker--ambitious { fill: #d69d2f; }
+}

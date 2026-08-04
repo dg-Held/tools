@@ -97,3 +97,9 @@ Bei fachlichen Änderungen gleichzeitig prüfen:
 6. Regressionstest
 7. Druckbericht
 8. Quellen und Lizenzgrenzen
+
+## Bauteil & Sanierung V0.3
+- `AENDERUNGEN-BAUTEIL-UND-SANIERUNG-V0-3.md`
+- `INSTALLATION-BAUTEIL-UND-SANIERUNG-V0-3.md`
+- `TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-3.md`
+- `tools/bauteil-sanierung/docs/`

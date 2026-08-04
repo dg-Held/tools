@@ -1,0 +1,59 @@
+{
+  "schema": "energy-tools-oib-envelope-u-values",
+  "version": "2025-09-v1",
+  "data_date": "2025-09",
+  "status": "fixed-standard-reference",
+  "notice": "Versionierte Prüfdaten. Vor Anwendung ist die aktuelle landesrechtliche Umsetzung projektbezogen zu prüfen. Keine energetische Empfehlung.",
+  "source": {
+    "title": "OIB-Richtlinie 6",
+    "edition": "2025",
+    "source_id": "OIB_RL6_2025"
+  },
+  "components": {
+    "wall_external": {
+      "label": "Wände gegen Außenluft",
+      "with_renovation_concept": 0.35,
+      "without_renovation_concept": 0.266
+    },
+    "wall_unheated_roof": {
+      "label": "Wände gegen unbeheizte oder nicht ausgebaute Dachräume",
+      "with_renovation_concept": 0.35,
+      "without_renovation_concept": 0.266
+    },
+    "wall_unheated_space": {
+      "label": "Wände gegen unbeheizte Gebäudeteile / Garagen",
+      "with_renovation_concept": 0.6,
+      "without_renovation_concept": 0.456
+    },
+    "wall_ground": {
+      "label": "Wände erdberührt",
+      "with_renovation_concept": 0.4,
+      "without_renovation_concept": 0.304
+    },
+    "window_external": {
+      "label": "Fenster und Fenstertüren Wohngebäude",
+      "with_renovation_concept": 1.4,
+      "without_renovation_concept": 1.064
+    },
+    "door_external": {
+      "label": "Unverglaste Außentüren",
+      "with_renovation_concept": 1.7,
+      "without_renovation_concept": 1.292
+    },
+    "roof_top_ceiling": {
+      "label": "Decken und Dachschrägen gegen Außenluft / Dachräume",
+      "with_renovation_concept": 0.2,
+      "without_renovation_concept": 0.152
+    },
+    "ceiling_unheated": {
+      "label": "Decken gegen unbeheizte Gebäudeteile",
+      "with_renovation_concept": 0.4,
+      "without_renovation_concept": 0.304
+    },
+    "floor_ground": {
+      "label": "Böden erdberührt",
+      "with_renovation_concept": 0.4,
+      "without_renovation_concept": 0.304
+    }
+  }
+}

@@ -1,19 +1,9 @@
 {
   "tool": "Bauteil & Sanierung",
-  "tool_version": "0.2.0",
+  "version": "0.3",
   "date": "2026-08-04",
-  "project_schema": 2,
-  "measure_core": "0.2.0",
-  "economics_core": "1.0.0",
-  "status": "Arbeitsversion – opake Dämmmaßnahmen",
-  "data_status": {
-    "targets": "befüllt",
-    "lambda_values": "befüllt",
-    "co_benefits": "befüllt",
-    "costs": "EAT-Richtwerte und gekennzeichnete Projektvorschläge",
-    "lifetimes": "Projektvorschläge – noch fachlich zu bestätigen",
-    "energy_prices": "aus Masterdatei – Entwurf",
-    "emissions": "aus Masterdatei – Entwurf",
-    "funding": "nur manuelle projektbezogene Eingabe"
-  }
+  "status": "Arbeitsversion",
+  "methodology": "METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md",
+  "maintenance": "WARTUNG-UND-DATENPFLEGE.md",
+  "lifetimes_source_status": "pending-readable-EN15459-1-annex-D-excerpt"
 }

@@ -10,8 +10,10 @@
   const oibNatCore = global.OibNatCore;
   const oibTnat13Core = global.OibTnat13Core;
   const precomputedClimateCore = global.PrecomputedClimateCore;
+  const addressManager = global.EnergyToolsAddressManager;
+  const geometryService = global.EnergyToolsBuildingGeometryService;
 
-  if (!store || !model || !resolver || !measureCore || !economicsCore) {
+  if (!store || !model || !resolver || !measureCore || !economicsCore || !addressManager || !geometryService) {
     console.error('Bauteil & Sanierung: gemeinsame Basis oder Rechenkerne fehlen.');
     return;
   }
@@ -65,6 +67,8 @@
     [model.ORIGIN.FALLBACK]: 'Fallback',
   };
 
+  const HGT_FALLBACK_TIROL = 3500;
+
   const FALLBACK_FINANCE = {
     period_years: 30,
     interest_rate_percent: 3,
@@ -89,6 +93,9 @@
   let optimizationMeta = { rawEconomicThicknessCm: null, rawShortestPaybackThicknessCm: null, economicRangeCm: null };
   let climateCalculationRunning = false;
   let suppressProjectRender = false;
+  let hybridAddressProvider = null;
+  let addressSearchTimer = null;
+  let addressSearchSequence = 0;
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -229,7 +236,7 @@
     host.innerHTML = COMPONENTS.map((component) => `
       <button class="component-choice ${component.id === activeComponentId ? 'is-active' : ''} ${component.supported ? '' : 'is-planned'}" data-component-choice="${component.id}" type="button" ${component.supported ? '' : 'disabled'}>
         <strong>${escapeHtml(component.short)}</strong>
-        <span>${component.supported ? 'Dämmmaßnahme' : 'Austausch folgt'}</span>
+        <span>${component.supported ? 'Dämmmaßnahme' : 'Austausch vorbereitet'}</span>
       </button>`).join('');
     host.querySelectorAll('[data-component-choice]').forEach((button) => {
       button.addEventListener('click', () => selectComponent(button.dataset.componentChoice));
@@ -352,13 +359,22 @@
     setInput('annualEfficiency', draft.annualEfficiency ?? valueAt(project, 'systems.heating.usefulHeatFactor', 0.85), 2);
     setInput('indoorTemperature', draft.indoorTemperatureC ?? valueAt(project, 'building.thermal.indoorTemperature', 20), 1);
     setInput('boundaryFactor', draft.boundaryFactor ?? component.boundaryFactor, 2);
-    setInput('heatingDegreeDays', draft.heatingDegreeDaysKd, 0);
+    const hgtValue = draft.heatingDegreeDaysKd ?? HGT_FALLBACK_TIROL;
+    setInput('heatingDegreeDays', hgtValue, 0);
+    if ($('hgtSource')) $('hgtSource').textContent = draft.heatingDegreeDaysKd !== undefined && draft.heatingDegreeDaysKd !== null
+      ? 'manuell / projektspezifisch'
+      : 'Fallback Tirol: 3.500 Kd/a';
 
     $('renewalContext').value = draft.renewalContext ?? 'renewal_due';
     setInput('baseCostEurM2', draft.baseCostEurM2 ?? costDefaults.baseCostEurM2, 0);
     setInput('variableCostEurM2Cm', draft.variableCostEurM2Cm ?? costDefaults.variableCostEurM2Cm, 1);
     setInput('sunkCostEurM2', draft.sunkCostEurM2 ?? costDefaults.sunkCostEurM2, 0);
     setInput('lifetimeYears', draft.lifetimeYears ?? costDefaults.lifetimeYears, 0);
+    if ($('lifetimeSource')) $('lifetimeSource').textContent = draft.lifetimeYears !== undefined && draft.lifetimeYears !== null
+      ? 'manuell / projektspezifisch'
+      : lifetimeConfig?.status === 'temporary-fallback-pending-readable-standard-excerpt'
+        ? 'vorläufiger Fallback – Normauszug noch lesbar nachreichen'
+        : 'zentraler Standardwert; überschreibbar';
 
     const selectedCarrier = populateEnergyCarrierOptions(draft.energyCarrierId);
     const carrier = carrierDefaults(selectedCarrier);
@@ -414,6 +430,9 @@
     $('costSummaryFinance').textContent = 'Standardannahmen geladen';
     $('costSummaryFinanceNote').textContent = `${formatNumber(inputNumber('periodYears', 30))} Jahre · ${formatNumber(inputNumber('interestRatePercent', 3), 1)} % Zins · Sensitivität empfohlen`;
 
+    renderGeometryStatus(project);
+    const addressInput = $('renAddressInput');
+    if (addressInput && document.activeElement !== addressInput) addressInput.value = project.project?.addressLabel || '';
     calculateAndRender();
   }
 
@@ -660,7 +679,7 @@
     $('ambitiousCardText').textContent = message;
     $('selectedVariantSelect').innerHTML = '';
     $('selectedVariantTitle').textContent = '–';
-    ['selectedUValue','selectedEnergySaving','selectedCo2Saving','selectedSurfaceTemperature','bridgeFullCost','bridgeSunkCost','bridgeEnergeticCost','bridgeSubsidy','bridgeOwnInvestment'].forEach((id) => { $(id).textContent = '–'; });
+    ['selectedUValue','selectedEnergySaving','selectedAnnualCostSaving','selectedCo2Saving','selectedSurfaceTemperature','bridgeFullCost','bridgeSunkCost','bridgeEnergeticCost','bridgeSubsidy','bridgeOwnInvestment','impactBeforeU','impactBeforeSurface','impactAfterU','impactAfterSurface','impactEnergy','impactCost','impactCo2','impactComfort'].forEach((id) => { if ($(id)) $(id).textContent = '–'; });
     $('variantsTableBody').innerHTML = '';
     $('costChart').innerHTML = '<p>Kostenangaben ergänzen.</p>';
     $('paybackChart').innerHTML = '<p>Kostenangaben ergänzen.</p>';
@@ -736,6 +755,10 @@
     $('selectedVariantTitle').textContent = selected.thicknessCm > 0 ? `${formatNumber(selected.thicknessCm)} cm Zusatzdämmung` : 'Bestand / Referenz';
     $('selectedUValue').textContent = `${formatNumber(selected.newUValue, 2)} W/m²K`;
     $('selectedEnergySaving').textContent = selected.energy.available ? formatEnergy(selected.energy.deliveredSavingsKwh) : 'Energiegrundlage fehlt';
+    const annualCostSaving = selected.energy.available && Number.isFinite(Number(inputs.energyPriceEurKwh))
+      ? selected.energy.deliveredSavingsKwh * inputs.energyPriceEurKwh
+      : null;
+    $('selectedAnnualCostSaving').textContent = annualCostSaving !== null ? `≈ ${formatAnnualMoney(annualCostSaving)}` : 'Energiepreis ergänzen';
     $('selectedCo2Saving').textContent = selected.co2SavingsKgA !== null ? formatCo2(selected.co2SavingsKgA) : 'Faktor ergänzen';
 
     const oldSurface = measureCore.surfaceTemperatureC({
@@ -753,6 +776,16 @@
     $('selectedSurfaceTemperature').textContent = oldSurface !== null && newSurface !== null
       ? `${formatNumber(oldSurface, 1)} → ${formatNumber(newSurface, 1)} °C`
       : '–';
+
+    if ($('impactBeforeU')) $('impactBeforeU').textContent = `U ${formatNumber(inputs.existingUValue, 2)} W/m²K`;
+    if ($('impactAfterU')) $('impactAfterU').textContent = `U ${formatNumber(selected.newUValue, 2)} W/m²K`;
+    if ($('impactBeforeSurface')) $('impactBeforeSurface').textContent = oldSurface !== null ? `Oberfläche ${formatNumber(oldSurface, 1)} °C` : 'Oberfläche –';
+    if ($('impactAfterSurface')) $('impactAfterSurface').textContent = newSurface !== null ? `Oberfläche ${formatNumber(newSurface, 1)} °C` : 'Oberfläche –';
+    if ($('impactEnergy')) $('impactEnergy').textContent = selected.energy.available ? `− ${formatEnergy(selected.energy.deliveredSavingsKwh)}` : 'noch offen';
+    if ($('impactCost')) $('impactCost').textContent = annualCostSaving !== null ? `− ${formatAnnualMoney(annualCostSaving)}` : 'noch offen';
+    if ($('impactCo2')) $('impactCo2').textContent = selected.co2SavingsKgA !== null ? `− ${formatCo2(selected.co2SavingsKgA)}` : 'noch offen';
+    const surfaceGainForGraphic = oldSurface !== null && newSurface !== null ? Math.max(0, newSurface - oldSurface) : null;
+    if ($('impactComfort')) $('impactComfort').textContent = surfaceGainForGraphic !== null ? `+ ${formatNumber(surfaceGainForGraphic, 1)} K Oberfläche` : 'wärmere Oberfläche';
 
     const costsAvailable = inputs.baseCostEurM2 !== null && inputs.variableCostEurM2Cm !== null;
     $('bridgeFullCost').textContent = costsAvailable ? formatMoney(selected.investment.fullInvestmentEur) : 'Kosten ergänzen';
@@ -951,6 +984,190 @@
     global.setTimeout(() => { $('saveMeasureStatus').textContent = ''; }, 4000);
   }
 
+
+  function renderGeometryStatus(project = store.get()) {
+    const chip = $('geometryStatus');
+    if (!chip) return;
+    const objectId = project.building?.identity?.objectId;
+    const footprintInfo = describeAt(project, 'building.geometry.footprintArea');
+    if (objectId) {
+      chip.textContent = `TIRIS Gebäude ${objectId}`;
+      chip.className = 'status-chip is-success';
+    } else if (footprintInfo.origin === model.ORIGIN.DERIVED || footprintInfo.origin === model.ORIGIN.OFFICIAL) {
+      chip.textContent = 'Projektgeometrie vorhanden';
+      chip.className = 'status-chip is-success';
+    } else {
+      chip.textContent = 'noch keine Gebäudegeometrie';
+      chip.className = 'status-chip';
+    }
+  }
+
+  function preserveManualFields(next, previous) {
+    if (Array.isArray(next)) return clone(next);
+    if (!next || typeof next !== 'object') return clone(next);
+    const output = clone(next);
+    Object.entries(previous ?? {}).forEach(([key, oldValue]) => {
+      if (resolver.isField(oldValue)) {
+        const manual = oldValue.candidates?.[model.ORIGIN.MANUAL];
+        if (!manual) return;
+        const base = resolver.isField(output[key]) ? output[key] : model.field(null, { unit: oldValue.unit ?? null });
+        base.candidates = { ...(base.candidates ?? {}), [model.ORIGIN.MANUAL]: clone(manual) };
+        output[key] = model.finalizeField(base);
+      } else if (oldValue && typeof oldValue === 'object' && !Array.isArray(oldValue)) {
+        output[key] = preserveManualFields(output[key] ?? {}, oldValue);
+      }
+    });
+    return output;
+  }
+
+  function applyBuildingFeature(feature, selectionMode = 'manual') {
+    const current = store.get();
+    const next = geometryService.toProjectBuilding(feature, selectionMode);
+    const merged = preserveManualFields(next, current.building);
+    store.setPath('building', merged);
+    $('renBuildingCandidates').hidden = true;
+    $('geometryStatus').textContent = `Gebäude ${feature.attributes?.OBJECTID ?? ''} übernommen`;
+    $('geometryStatus').className = 'status-chip is-success';
+  }
+
+  function renderBuildingCandidates(result) {
+    const host = $('renBuildingCandidates');
+    if (!result.features.length) {
+      host.hidden = true;
+      $('geometryStatus').textContent = 'kein TIRIS-Gebäude gefunden';
+      $('geometryStatus').className = 'status-chip';
+      return;
+    }
+    host.hidden = false;
+    host.innerHTML = `<strong>Gebäude bitte prüfen</strong>${result.features.map((feature, index) => {
+      const item = geometryService.candidateSummary(feature, index);
+      return `<button type="button" data-building-index="${index}"><strong>${item.label}</strong><small>${item.areaM2 !== null ? `${formatNumber(item.areaM2)} m² Dachprojektion` : 'Fläche unbekannt'}${item.medianHeightM !== null ? ` · Medianhöhe ${formatNumber(item.medianHeightM, 1)} m` : ''}${Number.isFinite(item.distanceM) ? ` · ca. ${formatNumber(item.distanceM)} m vom Adresspunkt` : ''}</small></button>`;
+    }).join('')}`;
+    host.querySelectorAll('[data-building-index]').forEach((button) => {
+      button.addEventListener('click', () => applyBuildingFeature(result.features[Number(button.dataset.buildingIndex)], 'manual'));
+    });
+  }
+
+  async function loadGeometryForAddress(address) {
+    $('geometryStatus').textContent = 'Gebäude wird zugeordnet …';
+    $('geometryStatus').className = 'status-chip is-working';
+    try {
+      const result = await geometryService.findCandidates(address, { maxRadiusM: 30 });
+      if (result.automaticallySelected) applyBuildingFeature(result.automaticallySelected, 'automatic');
+      else renderBuildingCandidates(result);
+    } catch (error) {
+      $('geometryStatus').textContent = 'Gebäudeabfrage fehlgeschlagen';
+      $('geometryStatus').className = 'status-chip is-error';
+      $('renAddressStatus').textContent = `Adresse wurde übernommen; TIRIS-Gebäude konnte nicht geladen werden: ${error.message}`;
+    }
+  }
+
+  function compactAddress(address) {
+    const keys = ['id', 'label', 'street', 'house_number', 'postal_code', 'municipality', 'municipality_code', 'locality', 'latitude', 'longitude', 'address_latitude', 'address_longitude', 'coordinate_kind', 'cadastral_municipality_number', 'cadastral_municipality_numbers', 'source', 'source_id', 'dataset_date', 'license', 'address_code', 'subcode', 'tiris_layer_id', 'tiris_layer_label'];
+    const result = {};
+    keys.forEach((key) => {
+      if (address?.[key] !== undefined && address?.[key] !== null) result[key] = clone(address[key]);
+    });
+    return result;
+  }
+
+  async function selectAddress(address) {
+    const permission = await addressManager.requestSelection(address);
+    if (!permission.allowed) return;
+    $('renAddressStatus').textContent = 'Adresse wird mit TIRIS live abgeglichen …';
+    let resolution = { address, mode: 'bev-fallback', usedFallback: true };
+    try {
+      resolution = await hybridAddressProvider.resolve(address);
+    } catch (error) {
+      console.warn(error);
+    }
+    const selected = resolution.address || address;
+    const source = selected.source || 'Gemeinsame Adresssuche';
+    store.patch({
+      project: { addressLabel: selected.label },
+      location: {
+        addressRecord: compactAddress(selected),
+        address: model.field(selected.label, { origin: model.ORIGIN.OFFICIAL, source, dataDate: selected.dataset_date ?? null }),
+        latitude: model.field(Number(selected.latitude), { unit: '°', origin: model.ORIGIN.OFFICIAL, source }),
+        longitude: model.field(Number(selected.longitude), { unit: '°', origin: model.ORIGIN.OFFICIAL, source }),
+        municipality: model.field(selected.municipality || null, { origin: model.ORIGIN.OFFICIAL, source }),
+        municipalityCode: model.field(selected.municipality_code || null, { origin: model.ORIGIN.OFFICIAL, source }),
+      },
+    });
+    $('renAddressInput').value = selected.label;
+    $('renAddressResults').hidden = true;
+    $('renAddressStatus').textContent = resolution.usedFallback
+      ? (resolution.warning || 'BEV-Adresse übernommen; kein eindeutiger TIRIS-Live-Treffer.')
+      : 'TIRIS-Live-Adresse übernommen.';
+    await loadGeometryForAddress(selected);
+  }
+
+  function renderAddressResults(results, guidance = '') {
+    const host = $('renAddressResults');
+    if (!results.length) {
+      host.hidden = !guidance;
+      host.innerHTML = guidance ? `<small>${escapeHtml(guidance)}</small>` : '';
+      return;
+    }
+    host.hidden = false;
+    host.innerHTML = results.map((address, index) => `<button type="button" data-address-index="${index}"><strong>${escapeHtml(address.label)}</strong><small>${escapeHtml(address.source || 'Adressvorschlag')}${address.dataset_date ? ` · Stand ${escapeHtml(address.dataset_date)}` : ''}</small></button>`).join('');
+    host.querySelectorAll('[data-address-index]').forEach((button) => {
+      button.addEventListener('click', () => selectAddress(results[Number(button.dataset.addressIndex)]));
+    });
+  }
+
+  async function searchAddress(query) {
+    const sequence = ++addressSearchSequence;
+    const normalizedQuery = query.trim();
+    if (normalizedQuery.length < 3) {
+      renderAddressResults([], 'Mindestens drei Zeichen eingeben.');
+      return;
+    }
+    $('renAddressStatus').textContent = 'Adressvorschläge werden geladen …';
+    try {
+      const result = await hybridAddressProvider.search(normalizedQuery, { limit: 8 });
+      if (sequence !== addressSearchSequence) return;
+      renderAddressResults(result.results ?? [], result.guidance ?? '');
+      $('renAddressStatus').textContent = result.results?.length
+        ? 'Adresse auswählen. Danach wird das TIRIS-Gebäude automatisch geprüft.'
+        : (result.guidance || 'Keine Adresse gefunden.');
+    } catch (error) {
+      if (sequence !== addressSearchSequence) return;
+      renderAddressResults([], error.message);
+      $('renAddressStatus').textContent = `Adresssuche fehlgeschlagen: ${error.message}`;
+    }
+  }
+
+  async function initAddressSearch() {
+    const input = $('renAddressInput');
+    const localProvider = new global.BevLocalAddressProvider();
+    const liveProvider = new global.TirisLiveAddressProvider();
+    hybridAddressProvider = new global.HybridAddressProvider({ suggestionProvider: localProvider, liveProvider });
+    try {
+      await hybridAddressProvider.init();
+      $('renAddressStatus').textContent = 'BEV-Vorschläge und TIRIS-Live-Abgleich sind bereit.';
+    } catch (error) {
+      $('renAddressStatus').textContent = `Adressindex konnte nicht geladen werden: ${error.message}`;
+    }
+
+    input.value = store.get().project?.addressLabel || '';
+    input.addEventListener('input', () => {
+      global.clearTimeout(addressSearchTimer);
+      const visibleText = input.value;
+      addressSearchTimer = global.setTimeout(() => searchAddress(visibleText), 280);
+    });
+    $('renUseProjectAddress').addEventListener('click', () => {
+      const project = store.get();
+      const record = project.location?.addressRecord;
+      if (!record) {
+        $('renAddressStatus').textContent = 'Im Projekt ist noch keine bestätigte Adresse mit Koordinaten vorhanden.';
+        return;
+      }
+      input.value = record.label || project.project?.addressLabel || '';
+      loadGeometryForAddress(record);
+    });
+  }
+
   function climateLocationFromProject(project) {
     const address = project.location?.addressRecord;
     if (!address || !Number.isFinite(Number(address.latitude)) || !Number.isFinite(Number(address.longitude))) {
@@ -1023,38 +1240,114 @@
       $('renovationPrintReport').innerHTML = '<h1>Bauteil &amp; Sanierung</h1><p>Für den Ausdruck fehlen Berechnungswerte.</p>';
       return;
     }
+
+    const oldSurface = measureCore.surfaceTemperatureC({
+      indoorTemperatureC: inputs.indoorTemperatureC,
+      boundaryTemperatureC: boundaryTemperature(inputs),
+      uValue: inputs.existingUValue,
+      internalSurfaceResistanceM2KW: inputs.component.rsi,
+    });
+    const newSurface = measureCore.surfaceTemperatureC({
+      indoorTemperatureC: inputs.indoorTemperatureC,
+      boundaryTemperatureC: boundaryTemperature(inputs),
+      uValue: selected.newUValue,
+      internalSurfaceResistanceM2KW: inputs.component.rsi,
+    });
+    const surfaceGain = oldSurface !== null && newSurface !== null ? Math.max(0, newSurface - oldSurface) : null;
+    const annualCostSaving = selected.energy.available && Number.isFinite(Number(inputs.energyPriceEurKwh))
+      ? selected.energy.deliveredSavingsKwh * inputs.energyPriceEurKwh
+      : null;
+
     const shortlist = [specialVariants.recommendation, specialVariants.economic, specialVariants.ambitious]
       .filter(Boolean)
       .filter((item, index, array) => array.findIndex((entry) => entry.thicknessCm === item.thicknessCm) === index);
+
+    const costChartMarkup = $('costChart')?.querySelector('svg')?.outerHTML ?? '';
+    const paybackChartMarkup = $('paybackChart')?.querySelector('svg')?.outerHTML ?? '';
+
     $('renovationPrintReport').innerHTML = `
-      <section><p class="eyebrow">Bauteil &amp; Sanierung</p><h1>${escapeHtml(inputs.component.label)}</h1><p>${escapeHtml(project.project?.addressLabel || 'ohne Standort')}</p></section>
+      <section class="print-hero">
+        <p class="eyebrow">Bauteil &amp; Sanierung</p>
+        <h1>${escapeHtml(inputs.component.label)}</h1>
+        <p>${escapeHtml(project.project?.addressLabel || 'ohne Standort')}</p>
+      </section>
+
       <section class="print-summary-grid">
         <div><span>Fläche</span><strong>${formatNumber(inputs.areaM2)} m²</strong></div>
         <div><span>U-Wert Bestand</span><strong>${formatNumber(inputs.existingUValue, 2)} W/m²K</strong></div>
         <div><span>λ-Wert</span><strong>${formatNumber(inputs.lambdaWmk, 3)} W/mK</strong></div>
       </section>
-      <section><h2>Ausgewählte Variante</h2><div class="print-kpi-grid">
-        <div><span>Dämmstärke</span><strong>${formatNumber(selected.thicknessCm)} cm</strong></div>
-        <div><span>U-Wert neu</span><strong>${formatNumber(selected.newUValue, 2)} W/m²K</strong></div>
-        <div><span>Energieeinsparung</span><strong>${selected.energy.available ? formatEnergy(selected.energy.deliveredSavingsKwh) : 'nicht berechnet'}</strong></div>
-        <div><span>CO₂-Einsparung</span><strong>${selected.co2SavingsKgA !== null ? formatCo2(selected.co2SavingsKgA) : 'nicht berechnet'}</strong></div>
-        <div><span>Gesamtkosten</span><strong>${formatMoney(selected.investment.fullInvestmentEur)}</strong></div>
-        <div><span>Amortisation</span><strong>${selected.economics.paybackYears !== null ? `${formatNumber(selected.economics.paybackYears, 1)} Jahre` : 'nicht ermittelt'}</strong></div>
-      </div></section>
-      <section><h2>Kostenbrücke</h2><div class="print-cost-bridge">
-        <div><span>Gesamtkosten</span><strong>${formatMoney(selected.investment.fullInvestmentEur)}</strong></div>
-        <div><span>− Sowiesokosten</span><strong>${formatMoney(selected.investment.sunkCostEur)}</strong></div>
-        <div><span>= energetische Mehrkosten</span><strong>${formatMoney(selected.investment.energeticAdditionalEur)}</strong></div>
-        <div><span>− bestätigte Förderung</span><strong>${formatMoney(selected.subsidyEur)}</strong></div>
-        <div><span>= relevante Eigeninvestition</span><strong>${formatMoney(selected.relevantOwnInvestmentEur)}</strong></div>
-      </div></section>
-      <section><h2>Orientierungspunkte</h2><table class="print-variants"><thead><tr><th>Bereich</th><th>Dämmung</th><th>U-Wert</th><th>Gesamtkosten</th><th>Amortisation</th></tr></thead><tbody>
-        ${shortlist.map((item) => {
-          const label = item === specialVariants.recommendation ? 'Empfehlung' : item === specialVariants.economic ? 'Kostenoptimum' : 'Ambitioniert';
-          return `<tr><td>${label}</td><td>${formatNumber(item.thicknessCm)} cm</td><td>${formatNumber(item.newUValue, 2)}</td><td>${item.economics.available ? formatMoney(item.economics.result.totalPresentValue) : '–'}</td><td>${item.economics.paybackYears !== null ? `${formatNumber(item.economics.paybackYears, 1)} a` : '–'}</td></tr>`;
-        }).join('')}
-      </tbody></table></section>
-      <section><h2>Grundlagen und Grenzen</h2><p>Empfehlung U ≤ ${target?.recommended ? formatNumber(target.recommended, 2) : '–'} W/m²K; ambitioniert U ≤ ${target?.ambitious ? formatNumber(target.ambitious, 2) : '–'} W/m²K. Interne Berechnung ohne Rundung, Darstellung: Dämmdicke in 2-cm-Schritten, Richtpreise auf 10 €/m² und Summen auf 500 €. Beratungshilfe; aktuelle rechtliche, förderbezogene und bauphysikalische Anforderungen projektbezogen prüfen.</p></section>`;
+
+      <section class="print-selected">
+        <h2>Ausgewählte Variante</h2>
+        <div class="print-kpi-grid">
+          <div><span>Dämmstärke</span><strong>${formatNumber(selected.thicknessCm)} cm</strong></div>
+          <div><span>U-Wert neu</span><strong>${formatNumber(selected.newUValue, 2)} W/m²K</strong></div>
+          <div><span>Energieeinsparung</span><strong>${selected.energy.available ? formatEnergy(selected.energy.deliveredSavingsKwh) : 'nicht berechnet'}</strong><small>${annualCostSaving !== null ? `≈ ${formatAnnualMoney(annualCostSaving)}` : ''}</small></div>
+          <div><span>CO₂-Einsparung</span><strong>${selected.co2SavingsKgA !== null ? formatCo2(selected.co2SavingsKgA) : 'nicht berechnet'}</strong></div>
+          <div><span>Gesamtkosten</span><strong>${formatMoney(selected.investment.fullInvestmentEur)}</strong></div>
+          <div><span>Amortisation</span><strong>${selected.economics.paybackYears !== null ? `${formatNumber(selected.economics.paybackYears, 1)} Jahre` : 'nicht ermittelt'}</strong></div>
+        </div>
+      </section>
+
+      <section class="print-impact">
+        <h2>Sanierung auf einen Blick</h2>
+        <div class="print-impact-grid">
+          <div class="print-impact-house print-impact-house--before"><span>Bestand</span><strong>U ${formatNumber(inputs.existingUValue, 2)}</strong><small>${oldSurface !== null ? `Oberfläche ${formatNumber(oldSurface, 1)} °C` : ''}</small></div>
+          <div class="print-impact-benefits">
+            <div><span>Energie</span><strong>${selected.energy.available ? `− ${formatEnergy(selected.energy.deliveredSavingsKwh)}` : '–'}</strong></div>
+            <div><span>Heizkosten</span><strong>${annualCostSaving !== null ? `− ${formatAnnualMoney(annualCostSaving)}` : '–'}</strong></div>
+            <div><span>CO₂</span><strong>${selected.co2SavingsKgA !== null ? `− ${formatCo2(selected.co2SavingsKgA)}` : '–'}</strong></div>
+            <div><span>Komfort</span><strong>${surfaceGain !== null ? `+ ${formatNumber(surfaceGain, 1)} K Oberfläche` : 'wärmere Oberfläche'}</strong></div>
+          </div>
+          <div class="print-impact-house print-impact-house--after"><span>Sanierung</span><strong>U ${formatNumber(selected.newUValue, 2)}</strong><small>${newSurface !== null ? `Oberfläche ${formatNumber(newSurface, 1)} °C` : ''}</small></div>
+        </div>
+      </section>
+
+      <section class="print-cost-section">
+        <h2>Kostenbrücke</h2>
+        <div class="print-cost-bridge">
+          <div><span>Gesamtkosten</span><strong>${formatMoney(selected.investment.fullInvestmentEur)}</strong></div>
+          <div><span>− Sowiesokosten</span><strong>${formatMoney(selected.investment.sunkCostEur)}</strong></div>
+          <div class="is-total"><span>= energetische Mehrkosten</span><strong>${formatMoney(selected.investment.energeticAdditionalEur)}</strong></div>
+          <div><span>− bestätigte Förderung</span><strong>${formatMoney(selected.subsidyEur)}</strong></div>
+          <div class="is-highlight"><span>= relevante Eigeninvestition</span><strong>${formatMoney(selected.relevantOwnInvestmentEur)}</strong></div>
+        </div>
+      </section>
+
+      ${(costChartMarkup || paybackChartMarkup) ? `<section class="print-charts"><h2>Wirtschaftlichkeit im Vergleich</h2><div class="print-charts-grid">
+        ${costChartMarkup ? `<div><h3>Gesamtkosten</h3>${costChartMarkup}<p>Das Minimum zeigt die langfristig günstigste Variante.</p></div>` : ''}
+        ${paybackChartMarkup ? `<div><h3>Dynamische Amortisation</h3>${paybackChartMarkup}<p>Die kürzeste Amortisation verfolgt ein anderes Ziel als das Kostenoptimum.</p></div>` : ''}
+      </div></section>` : ''}
+
+      <section>
+        <h2>Orientierungspunkte</h2>
+        <table class="print-variants"><thead><tr><th>Bereich</th><th>Dämmung</th><th>U-Wert</th><th>Gesamtkosten</th><th>Amortisation</th></tr></thead><tbody>
+          ${shortlist.map((item) => {
+            const label = item === specialVariants.recommendation ? 'Empfehlung' : item === specialVariants.economic ? 'Kostenoptimum' : 'Ambitioniert';
+            return `<tr><td>${label}</td><td>${formatNumber(item.thicknessCm)} cm</td><td>${formatNumber(item.newUValue, 2)}</td><td>${item.economics.available ? formatMoney(item.economics.result.totalPresentValue) : '–'}</td><td>${item.economics.paybackYears !== null ? `${formatNumber(item.economics.paybackYears, 1)} a` : '–'}</td></tr>`;
+          }).join('')}
+        </tbody></table>
+      </section>
+
+      <section class="print-all-variants">
+        <h2>Alle Varianten</h2>
+        <table class="print-variants"><thead><tr><th>Dämmung</th><th>U-Wert</th><th>Energieeinsparung</th><th>Investition</th><th>Gesamtkosten</th><th>Amortisation</th></tr></thead><tbody>
+          ${enrichedVariants.map((item) => `<tr class="${Math.abs(item.thicknessCm - selected.thicknessCm) < 1e-6 ? 'is-selected' : ''}">
+            <td>${formatNumber(item.thicknessCm)} cm</td>
+            <td>${formatNumber(item.newUValue, 2)}</td>
+            <td>${item.energy.available ? formatEnergy(item.energy.deliveredSavingsKwh) : '–'}</td>
+            <td>${formatMoney(item.investment.fullInvestmentEur)}</td>
+            <td>${item.economics.available ? formatMoney(item.economics.result.totalPresentValue) : '–'}</td>
+            <td>${item.economics.paybackYears !== null ? `${formatNumber(item.economics.paybackYears, 1)} a` : '–'}</td>
+          </tr>`).join('')}
+        </tbody></table>
+      </section>
+
+      <section class="print-method-note">
+        <h2>Grundlagen und Grenzen</h2>
+        <p>Empfehlung U ≤ ${target?.recommended ? formatNumber(target.recommended, 2) : '–'} W/m²K; ambitioniert U ≤ ${target?.ambitious ? formatNumber(target.ambitious, 2) : '–'} W/m²K. Interne Berechnung ohne Rundung, Darstellung: Dämmdicke in 2-cm-Schritten, Richtpreise auf 10 €/m² und Summen auf 500 €. Beratungshilfe; aktuelle rechtliche, förderbezogene und bauphysikalische Anforderungen projektbezogen prüfen.</p>
+      </section>`;
   }
 
   function bindEvents() {
@@ -1139,7 +1432,7 @@
       loadJson('measures/lambda-values.json', { values: [{ value: 0.035, label: '0,035 W/mK', active: true }] }),
       loadJson('measures/co-benefits.json', { components: {} }),
       loadJson('costs/renovation-costs.json', { models: [] }),
-      loadJson('costs/lifetimes.json', { items: [] }),
+      loadJson('standards/economics/component-lifetimes.json', { items: [] }),
       loadJson('economics/financial-defaults.json', { defaults: FALLBACK_FINANCE, rounding: {} }),
       loadJson('economics/energy-prices.json', { items: [] }),
       loadJson('emissions/emission-factors.json', { items: [] }),
@@ -1148,8 +1441,8 @@
     populateLambdaOptions();
     populateEnergyCarrierOptions();
     renderComponentSelector();
-    document.querySelector('[data-project-change-address]')?.setAttribute('hidden', '');
     bindEvents();
+    await initAddressSearch();
     renderFromProject(store.get());
   }
 

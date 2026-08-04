@@ -9,7 +9,7 @@
 <link href="../../shared/css/tokens.css" rel="stylesheet"/>
 <link href="../../shared/css/components.css" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="bauteil-sanierung.css?v=2" rel="stylesheet"/>
+<link href="bauteil-sanierung.css?v=3" rel="stylesheet"/>
 </head>
 <body data-tool-mode="envelope-renovation">
 <header class="site-header no-print">
@@ -25,11 +25,26 @@
 </header>
 <main class="renovation-page">
 <section class="container tool-intro no-print">
-<p class="eyebrow">Tool · Arbeitsversion V0.2</p>
+<p class="eyebrow">Tool · Arbeitsversion V0.3</p>
 <h1>Bauteil &amp; Sanierung</h1>
 <p>Dämmstärken technisch vergleichen und Empfehlung, Kostenoptimum, Amortisation, CO₂ sowie Wohnkomfort gemeinsam betrachten. Projektwerte aus dem Energiefluss werden automatisch übernommen.</p>
 </section>
 <div data-project-header></div>
+
+<section class="container address-card no-print" data-address-section>
+  <div class="section-heading section-heading--compact">
+    <div><p class="eyebrow">Standort</p><h2>Adresse und Gebäudegeometrie</h2></div>
+    <span class="status-chip" id="geometryStatus">Projektwerte werden geprüft</span>
+  </div>
+  <p class="section-note">Das Werkzeug kann direkt gestartet werden. Eine Adresse genügt, um dieselbe gemeinsame TIRIS-Gebäudegeometrie wie im Standortpass und Energiefluss zu übernehmen.</p>
+  <div class="address-search-row">
+    <label><span>Adresse suchen</span><input autocomplete="off" id="renAddressInput" placeholder="z. B. 6123 Dorfstraße 1" type="search"/></label>
+    <button class="quiet-button" id="renUseProjectAddress" type="button">Projektadresse übernehmen</button>
+  </div>
+  <small id="renAddressStatus">Die Eingabe bleibt während des Tippens unverändert; gesucht wird nach einer kurzen Pause.</small>
+  <div class="address-results" hidden id="renAddressResults"></div>
+  <div class="building-candidates" hidden id="renBuildingCandidates"></div>
+</section>
 
 <section class="container renovation-workspace no-print">
 <article class="ren-card ren-card--input">
@@ -55,7 +70,7 @@
 <summary>Erweiterte technische Eingaben</summary>
 <div class="input-grid input-grid--four">
 <label><span>Jahresnutzungsgrad</span><div class="input-with-unit"><input id="annualEfficiency" min="0.05" max="5" step="0.01" type="number"/><em>–</em></div><small>aus Projekt oder Voreinstellung</small></label>
-<label><span>HGT 22/14</span><div class="input-with-unit"><input id="heatingDegreeDays" min="0" step="1" type="number"/><em>Kd/a</em></div><small>optional: nur analytische Normorientierung nach Anhang B</small></label>
+<label><span>HGT 22/14</span><div class="input-with-unit"><input id="heatingDegreeDays" min="0" step="1" type="number"/><em>Kd/a</em></div><small id="hgtSource">Fallback Tirol: 3.500 Kd/a</small></label>
 <label><span>Temperaturkorrektur</span><input id="boundaryFactor" min="0.1" max="1.5" step="0.05" type="number"/><small>nur als Fallback ohne Energiefluss; Außenluft = 1,0</small></label>
 <label><span>Raumtemperatur</span><div class="input-with-unit"><input id="indoorTemperature" min="10" max="30" step="0.5" type="number"/><em>°C</em></div></label>
 </div>
@@ -97,7 +112,7 @@
 <label><span>Vollkosten-Sockel</span><div class="input-with-unit"><input id="baseCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
 <label><span>Mehrkosten je cm</span><div class="input-with-unit"><input id="variableCostEurM2Cm" min="0" step="0.5" type="number"/><em>€/m²·cm</em></div></label>
 <label><span>Sowiesokosten</span><div class="input-with-unit"><input id="sunkCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
-<label><span>Nutzungsdauer</span><div class="input-with-unit"><input id="lifetimeYears" min="1" step="1" type="number"/><em>Jahre</em></div></label>
+<label><span>Nutzungsdauer</span><div class="input-with-unit"><input id="lifetimeYears" min="1" step="1" type="number"/><em>Jahre</em></div><small id="lifetimeSource">zentraler Standardwert; überschreibbar</small></label>
 <label><span>Energiepreis</span><div class="input-with-unit"><input id="energyPriceEurKwh" min="0" step="0.001" type="number"/><em>€/kWh</em></div></label>
 <label><span>Emissionsfaktor</span><div class="input-with-unit"><input id="emissionFactorKgKwh" min="0" step="0.001" type="number"/><em>kg CO₂e/kWh</em></div></label>
 <label><span>Betrachtungszeitraum</span><div class="input-with-unit"><input id="periodYears" min="1" max="100" step="1" type="number"/><em>Jahre</em></div></label>
@@ -130,14 +145,26 @@
 <article data-card="ambitious"><span>Ambitioniert</span><strong id="ambitiousCardValue">–</strong><p id="ambitiousCardText">–</p><button class="quiet-button compact-button" data-select-special="ambitious" type="button">Variante wählen</button></article>
 </div>
 <div class="charts-grid">
-<section><h3>Gesamtkosten im Betrachtungszeitraum</h3><div class="chart-host" id="costChart"><p>Kostenangaben ergänzen.</p></div></section>
-<section><h3>Dynamische Amortisation</h3><div class="chart-host" id="paybackChart"><p>Kostenangaben ergänzen.</p></div></section>
+<section>
+      <h3>Gesamtkosten im Betrachtungszeitraum</h3>
+      <div class="chart-host" id="costChart"><p>Kostenangaben ergänzen.</p></div>
+      <p class="chart-explanation">Je tiefer die Kurve, desto geringer sind Investition und laufende Energiekosten zusammen über den gewählten Zeitraum. Das Minimum markiert das langfristige Kostenoptimum.</p>
+    </section>
+    <section>
+      <h3>Dynamische Amortisation</h3>
+      <div class="chart-host" id="paybackChart"><p>Kostenangaben ergänzen.</p></div>
+      <p class="chart-explanation">Die Amortisation zeigt, wann die Mehrinvestition durch abgezinste Einsparungen aufgeholt wird. Eine kürzere Amortisation ist nicht automatisch die Variante mit den niedrigsten Gesamtkosten.</p>
+    </section>
+</div>
+<div class="comparison-explainer">
+  <strong>Zwei verschiedene Blickwinkel</strong>
+  <p><b>Amortisation</b> fragt nach dem Zeitpunkt, an dem sich die Mehrinvestition rechnet. <b>Kostenoptimum</b> sucht die geringsten Gesamtkosten über die gesamte Nutzungsdauer. Beide Ergebnisse können deshalb bei unterschiedlichen Dämmstärken liegen.</p>
 </div>
 <div class="selected-variant">
 <div class="selected-heading"><div><span>Ausgewählte Variante</span><strong id="selectedVariantTitle">–</strong></div><select id="selectedVariantSelect" aria-label="Variante auswählen"></select></div>
 <div class="selected-kpis">
 <div><span>U-Wert neu</span><strong id="selectedUValue">–</strong></div>
-<div><span>Energieeinsparung</span><strong id="selectedEnergySaving">–</strong></div>
+<div><span>Energieeinsparung</span><strong id="selectedEnergySaving">–</strong><small id="selectedAnnualCostSaving">–</small></div>
 <div><span>CO₂-Einsparung</span><strong id="selectedCo2Saving">–</strong></div>
 <div><span>Oberflächentemperatur</span><strong id="selectedSurfaceTemperature">–</strong></div>
 </div>
@@ -149,12 +176,40 @@
 <div class="is-total is-highlight"><span>= relevante Eigeninvestition</span><strong id="bridgeOwnInvestment">–</strong></div>
 </div>
 <div class="comfort-panel"><h3>Wohnkomfort und Zusatznutzen</h3><p id="comfortText">–</p></div>
+
+<div class="impact-panel">
+  <div class="impact-panel__head">
+    <div><span class="eyebrow">Sanierung auf einen Blick</span><h3>Bestand und ausgewählte Variante</h3></div>
+    <small>Die Grafik fasst die wichtigsten Wirkungen bewusst gerundet zusammen.</small>
+  </div>
+  <div class="impact-infographic" aria-label="Infografik Bestand im Vergleich zur Sanierung">
+    <div class="impact-house impact-house--before">
+      <svg aria-hidden="true" viewBox="0 0 140 120"><path d="M14 57 70 13l56 44v51H14z"/><path d="M44 108V69h52v39"/><path class="impact-wave" d="M5 31c16 8 26 8 42 0M93 31c16 8 26 8 42 0"/></svg>
+      <span>Bestand</span>
+      <strong id="impactBeforeU">U –</strong>
+      <small id="impactBeforeSurface">Oberfläche –</small>
+    </div>
+    <div class="impact-benefits">
+      <div><span>Energie</span><strong id="impactEnergy">–</strong></div>
+      <div><span>Heizkosten</span><strong id="impactCost">–</strong></div>
+      <div><span>CO₂</span><strong id="impactCo2">–</strong></div>
+      <div><span>Wohnkomfort</span><strong id="impactComfort">–</strong></div>
+    </div>
+    <div class="impact-house impact-house--after">
+      <svg aria-hidden="true" viewBox="0 0 140 120"><path d="M14 57 70 13l56 44v51H14z"/><path d="M44 108V69h52v39"/><path class="impact-shield" d="M111 17c15 4 20 9 20 9v20c0 15-9 25-20 31-11-6-20-16-20-31V26s5-5 20-9z"/></svg>
+      <span>Sanierung</span>
+      <strong id="impactAfterU">U –</strong>
+      <small id="impactAfterSurface">Oberfläche –</small>
+    </div>
+  </div>
+</div>
+
 <div class="result-actions"><button class="primary-button" id="saveMeasure" type="button">Maßnahme im Projekt speichern</button><span id="saveMeasureStatus"></span></div>
 </div>
 </article>
 
 <article class="ren-card ren-card--table">
-<details open>
+<details id="variantsComparisonDetails">
 <summary>Alle Varianten vergleichen</summary>
 <div class="variants-table-wrap"><table class="variants-table"><thead><tr><th>Dämmung</th><th>U-Wert</th><th>Energie</th><th>Investition</th><th>Gesamtkosten</th><th>Amortisation</th><th></th></tr></thead><tbody id="variantsTableBody"></tbody></table></div>
 </details>
@@ -178,7 +233,7 @@
 <section aria-label="Druckbericht Bauteil und Sanierung" class="container renovation-print-report print-only" id="renovationPrintReport"></section>
 <div data-report-actions data-report-actions-label="Drucken / PDF"></div>
 </main>
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.2 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.3 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
 <script src="../../shared/js/data-model.js?v=2"></script>
@@ -186,6 +241,12 @@
 <script src="../../shared/js/value-resolver.js?v=1"></script>
 <script src="../../shared/js/project-store.js?v=2"></script>
 <script src="../../shared/js/project-header.js?v=2"></script>
+<script src="../../shared/js/project-address-manager.js?v=1"></script>
+<script src="../../shared/js/services/address-provider-core.js?v=1"></script>
+<script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script>
+<script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
+<script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
+<script src="../../shared/js/services/building-geometry-service.js?v=1"></script>
 <script src="../../shared/data/standards/oib/nat-tirol.js?v=1"></script>
 <script src="../../shared/data/standards/oib/tnat13-tirol.js?v=1"></script>
 <script src="../../shared/js/domain/climate/oib-nat-core.js?v=1"></script>
@@ -193,6 +254,6 @@
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=1"></script>
 <script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=2"></script>
-<script src="bauteil-sanierung.js?v=2"></script>
+<script src="bauteil-sanierung.js?v=3"></script>
 </body>
 </html>

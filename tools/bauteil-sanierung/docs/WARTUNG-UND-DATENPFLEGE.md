@@ -76,3 +76,13 @@ shared/js/domain/economics/economics-core.js
 ```
 
 Fachformeln dürfen nicht in der Oberfläche dupliziert werden. Änderungen benötigen Versionsanhebung, Tests und Dokumentation.
+
+
+## Datenabgrenzung V0.3
+
+- OIB-Prüfwerte: `shared/data/standards/oib/envelope-u-values.json`
+- Empfehlungen: `shared/data/measures/envelope-targets.json`
+- Nutzungsdauern: `shared/data/standards/economics/component-lifetimes.json`
+- Fenster/Türen Vorbereitung: `shared/data/measures/exchange-variants.json`
+
+Die Master-Exceldatei pflegt weder OIB-Prüfwerte noch Nutzungsdauern oder automatische Förderwerte.
