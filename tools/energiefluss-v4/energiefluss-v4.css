@@ -262,7 +262,7 @@
   .address-card,
   .tool-intro { display: none !important; }
   .v4-print-report { display: block !important; width: 194mm; margin: 0; }
-  .v4-print-page { min-height: 276mm; page-break-after: always; break-after: page; }
+  .v4-print-page { page-break-after: always; break-after: page; }
   .v4-print-page:last-child { page-break-after: auto; break-after: auto; }
   .print-title { display: flex; justify-content: space-between; gap: 8mm; align-items: end; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 0.3mm solid var(--line-strong); }
   .print-title h1 { margin: 0; font-size: 14pt; }
@@ -295,4 +295,113 @@
   .print-envelope td { padding: 1.5mm; border-bottom: 0.25mm solid var(--line-strong); font-size: 7pt; text-align: left; }
   .print-envelope th { background: var(--surface-muted); color: var(--text-muted); }
   .print-footer-note { margin-top: 3mm; font-size: 6.5pt; color: var(--text-muted); }
+}
+
+/* V4.1 – kompakte gemeinsame Ausgangslage */
+.section-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem 0.8rem;
+}
+.value-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.value-grid--compact .v4-value-field { padding: 0.68rem 0.72rem; }
+.value-grid--compact .v4-value-field small { min-height: 1.4em; }
+.basis-group h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.92rem;
+}
+.basis-details {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line-strong);
+}
+.basis-details summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+}
+.basis-details[open] summary { margin-bottom: 0.75rem; }
+
+/* V4.1 – Gebäudehülle als Hauptverlust, Bauteile als Detail */
+.flow-entry--group {
+  margin-top: 0.15rem;
+  margin-bottom: 0.48rem;
+  font-weight: 800;
+}
+.flow-entry--group .flow-bar { height: 10px; }
+.flow-entry--detail {
+  margin-left: 0.85rem;
+  margin-bottom: 0.42rem;
+  opacity: 0.72;
+}
+.flow-entry--detail .flow-entry__head { font-size: 0.7rem; }
+.flow-entry--detail .flow-bar { height: 6px; }
+.flow-entry--detail .flow-bar > i { opacity: 0.62; }
+.flow-detail-note {
+  display: block;
+  margin: 0.2rem 0 0.7rem 0.85rem;
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+.result-kpis { margin-top: 1rem; margin-bottom: 0; }
+
+.comparison-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.8rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-medium);
+  background: var(--surface-muted);
+}
+.comparison-panel p { margin: 0.32rem 0 0; color: var(--text-muted); }
+.comparison-status {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  background: var(--surface-subtle);
+}
+.comparison-panel[data-level="good"] .comparison-status,
+.comparison-panel[data-level="plausible"] .comparison-status {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+.comparison-panel[data-level="check"] .comparison-status {
+  color: var(--color-warning-dark);
+  background: var(--color-warning-soft);
+}
+.comparison-panel[data-level="warning"] .comparison-status {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+@media (max-width: 760px) {
+  .value-grid--three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .section-links { justify-content: flex-start; }
+  .comparison-panel { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 500px) {
+  .value-grid--three { grid-template-columns: 1fr; }
+}
+
+@media print {
+  /* Keine künstliche Seitenhöhe: sie verursachte den leeren zweiten Bogen. */
+  .v4-print-page { min-height: 0 !important; page-break-after: always; break-after: page; }
+  .v4-print-page:last-child { page-break-after: auto; break-after: auto; }
+  .print-kpis { margin-top: 3mm; }
+  .print-flow-entry--group { font-weight: 800; margin-bottom: 1.2mm; }
+  .print-flow-entry--group .print-flow-bar { height: 2.1mm; }
+  .print-flow-entry--detail { margin-left: 3mm; margin-bottom: 0.9mm; opacity: 0.72; }
+  .print-flow-entry--detail div:first-child { font-size: 6.2pt; }
+  .print-flow-entry--detail .print-flow-bar { height: 1.3mm; }
+  .print-detail-note { display: block; margin: 0.5mm 0 1mm 3mm; font-size: 5.5pt; color: var(--text-muted); }
+  .print-house { min-height: 60mm; }
 }

@@ -151,6 +151,30 @@
     return Number.isFinite(Number(value)) ? `${number0.format(Number(value))} kWh/m²a` : '–';
   }
 
+  function formatEditableNumber(value, digits = 1) {
+    if (!Number.isFinite(Number(value))) return '';
+    const factor = 10 ** digits;
+    const rounded = Math.round(Number(value) * factor) / factor;
+    return String(rounded);
+  }
+
+  function formatSignedPercent(value) {
+    if (!Number.isFinite(Number(value))) return '–';
+    const rounded = Math.round(Number(value) / 5) * 5;
+    return `${rounded > 0 ? '+' : ''}${number0.format(rounded)} %`;
+  }
+
+  function comparisonAssessment(deviationPercent) {
+    if (!Number.isFinite(Number(deviationPercent))) {
+      return { level: 'missing', label: 'Klimadaten fehlen', note: 'Klima einmal berechnen' };
+    }
+    const absolute = Math.abs(Number(deviationPercent));
+    if (absolute <= 15) return { level: 'good', label: 'gute Übereinstimmung', note: 'Größenordnung passt gut' };
+    if (absolute <= 30) return { level: 'plausible', label: 'plausibler Bereich', note: 'Eingaben wirken stimmig' };
+    if (absolute <= 50) return { level: 'check', label: 'deutliche Abweichung', note: 'U-Werte und Annahmen prüfen' };
+    return { level: 'warning', label: 'große Abweichung', note: 'Grundlagen genauer prüfen' };
+  }
+
   function hashText(text) {
     let hash = 5381;
     for (let index = 0; index < text.length; index += 1) {
@@ -293,7 +317,6 @@
       if (kind === 'number' && value !== null && !Number.isFinite(value)) return;
       store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4' });
     });
-    input.addEventListener('blur', () => input.dispatchEvent(new Event('change')));
     reset.addEventListener('click', () => store.clearFieldCandidate(path, model.ORIGIN.MANUAL));
   }
 
@@ -357,8 +380,6 @@
         if (value !== null && !Number.isFinite(value)) return;
         store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4' });
       });
-      area.addEventListener('blur', () => area.dispatchEvent(new Event('change')));
-      uValue.addEventListener('blur', () => uValue.dispatchEvent(new Event('change')));
       resetArea.addEventListener('click', () => store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL));
       resetU.addEventListener('click', () => store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL));
     });
@@ -373,8 +394,8 @@
       const componentResult = result?.envelope?.components?.find((item) => item.id === component.id);
 
       row.querySelector('[data-component-enabled]').checked = Boolean(enabledInfo.value);
-      row.querySelector('[data-component-area]').value = areaInfo.value ?? '';
-      row.querySelector('[data-component-u]').value = uInfo.value ?? '';
+      row.querySelector('[data-component-area]').value = formatEditableNumber(areaInfo.value, 1);
+      row.querySelector('[data-component-u]').value = formatEditableNumber(uInfo.value, 2);
       row.querySelector('[data-reset-area]').hidden = !areaInfo.isManual;
       row.querySelector('[data-reset-u]').hidden = !uInfo.isManual;
       row.querySelector('[data-area-detail]').textContent = `${ORIGIN_LABELS[areaInfo.origin] ?? 'offen'}${areaInfo.isManual && areaInfo.automaticValue !== null ? ` · Automatik ${formatNumber(areaInfo.automaticValue, 0)} m²` : ''}`;
@@ -383,6 +404,21 @@
       row.querySelector('[data-component-loss]').textContent = componentResult ? formatEnergy(componentResult.lossKwh) : '–';
       row.classList.toggle('is-disabled', !enabledInfo.value);
     });
+  }
+
+  function climateComparisonInputs(project) {
+    const summary = project.modules?.klima?.climateSummary;
+    const natC = hasValue(summary?.natC) ? finite(summary.natC, null) : null;
+    const averageFullLoadHours = hasValue(summary?.metrics?.average_full_load_hours)
+      ? finite(summary.metrics.average_full_load_hours, null)
+      : null;
+    return {
+      natC,
+      averageFullLoadHours,
+      balanceTemperatureC: 15,
+      period: summary?.period ?? null,
+      source: summary?.source ?? null,
+    };
   }
 
   function calculationInputs(project) {
@@ -396,6 +432,7 @@
       grossVolumeM3: valueAt(project, 'building.geometry.grossVolume', 0),
       indoorTemperatureC: valueAt(project, 'building.thermal.indoorTemperature', 20),
       heatedSharePercent: valueAt(project, 'building.thermal.heatedSharePercent', 100),
+      climate: climateComparisonInputs(project),
       components: COMPONENTS.map((component) => ({
         id: component.id,
         label: component.label,
@@ -415,16 +452,44 @@
     };
   }
 
-  function flowEntry(label, value, maximum, loss = false) {
+  function flowEntry(label, value, maximum, options = {}) {
     const percentage = maximum > 0 ? Math.max(0, Math.min(100, value / maximum * 100)) : 0;
-    return `<div class="flow-entry"><div class="flow-entry__head"><span>${label}</span><strong>${formatEnergy(value)}</strong></div><div class="flow-bar"><i style="width:${percentage.toFixed(2)}%"${loss ? ' class="is-loss"' : ''}></i></div></div>`;
+    const classes = [
+      'flow-entry',
+      options.group ? 'flow-entry--group' : '',
+      options.detail ? 'flow-entry--detail' : '',
+    ].filter(Boolean).join(' ');
+    const barClass = options.loss ? ' class="is-loss"' : '';
+    return `<div class="${classes}"><div class="flow-entry__head"><span>${label}</span><strong>${formatEnergy(value)}</strong></div><div class="flow-bar"><i style="width:${percentage.toFixed(2)}%"${barClass}></i></div></div>`;
+  }
+
+  function renderComparison(result) {
+    const plausibility = result.plausibility;
+    const assessment = comparisonAssessment(plausibility.deviationPercent);
+    const panel = $('comparisonPanel');
+    panel.dataset.level = assessment.level;
+    $('comparisonStatus').textContent = assessment.label;
+
+    if (!plausibility.available) {
+      $('calculatedDelivered').textContent = '–';
+      $('modelDeviation').textContent = '–';
+      $('modelDeviationNote').textContent = 'Klima einmal berechnen';
+      $('comparisonText').textContent = 'Der Verbrauchsvergleich benötigt die standortbezogenen INCA-Klimakennwerte. Energiefluss funktioniert weiterhin eigenständig; nach einer Klimaauswertung erscheint hier automatisch der unabhängige Hüllvergleich.';
+      return;
+    }
+
+    $('calculatedDelivered').textContent = formatEnergy(plausibility.calculatedDeliveredKwh);
+    $('modelDeviation').textContent = formatSignedPercent(plausibility.deviationPercent);
+    $('modelDeviationNote').textContent = assessment.note;
+    const direction = plausibility.deviationPercent > 0 ? 'über' : plausibility.deviationPercent < 0 ? 'unter' : 'bei';
+    const roundedAbsolute = Math.round(Math.abs(plausibility.deviationPercent) / 5) * 5;
+    const period = plausibility.period ? `, INCA ${plausibility.period}` : '';
+    $('comparisonText').textContent = `Das Hüllmodell liegt rund ${number0.format(roundedAbsolute)} % ${direction} dem eingegebenen Heizenergieverbrauch. Rechnerischer HWB: ${formatSpecific(plausibility.calculatedHwbKwhM2a)}${period}; Bilanztemperatur 15 °C.`;
   }
 
   function renderResults(project, result) {
     $('hwbConsumption').textContent = formatSpecific(result.consumption.hwbConsumptionKwhM2a);
     $('hwbCorrected').textContent = formatSpecific(result.consumption.hwbCorrectedKwhM2a);
-    $('specificDelivered').textContent = formatSpecific(result.consumption.specificDeliveredKwhM2a);
-    $('roomHeatTotal').textContent = formatEnergy(result.consumption.roomHeatKwh);
     $('totalUa').textContent = `${formatNumber(result.envelope.totalUaWK, 0)} W/K`;
     $('calibrationFactor').textContent = result.envelope.calibrationKwhPerWK > 0
       ? `${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a`
@@ -437,19 +502,27 @@
       ['Solare Gewinne', result.gains.solarKwh],
       ['Heizenergieverbrauch', result.gains.deliveredKwh],
     ];
-    $('gainFlow').innerHTML = gainItems.map(([label, value]) => flowEntry(label, value, result.gains.totalKwh)).join('');
+    $('gainFlow').innerHTML = gainItems
+      .map(([label, value]) => flowEntry(label, value, result.gains.totalKwh))
+      .join('');
 
-    const componentLosses = result.envelope.components
+    const componentDetails = result.envelope.components
       .filter((item) => item.enabled && item.lossKwh > 0)
-      .map((item) => [item.label, item.lossKwh]);
-    const lossItems = [
-      ...componentLosses,
-      ['Wärmebrücken', result.losses.thermalBridgesKwh],
-      ['Lüftung', result.losses.ventilationKwh],
-      ['Anlage', result.losses.systemKwh],
-      ...(result.losses.hotWaterKwh > 0 ? [['Warmwasser', result.losses.hotWaterKwh]] : []),
-    ];
-    $('lossFlow').innerHTML = lossItems.map(([label, value]) => flowEntry(label, value, result.losses.totalKwh, true)).join('');
+      .map((item) => flowEntry(item.label, item.lossKwh, result.losses.totalKwh, { loss: true, detail: true }))
+      .join('');
+    const lossHtml = [
+      flowEntry('Gebäudehülle', result.losses.componentsKwh, result.losses.totalKwh, { loss: true, group: true }),
+      componentDetails,
+      flowEntry('Wärmebrücken', result.losses.thermalBridgesKwh, result.losses.totalKwh, { loss: true }),
+      flowEntry('Lüftung', result.losses.ventilationKwh, result.losses.totalKwh, { loss: true }),
+      flowEntry('Anlage', result.losses.systemKwh, result.losses.totalKwh, { loss: true }),
+      result.losses.hotWaterKwh > 0
+        ? flowEntry('Warmwasser', result.losses.hotWaterKwh, result.losses.totalKwh, { loss: true })
+        : '',
+    ].join('');
+    $('lossFlow').innerHTML = `${lossHtml}<small class="flow-detail-note">Eingerückte Bauteile sind die Aufschlüsselung der Gebäudehülle und werden nicht zusätzlich summiert.</small>`;
+
+    renderComparison(result);
 
     const warnings = $('v4Warnings');
     warnings.hidden = result.warnings.length === 0;
@@ -481,6 +554,13 @@
         totalUaWK: result.envelope.totalUaWK,
         calibrationKwhPerWK: result.envelope.calibrationKwhPerWK,
         components: result.envelope.components.map((item) => ({ id: item.id, areaM2: item.areaM2, uValue: item.uValue, enabled: item.enabled, uaWK: item.uaWK, lossKwh: item.lossKwh })),
+        plausibility: {
+          available: result.plausibility.available,
+          calculatedDeliveredKwh: result.plausibility.calculatedDeliveredKwh,
+          calculatedHwbKwhM2a: result.plausibility.calculatedHwbKwhM2a,
+          deviationPercent: result.plausibility.deviationPercent,
+          climatePeriod: result.plausibility.period,
+        },
       },
     };
   }
@@ -695,25 +775,62 @@
     });
   }
 
-  function printFlowEntries(items, maximum, loss = false) {
-    return items.map(([label, value]) => {
-      const width = maximum > 0 ? Math.min(100, Math.max(0, value / maximum * 100)) : 0;
-      return `<div class="print-flow-entry"><div><span>${label}</span><strong>${formatEnergy(value)}</strong></div><div class="print-flow-bar"><i style="width:${width.toFixed(2)}%${loss ? ';background:var(--color-secondary)' : ''}"></i></div></div>`;
-    }).join('');
+  function printFlowEntry(label, value, maximum, options = {}) {
+    const width = maximum > 0 ? Math.min(100, Math.max(0, value / maximum * 100)) : 0;
+    const classes = [
+      'print-flow-entry',
+      options.group ? 'print-flow-entry--group' : '',
+      options.detail ? 'print-flow-entry--detail' : '',
+    ].filter(Boolean).join(' ');
+    const background = options.loss
+      ? (options.detail ? 'var(--color-secondary-light)' : 'var(--color-secondary)')
+      : 'var(--color-primary)';
+    return `<div class="${classes}"><div><span>${label}</span><strong>${formatEnergy(value)}</strong></div><div class="print-flow-bar"><i style="width:${width.toFixed(2)}%;background:${background}"></i></div></div>`;
   }
 
   function printOrigin(info) {
     return ORIGIN_LABELS[info.origin] ?? 'offen';
   }
 
+  function printComparison(result) {
+    const plausibility = result.plausibility;
+    if (!plausibility.available) {
+      return {
+        calculated: '–',
+        deviation: '–',
+        note: 'Klimadaten fehlen; Klima-Tool einmal ausführen.',
+      };
+    }
+    const assessment = comparisonAssessment(plausibility.deviationPercent);
+    return {
+      calculated: formatEnergy(plausibility.calculatedDeliveredKwh),
+      deviation: formatSignedPercent(plausibility.deviationPercent),
+      note: `${assessment.label} · rechnerischer HWB ${formatSpecific(plausibility.calculatedHwbKwhM2a)} · INCA ${plausibility.period ?? 'Projektklima'}`,
+    };
+  }
+
   function buildPrintReport(project, result) {
     const address = project.project?.addressLabel || 'Kein Standort gewählt';
-    const gains = [['Interne Gewinne', result.gains.internalKwh], ['Solare Gewinne', result.gains.solarKwh], ['Heizenergieverbrauch', result.gains.deliveredKwh]];
-    const losses = [
-      ...result.envelope.components.filter((item) => item.enabled && item.lossKwh > 0).map((item) => [item.label, item.lossKwh]),
-      ['Wärmebrücken', result.losses.thermalBridgesKwh], ['Lüftung', result.losses.ventilationKwh], ['Anlage', result.losses.systemKwh],
-      ...(result.losses.hotWaterKwh > 0 ? [['Warmwasser', result.losses.hotWaterKwh]] : []),
-    ];
+    const gainsHtml = [
+      printFlowEntry('Interne Gewinne', result.gains.internalKwh, result.gains.totalKwh),
+      printFlowEntry('Solare Gewinne', result.gains.solarKwh, result.gains.totalKwh),
+      printFlowEntry('Heizenergieverbrauch', result.gains.deliveredKwh, result.gains.totalKwh),
+    ].join('');
+    const componentDetails = result.envelope.components
+      .filter((item) => item.enabled && item.lossKwh > 0)
+      .map((item) => printFlowEntry(item.label, item.lossKwh, result.losses.totalKwh, { loss: true, detail: true }))
+      .join('');
+    const lossesHtml = [
+      printFlowEntry('Gebäudehülle', result.losses.componentsKwh, result.losses.totalKwh, { loss: true, group: true }),
+      componentDetails,
+      printFlowEntry('Wärmebrücken', result.losses.thermalBridgesKwh, result.losses.totalKwh, { loss: true }),
+      printFlowEntry('Lüftung', result.losses.ventilationKwh, result.losses.totalKwh, { loss: true }),
+      printFlowEntry('Anlage', result.losses.systemKwh, result.losses.totalKwh, { loss: true }),
+      result.losses.hotWaterKwh > 0
+        ? printFlowEntry('Warmwasser', result.losses.hotWaterKwh, result.losses.totalKwh, { loss: true })
+        : '',
+    ].join('');
+    const comparison = printComparison(result);
 
     const baseData = [
       ['Beheizte Nutzfläche', `${formatNumber(result.inputs.heatedFloorAreaM2)} m²`, printOrigin(describeAt(project, 'building.geometry.heatedFloorArea'))],
@@ -735,26 +852,26 @@
 
     $('v4PrintReport').innerHTML = `
       <div class="v4-print-page">
-        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung. Kein Ersatz für Energieausweis oder detaillierte Bauteilberechnung.</p></div>
+        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.1</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
+        <div class="print-flow">
+          <div><h2>Einträge</h2>${gainsHtml}</div>
+          <div class="print-house"><img src="../../shared/assets/energy-flow-house.svg" alt=""><strong>${formatEnergy(result.gains.totalKwh)}</strong></div>
+          <div><h2>Verluste</h2>${lossesHtml}<small class="print-detail-note">Bauteile = Aufschlüsselung der Gebäudehülle</small></div>
+        </div>
         <div class="print-kpis">
           <article><span>HWB aus Verbrauch</span><strong>${formatSpecific(result.consumption.hwbConsumptionKwhM2a)}</strong><small>Raumwärme / BGF</small></article>
           <article><span>HWB korrigiert</span><strong>${formatSpecific(result.consumption.hwbCorrectedKwhM2a)}</strong><small>Temperatur + beheizter Anteil</small></article>
-          <article><span>Spezifischer Verbrauch</span><strong>${formatSpecific(result.consumption.specificDeliveredKwhM2a)}</strong><small>Endenergie / beheizte Fläche</small></article>
-          <article><span>Raumwärme</span><strong>${formatEnergy(result.consumption.roomHeatKwh)}</strong><small>nach Warmwasserabzug</small></article>
+          <article><span>Rechnerischer Verbrauch</span><strong>${comparison.calculated}</strong><small>U × A + Klima</small></article>
+          <article><span>Abweichung</span><strong>${comparison.deviation}</strong><small>Plausibilitätsvergleich</small></article>
         </div>
-        <div class="print-flow">
-          <div><h2>Einträge</h2>${printFlowEntries(gains, result.gains.totalKwh)}</div>
-          <div class="print-house"><img src="../../shared/assets/energy-flow-house.svg" alt=""><strong>${formatEnergy(result.gains.totalKwh)}</strong></div>
-          <div><h2>Verluste</h2>${printFlowEntries(losses, result.losses.totalKwh, true)}</div>
-        </div>
-        <p class="print-note">Der gemessene Verbrauch bleibt die Bilanzbasis. Die Bestands-U-Werte und Flächen verteilen den verbrauchsbasierten Bauteilverlust und schaffen damit die Grundlage für spätere Maßnahmenvarianten.</p>
-        <section class="print-section"><h2>Gebäude- und Verbrauchsbasis</h2><div class="print-data-grid">${baseData.map(([label, value, origin]) => `<div><span>${label}</span><strong>${value}</strong><small>${origin}</small></div>`).join('')}</div></section>
+        <p class="print-note">${comparison.note} Der gemessene Verbrauch bleibt die farbige Bilanzbasis; das Hüllmodell wird nicht daran kalibriert.</p>
+        <section class="print-section"><h2>Projekt- und Verbrauchsbasis</h2><div class="print-data-grid">${baseData.map(([label, value, origin]) => `<div><span>${label}</span><strong>${value}</strong><small>${origin}</small></div>`).join('')}</div></section>
       </div>
       <div class="v4-print-page">
         <div class="print-title"><div><h1>Gebäudehülle und Datenbasis</h1><small>${address}</small></div><p>Automatische, abgeleitete und manuelle Werte bleiben unterscheidbar.</p></div>
         <section class="print-section"><h2>Bauteile</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>UA</th><th>Verlust</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
-        <section class="print-section"><h2>Zusammenfassung</h2><div class="print-data-grid"><div><span>Summe UA</span><strong>${formatNumber(result.envelope.totalUaWK)} W/K</strong></div><div><span>Kalibrierfaktor</span><strong>${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a</strong></div><div><span>Bauteilverluste</span><strong>${formatEnergy(result.losses.componentsKwh)}</strong></div><div><span>Wärmebrücken</span><strong>${formatEnergy(result.losses.thermalBridgesKwh)}</strong></div></div></section>
-        <p class="print-footer-note">Modell ${core.MODEL_VERSION} · Fallback-Datenstand ${config.data_date ?? '–'} · 2,7 W/m² interne Gewinne · solare Gewinne 175 × Fensterfläche × 0,70 · Lüftung 10 kWh/m³a · Wärmebrücken 7,5 % der Bauteilverluste. Sichtbare Annahmen können projektweit überschrieben werden.</p>
+        <section class="print-section"><h2>Zusammenfassung</h2><div class="print-data-grid"><div><span>Summe UA</span><strong>${formatNumber(result.envelope.totalUaWK)} W/K</strong></div><div><span>Kalibrierfaktor</span><strong>${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a</strong></div><div><span>Gebäudehülle</span><strong>${formatEnergy(result.losses.componentsKwh)}</strong></div><div><span>Wärmebrücken</span><strong>${formatEnergy(result.losses.thermalBridgesKwh)}</strong></div></div></section>
+        <p class="print-footer-note">Modell ${core.MODEL_VERSION} · Fallback-Datenstand ${config.data_date ?? '–'} · U-Wert-Profile aus shared/data/standards/energy-flow-v4-defaults.json · Hüllvergleich mit INCA-Heizgradstunden zur Bilanztemperatur 15 °C, sofern im Projekt vorhanden.</p>
       </div>`;
   }
 
