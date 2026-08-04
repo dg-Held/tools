@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "data_date": "2026-08-04",
+  "title": "Bewertung und Zielorientierung für Hüllbauteile",
+  "purpose": "Ampelbewertung des Bestands sowie fachliche Empfehlung und ambitionierter Zielwert. Rechtliche und förderbezogene Werte sind nur versionierte Prüfhinweise, keine Beratungsempfehlung.",
+  "source": {
+    "title": "Kriterien Ampelbewertung U-Werte der EAT",
+    "file": "Kriterien Ampelbewertung  U-Werte der EAT.xlsx",
+    "sheet": "Ampel U-Werte NEU"
+  },
+  "components": {
+    "exteriorWall": { "recommended": 0.20, "ambitious": 0.15, "thresholds": { "green_max": 0.20, "lightgreen_max": 0.35, "orange_max": 0.50 } },
+    "windows": { "recommended": 1.00, "ambitious": 0.90, "thresholds": { "green_max": 1.00, "lightgreen_max": 1.40, "orange_max": 1.70 } },
+    "topFloorCeiling": { "recommended": 0.15, "ambitious": 0.13, "thresholds": { "green_max": 0.15, "lightgreen_max": 0.20, "orange_max": 0.30 } },
+    "roof": { "recommended": 0.15, "ambitious": 0.13, "thresholds": { "green_max": 0.15, "lightgreen_max": 0.20, "orange_max": 0.30 } },
+    "basementCeiling": { "recommended": 0.28, "ambitious": 0.20, "thresholds": { "green_max": 0.28, "lightgreen_max": 0.40, "orange_max": 0.50 } },
+    "groundFloor": { "recommended": 0.28, "ambitious": 0.20, "thresholds": { "green_max": 0.28, "lightgreen_max": 0.40, "orange_max": 0.50 } },
+    "exteriorDoor": { "recommended": 1.10, "ambitious": 1.00, "thresholds": { "green_max": 1.10, "lightgreen_max": 1.70, "orange_max": 2.00 } }
+  },
+  "regulatory_reference": {
+    "display_mode": "warning_only",
+    "note": "Gesetzliche und förderbezogene Anforderungen ändern sich. Vor Umsetzung ist der aktuelle, projektspezifische Stand zu prüfen. Mindestanforderungen sind keine energetische Empfehlung.",
+    "components": {
+      "exteriorWall": { "oib_with_concept": 0.35, "oib_without_concept": 0.266, "wbf_2026": 0.20 },
+      "windows": { "oib_with_concept": 1.40, "oib_without_concept": 1.064, "wbf_2026": 1.00 },
+      "topFloorCeiling": { "oib_with_concept": 0.20, "oib_without_concept": 0.152, "wbf_2026": 0.15 },
+      "roof": { "oib_with_concept": 0.20, "oib_without_concept": 0.152, "wbf_2026": 0.15 },
+      "basementCeiling": { "oib_with_concept": 0.40, "oib_without_concept": 0.304, "wbf_2026": 0.28 },
+      "groundFloor": { "oib_with_concept": 0.40, "oib_without_concept": 0.304, "wbf_2026": 0.28 },
+      "exteriorDoor": { "oib_with_concept": 1.70, "oib_without_concept": 1.292, "wbf_2026": 1.10 }
+    }
+  }
+}

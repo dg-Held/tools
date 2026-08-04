@@ -31,7 +31,7 @@
   };
 
   const DEFAULT_CONFIG = {
-    data_date: '2026-08-03',
+    data_date: '2026-08-04',
     assumptions: {
       heated_floor_area_m2: 120,
       persons: 4,
@@ -112,6 +112,8 @@
   ];
 
   let config = DEFAULT_CONFIG;
+  let existingUValuesConfig = null;
+  let envelopeEvaluationConfig = null;
   let hybridAddressProvider = null;
   let addressSearchTimer = null;
   let addressSearchSequence = 0;
@@ -249,12 +251,73 @@
     };
   }
 
+  function constructionPeriodForYear(year) {
+    const numericYear = Number(year);
+    if (!Number.isFinite(numericYear) || !existingUValuesConfig?.periods?.length) return null;
+    return existingUValuesConfig.periods.find((period) => {
+      const minimum = period.year_min ?? Number.NEGATIVE_INFINITY;
+      const maximum = period.year_max ?? Number.POSITIVE_INFINITY;
+      return numericYear >= minimum && numericYear <= maximum;
+    }) ?? null;
+  }
+
+  function uValueFallbackContext(project) {
+    const conditionInfo = describeAt(project, 'building.thermal.condition');
+    const year = valueAt(project, 'building.profile.constructionYear', null);
+    const period = constructionPeriodForYear(year);
+
+    if (conditionInfo.origin === model.ORIGIN.MANUAL) {
+      const profile = config.u_value_profiles?.[conditionInfo.value];
+      if (profile) return {
+        kind: 'condition',
+        label: profile.label,
+        values: profile,
+        source: `Gebäudezustand · ${profile.label}`,
+        method: 'manuell gewählter grober Zustandsfallback',
+      };
+    }
+
+    if (period && existingUValuesConfig?.components) {
+      const values = {};
+      COMPONENTS.forEach((component) => {
+        values[component.id] = existingUValuesConfig.components?.[component.id]?.values?.[period.id] ?? null;
+      });
+      return {
+        kind: 'construction-period',
+        label: `Bauperiode ${period.label}`,
+        values,
+        source: `U-Wert-Vorschlag · Bauperiode ${period.label}`,
+        method: 'Bestandsvorschlag nach Jahr der Baubewilligung',
+      };
+    }
+
+    const condition = conditionInfo.value || 'teilsanierter_bestand';
+    const profile = config.u_value_profiles?.[condition] ?? config.u_value_profiles?.teilsanierter_bestand;
+    return {
+      kind: 'condition',
+      label: profile?.label ?? 'Teilsanierter Bestand',
+      values: profile ?? {},
+      source: `Gebäudezustand · ${profile?.label ?? 'Teilsanierter Bestand'}`,
+      method: 'grober Zustandsfallback, da keine Bauperiode vorliegt',
+    };
+  }
+
+  function evaluateUValue(componentId, value) {
+    const uValue = Number(value);
+    const settings = envelopeEvaluationConfig?.components?.[componentId];
+    if (!settings || !Number.isFinite(uValue)) return null;
+    const thresholds = settings.thresholds ?? {};
+    if (uValue <= thresholds.green_max) return { level: 'green', label: 'sehr gut' };
+    if (uValue <= thresholds.lightgreen_max) return { level: 'lightgreen', label: 'gut' };
+    if (uValue <= thresholds.orange_max) return { level: 'orange', label: 'verbesserbar' };
+    return { level: 'red', label: 'hohes Verbesserungspotenzial' };
+  }
+
   function ensureFallbackCandidates(project) {
     if (fallbackUpdateRunning) return false;
     const a = config.assumptions;
     const geometry = effectiveGeometryFallbacks(project);
-    const condition = valueAt(project, 'building.thermal.condition', 'teilsanierter_bestand');
-    const profile = config.u_value_profiles[condition] ?? config.u_value_profiles.teilsanierter_bestand;
+    const uFallback = uValueFallbackContext(project);
     const updates = [];
 
     fallbackUpdate(updates, project, 'usage.household.persons', a.persons, { unit: 'Personen', source: 'Energiefluss V4 Standardannahme' });
@@ -282,12 +345,16 @@
 
     COMPONENTS.forEach((component) => {
       fallbackUpdate(updates, project, component.enabledPath, component.defaultEnabled, { source: 'Energiefluss V4 Standardannahme' });
-      fallbackUpdate(updates, project, component.uPath, profile[component.id], {
-        unit: 'W/m²K',
-        source: `Energiefluss V4 · ${profile.label}`,
-        method: 'sichtbarer U-Wert-Fallback nach grobem Gebäudezustand',
-        quality: 'Beratungsannahme',
-      });
+      const fallbackUValue = uFallback.values?.[component.id];
+      if (Number.isFinite(Number(fallbackUValue))) {
+        fallbackUpdate(updates, project, component.uPath, Number(fallbackUValue), {
+          unit: 'W/m²K',
+          source: uFallback.source,
+          method: uFallback.method,
+          dataDate: existingUValuesConfig?.data_date ?? config.data_date ?? null,
+          quality: 'Beratungsannahme; konkreten Aufbau und Sanierungsstand prüfen',
+        });
+      }
     });
 
     if (!updates.length) return false;
@@ -338,7 +405,7 @@
       else if (kind === 'condition-select') value = input.value;
       else value = input.value.trim() === '' ? null : Number(input.value);
       if (kind === 'number' && value !== null && !Number.isFinite(value)) return;
-      store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.2' });
+      store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.3' });
     });
     reset.addEventListener('click', () => store.clearFieldCandidate(path, model.ORIGIN.MANUAL));
   }
@@ -389,7 +456,7 @@
 
       enabled.addEventListener('change', () => {
         if (rendering) return;
-        store.setFieldCandidate(component.enabledPath, model.ORIGIN.MANUAL, enabled.checked, { source: 'Energiefluss V4.2' });
+        store.setFieldCandidate(component.enabledPath, model.ORIGIN.MANUAL, enabled.checked, { source: 'Energiefluss V4.3' });
       });
       area.addEventListener('change', () => {
         if (rendering) return;
@@ -397,13 +464,13 @@
         if (rawValue !== null && !Number.isFinite(rawValue)) return;
         const value = rawValue === null ? null : roundToStep(rawValue, component.areaStep);
         area.value = value === null ? '' : String(value);
-        store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.2', method: `bewusst auf ${component.areaStep} m² gerundet` });
+        store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.3', method: `bewusst auf ${component.areaStep} m² gerundet` });
       });
       uValue.addEventListener('change', () => {
         if (rendering) return;
         const value = uValue.value.trim() === '' ? null : Number(uValue.value);
         if (value !== null && !Number.isFinite(value)) return;
-        store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4.2' });
+        store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4.3' });
       });
       resetArea.addEventListener('click', () => store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL));
       resetU.addEventListener('click', () => store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL));
@@ -425,7 +492,15 @@
       row.querySelector('[data-reset-area]').hidden = !areaInfo.isManual;
       row.querySelector('[data-reset-u]').hidden = !uInfo.isManual;
       row.querySelector('[data-area-detail]').textContent = `${ORIGIN_LABELS[areaInfo.origin] ?? 'offen'}${areaInfo.isManual && areaInfo.automaticValue !== null ? ` · Automatik ca. ${formatNumber(roundToStep(areaInfo.automaticValue, component.areaStep), 0)} m²` : ''}`;
-      row.querySelector('[data-u-detail]').textContent = `${ORIGIN_LABELS[uInfo.origin] ?? 'offen'}${uInfo.isManual && uInfo.automaticValue !== null ? ` · Fallback ${formatNumber(uInfo.automaticValue, 2)}` : ''}`;
+      const uEvaluation = evaluateUValue(component.id, uInfo.value);
+      const uDetail = row.querySelector('[data-u-detail]');
+      uDetail.textContent = [
+        ORIGIN_LABELS[uInfo.origin] ?? 'offen',
+        uInfo.isManual && uInfo.automaticValue !== null ? `Fallback ${formatNumber(uInfo.automaticValue, 2)}` : null,
+        uInfo.source && !uInfo.isManual ? uInfo.source : null,
+        uEvaluation?.label ?? null,
+      ].filter(Boolean).join(' · ');
+      uDetail.dataset.evaluation = uEvaluation?.level ?? 'none';
       row.querySelector('[data-component-ua]').textContent = componentResult ? `${formatNumber(componentResult.uaWK, 0)} W/K` : '–';
       row.querySelector('[data-component-loss]').textContent = componentResult ? formatEnergy(componentResult.lossKwh) : '–';
       row.classList.toggle('is-disabled', !enabledInfo.value);
@@ -597,10 +672,10 @@
     const roomHeatField = project.consumption?.heating?.usefulRoomHeatAnnual;
     const updates = [];
     if (!sameCandidate(hwbField, model.ORIGIN.DERIVED, result.consumption.hwbCorrectedKwhM2a)) {
-      updates.push({ path: 'building.thermal.consumptionHwb', origin: model.ORIGIN.DERIVED, value: result.consumption.hwbCorrectedKwhM2a, options: { unit: 'kWh/m²a', source: 'Energiefluss V4.2', method: 'verbrauchsbasiert, raumtemperatur- und flächenkorrigiert' } });
+      updates.push({ path: 'building.thermal.consumptionHwb', origin: model.ORIGIN.DERIVED, value: result.consumption.hwbCorrectedKwhM2a, options: { unit: 'kWh/m²a', source: 'Energiefluss V4.3', method: 'verbrauchsbasiert, raumtemperatur- und flächenkorrigiert' } });
     }
     if (!sameCandidate(roomHeatField, model.ORIGIN.DERIVED, result.consumption.roomHeatKwh)) {
-      updates.push({ path: 'consumption.heating.usefulRoomHeatAnnual', origin: model.ORIGIN.DERIVED, value: result.consumption.roomHeatKwh, options: { unit: 'kWh/a', source: 'Energiefluss V4.2', method: 'Verbrauch × Nutzungsgrad − Warmwasser' } });
+      updates.push({ path: 'consumption.heating.usefulRoomHeatAnnual', origin: model.ORIGIN.DERIVED, value: result.consumption.roomHeatKwh, options: { unit: 'kWh/a', source: 'Energiefluss V4.3', method: 'Verbrauch × Nutzungsgrad − Warmwasser' } });
     }
     if (updates.length) store.setFieldCandidates(updates);
     if (existing !== fingerprint) store.patch({ modules: { energiefluss: resultSnapshot(result, fingerprint) } });
@@ -858,7 +933,9 @@
     ].join('');
     const comparison = printComparison(result);
 
+    const constructionYear = valueAt(project, 'building.profile.constructionYear', null);
     const baseData = [
+      ['Baujahr / Baubewilligung', constructionYear ? formatNumber(constructionYear, 0) : '–', printOrigin(describeAt(project, 'building.profile.constructionYear'))],
       ['Beheizte Nutzfläche', `${formatNumber(result.inputs.heatedFloorAreaM2)} m²`, printOrigin(describeAt(project, 'building.geometry.heatedFloorArea'))],
       ['BGF', `${formatNumber(result.inputs.grossFloorAreaM2)} m²`, printOrigin(describeAt(project, 'building.geometry.grossFloorArea'))],
       ['Volumen', `${formatNumber(result.inputs.grossVolumeM3)} m³`, printOrigin(describeAt(project, 'building.geometry.grossVolume'))],
@@ -878,7 +955,7 @@
 
     $('v4PrintReport').innerHTML = `
       <div class="v4-print-page">
-        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.2</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
+        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.3</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
         <div class="print-flow">
           <div><h2>Einträge</h2>${gainsHtml}</div>
           <div class="print-house"><img src="../../shared/assets/energy-flow-house.svg" alt=""><strong>${formatEnergy(result.gains.totalKwh)}</strong></div>
@@ -897,7 +974,7 @@
         <div class="print-title"><div><h1>Gebäudehülle und Datenbasis</h1><small>${address}</small></div><p>Automatische, abgeleitete und manuelle Werte bleiben unterscheidbar.</p></div>
         <section class="print-section"><h2>Bauteile</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>UA</th><th>Verlust</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
         <section class="print-section"><h2>Zusammenfassung</h2><div class="print-data-grid"><div><span>Summe UA</span><strong>${formatNumber(result.envelope.totalUaWK)} W/K</strong></div><div><span>Kalibrierfaktor</span><strong>${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a</strong></div><div><span>Gebäudehülle</span><strong>${formatEnergy(result.losses.componentsKwh)}</strong></div><div><span>Wärmebrücken</span><strong>${formatEnergy(result.losses.thermalBridgesKwh)}</strong></div></div></section>
-        <p class="print-footer-note">Modell ${core.MODEL_VERSION} · Fallback-Datenstand ${config.data_date ?? '–'} · U-Wert-Profile aus shared/data/standards/energy-flow-v4-defaults.json · Hüllvergleich mit INCA-Heizgradstunden zur Bilanztemperatur 15 °C; Klimawerte können direkt im Energiefluss berechnet werden.</p>
+        <p class="print-footer-note">Modell ${core.MODEL_VERSION} · Fallback-Datenstand ${config.data_date ?? '–'} · U-Wert-Vorschläge aus shared/data/building/existing-u-values.json; Zustandsfallbacks aus energy-flow-v4-defaults.json · Hüllvergleich mit INCA-Heizgradstunden zur Bilanztemperatur 15 °C; Klimawerte können direkt im Energiefluss berechnet werden.</p>
       </div>`;
   }
 
@@ -1017,17 +1094,37 @@
     }
   }
 
+  async function loadJson(url) {
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
   async function loadConfig() {
-    try {
-      const url = paths?.href('standards/energy-flow-v4-defaults.json', new URL(paths.sharedData))
-        ?? '../../shared/data/standards/energy-flow-v4-defaults.json';
-      const response = await fetch(url, { headers: { Accept: 'application/json' } });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      config = await response.json();
-    } catch (error) {
-      console.warn('Energiefluss V4: zentrale Fallback-Datendatei nicht geladen; eingebettete Werte werden verwendet.', error);
+    const defaultsUrl = paths?.href('standards/energy-flow-v4-defaults.json', new URL(paths.sharedData))
+      ?? '../../shared/data/standards/energy-flow-v4-defaults.json';
+    const existingUUrl = paths?.href('building/existing-u-values.json', new URL(paths.sharedData))
+      ?? '../../shared/data/building/existing-u-values.json';
+    const evaluationUrl = paths?.href('building/envelope-evaluation.json', new URL(paths.sharedData))
+      ?? '../../shared/data/building/envelope-evaluation.json';
+
+    const [defaultsResult, existingResult, evaluationResult] = await Promise.allSettled([
+      loadJson(defaultsUrl),
+      loadJson(existingUUrl),
+      loadJson(evaluationUrl),
+    ]);
+
+    if (defaultsResult.status === 'fulfilled') config = defaultsResult.value;
+    else {
+      console.warn('Energiefluss V4: zentrale Fallback-Datendatei nicht geladen; eingebettete Werte werden verwendet.', defaultsResult.reason);
       config = DEFAULT_CONFIG;
     }
+
+    if (existingResult.status === 'fulfilled') existingUValuesConfig = existingResult.value;
+    else console.warn('Energiefluss V4: Bauperioden-U-Werte konnten nicht geladen werden.', existingResult.reason);
+
+    if (evaluationResult.status === 'fulfilled') envelopeEvaluationConfig = evaluationResult.value;
+    else console.warn('Energiefluss V4: U-Wert-Bewertung konnte nicht geladen werden.', evaluationResult.reason);
   }
 
   function initInfoTips() {
@@ -1081,6 +1178,6 @@
   init().catch((error) => {
     console.error(error);
     $('v4Warnings').hidden = false;
-    $('v4Warnings').innerHTML = `<p>Energiefluss V4.2 konnte nicht initialisiert werden: ${error.message}</p>`;
+    $('v4Warnings').innerHTML = `<p>Energiefluss V4.3 konnte nicht initialisiert werden: ${error.message}</p>`;
   });
 })(window);

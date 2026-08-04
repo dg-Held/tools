@@ -1,24 +1,24 @@
 {
-  "document_version": "1.0",
-  "tool_state": "V4.2",
-  "model_version": "4.2.0",
+  "document_version": "1.1",
+  "tool_state": "V4.3",
+  "model_version": "4.3.0",
   "date": "2026-08-04",
-  "fallback_data_date": "2026-08-03",
+  "fallback_data_date": "2026-08-04",
   "project_schema": "2.0",
   "area_rounding_m2": {
     "windows": 5,
     "other_envelope_components": 10
+  },
+  "u_values": {
+    "primary_fallback": "shared/data/building/existing-u-values.json",
+    "evaluation": "shared/data/building/envelope-evaluation.json",
+    "secondary_fallback": "shared/data/standards/energy-flow-v4-defaults.json",
+    "priority": "manual > official/imported > construction period > condition fallback"
   },
   "climate": {
     "source": "GeoSphere Austria INCA yearly packages",
     "balance_temperature_c": 15,
     "direct_calculation_in_energy_flow": true
   },
-  "important_interpretation": {
-    "colored_balance": "measured-consumption calibrated",
-    "component_losses": "residual envelope balance distributed by U*A",
-    "independent_comparison": "not consumption calibrated; plausibility only",
-    "hwb_consumption": "consumption-based orientation, not normative energy-certificate HWB",
-    "u_value_profiles": "provisional visible fallbacks; require technical source validation"
-  }
+  "status": "functionally complete; measures and economics intentionally moved to Bauteil & Sanierung"
 }

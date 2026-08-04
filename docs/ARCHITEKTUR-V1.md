@@ -29,7 +29,7 @@ Gemeinsame Dienste, Berechnungskerne und Datenpakete
 - **Standortpass** ist die ausführlichste Oberfläche für Standort, Gebäudezuordnung und Geometrie. Die verwendeten Adress- und Geometriedienste liegen unter `shared/` und können von anderen Tools direkt aufgerufen werden.
 - **Klima** stellt Klimadaten, Jahresverläufe und Kennwerte ausführlich dar.
 - **Heizlast** nutzt denselben Klimakern automatisch und zeigt nur den benötigten Klimakontext.
-- **Energiefluss V4.2** nutzt Geometrie, Nutzung und Verbrauch aus dem Projekt. Den für den unabhängigen Hüllvergleich notwendigen INCA-Klimakontext kann es direkt berechnen und im selben Projektmodul `modules.klima.climateSummary` ablegen.
+- **Energiefluss V4.3** nutzt Geometrie, Nutzung und Verbrauch aus dem Projekt. Den für den unabhängigen Hüllvergleich notwendigen INCA-Klimakontext kann es direkt berechnen und im selben Projektmodul `modules.klima.climateSummary` ablegen.
 - **Energiefluss V3** bleibt als eingefrorener, eigenständiger Referenzstand bestehen.
 
 Eine Abhängigkeit zwischen Fachberechnungen ist zulässig; eine Abhängigkeit zwischen Webseiten ist nicht erforderlich.
@@ -112,7 +112,7 @@ shared/data/
         └── tnat13-tirol.json
 ```
 
-Die INCA-Jahrespakete werden von Klima, Heizlast und dem kompakten Klimakontext in Energiefluss V4.2 gemeinsam genutzt.
+Die INCA-Jahrespakete werden von Klima, Heizlast und dem kompakten Klimakontext in Energiefluss V4.3 gemeinsam genutzt.
 
 ## Gemeinsame JavaScript-Schichten
 
@@ -159,3 +159,19 @@ shared/css/
 ## Maßnahmen und Szenarien
 
 Bestand und Maßnahme werden getrennt gespeichert. Ein späteres zentrales Maßnahmenobjekt soll dieselbe Maßnahme in Energiefluss, Wirtschaftlichkeit und Sanierungsfahrplan verwenden. Zielwerte kommen aus versionierten Tabellen; Sowiesokosten und energetische Mehrkosten werden getrennt geführt.
+
+## Ergänzung 04.08.2026 – Bauteile und Wirtschaftlichkeit
+
+Energiefluss V4.3 ist das Diagnosewerkzeug und wird funktional eingefroren. Die Optimierung einzelner Hüllbauteile erfolgt künftig im eigenständigen Tool `Bauteil & Sanierung`.
+
+Gemeinsame neue Grundlagen:
+
+```text
+shared/data/building/existing-u-values.json
+shared/data/building/envelope-evaluation.json
+shared/js/domain/economics/economics-core.js
+```
+
+Das Maßnahmenmodell wird fachlich nach Gebäudehülle, Wärmeerzeugung, Wärmeverteilung/-abgabe, Lüftung/Raumluft und Strom/Solar gegliedert. Das Bauteiltool bearbeitet nur die Gebäudehülle; gebäudetechnische Anlagen werden später in eigenen Werkzeugen bewertet.
+
+Der vollständige dynamische Variantenvergleich ist die Hauptmethode. Das vereinfachte analytische Kostenoptimum opaker Bauteile wird nur ergänzend verwendet. Sowiesokosten, Förderung, CO₂ und Wohnkomfort bleiben getrennte, nachvollziehbare Ergebnisdimensionen.

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
-  "data_date": "2026-08-03",
-  "title": "Sichtbare Fallbackannahmen Energiefluss V4.2",
-  "note": "Die Werte sind bewusst grobe, austauschbare Beratungsannahmen. Sie sind keine Bauteilberechnung, kein Energieausweis und keine normative Zuordnung nach Baujahr.",
+  "data_date": "2026-08-04",
+  "title": "Sichtbare Fallbackannahmen Energiefluss V4.3",
+  "note": "Geometrie- und Nutzungswerte sind grobe Beratungsannahmen. U-Wert-Zustandsprofile werden nur verwendet, wenn kein bestätigter U-Wert und kein nutzbarer Bauperiodenvorschlag vorliegt.",
   "assumptions": {
     "heated_floor_area_m2": 120,
     "persons": 4,
@@ -62,9 +62,10 @@
     }
   },
   "u_value_basis": {
-    "status": "provisorische Beratungsfallbacks",
-    "purpose": "Nur verwenden, wenn kein bestätigter Projekt-U-Wert vorhanden ist.",
-    "maintenance": "Die Profile sind zentral wartbar und sollen mit der verwendeten U-Wert-Broschüre der Energieagentur fachlich abgeglichen werden.",
-    "priority": "manuell bestätigt → amtlich/übernommen → abgeleitet → Fallback"
+    "status": "sekundäre Zustandsfallbacks",
+    "purpose": "Nur verwenden, wenn kein bestätigter Projekt-U-Wert und kein Bauperiodenvorschlag verfügbar ist.",
+    "primary_data": "shared/data/building/existing-u-values.json",
+    "evaluation_data": "shared/data/building/envelope-evaluation.json",
+    "priority": "manuell bestätigt → übernommen/amtlich → Bauperiodenvorschlag → grober Zustandsfallback"
   }
 }

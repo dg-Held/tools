@@ -59,12 +59,7 @@
 .status-chip.is-success { color: var(--color-success); background: var(--color-success-soft); }
 .section-badge--berry { color: var(--color-secondary-dark); background: var(--color-secondary-light); }
 
-.tool-link {
-  color: var(--color-primary-dark);
-  font-weight: 700;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-}
+
 
 .address-search-row {
   display: grid;
@@ -297,7 +292,7 @@
   .print-footer-note { margin-top: 3mm; font-size: 6.5pt; color: var(--text-muted); }
 }
 
-/* V4.2 – kompakte gemeinsame Ausgangslage */
+/* V4.3 – kompakte gemeinsame Ausgangslage */
 .section-links {
   display: flex;
   flex-wrap: wrap;
@@ -323,7 +318,7 @@
 }
 .basis-details[open] summary { margin-bottom: 0.75rem; }
 
-/* V4.2 – Gebäudehülle als Hauptverlust, Bauteile als Detail */
+/* V4.3 – Gebäudehülle als Hauptverlust, Bauteile als Detail */
 .flow-entry--group {
   margin-top: 0.15rem;
   margin-bottom: 0.48rem;
@@ -406,7 +401,7 @@
   .print-house { min-height: 60mm; }
 }
 
-/* V4.2 – kompakte KPI-Hinweise und direkte Klimaberechnung */
+/* V4.3 – kompakte KPI-Hinweise und direkte Klimaberechnung */
 .kpi-heading {
   display: flex;
   align-items: center;
@@ -506,3 +501,9 @@
 @media print {
   .info-tip { display: none !important; }
 }
+
+/* V4.3: dezente Bewertung der Bestands-U-Werte */
+.envelope-field small[data-evaluation="green"] { color: var(--color-success); font-weight: 700; }
+.envelope-field small[data-evaluation="lightgreen"] { color: var(--color-primary-dark); font-weight: 700; }
+.envelope-field small[data-evaluation="orange"] { color: var(--color-warning-dark); font-weight: 700; }
+.envelope-field small[data-evaluation="red"] { color: var(--color-danger); font-weight: 700; }
