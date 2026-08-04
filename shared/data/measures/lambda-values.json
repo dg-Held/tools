@@ -1,0 +1,14 @@
+{
+  "schema": "energy-tools-lambda-values",
+  "version": "2026-08-04-template-v1",
+  "data_date": "2026-08-04",
+  "values": [
+    {"id":"lambda_022","value":0.022,"label":"0,022 W/mK","active":true},
+    {"id":"lambda_031","value":0.031,"label":"0,031 W/mK","active":true},
+    {"id":"lambda_035","value":0.035,"label":"0,035 W/mK","active":true,"recommended_input":true},
+    {"id":"lambda_040","value":0.040,"label":"0,040 W/mK","active":true},
+    {"id":"lambda_045","value":0.045,"label":"0,045 W/mK","active":true},
+    {"id":"lambda_050","value":0.050,"label":"0,050 W/mK","active":true}
+  ],
+  "notice": "Materialneutrale thermische Eingabe. Eine spätere Ökologiebewertung benötigt zusätzliche Materialdaten."
+}

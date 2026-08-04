@@ -439,7 +439,7 @@
     body.innerHTML = COMPONENTS.map((component) => `
       <tr data-component-id="${component.id}">
         <td class="envelope-active"><input type="checkbox" data-component-enabled aria-label="${component.label} aktiv"></td>
-        <td class="envelope-label"><strong>${component.label}</strong><small>${component.note}</small></td>
+        <td class="envelope-label"><strong>${component.label}</strong><small>${component.note}</small>${component.id === 'windows' ? '<span class="envelope-action envelope-action--planned">Austauschvarianten folgen</span>' : `<a class="envelope-action" href="../bauteil-sanierung/index.html?component=${component.id}">Bauteil sanieren</a>`}</td>
         <td><div class="envelope-field"><input class="envelope-input" type="number" step="${component.areaStep}" min="0" data-component-area><button class="envelope-reset" type="button" data-reset-area>↺</button><small data-area-detail></small></div></td>
         <td><div class="envelope-field"><input class="envelope-input" type="number" step="0.01" min="0" data-component-u><button class="envelope-reset" type="button" data-reset-u>↺</button><small data-u-detail></small></div></td>
         <td class="envelope-result" data-component-ua>–</td>

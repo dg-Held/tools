@@ -1,0 +1,13 @@
+{
+  "schema": "energy-tools-energy-prices",
+  "version": "2026-08-04-template-v1",
+  "status": "template-unfilled",
+  "items": [
+    {"id":"oil","label":"Heizöl","price":null,"unit":"€/kWh Endenergie","active":false},
+    {"id":"gas","label":"Erdgas","price":null,"unit":"€/kWh Endenergie","active":false},
+    {"id":"pellets","label":"Pellets","price":null,"unit":"€/kWh Endenergie","active":false},
+    {"id":"wood","label":"Scheitholz / Hackgut","price":null,"unit":"€/kWh Endenergie","active":false},
+    {"id":"electricity","label":"Strom","price":null,"unit":"€/kWh","active":false},
+    {"id":"district_heat","label":"Fernwärme","price":null,"unit":"€/kWh","active":false}
+  ]
+}

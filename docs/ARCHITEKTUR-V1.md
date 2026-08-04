@@ -175,3 +175,19 @@ shared/js/domain/economics/economics-core.js
 Das Maßnahmenmodell wird fachlich nach Gebäudehülle, Wärmeerzeugung, Wärmeverteilung/-abgabe, Lüftung/Raumluft und Strom/Solar gegliedert. Das Bauteiltool bearbeitet nur die Gebäudehülle; gebäudetechnische Anlagen werden später in eigenen Werkzeugen bewertet.
 
 Der vollständige dynamische Variantenvergleich ist die Hauptmethode. Das vereinfachte analytische Kostenoptimum opaker Bauteile wird nur ergänzend verwendet. Sowiesokosten, Förderung, CO₂ und Wohnkomfort bleiben getrennte, nachvollziehbare Ergebnisdimensionen.
+
+## Ergänzung 04.08.2026 – Bauteil & Sanierung
+
+Das neue Tool liegt unter `tools/bauteil-sanierung/` und verwendet:
+
+```text
+shared/js/domain/measures/envelope-renovation-core.js
+shared/js/domain/economics/economics-core.js
+shared/data/measures/
+shared/data/costs/
+shared/data/economics/
+shared/data/emissions/
+shared/data/funding/
+```
+
+Energiefluss diagnostiziert den bestehenden Bauteilverlust. Bauteil & Sanierung erzeugt daraus Varianten und speichert die ausgewählte Maßnahme einmalig unter `project.measures`. Das spätere allgemeine Wirtschaftlichkeitstool und der Sanierungsfahrplan verwenden dasselbe Maßnahmenobjekt.

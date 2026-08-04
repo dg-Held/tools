@@ -30,9 +30,9 @@ Klima und Heizlast bleiben getrennte Oberflächen, verwenden aber dieselbe Klima
 
 ## 5. Energiefluss
 
-### V3 – eingefrorener Referenzstand
+### V3 – extern archivierter Referenzstand
 
-- `tools/energiefluss/docs/`
+Der V3-Code kann nach externer ZIP-Sicherung von der Website entfernt werden. Eine verbleibende Statusnotiz ist nicht für den Betrieb erforderlich.
 
 ### V4.3 – funktional abgeschlossen
 
@@ -42,18 +42,14 @@ Klima und Heizlast bleiben getrennte Oberflächen, verwenden aber dieselbe Klima
 
 V4.3 diagnostiziert Verbrauch und Gebäudehülle. Maßnahmen, Kosten und Wirtschaftlichkeit werden bewusst nicht mehr in diese Seite eingebaut.
 
-## 6. Bauteil & Sanierung – verbindliches Fachkonzept
+## 6. Bauteil & Sanierung – Arbeitsversion V0.1
 
 - `docs/FACHKONZEPT-BAUTEIL-UND-SANIERUNG-V1.md`
+- `tools/bauteil-sanierung/docs/METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md`
+- `tools/bauteil-sanierung/docs/WARTUNG-UND-DATENPFLEGE.md`
+- `docs/TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-1.md`
 
-Geplanter Umfang:
-
-- Hüllbauteile und Fenster/Türen
-- Empfehlung, wirtschaftlicher Bereich und ambitionierter Standard
-- dynamische Wirtschaftlichkeit
-- Sowiesokosten und Förderung
-- CO₂ und Wohnkomfort
-- Übergabe an Wirtschaftlichkeit und Sanierungsfahrplan
+V0.1 unterstützt Außenwand, Dach, OGD, Kellerdecke und Boden als Dämmmaßnahmen. Fenster und Außentüren sind im Datenmodell vorbereitet und folgen als diskrete Austauschvarianten. Die Kosten- und Fördertabellen sind für den späteren Export der Excel-Masterdatei vorbereitet; bis dahin sind manuelle Projektwerte möglich.
 
 ## 7. Gemeinsamer Wirtschaftlichkeitskern
 
@@ -79,6 +75,11 @@ shared/data/
 │   └── envelope-evaluation.json
 ├── climate/
 │   └── inca/
+├── measures/
+├── costs/
+├── economics/
+├── emissions/
+├── funding/
 └── standards/
     ├── energy-flow-v4-defaults.json
     └── oib/

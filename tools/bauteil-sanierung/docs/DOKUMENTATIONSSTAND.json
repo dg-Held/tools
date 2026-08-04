@@ -1,0 +1,19 @@
+{
+  "tool": "Bauteil & Sanierung",
+  "tool_version": "0.1.0",
+  "date": "2026-08-04",
+  "project_schema": 2,
+  "measure_core": "0.1.0",
+  "economics_core": "1.0.0",
+  "status": "Arbeitsversion – opake Dämmmaßnahmen",
+  "data_status": {
+    "targets": "befüllt",
+    "lambda_values": "befüllt",
+    "co_benefits": "befüllt",
+    "costs": "Excel-Master noch auszufüllen",
+    "lifetimes": "Excel-Master noch auszufüllen",
+    "energy_prices": "Excel-Master noch auszufüllen",
+    "emissions": "Excel-Master noch auszufüllen",
+    "funding": "Excel-Master noch auszufüllen"
+  }
+}
