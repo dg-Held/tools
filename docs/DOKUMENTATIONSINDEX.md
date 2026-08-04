@@ -34,22 +34,22 @@ Klima und Heizlast bleiben getrennte Oberflächen, verwenden aber dieselbe Klima
 
 Der V3-Code kann nach externer ZIP-Sicherung von der Website entfernt werden. Eine verbleibende Statusnotiz ist nicht für den Betrieb erforderlich.
 
-### V4.3 – funktional abgeschlossen
+### V4.4 – funktional abgeschlossen
 
 - `tools/energiefluss-v4/docs/METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md`
 - `tools/energiefluss-v4/docs/WARTUNG-UND-VALIDIERUNG.md`
 - `tools/energiefluss-v4/docs/DOKUMENTATIONSSTAND.json`
 
-V4.3 diagnostiziert Verbrauch und Gebäudehülle. Maßnahmen, Kosten und Wirtschaftlichkeit werden bewusst nicht mehr in diese Seite eingebaut.
+V4.4 diagnostiziert Verbrauch und Gebäudehülle. Maßnahmen, Kosten und Wirtschaftlichkeit werden bewusst nicht mehr in diese Seite eingebaut.
 
-## 6. Bauteil & Sanierung – Arbeitsversion V0.1
+## 6. Bauteil & Sanierung – Arbeitsversion V0.2
 
 - `docs/FACHKONZEPT-BAUTEIL-UND-SANIERUNG-V1.md`
 - `tools/bauteil-sanierung/docs/METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md`
 - `tools/bauteil-sanierung/docs/WARTUNG-UND-DATENPFLEGE.md`
-- `docs/TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-1.md`
+- `docs/TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-2.md`
 
-V0.1 unterstützt Außenwand, Dach, OGD, Kellerdecke und Boden als Dämmmaßnahmen. Fenster und Außentüren sind im Datenmodell vorbereitet und folgen als diskrete Austauschvarianten. Die Kosten- und Fördertabellen sind für den späteren Export der Excel-Masterdatei vorbereitet; bis dahin sind manuelle Projektwerte möglich.
+V0.2 unterstützt Außenwand, Dach, OGD, Kellerdecke und Boden als Dämmmaßnahmen. Fenster und Außentüren sind im Datenmodell vorbereitet und folgen als diskrete Austauschvarianten. Kosten, Energiepreise und Emissionsfaktoren werden aus den zentralen Datenpaketen vorgeschlagen. Förderungen bleiben bewusst freie projektbezogene Eingaben.
 
 ## 7. Gemeinsamer Wirtschaftlichkeitskern
 

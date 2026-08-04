@@ -405,7 +405,7 @@
       else if (kind === 'condition-select') value = input.value;
       else value = input.value.trim() === '' ? null : Number(input.value);
       if (kind === 'number' && value !== null && !Number.isFinite(value)) return;
-      store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.3' });
+      store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.4' });
     });
     reset.addEventListener('click', () => store.clearFieldCandidate(path, model.ORIGIN.MANUAL));
   }
@@ -439,7 +439,7 @@
     body.innerHTML = COMPONENTS.map((component) => `
       <tr data-component-id="${component.id}">
         <td class="envelope-active"><input type="checkbox" data-component-enabled aria-label="${component.label} aktiv"></td>
-        <td class="envelope-label"><strong>${component.label}</strong><small>${component.note}</small>${component.id === 'windows' ? '<span class="envelope-action envelope-action--planned">Austauschvarianten folgen</span>' : `<a class="envelope-action" href="../bauteil-sanierung/index.html?component=${component.id}">Bauteil sanieren</a>`}</td>
+        <td class="envelope-label"><strong>${component.label}</strong><small>${component.note}</small></td>
         <td><div class="envelope-field"><input class="envelope-input" type="number" step="${component.areaStep}" min="0" data-component-area><button class="envelope-reset" type="button" data-reset-area>↺</button><small data-area-detail></small></div></td>
         <td><div class="envelope-field"><input class="envelope-input" type="number" step="0.01" min="0" data-component-u><button class="envelope-reset" type="button" data-reset-u>↺</button><small data-u-detail></small></div></td>
         <td class="envelope-result" data-component-ua>–</td>
@@ -456,7 +456,7 @@
 
       enabled.addEventListener('change', () => {
         if (rendering) return;
-        store.setFieldCandidate(component.enabledPath, model.ORIGIN.MANUAL, enabled.checked, { source: 'Energiefluss V4.3' });
+        store.setFieldCandidate(component.enabledPath, model.ORIGIN.MANUAL, enabled.checked, { source: 'Energiefluss V4.4' });
       });
       area.addEventListener('change', () => {
         if (rendering) return;
@@ -464,13 +464,13 @@
         if (rawValue !== null && !Number.isFinite(rawValue)) return;
         const value = rawValue === null ? null : roundToStep(rawValue, component.areaStep);
         area.value = value === null ? '' : String(value);
-        store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.3', method: `bewusst auf ${component.areaStep} m² gerundet` });
+        store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` });
       });
       uValue.addEventListener('change', () => {
         if (rendering) return;
         const value = uValue.value.trim() === '' ? null : Number(uValue.value);
         if (value !== null && !Number.isFinite(value)) return;
-        store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4.3' });
+        store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4.4' });
       });
       resetArea.addEventListener('click', () => store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL));
       resetU.addEventListener('click', () => store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL));
@@ -672,10 +672,10 @@
     const roomHeatField = project.consumption?.heating?.usefulRoomHeatAnnual;
     const updates = [];
     if (!sameCandidate(hwbField, model.ORIGIN.DERIVED, result.consumption.hwbCorrectedKwhM2a)) {
-      updates.push({ path: 'building.thermal.consumptionHwb', origin: model.ORIGIN.DERIVED, value: result.consumption.hwbCorrectedKwhM2a, options: { unit: 'kWh/m²a', source: 'Energiefluss V4.3', method: 'verbrauchsbasiert, raumtemperatur- und flächenkorrigiert' } });
+      updates.push({ path: 'building.thermal.consumptionHwb', origin: model.ORIGIN.DERIVED, value: result.consumption.hwbCorrectedKwhM2a, options: { unit: 'kWh/m²a', source: 'Energiefluss V4.4', method: 'verbrauchsbasiert, raumtemperatur- und flächenkorrigiert' } });
     }
     if (!sameCandidate(roomHeatField, model.ORIGIN.DERIVED, result.consumption.roomHeatKwh)) {
-      updates.push({ path: 'consumption.heating.usefulRoomHeatAnnual', origin: model.ORIGIN.DERIVED, value: result.consumption.roomHeatKwh, options: { unit: 'kWh/a', source: 'Energiefluss V4.3', method: 'Verbrauch × Nutzungsgrad − Warmwasser' } });
+      updates.push({ path: 'consumption.heating.usefulRoomHeatAnnual', origin: model.ORIGIN.DERIVED, value: result.consumption.roomHeatKwh, options: { unit: 'kWh/a', source: 'Energiefluss V4.4', method: 'Verbrauch × Nutzungsgrad − Warmwasser' } });
     }
     if (updates.length) store.setFieldCandidates(updates);
     if (existing !== fingerprint) store.patch({ modules: { energiefluss: resultSnapshot(result, fingerprint) } });
@@ -955,7 +955,7 @@
 
     $('v4PrintReport').innerHTML = `
       <div class="v4-print-page">
-        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.3</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
+        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.4</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
         <div class="print-flow">
           <div><h2>Einträge</h2>${gainsHtml}</div>
           <div class="print-house"><img src="../../shared/assets/energy-flow-house.svg" alt=""><strong>${formatEnergy(result.gains.totalKwh)}</strong></div>
@@ -1178,6 +1178,6 @@
   init().catch((error) => {
     console.error(error);
     $('v4Warnings').hidden = false;
-    $('v4Warnings').innerHTML = `<p>Energiefluss V4.3 konnte nicht initialisiert werden: ${error.message}</p>`;
+    $('v4Warnings').innerHTML = `<p>Energiefluss V4.4 konnte nicht initialisiert werden: ${error.message}</p>`;
   });
 })(window);

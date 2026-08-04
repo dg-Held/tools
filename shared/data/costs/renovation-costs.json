@@ -1,8 +1,17 @@
 {
   "schema": "energy-tools-renovation-costs",
-  "version": "2026-08-04-template-v1",
-  "data_date": null,
-  "status": "template-unfilled",
-  "notice": "Kostenkennwerte werden aus der ausgefüllten BAUTEIL_DATEN_MASTER.xlsx ergänzt. Bis dahin sind manuelle Projektangaben erforderlich.",
-  "models": []
+  "version": "2026-08-04-master-v1.1",
+  "data_date": "2026-03",
+  "status": "mixed-confirmed-and-proposal",
+  "notice": "Bestätigte EAT-Richtwerte und klar gekennzeichnete Projektvorschläge. Intern exakt rechnen; Beratungsausgabe auf 10 €/m² bzw. 500 € runden.",
+  "models": [
+    {"id":"wall_wdvs","component_id":"wall_external","label":"Außenwand – WDVS","base_cost_eur_m2":120,"variable_cost_eur_m2_cm":1.5,"sunk_cost_eur_m2":80,"range_eur_m2":{"low":130,"middle":160,"high":200},"status":"confirmed","active":true,"source_id":"Kosten EAT"},
+    {"id":"wall_ventilated","component_id":"wall_external","label":"Außenwand – hinterlüftete Fassade","base_cost_eur_m2":220,"variable_cost_eur_m2_cm":2.5,"sunk_cost_eur_m2":140,"range_eur_m2":{"low":220,"middle":280,"high":360},"status":"proposal","active":true,"source_id":"PROJECT_PROPOSAL"},
+    {"id":"top_ceiling","component_id":"roof_top_ceiling","label":"Oberste Geschoßdecke dämmen","base_cost_eur_m2":50,"variable_cost_eur_m2_cm":0.5,"sunk_cost_eur_m2":0,"range_eur_m2":{"low":30,"middle":60,"high":100},"status":"confirmed","active":true,"source_id":"Kosten EAT"},
+    {"id":"roof","component_id":"roof_top_ceiling","label":"Dach / Dachschräge dämmen","base_cost_eur_m2":180,"variable_cost_eur_m2_cm":2.0,"sunk_cost_eur_m2":120,"range_eur_m2":{"low":150,"middle":240,"high":350},"status":"proposal","active":true,"source_id":"PROJECT_PROPOSAL"},
+    {"id":"basement_ceiling","component_id":"ceiling_unheated","label":"Kellerdecke dämmen","base_cost_eur_m2":100,"variable_cost_eur_m2_cm":1.0,"sunk_cost_eur_m2":0,"range_eur_m2":{"low":60,"middle":100,"high":150},"status":"confirmed","active":true,"source_id":"Kosten EAT"},
+    {"id":"ground_floor","component_id":"floor_ground","label":"Boden gegen Erdreich sanieren","base_cost_eur_m2":220,"variable_cost_eur_m2_cm":1.5,"sunk_cost_eur_m2":170,"range_eur_m2":{"low":180,"middle":280,"high":420},"status":"proposal","active":true,"source_id":"PROJECT_PROPOSAL"},
+    {"id":"window_replace","component_id":"window_external","label":"Fenster austauschen","base_cost_eur_m2":1000,"variable_cost_eur_m2_cm":0,"sunk_cost_eur_m2":700,"range_eur_m2":{"low":700,"middle":1000,"high":1300},"status":"confirmed","active":true,"source_id":"Kosten EAT"},
+    {"id":"door_replace","component_id":"door_external","label":"Außentür austauschen","base_cost_eur_m2":4000,"variable_cost_eur_m2_cm":0,"sunk_cost_eur_m2":3000,"range_eur_m2":{"low":2500,"middle":4000,"high":5750},"status":"proposal","active":true,"source_id":"PROJECT_PROPOSAL","unit":"€/Stk."}
+  ]
 }

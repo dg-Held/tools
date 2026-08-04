@@ -5,7 +5,7 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.EnvelopeRenovationCore = Object.freeze(api);
 })(typeof window !== 'undefined' ? window : globalThis, function envelopeFactory() {
-  const MODEL_VERSION = '0.1.0';
+  const MODEL_VERSION = '0.2.0';
   const EPSILON = 1e-12;
 
   function finite(value, fallback = 0) {
@@ -170,6 +170,33 @@
     return Math.max(0, Math.min(subsidy, fullInvestmentEur));
   }
 
+
+  function fundingForInvestment(entries, investment) {
+    const source = Array.isArray(entries) ? entries : [];
+    const items = source.map((entry, index) => {
+      const mode = entry?.mode ?? 'none';
+      const value = Math.max(0, finite(entry?.value, 0));
+      let amountEur = 0;
+      if (mode === 'amount') amountEur = value;
+      if (mode === 'percent_full') amountEur = investment.fullInvestmentEur * value / 100;
+      if (mode === 'percent_energetic') amountEur = investment.energeticAdditionalEur * value / 100;
+      amountEur = Math.max(0, Math.min(amountEur, investment.fullInvestmentEur));
+      return {
+        id: entry?.id ?? `funding-${index + 1}`,
+        label: entry?.label ?? 'Förderung',
+        mode,
+        value,
+        amountEur,
+        confirmed: mode !== 'none' && value > 0,
+      };
+    });
+    const totalEur = Math.min(
+      investment.fullInvestmentEur,
+      items.reduce((sum, item) => sum + item.amountEur, 0),
+    );
+    return { items, totalEur };
+  }
+
   function createThicknesses(maximumCm = 30, stepCm = 2) {
     const maximum = Math.max(0, finite(maximumCm, 30));
     const step = Math.max(0.1, finite(stepCm, 2));
@@ -201,13 +228,18 @@
         sunkCostEurM2: inputs.sunkCostEurM2,
         renewalContext: inputs.renewalContext,
       });
-      const subsidy = subsidyForInvestment({
-        mode: inputs.subsidyMode,
-        value: inputs.subsidyValue,
-        basis: inputs.subsidyBasis,
-        maximumEur: inputs.subsidyMaximumEur,
-        ...investment,
-      });
+      const funding = Array.isArray(inputs.fundingEntries)
+        ? fundingForInvestment(inputs.fundingEntries, investment)
+        : {
+            items: [],
+            totalEur: subsidyForInvestment({
+              mode: inputs.subsidyMode,
+              value: inputs.subsidyValue,
+              basis: inputs.subsidyBasis,
+              maximumEur: inputs.subsidyMaximumEur,
+              ...investment,
+            }),
+          };
       const energyCostSavingsEurA = energy.available && optionalFinite(inputs.energyPriceEurKwh) !== null
         ? energy.deliveredSavingsKwh * finite(inputs.energyPriceEurKwh, 0)
         : null;
@@ -220,9 +252,10 @@
         newUValue,
         energy,
         investment,
-        subsidyEur: subsidy,
-        paymentAfterSubsidyEur: Math.max(0, investment.fullInvestmentEur - subsidy),
-        relevantOwnInvestmentEur: Math.max(0, investment.energeticAdditionalEur - subsidy),
+        subsidyEur: funding.totalEur,
+        fundingItems: funding.items,
+        paymentAfterSubsidyEur: Math.max(0, investment.fullInvestmentEur - funding.totalEur),
+        relevantOwnInvestmentEur: Math.max(0, investment.energeticAdditionalEur - funding.totalEur),
         energyCostSavingsEurA,
         co2SavingsKgA,
       };
@@ -242,6 +275,7 @@
     energyEffect,
     investmentForThickness,
     subsidyForInvestment,
+    fundingForInvestment,
     createThicknesses,
     createVariants,
   };

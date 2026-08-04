@@ -1,13 +1,15 @@
 {
   "schema": "energy-tools-energy-prices",
-  "version": "2026-08-04-template-v1",
-  "status": "template-unfilled",
+  "version": "2026-03-master-v1.1",
+  "data_date": "2026-03",
+  "status": "draft-from-master",
+  "notice": "Mittelwerte aus der gepflegten Masterdatei; projektspezifisch überschreibbar.",
   "items": [
-    {"id":"oil","label":"Heizöl","price":null,"unit":"€/kWh Endenergie","active":false},
-    {"id":"gas","label":"Erdgas","price":null,"unit":"€/kWh Endenergie","active":false},
-    {"id":"pellets","label":"Pellets","price":null,"unit":"€/kWh Endenergie","active":false},
-    {"id":"wood","label":"Scheitholz / Hackgut","price":null,"unit":"€/kWh Endenergie","active":false},
-    {"id":"electricity","label":"Strom","price":null,"unit":"€/kWh","active":false},
-    {"id":"district_heat","label":"Fernwärme","price":null,"unit":"€/kWh","active":false}
+    {"id":"oil","label":"Heizöl","price":0.120,"unit":"€/kWh Endenergie","active":true},
+    {"id":"gas","label":"Erdgas","price":0.129,"unit":"€/kWh Endenergie","active":true},
+    {"id":"pellets","label":"Pellets","price":0.071,"unit":"€/kWh Endenergie","active":true},
+    {"id":"wood","label":"Scheitholz / Hackgut","price":0.101,"unit":"€/kWh Endenergie","active":true},
+    {"id":"electricity","label":"Strom","price":0.265,"unit":"€/kWh","active":true},
+    {"id":"district_heat","label":"Fernwärme","price":0.160,"unit":"€/kWh","active":true}
   ]
 }

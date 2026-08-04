@@ -1,14 +1,18 @@
 {
   "schema": "energy-tools-financial-defaults",
-  "version": "2026-08-04-template-v1",
-  "status": "visible-fallbacks",
+  "version": "2026-08-04-master-v1.1",
+  "status": "visible-project-defaults",
   "defaults": {
     "period_years": 30,
-    "interest_rate_percent": 2.0,
-    "energy_price_escalation_percent": 2.0,
+    "interest_rate_percent": 3.0,
+    "energy_price_escalation_percent": 3.0,
     "investment_price_escalation_percent": 2.0,
     "disposal_price_escalation_percent": 2.0,
     "include_vat": true
+  },
+  "sensitivity": {
+    "investment_price_escalation_percent": [0,2,4],
+    "disposal_price_escalation_percent": [0,2,4]
   },
   "rounding": {
     "thickness_cm": 2,
@@ -18,5 +22,5 @@
     "annual_eur": 50,
     "co2_kg": 100
   },
-  "notice": "Finanzwerte sind sichtbare Fallbacks und müssen für eine projektbezogene Berechnung geprüft werden. Intern wird ohne Rundung gerechnet."
+  "notice": "Keine normativ festgelegten Prognosewerte. Projektbezogen prüfbar; Sensitivität empfohlen. Intern wird ohne Rundung gerechnet."
 }

@@ -4,13 +4,13 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Energiefluss V4.3 | Tools für Energieberatung</title>
+<title>Energiefluss V4.4 | Tools für Energieberatung</title>
 <meta content="Verbrauchsbasierter Energiefluss mit gemeinsamer Projektbasis, Gebäudegeometrie und nachvollziehbarer Bauteilverteilung." name="description"/>
 <link href="../../styles.css" rel="stylesheet"/>
 <link href="../../shared/css/tokens.css" rel="stylesheet"/>
 <link href="../../shared/css/components.css" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="energiefluss-v4.css?v=5" rel="stylesheet"/>
+<link href="energiefluss-v4.css?v=6" rel="stylesheet"/>
 </head>
 <body data-tool-mode="energy-flow-v4">
 <header class="site-header no-print">
@@ -30,7 +30,7 @@
 </header>
 <main class="energy-v4-page">
 <section class="container tool-intro no-print">
-<p class="eyebrow">Tool · V4.3</p>
+<p class="eyebrow">Tool · V4.4</p>
 <h1>Energiefluss im Gebäude</h1>
 <p>Verbrauch, Nutzung und gemeinsame Gebäudegeometrie werden zu einer nachvollziehbaren Energiebilanz verbunden. Bekannte Projektwerte werden übernommen; nur unsichere Werte müssen geprüft oder überschrieben werden.</p>
 </section>
@@ -55,7 +55,7 @@
 <div class="address-results" hidden="" id="v4AddressResults"></div>
 <div class="building-candidates" hidden="" id="v4BuildingCandidates"></div>
 </section>
-<section aria-label="Arbeitsoberfläche Energiefluss V4.3" class="container v4-workspace no-print">
+<section aria-label="Arbeitsoberfläche Energiefluss V4.4" class="container v4-workspace no-print">
 <div class="v4-card v4-card--basis">
 <div class="section-heading">
 <div>
@@ -68,6 +68,7 @@
 <div class="basis-group">
 <h3>Kernwerte für die Beratung</h3>
 <div class="value-grid value-grid--three value-grid--compact">
+<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Baujahr / Baubewilligung" data-max="2100" data-min="1500" data-project-path="building.profile.constructionYear" data-step="1"></div>
 <div class="v4-value-field" data-digits="0" data-kind="number" data-label="Beheizte Nutzfläche" data-project-path="building.geometry.heatedFloorArea" data-unit="m²"></div>
 <div class="v4-value-field" data-digits="0" data-kind="number" data-label="Personen" data-project-path="usage.household.persons" data-unit="Personen"></div>
 <div class="v4-value-field" data-digits="0" data-kind="number" data-label="Heizenergieverbrauch" data-project-path="consumption.heating.annualEnergy" data-unit="kWh/a"></div>
@@ -77,8 +78,7 @@
 </div>
 <details class="basis-details">
 <summary>Weitere Berechnungsgrundlagen prüfen</summary>
-<div class="value-grid value-grid--three value-grid--compact"><div class="v4-value-field" data-digits="0" data-kind="number" data-label="Baujahr / Baubewilligung" data-max="2100" data-min="1500" data-project-path="building.profile.constructionYear" data-step="1"></div>
-<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Bruttogeschoßfläche" data-project-path="building.geometry.grossFloorArea" data-unit="m²"></div>
+<div class="value-grid value-grid--three value-grid--compact"><div class="v4-value-field" data-digits="0" data-kind="number" data-label="Bruttogeschoßfläche" data-project-path="building.geometry.grossFloorArea" data-unit="m²"></div>
 <div class="v4-value-field" data-digits="0" data-kind="number" data-label="Gebäudevolumen" data-project-path="building.geometry.grossVolume" data-unit="m³"></div>
 <div class="v4-value-field" data-digits="1" data-kind="number" data-label="Raumtemperatur" data-max="30" data-min="10" data-project-path="building.thermal.indoorTemperature" data-step="0.5" data-unit="°C"></div>
 <div class="v4-value-field" data-digits="0" data-kind="number" data-label="Beheizter Anteil" data-max="100" data-min="0" data-project-path="building.thermal.heatedSharePercent" data-step="1" data-unit="%"></div>
@@ -176,7 +176,7 @@
 </main>
 <footer class="site-footer no-print">
 <div class="container footer-inner">
-<div><p class="footer-name">Tools</p><p class="footer-note">Energiefluss V4.3 · gemeinsame Projektbasis</p></div>
+<div><p class="footer-name">Tools</p><p class="footer-note">Energiefluss V4.4 · gemeinsame Projektbasis</p></div>
 <nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav>
 <p class="copyright">© <span id="year">2026</span></p>
 </div>

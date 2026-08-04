@@ -1,13 +1,13 @@
-# Energiefluss V4.3 – Methodik und Berechnungsgrundlagen
+# Energiefluss V4.4 – Methodik und Berechnungsgrundlagen
 
-**Toolstand:** V4.3  
+**Toolstand:** V4.4  
 **Modellversion Energiefluss:** 4.3.0  
 **Datenstand Bestands-U-Werte:** 04.08.2026  
 **Dokumentstand:** 04.08.2026
 
 ## 1. Zweck und Abschlussstatus
 
-Energiefluss V4.3 ist eine überschlägige Beratungshilfe. Es zeigt, wie sich der eingegebene Heizenergieverbrauch auf Nutzwärme, Gebäudehülle, Lüftung, Warmwasser und Anlagenverluste verteilt. Zusätzlich plausibilisiert ein unabhängiger Hüllvergleich die Größenordnung des Verbrauchs.
+Energiefluss V4.4 ist eine überschlägige Beratungshilfe. Es zeigt, wie sich der eingegebene Heizenergieverbrauch auf Nutzwärme, Gebäudehülle, Lüftung, Warmwasser und Anlagenverluste verteilt. Zusätzlich plausibilisiert ein unabhängiger Hüllvergleich die Größenordnung des Verbrauchs.
 
 Das Tool ist funktional abgeschlossen. Maßnahmenoptimierung, Kosten und Wirtschaftlichkeit werden bewusst im eigenständigen Tool **„Bauteil & Sanierung“** umgesetzt.
 
@@ -15,7 +15,7 @@ Es ist kein Energieausweis, keine normgemäße Heizlastberechnung und keine deta
 
 ## 2. Seitenlogik
 
-1. Projekt- und Verbrauchsbasis kompakt prüfen
+1. Projekt- und Verbrauchsbasis kompakt prüfen – Baujahr/Baubewilligung ist als U-Wert-Fallback sofort sichtbar
 2. Energiefluss und Plausibilitätscheck
 3. Gebäudehülle mit Flächen und Bestands-U-Werten
 4. Methodik, Annahmen und Grenzen

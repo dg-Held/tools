@@ -9,7 +9,7 @@
 <link href="../../shared/css/tokens.css" rel="stylesheet"/>
 <link href="../../shared/css/components.css" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="bauteil-sanierung.css?v=1" rel="stylesheet"/>
+<link href="bauteil-sanierung.css?v=2" rel="stylesheet"/>
 </head>
 <body data-tool-mode="envelope-renovation">
 <header class="site-header no-print">
@@ -25,7 +25,7 @@
 </header>
 <main class="renovation-page">
 <section class="container tool-intro no-print">
-<p class="eyebrow">Tool · Arbeitsversion V0.1</p>
+<p class="eyebrow">Tool · Arbeitsversion V0.2</p>
 <h1>Bauteil &amp; Sanierung</h1>
 <p>Dämmstärken technisch vergleichen und Empfehlung, Kostenoptimum, Amortisation, CO₂ sowie Wohnkomfort gemeinsam betrachten. Projektwerte aus dem Energiefluss werden automatisch übernommen.</p>
 </section>
@@ -38,15 +38,14 @@
 <span class="status-chip" id="projectLinkStatus">Projektwerte werden geprüft</span>
 </div>
 <div class="component-selector" id="componentSelector" role="list" aria-label="Bauteil auswählen"></div>
-<div class="input-grid input-grid--three">
+<div class="input-grid input-grid--four">
 <label><span>Bauteil</span><select id="componentSelect"></select></label>
 <label><span>Fläche</span><div class="input-with-unit"><input id="areaM2" min="0" step="1" type="number"/><em>m²</em></div><small id="areaSource">–</small></label>
 <label><span>U-Wert Bestand</span><div class="input-with-unit"><input id="existingUValue" min="0.01" step="0.01" type="number"/><em>W/m²K</em></div><small id="uValueSource">–</small></label>
+<label><span>Wärmeleitfähigkeit λ</span><select id="lambdaSelect"></select><small>materialneutral; Standard 0,035 W/mK</small></label>
 </div>
-<div class="input-grid input-grid--three">
-<label><span>Wärmeleitfähigkeit λ</span><select id="lambdaSelect"></select></label>
+<div class="custom-lambda-row" id="lambdaCustomWrap" hidden>
 <label><span>Eigener λ-Wert</span><div class="input-with-unit"><input id="lambdaCustom" min="0.015" max="0.2" step="0.001" type="number"/><em>W/mK</em></div></label>
-<label><span>Jahresnutzungsgrad</span><div class="input-with-unit"><input id="annualEfficiency" min="0.05" max="5" step="0.01" type="number"/><em>–</em></div><small>aus Projekt oder manuell</small></label>
 </div>
 <div class="climate-strip" id="climateStrip">
 <div><strong id="energyBasisTitle">Energiegrundlage wird geprüft</strong><span id="energyBasisText">Energiefluss oder Klimakennwerte werden übernommen.</span></div>
@@ -54,12 +53,13 @@
 </div>
 <details class="advanced-inputs">
 <summary>Erweiterte technische Eingaben</summary>
-<div class="input-grid input-grid--three">
-<label><span>HGT 22/14</span><div class="input-with-unit"><input id="heatingDegreeDays" min="0" step="1" type="number"/><em>Kd/a</em></div><small>für normnahes Kostenoptimum</small></label>
-<label><span>Temperaturfaktor</span><input id="boundaryFactor" min="0.1" max="1.5" step="0.05" type="number"/><small>nur bei Klimarechnung ohne Energiefluss</small></label>
+<div class="input-grid input-grid--four">
+<label><span>Jahresnutzungsgrad</span><div class="input-with-unit"><input id="annualEfficiency" min="0.05" max="5" step="0.01" type="number"/><em>–</em></div><small>aus Projekt oder Voreinstellung</small></label>
+<label><span>HGT 22/14</span><div class="input-with-unit"><input id="heatingDegreeDays" min="0" step="1" type="number"/><em>Kd/a</em></div><small>optional: nur analytische Normorientierung nach Anhang B</small></label>
+<label><span>Temperaturkorrektur</span><input id="boundaryFactor" min="0.1" max="1.5" step="0.05" type="number"/><small>nur als Fallback ohne Energiefluss; Außenluft = 1,0</small></label>
 <label><span>Raumtemperatur</span><div class="input-with-unit"><input id="indoorTemperature" min="10" max="30" step="0.5" type="number"/><em>°C</em></div></label>
 </div>
-<p class="inline-note">Für Bauteile gegen unbeheizte Bereiche oder Erdreich ist die direkte Energiefluss-Übernahme vorzuziehen. Eine reine Klimarechnung verwendet hier nur einen sichtbaren, überschlägigen Temperaturfaktor.</p>
+<p class="inline-note">Der HGT-Wert wird nicht aus den aktuellen INCA-Heizgradstunden geraten. Für den normalen Variantenvergleich genügt die kalibrierte Energiefluss-Basis oder die direkte Standortklimarechnung. Bei unbeheizten Bereichen und Erdreich kann die Temperaturkorrektur die überschlägige Klimarechnung deutlich verändern.</p>
 </details>
 </article>
 
@@ -69,41 +69,53 @@
 <span class="section-badge">2-cm-Schritte</span>
 </div>
 <p class="section-note">Intern wird exakt gerechnet. Angezeigt werden bewusst gerundete Dämmdicken, U-Werte und Kosten.</p>
-<div class="target-preview">
+<div class="target-preview target-preview--two">
 <div><span>Empfehlung</span><strong id="recommendedTarget">–</strong><small id="recommendedThickness">–</small></div>
 <div><span>Ambitioniert</span><strong id="ambitiousTarget">–</strong><small id="ambitiousThickness">–</small></div>
-<div><span>Prüfhinweis</span><strong id="legalCheck">–</strong><small>kein Ersatz für aktuelle Projektprüfung</small></div>
 </div>
 <div class="notice notice--soft">Gesetzliche Mindestanforderungen sind keine energetische Empfehlung. Bei langlebigen Maßnahmen zählen Behaglichkeit, Sowiesokosten, Energieeinsparung, Lebensdauer und künftige Anforderungen gemeinsam.</div>
 </article>
 
 <article class="ren-card ren-card--economics">
 <div class="section-heading">
-<div><p class="eyebrow">3 · Kosten</p><h2>Sowiesokosten und Förderung verständlich trennen</h2></div>
-<span class="status-chip" id="costDataStatus">Manuelle Werte erforderlich</span>
+<div><p class="eyebrow">3 · Kosten</p><h2>Kosten und Wirtschaftlichkeit</h2></div>
+<span class="status-chip" id="costDataStatus">Voreinstellungen werden geladen</span>
 </div>
-<div class="input-grid input-grid--three">
+<p class="section-note">Im Normalfall genügen die automatisch bereitgestellten Richtwerte. Angezeigt werden zuerst nur die verständlichen Summen; sämtliche Annahmen bleiben aufklappbar und überschreibbar.</p>
+<div class="input-grid input-grid--two">
 <label><span>Ausgangslage</span><select id="renewalContext"><option value="energy_only">rein energetische Maßnahme</option><option value="renewal_due">Erneuerung ohnehin erforderlich</option></select></label>
+<label><span>Energieträger</span><select id="energyCarrierSelect"></select><small>Energiepreis und CO₂-Faktor werden vorgeschlagen.</small></label>
+</div>
+<div class="assumption-summary">
+<div><span>Richtkostenmodell</span><strong id="costSummaryModel">–</strong><small id="costSummaryModelNote">–</small></div>
+<div><span>Sowiesokosten</span><strong id="costSummarySunk">–</strong><small>nur bei ohnehin anstehender Erneuerung</small></div>
+<div><span>Finanzannahmen</span><strong id="costSummaryFinance">–</strong><small id="costSummaryFinanceNote">–</small></div>
+</div>
+<details class="advanced-inputs">
+<summary>Kosten- und Finanzannahmen prüfen</summary>
+<div class="input-grid input-grid--three">
 <label><span>Vollkosten-Sockel</span><div class="input-with-unit"><input id="baseCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
-<label><span>Mehrkosten je cm</span><div class="input-with-unit"><input id="variableCostEurM2Cm" min="0" step="1" type="number"/><em>€/m²·cm</em></div></label>
+<label><span>Mehrkosten je cm</span><div class="input-with-unit"><input id="variableCostEurM2Cm" min="0" step="0.5" type="number"/><em>€/m²·cm</em></div></label>
 <label><span>Sowiesokosten</span><div class="input-with-unit"><input id="sunkCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
 <label><span>Nutzungsdauer</span><div class="input-with-unit"><input id="lifetimeYears" min="1" step="1" type="number"/><em>Jahre</em></div></label>
 <label><span>Energiepreis</span><div class="input-with-unit"><input id="energyPriceEurKwh" min="0" step="0.001" type="number"/><em>€/kWh</em></div></label>
-</div>
-<details class="advanced-inputs">
-<summary>Finanzannahmen und Förderung</summary>
-<div class="input-grid input-grid--three">
+<label><span>Emissionsfaktor</span><div class="input-with-unit"><input id="emissionFactorKgKwh" min="0" step="0.001" type="number"/><em>kg CO₂e/kWh</em></div></label>
 <label><span>Betrachtungszeitraum</span><div class="input-with-unit"><input id="periodYears" min="1" max="100" step="1" type="number"/><em>Jahre</em></div></label>
 <label><span>Kalkulatorischer Zinssatz</span><div class="input-with-unit"><input id="interestRatePercent" min="-5" max="20" step="0.1" type="number"/><em>%</em></div></label>
 <label><span>Energiepreisentwicklung</span><div class="input-with-unit"><input id="energyEscalationPercent" min="-10" max="30" step="0.1" type="number"/><em>%/a</em></div></label>
 <label><span>Preisentwicklung Investition</span><div class="input-with-unit"><input id="investmentEscalationPercent" min="-10" max="30" step="0.1" type="number"/><em>%/a</em></div></label>
 <label><span>Preisentwicklung Entsorgung</span><div class="input-with-unit"><input id="disposalEscalationPercent" min="-10" max="30" step="0.1" type="number"/><em>%/a</em></div></label>
-<label><span>Förderung</span><select id="subsidyMode"><option value="none">nicht berücksichtigt</option><option value="amount">Betrag</option><option value="percent">Prozentsatz</option></select></label>
-<label><span>Förderwert</span><input id="subsidyValue" min="0" step="0.1" type="number"/></label>
-<label><span>Förderbasis</span><select id="subsidyBasis"><option value="full">Gesamtkosten</option><option value="energetic">energetische Mehrkosten</option></select></label>
-<label><span>Emissionsfaktor</span><div class="input-with-unit"><input id="emissionFactorKgKwh" min="0" step="0.001" type="number"/><em>kg CO₂e/kWh</em></div></label>
 </div>
-<p class="inline-note">Förderungen werden nur nach bewusster Eingabe berücksichtigt. Das technische Kostenoptimum wird zusätzlich ohne Förderung berechnet.</p>
+<p class="inline-note">Die Voreinstellungen sind transparent dokumentiert. Für belastbare Projektergebnisse können alle Werte überschrieben werden; eine Sensitivitätsbetrachtung bleibt empfohlen.</p>
+</details>
+<details class="advanced-inputs">
+<summary>Förderungen manuell berücksichtigen</summary>
+<p class="inline-note">Förderungen werden nicht automatisch vorgeschlagen. Nur bestätigte projektbezogene Angaben werden abgezogen.</p>
+<div class="funding-grid">
+<div class="funding-row"><strong>Landesförderung</strong><select id="stateFundingMode"><option value="none">nicht berücksichtigt</option><option value="percent_full">% der Vollkosten</option><option value="percent_energetic">% der energetischen Mehrkosten</option><option value="amount">Fixbetrag</option></select><div class="input-with-unit"><input id="stateFundingValue" min="0" step="0.1" type="number"/><em id="stateFundingUnit">–</em></div></div>
+<div class="funding-row"><strong>Bundesförderung</strong><select id="federalFundingMode"><option value="none">nicht berücksichtigt</option><option value="percent_full">% der Vollkosten</option><option value="percent_energetic">% der energetischen Mehrkosten</option><option value="amount">Fixbetrag</option></select><div class="input-with-unit"><input id="federalFundingValue" min="0" step="0.1" type="number"/><em id="federalFundingUnit">–</em></div></div>
+<div class="funding-row"><strong>Sonstige Förderung</strong><select id="otherFundingMode"><option value="none">nicht berücksichtigt</option><option value="percent_full">% der Vollkosten</option><option value="percent_energetic">% der energetischen Mehrkosten</option><option value="amount">Fixbetrag</option></select><div class="input-with-unit"><input id="otherFundingValue" min="0" step="0.1" type="number"/><em id="otherFundingUnit">–</em></div></div>
+</div>
 </details>
 </article>
 
@@ -166,7 +178,7 @@
 <section aria-label="Druckbericht Bauteil und Sanierung" class="container renovation-print-report print-only" id="renovationPrintReport"></section>
 <div data-report-actions data-report-actions-label="Drucken / PDF"></div>
 </main>
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.2 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
 <script src="../../shared/js/data-model.js?v=2"></script>
@@ -180,7 +192,7 @@
 <script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script>
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=1"></script>
-<script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=1"></script>
-<script src="bauteil-sanierung.js?v=1"></script>
+<script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=2"></script>
+<script src="bauteil-sanierung.js?v=2"></script>
 </body>
 </html>

@@ -67,8 +67,8 @@
 
   const FALLBACK_FINANCE = {
     period_years: 30,
-    interest_rate_percent: 2,
-    energy_price_escalation_percent: 2,
+    interest_rate_percent: 3,
+    energy_price_escalation_percent: 3,
     investment_price_escalation_percent: 2,
     disposal_price_escalation_percent: 2,
   };
@@ -79,6 +79,8 @@
   let costConfig = null;
   let lifetimeConfig = null;
   let financeConfig = null;
+  let energyPricesConfig = null;
+  let emissionFactorsConfig = null;
   let activeComponentId = 'exteriorWall';
   let variants = [];
   let enrichedVariants = [];
@@ -244,6 +246,68 @@
     select.innerHTML = values.map((item) => `<option value="${item.value}">${escapeHtml(item.label)}</option>`).join('') + '<option value="custom">eigener Wert</option>';
   }
 
+  function costModelFor(component = activeComponent()) {
+    return (costConfig?.models ?? []).find((item) => item.id === component.costModelId) ?? null;
+  }
+
+  function lifetimeFor(component = activeComponent()) {
+    return (lifetimeConfig?.items ?? []).find((item) => item.cost_model_id === component.costModelId || item.id === component.costModelId) ?? null;
+  }
+
+  function energyCarrierItems() {
+    return (energyPricesConfig?.items ?? []).filter((item) => item.active !== false && Number.isFinite(Number(item.price)));
+  }
+
+  function populateEnergyCarrierOptions(selectedId = null) {
+    const select = $('energyCarrierSelect');
+    const items = energyCarrierItems();
+    select.innerHTML = items.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`).join('');
+    if (!items.length) select.innerHTML = '<option value="custom">Energiepreis manuell</option>';
+    const desired = items.some((item) => item.id === selectedId) ? selectedId : (items.find((item) => item.id === 'oil')?.id ?? items[0]?.id ?? 'custom');
+    select.value = desired;
+    return desired;
+  }
+
+  function carrierDefaults(carrierId) {
+    const price = (energyPricesConfig?.items ?? []).find((item) => item.id === carrierId);
+    const emission = (emissionFactorsConfig?.items ?? []).find((item) => item.id === carrierId);
+    return {
+      price: finite(price?.price, null),
+      emissionFactor: finite(emission?.factor_kg_co2e_kwh, null),
+      label: price?.label ?? emission?.label ?? 'Energieträger',
+    };
+  }
+
+  function fundingDraft(draft = {}) {
+    const existing = draft.funding ?? {};
+    return {
+      state: existing.state ?? { mode: 'none', value: 0 },
+      federal: existing.federal ?? { mode: 'none', value: 0 },
+      other: existing.other ?? { mode: 'none', value: 0 },
+    };
+  }
+
+  function updateFundingUnits() {
+    ['state', 'federal', 'other'].forEach((id) => {
+      const mode = $(`${id}FundingMode`)?.value ?? 'none';
+      const unit = mode === 'amount' ? '€' : mode.startsWith('percent_') ? '%' : '–';
+      $(`${id}FundingUnit`).textContent = unit;
+      $(`${id}FundingValue`).disabled = mode === 'none';
+    });
+  }
+
+  function defaultCostValues(component = activeComponent()) {
+    const modelValue = costModelFor(component);
+    const lifetimeValue = lifetimeFor(component);
+    return {
+      model: modelValue,
+      baseCostEurM2: finite(modelValue?.base_cost_eur_m2, null),
+      variableCostEurM2Cm: finite(modelValue?.variable_cost_eur_m2_cm, null),
+      sunkCostEurM2: finite(modelValue?.sunk_cost_eur_m2, 0),
+      lifetimeYears: finite(lifetimeValue?.years, null),
+    };
+  }
+
   function selectComponent(componentId) {
     const component = COMPONENTS.find((item) => item.id === componentId && item.supported);
     if (!component) return;
@@ -267,6 +331,7 @@
     const climate = climateContext(project);
     const flowComponent = energyFlowComponent(project, component);
     const financeDefaults = financeConfig?.defaults ?? FALLBACK_FINANCE;
+    const costDefaults = defaultCostValues(component);
 
     setInput('areaM2', areaInfo.value, 0);
     setInput('existingUValue', uInfo.value, 2);
@@ -282,7 +347,7 @@
     const lambdaOption = Array.from($('lambdaSelect').options).find((option) => finite(option.value, null) === lambdaValue);
     $('lambdaSelect').value = lambdaOption ? String(lambdaValue) : 'custom';
     setInput('lambdaCustom', lambdaValue, 3);
-    $('lambdaCustom').disabled = $('lambdaSelect').value !== 'custom';
+    $('lambdaCustomWrap').hidden = $('lambdaSelect').value !== 'custom';
 
     setInput('annualEfficiency', draft.annualEfficiency ?? valueAt(project, 'systems.heating.usefulHeatFactor', 0.85), 2);
     setInput('indoorTemperature', draft.indoorTemperatureC ?? valueAt(project, 'building.thermal.indoorTemperature', 20), 1);
@@ -290,26 +355,33 @@
     setInput('heatingDegreeDays', draft.heatingDegreeDaysKd, 0);
 
     $('renewalContext').value = draft.renewalContext ?? 'renewal_due';
-    setInput('baseCostEurM2', draft.baseCostEurM2, 0);
-    setInput('variableCostEurM2Cm', draft.variableCostEurM2Cm, 1);
-    setInput('sunkCostEurM2', draft.sunkCostEurM2, 0);
-    setInput('lifetimeYears', draft.lifetimeYears, 0);
-    setInput('energyPriceEurKwh', draft.energyPriceEurKwh, 3);
+    setInput('baseCostEurM2', draft.baseCostEurM2 ?? costDefaults.baseCostEurM2, 0);
+    setInput('variableCostEurM2Cm', draft.variableCostEurM2Cm ?? costDefaults.variableCostEurM2Cm, 1);
+    setInput('sunkCostEurM2', draft.sunkCostEurM2 ?? costDefaults.sunkCostEurM2, 0);
+    setInput('lifetimeYears', draft.lifetimeYears ?? costDefaults.lifetimeYears, 0);
+
+    const selectedCarrier = populateEnergyCarrierOptions(draft.energyCarrierId);
+    const carrier = carrierDefaults(selectedCarrier);
+    setInput('energyPriceEurKwh', draft.energyPriceEurKwh ?? carrier.price, 3);
+    setInput('emissionFactorKgKwh', draft.emissionFactorKgKwh ?? carrier.emissionFactor, 3);
+
     setInput('periodYears', draft.periodYears ?? financeDefaults.period_years, 0);
     setInput('interestRatePercent', draft.interestRatePercent ?? financeDefaults.interest_rate_percent, 1);
     setInput('energyEscalationPercent', draft.energyEscalationPercent ?? financeDefaults.energy_price_escalation_percent, 1);
     setInput('investmentEscalationPercent', draft.investmentEscalationPercent ?? financeDefaults.investment_price_escalation_percent, 1);
     setInput('disposalEscalationPercent', draft.disposalEscalationPercent ?? financeDefaults.disposal_price_escalation_percent, 1);
-    $('subsidyMode').value = draft.subsidyMode ?? 'none';
-    setInput('subsidyValue', draft.subsidyValue, 1);
-    $('subsidyBasis').value = draft.subsidyBasis ?? 'full';
-    setInput('emissionFactorKgKwh', draft.emissionFactorKgKwh, 3);
+
+    const funding = fundingDraft(draft);
+    ['state', 'federal', 'other'].forEach((id) => {
+      $(`${id}FundingMode`).value = funding[id].mode ?? 'none';
+      setInput(`${id}FundingValue`, funding[id].value ?? 0, 1);
+    });
+    updateFundingUnits();
 
     const recommended = target?.recommended;
     const ambitious = target?.ambitious;
     $('recommendedTarget').textContent = recommended ? `U ≤ ${formatNumber(recommended, 2)} W/m²K` : 'noch offen';
     $('ambitiousTarget').textContent = ambitious ? `U ≤ ${formatNumber(ambitious, 2)} W/m²K` : 'noch offen';
-    $('legalCheck').textContent = target?.legal_without_concept ? `Prüfwert ${formatNumber(target.legal_without_concept, 2)}` : 'aktuell prüfen';
 
     if (flowComponent?.lossKwh > 0) {
       $('climateStrip').dataset.level = 'good';
@@ -328,8 +400,19 @@
       $('calculateClimate').hidden = false;
     }
 
+    const modelStatus = costDefaults.model?.status === 'confirmed' ? 'bestätigter Richtwert' : costDefaults.model ? 'Vorschlag – bitte prüfen' : 'manuelle Eingabe';
     $('projectLinkStatus').textContent = areaInfo.value && uInfo.value ? 'Projektwerte übernommen' : 'Eingaben ergänzen';
-    $('costDataStatus').textContent = costConfig?.models?.length ? 'Kostendaten geladen' : 'Manuelle Werte erforderlich';
+    $('costDataStatus').textContent = costDefaults.baseCostEurM2 !== null ? modelStatus : 'Kostenwerte ergänzen';
+    const costRange = costDefaults.model?.range_eur_m2;
+    $('costSummaryModel').textContent = costRange?.low !== undefined && costRange?.high !== undefined
+      ? `ca. ${formatNumber(costRange.low)}–${formatNumber(costRange.high)} €/m²`
+      : costDefaults.baseCostEurM2 !== null ? 'Richtwert automatisch geladen' : 'noch kein Richtwert';
+    $('costSummaryModelNote').textContent = `${costDefaults.model?.label ?? component.label} · ${modelStatus}`;
+    $('costSummarySunk').textContent = $('renewalContext').value === 'renewal_due' && inputNumber('sunkCostEurM2', 0) > 0
+      ? 'automatisch berücksichtigt'
+      : 'nicht angesetzt';
+    $('costSummaryFinance').textContent = 'Standardannahmen geladen';
+    $('costSummaryFinanceNote').textContent = `${formatNumber(inputNumber('periodYears', 30))} Jahre · ${formatNumber(inputNumber('interestRatePercent', 3), 1)} % Zins · Sensitivität empfohlen`;
 
     calculateAndRender();
   }
@@ -342,6 +425,11 @@
     const selectedLambda = $('lambdaSelect').value === 'custom'
       ? inputNumber('lambdaCustom', null)
       : finite($('lambdaSelect').value, null);
+    const fundingEntries = [
+      { id: 'state', label: 'Landesförderung', mode: $('stateFundingMode').value, value: inputNumber('stateFundingValue', 0) },
+      { id: 'federal', label: 'Bundesförderung', mode: $('federalFundingMode').value, value: inputNumber('federalFundingValue', 0) },
+      { id: 'other', label: 'Sonstige Förderung', mode: $('otherFundingMode').value, value: inputNumber('otherFundingValue', 0) },
+    ];
     return {
       component,
       areaM2: inputNumber('areaM2', 0),
@@ -360,17 +448,30 @@
       variableCostEurM2Cm: inputNumber('variableCostEurM2Cm', null),
       sunkCostEurM2: measureCore.roundToStep(inputNumber('sunkCostEurM2', 0), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
       lifetimeYears: inputNumber('lifetimeYears', null),
+      energyCarrierId: $('energyCarrierSelect').value,
       energyPriceEurKwh: inputNumber('energyPriceEurKwh', null),
       periodYears: inputNumber('periodYears', FALLBACK_FINANCE.period_years),
       interestRatePercent: inputNumber('interestRatePercent', FALLBACK_FINANCE.interest_rate_percent),
       energyEscalationPercent: inputNumber('energyEscalationPercent', FALLBACK_FINANCE.energy_price_escalation_percent),
       investmentEscalationPercent: inputNumber('investmentEscalationPercent', FALLBACK_FINANCE.investment_price_escalation_percent),
       disposalEscalationPercent: inputNumber('disposalEscalationPercent', FALLBACK_FINANCE.disposal_price_escalation_percent),
-      subsidyMode: $('subsidyMode').value,
-      subsidyValue: inputNumber('subsidyValue', 0),
-      subsidyBasis: $('subsidyBasis').value,
+      fundingEntries,
       emissionFactorKgKwh: inputNumber('emissionFactorKgKwh', null),
     };
+  }
+
+  function renderAssumptionSummary(inputs) {
+    const modelValue = costModelFor(inputs.component);
+    const costRange = modelValue?.range_eur_m2;
+    $('costSummaryModel').textContent = costRange?.low !== undefined && costRange?.high !== undefined
+      ? `ca. ${formatNumber(costRange.low)}–${formatNumber(costRange.high)} €/m²`
+      : inputs.baseCostEurM2 !== null ? 'Richtwert automatisch geladen' : 'noch kein Richtwert';
+    $('costSummaryModelNote').textContent = modelValue?.label ?? inputs.component.label;
+    $('costSummarySunk').textContent = inputs.renewalContext === 'renewal_due' && (inputs.sunkCostEurM2 ?? 0) > 0
+      ? 'automatisch berücksichtigt'
+      : 'nicht angesetzt';
+    $('costSummaryFinance').textContent = 'Standardannahmen geladen';
+    $('costSummaryFinanceNote').textContent = `${formatNumber(inputs.periodYears)} Jahre · ${formatNumber(inputs.interestRatePercent, 1)} % Zins · Sensitivität empfohlen`;
   }
 
   function variantEconomics(variant, reference, inputs) {
@@ -430,6 +531,7 @@
 
   function calculateAndRender() {
     const inputs = currentInputs();
+    renderAssumptionSummary(inputs);
     const target = targetForComponent(inputs.component);
     const technicalReady = hasPositive(inputs.areaM2) && hasPositive(inputs.existingUValue) && hasPositive(inputs.lambdaWmk);
 
@@ -454,9 +556,7 @@
       baseCostEurM2: inputs.baseCostEurM2 ?? 0,
       variableCostEurM2Cm: inputs.variableCostEurM2Cm ?? 0,
       sunkCostEurM2: inputs.sunkCostEurM2 ?? 0,
-      subsidyMode: inputs.subsidyMode,
-      subsidyValue: inputs.subsidyValue,
-      subsidyBasis: inputs.subsidyBasis,
+      fundingEntries: inputs.fundingEntries,
       energyPriceEurKwh: inputs.energyPriceEurKwh,
       emissionFactorKgKwh: inputs.emissionFactorKgKwh,
     });
@@ -484,9 +584,7 @@
       baseCostEurM2: inputs.baseCostEurM2 ?? 0,
       variableCostEurM2Cm: inputs.variableCostEurM2Cm ?? 0,
       sunkCostEurM2: inputs.sunkCostEurM2 ?? 0,
-      subsidyMode: inputs.subsidyMode,
-      subsidyValue: inputs.subsidyValue,
-      subsidyBasis: inputs.subsidyBasis,
+      fundingEntries: inputs.fundingEntries,
       energyPriceEurKwh: inputs.energyPriceEurKwh,
       emissionFactorKgKwh: inputs.emissionFactorKgKwh,
     });
@@ -759,10 +857,10 @@
     const inputs = currentInputs();
     const component = inputs.component;
     suppressProjectRender = true;
-    if (component.areaPath) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.1' });
-    if (component.uPath) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.1' });
-    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.1' });
-    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.1' });
+    if (component.areaPath) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.2' });
+    if (component.uPath) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.2' });
+    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.2' });
+    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.2' });
     writeDraft({
       lambdaWmk: inputs.lambdaWmk,
       annualEfficiency: inputs.annualEfficiency,
@@ -774,15 +872,18 @@
       variableCostEurM2Cm: inputs.variableCostEurM2Cm,
       sunkCostEurM2: inputs.sunkCostEurM2,
       lifetimeYears: inputs.lifetimeYears,
+      energyCarrierId: inputs.energyCarrierId,
       energyPriceEurKwh: inputs.energyPriceEurKwh,
       periodYears: inputs.periodYears,
       interestRatePercent: inputs.interestRatePercent,
       energyEscalationPercent: inputs.energyEscalationPercent,
       investmentEscalationPercent: inputs.investmentEscalationPercent,
       disposalEscalationPercent: inputs.disposalEscalationPercent,
-      subsidyMode: inputs.subsidyMode,
-      subsidyValue: inputs.subsidyValue,
-      subsidyBasis: inputs.subsidyBasis,
+      funding: {
+        state: inputs.fundingEntries.find((item) => item.id === 'state'),
+        federal: inputs.fundingEntries.find((item) => item.id === 'federal'),
+        other: inputs.fundingEntries.find((item) => item.id === 'other'),
+      },
       emissionFactorKgKwh: inputs.emissionFactorKgKwh,
       selectedThicknessCm,
     });
@@ -821,7 +922,7 @@
         fullInvestmentEur: selected.investment.fullInvestmentEur,
       },
       sunkCosts: { rateEurM2: inputs.sunkCostEurM2, totalEur: selected.investment.sunkCostEur },
-      subsidy: { mode: inputs.subsidyMode, value: inputs.subsidyValue, basis: inputs.subsidyBasis, amountEur: selected.subsidyEur, confirmed: inputs.subsidyMode !== 'none' },
+      funding: { entries: clone(selected.fundingItems ?? []), amountEur: selected.subsidyEur, confirmed: (selected.fundingItems ?? []).some((item) => item.confirmed) },
       financialAssumptions: {
         periodYears: inputs.periodYears,
         interestRatePercent: inputs.interestRatePercent,
@@ -960,7 +1061,7 @@
     $('componentSelect').addEventListener('change', () => selectComponent($('componentSelect').value));
     $('lambdaSelect').addEventListener('change', () => {
       const custom = $('lambdaSelect').value === 'custom';
-      $('lambdaCustom').disabled = !custom;
+      $('lambdaCustomWrap').hidden = !custom;
       if (!custom) setInput('lambdaCustom', Number($('lambdaSelect').value), 3);
       calculateAndRender();
     });
@@ -983,10 +1084,29 @@
     }));
     $('calculateClimate').addEventListener('click', calculateClimate);
     $('saveMeasure').addEventListener('click', saveMeasure);
+    $('energyCarrierSelect').addEventListener('change', () => {
+      const defaults = carrierDefaults($('energyCarrierSelect').value);
+      if (defaults.price !== null) setInput('energyPriceEurKwh', defaults.price, 3);
+      if (defaults.emissionFactor !== null) setInput('emissionFactorKgKwh', defaults.emissionFactor, 3);
+      calculateAndRender();
+      persistVisibleInputs();
+    });
+    ['state', 'federal', 'other'].forEach((id) => {
+      $(`${id}FundingMode`).addEventListener('change', () => {
+        updateFundingUnits();
+        calculateAndRender();
+        persistVisibleInputs();
+      });
+    });
+    $('renewalContext').addEventListener('change', () => {
+      $('costSummarySunk').textContent = $('renewalContext').value === 'renewal_due' && inputNumber('sunkCostEurM2', 0) > 0
+        ? 'automatisch berücksichtigt'
+        : 'nicht angesetzt';
+    });
 
     const calculationInputs = document.querySelectorAll('.renovation-workspace input, .renovation-workspace select');
     calculationInputs.forEach((input) => {
-      if (['componentSelect', 'selectedVariantSelect', 'lambdaSelect'].includes(input.id)) return;
+      if (['componentSelect', 'selectedVariantSelect', 'lambdaSelect', 'energyCarrierSelect', 'stateFundingMode', 'federalFundingMode', 'otherFundingMode'].includes(input.id)) return;
       input.addEventListener('input', calculateAndRender);
       input.addEventListener('change', persistVisibleInputs);
     });
@@ -1014,16 +1134,19 @@
       ? requested
       : COMPONENTS.some((item) => item.id === stored && item.supported) ? stored : 'exteriorWall';
 
-    [targetsConfig, lambdaConfig, coBenefitsConfig, costConfig, lifetimeConfig, financeConfig] = await Promise.all([
+    [targetsConfig, lambdaConfig, coBenefitsConfig, costConfig, lifetimeConfig, financeConfig, energyPricesConfig, emissionFactorsConfig] = await Promise.all([
       loadJson('measures/envelope-targets.json', { components: {} }),
       loadJson('measures/lambda-values.json', { values: [{ value: 0.035, label: '0,035 W/mK', active: true }] }),
       loadJson('measures/co-benefits.json', { components: {} }),
       loadJson('costs/renovation-costs.json', { models: [] }),
       loadJson('costs/lifetimes.json', { items: [] }),
       loadJson('economics/financial-defaults.json', { defaults: FALLBACK_FINANCE, rounding: {} }),
+      loadJson('economics/energy-prices.json', { items: [] }),
+      loadJson('emissions/emission-factors.json', { items: [] }),
     ]);
 
     populateLambdaOptions();
+    populateEnergyCarrierOptions();
     renderComponentSelector();
     document.querySelector('[data-project-change-address]')?.setAttribute('hidden', '');
     bindEvents();

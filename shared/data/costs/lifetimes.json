@@ -1,8 +1,17 @@
 {
   "schema": "energy-tools-lifetimes",
-  "version": "2026-08-04-template-v1",
-  "data_date": null,
-  "status": "template-unfilled",
-  "notice": "Nutzungsdauern werden aus der ausgefüllten Masterdatei ergänzt.",
-  "items": []
+  "version": "2026-08-04-proposal-v1.1",
+  "data_date": "2026-08-04",
+  "status": "project-proposals-unverified",
+  "notice": "Startwerte für den Prototyp. Vor Freigabe mit ÖNORM EN 15459-1:2017 Anhang D oder einem dokumentierten Nutzungsdauerkatalog abgleichen.",
+  "items": [
+    {"id":"wall_wdvs","cost_model_id":"wall_wdvs","years":40,"active":true,"status":"proposal"},
+    {"id":"wall_ventilated","cost_model_id":"wall_ventilated","years":50,"active":true,"status":"proposal"},
+    {"id":"top_ceiling","cost_model_id":"top_ceiling","years":50,"active":true,"status":"proposal"},
+    {"id":"roof","cost_model_id":"roof","years":40,"active":true,"status":"proposal"},
+    {"id":"basement_ceiling","cost_model_id":"basement_ceiling","years":50,"active":true,"status":"proposal"},
+    {"id":"ground_floor","cost_model_id":"ground_floor","years":50,"active":true,"status":"proposal"},
+    {"id":"window_replace","cost_model_id":"window_replace","years":35,"active":true,"status":"proposal"},
+    {"id":"door_replace","cost_model_id":"door_replace","years":30,"active":true,"status":"proposal"}
+  ]
 }

@@ -1,6 +1,7 @@
 # Bauteil & Sanierung – Wartung und Datenpflege
 
-**Stand:** 04.08.2026
+**Stand:** 04.08.2026  
+**Toolstand:** V0.2
 
 ## 1. Zentrale Dateien
 
@@ -16,55 +17,62 @@ shared/data/emissions/emission-factors.json
 shared/data/funding/funding.json
 ```
 
-Diese Dateien sind die zukünftigen Website-Exporte der wartbaren Excel-Masterdatei.
+Diese Dateien sind die Website-Datenpakete der wartbaren Excel-Masterdatei.
 
-## 2. Aktueller Datenstatus
+## 2. Datenstatus V0.2
 
-Bereits befüllt:
+Befüllt sind:
 
-- Ziel-U-Werte und Prüfwerte,
+- Ziel-U-Werte und rechtliche Prüfwerte,
 - λ-Auswahl,
 - qualitative Komforthinweise,
-- Rundungsregeln.
+- bestätigte EAT-Kostenkennwerte für WDVS, OGD, Kellerdecke und Fenster,
+- klar als Vorschlag markierte Kosten für hinterlüftete Fassade, Dach, Boden und Außentür,
+- Energiepreise und betriebliche Emissionsfaktoren aus der Masterdatei,
+- Finanzannahmen und Rundungsregeln.
 
-Noch bewusst leer:
+Noch zu bestätigen sind:
 
-- Richtkosten,
-- Sowiesokosten,
-- Nutzungsdauern,
-- Energiepreise,
-- Emissionsfaktoren,
-- Förderungen.
+- vorgeschlagene Nutzungsdauern,
+- vorgeschlagene Kostenkennwerte der bisher nicht belegten Maßnahmen,
+- projektspezifische Förderungen.
 
-Solange diese Werte fehlen, verwendet das Tool manuelle Projektangaben und kennzeichnet den Zustand sichtbar.
+## 3. Förderungen
 
-## 3. Pflegeprinzip
+Förderungen werden nicht als automatische Programmdaten gepflegt. Im Projekt stehen drei freie Felder bereit:
+
+- Landesförderung,
+- Bundesförderung,
+- sonstige Förderung.
+
+Je Feld kann zwischen Fixbetrag, Prozent der Vollkosten und Prozent der energetischen Mehrkosten gewählt werden. Nur bewusst eingegebene Werte werden berücksichtigt.
+
+## 4. Pflegeprinzip
 
 - Quellwerte bleiben in Excel exakt erhalten.
-- Bereitgestellte Richtpreise werden auf 10 €/m² gerundet.
-- Berechnungen verwenden die bereitgestellten Zahlen intern exakt.
+- Website-Richtpreise werden bewusst auf 10 €/m² bereitgestellt.
+- Rechenkerne arbeiten intern ohne Ergebnisrundung.
 - Summen werden erst für Anzeige und Ausdruck auf 500 € gerundet.
-- Jeder Datensatz benötigt Quelle, Datenstand, Region und Aktivstatus.
-- Förderungen dürfen nur nach bewusster Bestätigung in eine Projektberechnung eingehen.
+- Jeder aktive Datensatz benötigt Quelle, Datenstand, Region und Aktivstatus.
+- Projektvorschläge dürfen erst nach fachlicher Prüfung als bestätigte Richtwerte gekennzeichnet werden.
 
-## 4. Validierung nach Datenupdate
+## 5. Validierung nach Datenupdate
 
-Nach jedem JSON-Export prüfen:
+1. JSON-Syntax prüfen.
+2. Eindeutige IDs prüfen.
+3. Aktive Datensätze besitzen Zahlen und Quellen.
+4. Kostenband unten ≤ Mitte ≤ oben.
+5. Sowiesokosten ≤ Vollkosten.
+6. Empfehlung und ambitionierter Zielwert sind plausibel angeordnet.
+7. Außenwand, Dach, OGD, Kellerdecke und Boden mit je einem Testprojekt rechnen.
+8. Fördereingaben als Fixbetrag und Prozentwert prüfen.
+9. Ausdruck sowie Projekt-Export/-Import prüfen.
 
-1. JSON-Syntax,
-2. eindeutige IDs,
-3. aktive Datensätze besitzen Zahlen und Quellen,
-4. Kostenband unten ≤ Mitte ≤ oben,
-5. Sowiesokosten ≤ Vollkosten,
-6. Empfehlung und ambitionierter Zielwert sind plausibel angeordnet,
-7. Testprojekt mit Außenwand, Dach und Kellerdecke,
-8. Ausdruck und Projekt-Export/-Import.
-
-## 5. Rechenkerne
+## 6. Rechenkerne
 
 ```text
 shared/js/domain/measures/envelope-renovation-core.js
 shared/js/domain/economics/economics-core.js
 ```
 
-Fachformeln dürfen nicht in die Oberfläche dupliziert werden. Änderungen benötigen Versionsanhebung, Tests und Dokumentation.
+Fachformeln dürfen nicht in der Oberfläche dupliziert werden. Änderungen benötigen Versionsanhebung, Tests und Dokumentation.

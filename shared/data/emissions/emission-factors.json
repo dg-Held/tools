@@ -1,6 +1,15 @@
 {
   "schema": "energy-tools-emission-factors",
-  "version": "2026-08-04-template-v1",
-  "status": "template-unfilled",
-  "items": []
+  "version": "2025-09-master-v1.1",
+  "data_date": "2025-09",
+  "status": "draft-from-master",
+  "notice": "Betriebliche Emissionsfaktoren aus der gepflegten Masterdatei; Bilanzgrenze und Datenstand im Bericht ausweisen.",
+  "items": [
+    {"id":"oil","label":"Heizöl","factor_kg_co2e_kwh":0.271,"active":true},
+    {"id":"gas","label":"Erdgas","factor_kg_co2e_kwh":0.201,"active":true},
+    {"id":"pellets","label":"Pellets","factor_kg_co2e_kwh":0.009,"active":true},
+    {"id":"wood","label":"Scheitholz / Hackgut","factor_kg_co2e_kwh":0.009,"active":true},
+    {"id":"electricity","label":"Strom","factor_kg_co2e_kwh":0.074,"active":true},
+    {"id":"district_heat","label":"Fernwärme","factor_kg_co2e_kwh":0.025,"active":true}
+  ]
 }
