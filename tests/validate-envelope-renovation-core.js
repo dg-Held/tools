@@ -37,11 +37,11 @@ const testVariant = {
 };
 const result = economics.calculateVariant(testVariant, assumptions);
 assert.ok(result.totalPresentValue > 20000);
-console.log(JSON.stringify({ passed: true, nextU, requiredCm: required, variants: variants.length, totalPresentValue: result.totalPresentValue }, null, 2));
 
+// Zwei Haustüren: Energie über 2 × 2,0 m²; Kosten über 2 Stück.
 const doorVariants = core.createExchangeVariants({
-  areaM2: 2.2,
-  costQuantity: 1,
+  areaM2: 4.0,
+  costQuantity: 2,
   existingUValue: 2.5,
   variants: [{ id: 'door-test', label: 'Haustür Test', uValue: 1.1, fullCostEurM2: 4000, role: 'recommended' }],
   heatingDegreeHoursKh: 70000,
@@ -53,6 +53,16 @@ const doorVariants = core.createExchangeVariants({
   energyPriceEurKwh: 0.14,
   emissionFactorKgKwh: 0.25,
 });
-assert.equal(doorVariants[1].investment.fullInvestmentEur, 4000, 'Haustürkosten müssen über Stückzahl und nicht über Fläche berechnet werden.');
-assert.equal(doorVariants[1].investment.sunkCostEur, 3000);
-console.log(JSON.stringify({ doorTest: true, fullInvestmentEur: doorVariants[1].investment.fullInvestmentEur }));
+assert.equal(doorVariants[1].investment.fullInvestmentEur, 8000, 'Haustürkosten müssen nach Stückzahl berechnet werden.');
+assert.equal(doorVariants[1].investment.sunkCostEur, 6000);
+assert.ok(doorVariants[1].energy.deliveredSavingsKwh > 0, 'Energiewirkung muss die Gesamtfläche der Türen verwenden.');
+
+console.log(JSON.stringify({
+  passed: true,
+  nextU,
+  requiredCm: required,
+  variants: variants.length,
+  totalPresentValue: result.totalPresentValue,
+  doorFullInvestmentEur: doorVariants[1].investment.fullInvestmentEur,
+  doorEnergySavingKwh: doorVariants[1].energy.deliveredSavingsKwh,
+}, null, 2));

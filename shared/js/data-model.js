@@ -167,7 +167,6 @@
         klima: {},
         heizlast: {},
         energiefluss: {},
-        bauteilSanierung: {},
         wirtschaftlichkeit: {},
       },
       cache: {},

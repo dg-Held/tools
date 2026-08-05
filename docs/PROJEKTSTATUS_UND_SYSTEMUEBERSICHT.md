@@ -1,0 +1,281 @@
+# Projektstatus und Systemübersicht – Tools für Energieberatung
+
+**Stand:** 05.08.2026  
+**Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
+**Pflegeregel:** Bei jedem Paket aktualisieren.
+
+## 1. Projektziel
+
+Private, unabhängige, statische Toolsammlung für Energieberatung in Tirol. Technik: HTML, CSS und JavaScript auf GitHub Pages, möglichst ohne Backend.
+
+Die Tools sollen:
+
+- amtliche und möglichst kostenlose Datenquellen verwenden,
+- ohne GIS-Kenntnisse funktionieren,
+- im Beratungsgespräch nur wenige notwendige Eingaben verlangen,
+- Projekte und bestätigte Werte toolübergreifend verwenden,
+- amtliche, abgeleitete, manuelle und Fallbackwerte unterscheiden,
+- keine Scheingenauigkeit darstellen,
+- kompakte A4-Ausdrucke erzeugen,
+- einzeln nutzbar bleiben und gemeinsam einen Sanierungsfahrplan vorbereiten.
+
+Leitgedanke: Der Berater spricht mit dem Kunden; das Tool stellt bekannte Daten bereit und verlangt nur Bestätigung oder Korrektur.
+
+## 2. Gestaltung und Bedienung
+
+- Schrift: Nunito.
+- Primärfarbe: Türkis `#34AB9F`.
+- Sekundärfarbe: Berry `#B3446C`.
+- ruhige helle Karten, Inhaltsbreite etwa 820 px.
+- neue Farben, Abstände und Komponenten nur über gemeinsame Styles ergänzen.
+- gemeinsamer Projektkopf: Projekttitel/Adresse etwa 2/3, Projekt-ID/Datum etwa 1/3.
+- Drucken/PDF oben und am Berichtsende.
+- erweiterte technische und finanzielle Angaben standardmäßig einklappen.
+- projektbezogene Förderungen sichtbar und manuell bestätigbar halten.
+
+Zentrale Gestaltung:
+
+```text
+shared/css/tokens.css
+shared/css/base.css
+shared/css/components.css
+shared/css/print.css
+```
+
+## 3. Gemeinsames Projektmodell
+
+Speicherung über `localStorage`, zusätzlich JSON-Export und -Import.
+
+Wertepriorität:
+
+```text
+manuell bestätigt → amtlich automatisch → abgeleitet → Fallback
+```
+
+Grundregeln:
+
+1. Ein Wert existiert nur einmal im gemeinsamen Projektmodell.
+2. Herkunft, Methode, Datenstand und Unsicherheit gehören zum Wert.
+3. Ein manueller Wert löscht den automatischen Ursprungswert nicht.
+4. Bestand und Maßnahme bleiben getrennt.
+5. Maßnahmen sind toolübergreifend.
+6. Ergebnisse werden aus Eingaben neu berechnet; Berichtssnapshots dienen nur der Dokumentation.
+7. Ein Tool darf gemeinsame Dienste aufrufen, ohne dass eine andere Toolseite vorher geöffnet wurde.
+
+Zentrale Dateien:
+
+```text
+shared/js/data-model.js
+shared/js/project-migrations.js
+shared/js/value-resolver.js
+shared/js/project-store.js
+shared/js/project-header.js
+shared/js/services/
+shared/js/domain/
+```
+
+## 4. Gemeinsame Gebäudegeometrie – Stand V1.2
+
+Getrennte Werte:
+
+- TIRIS-Dachprojektion/Gebäudegrundfläche,
+- ganze oberirdische Geschoßzahl,
+- Bruttogeschoßfläche (BGF),
+- Nutzfläche (NFL),
+- beheizte Nutzfläche,
+- äußeres geometrisches Bruttovolumen,
+- konditioniertes/beheiztes Volumen,
+- Hüllflächen.
+
+### Automatische Referenzkette
+
+Sie bleibt ohne manuelle Korrekturen nachvollziehbar:
+
+```text
+Geschoße_auto = Medianhöhe / Höhenmodul, auf ganze Zahl gerundet
+BGF_auto = Dachprojektion × Geschoße_auto
+NFL_auto = BGF_auto × Nutzflächenfaktor
+beheizte NFL_auto = NFL_auto
+Bruttovolumen_auto = Dachprojektion × Medianhöhe
+```
+
+Standards:
+
+- Höhenmodul: 3,2 m/Geschoß.
+- Nutzflächenfaktor: 75 %.
+- Geschoße ausschließlich ganzzahlig.
+
+### Verwendete Kette
+
+```text
+Geschoße_verwendet = manuell oder automatisch
+BGF_verwendet = manuell oder Dachprojektion × Geschoße_verwendet
+NFL_verwendet = manuell oder BGF_verwendet × Nutzflächenfaktor
+beheizte NFL_verwendet = manuell oder NFL_verwendet
+```
+
+Die beheizte Nutzfläche darf nie größer als die Nutzfläche sein. Eine zu große manuelle Eingabe wird auf die Nutzfläche begrenzt und mit einem Hinweis versehen.
+
+Das äußere geometrische Bruttovolumen ist unabhängig von BGF und Geschoßzahl:
+
+```text
+Bruttovolumen = Dachprojektion × Medianhöhe
+```
+
+Ein manuelles Bruttovolumen behält Vorrang; der automatische Wert bleibt erhalten.
+
+Zusätzlich wird vorbereitet beziehungsweise abgeleitet:
+
+```text
+beheizter Anteil = beheizte NFL / NFL
+beheiztes Volumen = Bruttovolumen × beheizter Anteil
+```
+
+Das beheizte Volumen ist eine überschlägige Projektgröße und noch kein normativ bestimmtes Luftvolumen.
+
+## 5. Aktuelle Werkzeuge
+
+### Standortpass Energie & Gebäude
+
+Status: V1, fachlich weitgehend fertig; Geometriekette V1.2.
+
+- Adresse und TIRIS-Gebäudezuordnung,
+- gespeicherter Gebäude-/Polygon-Snapshot,
+- Orthofoto, Geländehöhe und Gebäudehöhen,
+- Dachprojektion, Umfang, Dachneigung und Dachfläche,
+- Geschoße, BGF, NFL, beheizte NFL und Bruttovolumen,
+- Wärmeversorgung und Umweltwärmehinweise,
+- Solar-/Verschattungsinformationen,
+- Hochwasser, Naturgefahren, WLV, Radon, Denkmal- und Kulturkontext,
+- zwei verdichtete A4-Seiten.
+
+### Klima am Standort
+
+Status: eigenständiges Tool.
+
+- BEV-Lokalvorschläge, TIRIS-Livevalidierung, BEV-Fallback,
+- OIB NAT/TNAT,13,
+- vorberechnete INCA-Jahrespakete ab 2012,
+- Jahreslinien, Median, Kennwerte und Datenstand,
+- GeoSphere-Liveabruf als Fallback.
+
+### Heizlast abschätzen
+
+Status: eigenständiges, mit Klima verschränktes Tool.
+
+- verbrauchsbasierte Abschätzung,
+- flächenbezogene Orientierung,
+- gemeinsame Klimagrundlage,
+- editierbare Heizgrenztemperatur,
+- vorhandene Heizung und Dauerlinie,
+- kompakter Ein-Seiten-Ausdruck.
+
+### Energiefluss im Gebäude V4.4
+
+Status: funktional abgeschlossen. V3 ist extern archiviert und online nicht mehr erforderlich.
+
+- bekannte Projekt- und Verbrauchswerte kompakt prüfen,
+- verbrauchsbasierte Bilanz,
+- Gebäudehülle und Einzelbauteilverluste,
+- Plausibilitätsvergleich aus U-Werten, Flächen und Klima,
+- Baujahr als Fallback für nicht bestätigte Bestands-U-Werte,
+- sichtbare Flächenrundung: Fenster 5 m², übrige Hüllflächen 10 m²,
+- direkte Übergabe an Bauteil & Sanierung.
+
+### Bauteil & Sanierung V0.6
+
+Status: Abschlussstand vor Freigabe als erste stabile Version.
+
+Dämmmaßnahmen:
+
+- Außenwand,
+- OGD,
+- Dach/Dachschräge,
+- Kellerdecke,
+- Boden gegen Erdreich.
+
+Austauschmaßnahmen:
+
+- Fenster,
+- Haustür/Außentür.
+
+Funktionen:
+
+- eigenständiger Adress- und Geometrieeinstieg,
+- Baujahr als U-Wert-Fallback,
+- Berry-Pflichtkennzeichnung bei fehlendem Bestands-U-Wert,
+- Dämmdicken in 2-cm-Schritten bei exakter interner Rechnung,
+- diskrete Fenster- und Türvarianten,
+- Kostenoptimum und dynamische Amortisation getrennt,
+- Energie, Heizkosten, Betriebs-CO₂ und Oberflächentemperatur,
+- Sowiesokosten und drei manuelle Förderpositionen,
+- Infografik „Sanierung auf einen Blick“,
+- eigene SVGs mit Fallback,
+- gemeinsame Projektmaßnahme.
+
+Haustür:
+
+- Hauptansicht: Anzahl, Baujahr und U-Wert.
+- typische Fläche je Tür nur unter „Erweiterte technische Eingaben“.
+- Energiewirkung = Anzahl × Fläche je Tür.
+- Kosten = Anzahl × Stückpreis.
+
+## 6. Gemeinsame Fachkerne
+
+```text
+shared/js/domain/economics/economics-core.js
+shared/js/domain/measures/envelope-renovation-core.js
+```
+
+Der Wirtschaftlichkeitskern bildet die dynamische Betrachtung der ÖNORM B 8110-4:2024 ab und wurde gegen das normative Validierungsbeispiel geprüft. Für eine vollständig normgemäße Toolausgabe müssen auch Eingaben, Quellen, Sensitivitäten und Bericht vollständig nachvollziehbar sein.
+
+Gebäudehülle und gebäudetechnische Anlagen bleiben fachlich getrennt. Heizungstausch, Leitungsdämmung, Heizflächen, Regelung und Lüftung werden später in eigenen Werkzeugen beziehungsweise im allgemeinen Wirtschaftlichkeitstool behandelt.
+
+## 7. Datenpflege
+
+Zentrale Datenordner:
+
+```text
+shared/data/
+├── addresses/
+├── building/
+├── climate/inca/
+├── costs/
+├── economics/
+├── emissions/
+├── measures/
+└── standards/
+```
+
+- Richtkosten, Energiepreise, Emissionsfaktoren und Empfehlungen werden in der Master-Excel gepflegt und kontrolliert nach JSON exportiert.
+- OIB-Prüfwerte und normative Nutzungsdauern liegen als getrennte versionierte Standarddaten vor.
+- Förderungen werden nicht automatisch gepflegt, sondern projektbezogen eingetragen.
+- Lizenzierte Normtexte werden nicht veröffentlicht.
+
+## 8. Rundung
+
+Intern exakt rechnen, bewusst gerundet anzeigen:
+
+- Dämmdicke: 2 cm,
+- U-Wert: 0,01 W/m²K,
+- Richtpreis: 10 €/m² beziehungsweise passende Stückeinheit,
+- Investitionssumme: 500 €,
+- jährliche Euro-Wirkung: 50 €/a,
+- CO₂: 100 kg/a.
+
+## 9. Nächste Schritte
+
+1. V0.6 praktisch testen und Bauteil & Sanierung als V1.0 freigeben.
+2. Master-Excel vervollständigen und Excel→JSON-Export umsetzen.
+3. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen.
+4. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren.
+5. später Heizung & Verteilung, Sommerkomfort sowie Speicher/Eigenverbrauch.
+
+## 10. Übergaberegeln
+
+- große Klima-, Adress- und Standarddaten nicht in kleinen Austauschpaketen mitsenden,
+- Pakete enthalten nur neue/geänderte Dateien,
+- Verschieben und Löschen separat dokumentieren,
+- vor dem Löschen alter Dateien abhängige Tools testen,
+- bei jedem Paket Syntax-, JSON-, Rechen-, Import/Export- und Druckprüfung durchführen,
+- diese Datei bei jedem Paket aktualisieren.

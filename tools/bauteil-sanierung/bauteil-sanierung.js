@@ -421,7 +421,7 @@
           fallback.style.display = '';
         }
       };
-      image.src = `${src}?v=6`;
+      image.src = `${src}?v=7`;
     });
   }
 
@@ -430,8 +430,10 @@
     const windowComponent = isWindowComponent(component);
     const doorComponent = isDoorComponent(component);
     if ($('lambdaField')) $('lambdaField').hidden = exchange;
+    if ($('areaField')) $('areaField').hidden = doorComponent;
     if ($('windowFrameField')) $('windowFrameField').hidden = !windowComponent;
     if ($('exchangeCountField')) $('exchangeCountField').hidden = !doorComponent;
+    if ($('doorAreaPerUnitField')) $('doorAreaPerUnitField').hidden = !doorComponent;
     if ($('lambdaCustomWrap')) $('lambdaCustomWrap').hidden = exchange || $('lambdaSelect').value !== 'custom';
     if ($('baseCostField')) $('baseCostField').hidden = exchange;
     if ($('variableCostField')) $('variableCostField').hidden = exchange;
@@ -580,7 +582,13 @@
     if (isExchangeComponent(component)) {
       if (selectedExchangeVariantId === null && draft.selectedExchangeVariantId) selectedExchangeVariantId = draft.selectedExchangeVariantId;
       if (isWindowComponent(component)) $('windowFrameMaterial').value = frameMaterial;
-      if (isDoorComponent(component)) setInput('exchangeCount', draft.exchangeCount ?? 1, 0);
+      if (isDoorComponent(component)) {
+        const doorCount = Math.max(1, Math.round(finite(draft.exchangeCount, 1)));
+        const totalDoorArea = finite(areaInfo.value, null);
+        const areaPerDoor = finite(draft.doorAreaPerUnitM2, totalDoorArea !== null ? totalDoorArea / doorCount : 2.0);
+        setInput('exchangeCount', doorCount, 0);
+        setInput('doorAreaPerUnit', areaPerDoor, 1);
+      }
     } else {
       if (selectedThicknessCm === null && draft.selectedThicknessCm !== null && draft.selectedThicknessCm !== undefined) selectedThicknessCm = finite(draft.selectedThicknessCm, null);
       const lambdaValue = finite(draft.lambdaWmk, 0.035);
@@ -660,7 +668,10 @@
     }
 
     const modelStatus = costDefaults.model?.status === 'confirmed' ? 'bestätigter Richtwert' : costDefaults.model ? 'Vorschlag – bitte prüfen' : 'manuelle Eingabe';
-    $('projectLinkStatus').textContent = areaInfo.value && uInfo.value ? 'Projektwerte übernommen' : 'Eingaben ergänzen';
+    const effectiveAreaReady = isDoorComponent(component)
+      ? Math.max(1, Math.round(finite(draft.exchangeCount, 1))) * finite(draft.doorAreaPerUnitM2, 2.0) > 0
+      : areaInfo.value > 0;
+    $('projectLinkStatus').textContent = effectiveAreaReady && uInfo.value ? 'Projektwerte übernommen' : 'Eingaben ergänzen';
     $('costDataStatus').textContent = costDefaults.baseCostEurM2 !== null ? modelStatus : 'Kostenwerte ergänzen';
     const costRange = costDefaults.model?.range_eur_m2;
     $('costSummaryModel').textContent = costRange?.low !== undefined && costRange?.high !== undefined
@@ -695,14 +706,20 @@
       { id: 'federal', label: 'Bundesförderung', mode: $('federalFundingMode').value, value: inputNumber('federalFundingValue', 0) },
       { id: 'other', label: 'Sonstige Förderung', mode: $('otherFundingMode').value, value: inputNumber('otherFundingValue', 0) },
     ];
+    const exchangeCount = isDoorComponent(component) ? Math.max(1, Math.round(inputNumber('exchangeCount', 1))) : null;
+    const doorAreaPerUnitM2 = isDoorComponent(component) ? inputNumber('doorAreaPerUnit', 2.0) : null;
+    const componentAreaM2 = isDoorComponent(component)
+      ? Math.max(0, exchangeCount * Math.max(0, doorAreaPerUnitM2 ?? 0))
+      : inputNumber('areaM2', 0);
     return {
       component,
-      areaM2: inputNumber('areaM2', 0),
+      areaM2: componentAreaM2,
+      doorAreaPerUnitM2,
       constructionYear: inputNumber('constructionYear', null),
       existingUValue: inputNumber('existingUValue', 0),
       lambdaWmk: selectedLambda,
       frameMaterial: isWindowComponent(component) ? ($('windowFrameMaterial')?.value ?? null) : null,
-      exchangeCount: isDoorComponent(component) ? Math.max(1, Math.round(inputNumber('exchangeCount', 1))) : null,
+      exchangeCount,
       annualEfficiency: inputNumber('annualEfficiency', 0.85),
       indoorTemperatureC: inputNumber('indoorTemperature', 20),
       boundaryFactor: inputNumber('boundaryFactor', component.boundaryFactor),
@@ -1271,30 +1288,35 @@
     const constructionYearInput = $('constructionYear');
     if (constructionYearInput?.dataset.userEdited === 'true') {
       if (inputs.constructionYear === null) store.clearFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL);
-      else store.setFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL, Math.round(inputs.constructionYear), { unit: 'Jahr', source: 'Nutzereingabe Bauteil & Sanierung V0.5' });
+      else store.setFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL, Math.round(inputs.constructionYear), { unit: 'Jahr', source: 'Nutzereingabe Bauteil & Sanierung V0.6' });
       constructionYearInput.dataset.userEdited = 'false';
     }
 
     const areaInput = $('areaM2');
-    if (component.areaPath && areaInput?.dataset.userEdited === 'true') {
-      if (inputs.areaM2 > 0) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.5' });
+    const doorAreaEdited = isDoorComponent(component)
+      && ($('exchangeCount')?.dataset.userEdited === 'true' || $('doorAreaPerUnit')?.dataset.userEdited === 'true');
+    if (component.areaPath && (areaInput?.dataset.userEdited === 'true' || doorAreaEdited)) {
+      if (inputs.areaM2 > 0) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.6', method: isDoorComponent(component) ? 'Anzahl × typische Fläche je Haustür' : null });
       else store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL);
-      areaInput.dataset.userEdited = 'false';
+      if (areaInput) areaInput.dataset.userEdited = 'false';
+      if ($('exchangeCount')) $('exchangeCount').dataset.userEdited = 'false';
+      if ($('doorAreaPerUnit')) $('doorAreaPerUnit').dataset.userEdited = 'false';
     }
 
     const uInput = $('existingUValue');
     if (component.uPath && uInput?.dataset.userEdited === 'true') {
-      if (inputs.existingUValue > 0) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.5' });
+      if (inputs.existingUValue > 0) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.6' });
       else store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL);
       uInput.dataset.userEdited = 'false';
     }
 
-    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.5' });
-    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.5' });
+    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.6' });
+    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.6' });
     writeDraft({
       lambdaWmk: inputs.lambdaWmk,
       frameMaterial: inputs.frameMaterial,
       exchangeCount: inputs.exchangeCount,
+      doorAreaPerUnitM2: inputs.doorAreaPerUnitM2,
       annualEfficiency: inputs.annualEfficiency,
       indoorTemperatureC: inputs.indoorTemperatureC,
       boundaryFactor: inputs.boundaryFactor,
@@ -1347,7 +1369,7 @@
       status: 'draft-selected',
       existingState: { areaM2: inputs.areaM2, uValue: inputs.existingUValue },
       selectedVariant: isExchangeComponent(inputs.component)
-        ? { id: selected.exchangeId, label: selected.label, uValue: selected.newUValue, frameMaterial: inputs.frameMaterial, count: inputs.exchangeCount }
+        ? { id: selected.exchangeId, label: selected.label, uValue: selected.newUValue, frameMaterial: inputs.frameMaterial, count: inputs.exchangeCount, areaPerUnitM2: inputs.doorAreaPerUnitM2, totalAreaM2: inputs.areaM2 }
         : { thicknessCm: selected.thicknessCm, uValue: selected.newUValue, lambdaWmk: inputs.lambdaWmk },
       targetProfile: {
         recommendedUValue: target?.recommended ?? null,
@@ -1371,7 +1393,7 @@
         lifetimeYears: inputs.lifetimeYears,
         fullInvestmentEur: selected.investment.fullInvestmentEur,
       },
-      sunkCosts: { rateEurM2: inputs.sunkCostEurM2, totalEur: selected.investment.sunkCostEur },
+      sunkCosts: { rate: inputs.sunkCostEurM2, unit: costUnitFor(inputs.component), rateEurM2: inputs.sunkCostEurM2, totalEur: selected.investment.sunkCostEur },
       funding: { entries: clone(selected.fundingItems ?? []), amountEur: selected.subsidyEur, confirmed: (selected.fundingItems ?? []).some((item) => item.confirmed) },
       financialAssumptions: {
         periodYears: inputs.periodYears,
@@ -1686,12 +1708,19 @@
     const afterArtwork = $('impactAfterImage') && !$('impactAfterImage').hidden
       ? `<img class="print-impact-image" src="${escapeHtml($('impactAfterImage').src)}" alt="">`
       : '';
-    const thirdBasisLabel = isWindowComponent(inputs.component) ? 'Rahmenmaterial' : isDoorComponent(inputs.component) ? 'Anzahl' : 'λ-Wert';
+    const thirdBasisLabel = isWindowComponent(inputs.component) ? 'Rahmenmaterial' : isDoorComponent(inputs.component) ? 'Fläche je Tür' : 'λ-Wert';
     const thirdBasisValue = isWindowComponent(inputs.component)
       ? frameMaterialText(inputs.frameMaterial)
       : isDoorComponent(inputs.component)
-        ? `${formatNumber(inputs.exchangeCount)} Stk.`
+        ? `${formatNumber(inputs.doorAreaPerUnitM2, 1)} m²/Stk.`
         : `${formatNumber(inputs.lambdaWmk, 3)} W/mK`;
+    const printBasisMarkup = isDoorComponent(inputs.component)
+      ? `<div><span>Anzahl</span><strong>${formatNumber(inputs.exchangeCount)} Stk.</strong></div>
+         <div><span>U-Wert Bestand</span><strong>${formatNumber(inputs.existingUValue, 2)} W/m²K</strong></div>
+         <div><span>${thirdBasisLabel}</span><strong>${thirdBasisValue}</strong></div>`
+      : `<div><span>Fläche</span><strong>${formatNumber(inputs.areaM2)} m²</strong></div>
+         <div><span>U-Wert Bestand</span><strong>${formatNumber(inputs.existingUValue, 2)} W/m²K</strong></div>
+         <div><span>${thirdBasisLabel}</span><strong>${thirdBasisValue}</strong></div>`;
 
     $('renovationPrintReport').innerHTML = `
       <section class="print-hero">
@@ -1700,11 +1729,7 @@
         <p>${escapeHtml(project.project?.addressLabel || 'ohne Standort')} · ${escapeHtml(variantLongText(selected))}</p>
       </section>
 
-      <section class="print-summary-grid">
-        <div><span>Fläche</span><strong>${formatNumber(inputs.areaM2)} m²</strong></div>
-        <div><span>U-Wert Bestand</span><strong>${formatNumber(inputs.existingUValue, 2)} W/m²K</strong></div>
-        <div><span>${thirdBasisLabel}</span><strong>${thirdBasisValue}</strong></div>
-      </section>
+      <section class="print-summary-grid">${printBasisMarkup}</section>
 
       <section class="print-impact">
         <h2>Sanierung auf einen Blick</h2>
@@ -1816,7 +1841,7 @@
         : 'nicht angesetzt';
     });
 
-    ['constructionYear', 'areaM2', 'existingUValue'].forEach((id) => {
+    ['constructionYear', 'areaM2', 'existingUValue', 'exchangeCount', 'doorAreaPerUnit'].forEach((id) => {
       const input = $(id);
       if (!input) return;
       input.addEventListener('input', () => {

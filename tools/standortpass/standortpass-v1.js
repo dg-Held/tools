@@ -250,30 +250,40 @@
       manuals[config.key] = manual;
     });
 
-    // Geschoße werden bewusst nur als ganze Zahl geführt. Halbgeschoße bleiben außerhalb der Orientierungsschätzung.
-    const baseAutomaticStoreys = medianHeight !== null
+    // Vollständig automatische Referenzkette. Sie bleibt unabhängig von manuellen Korrekturen sichtbar.
+    const automaticStoreys = medianHeight !== null
       ? Math.max(1, Math.round(medianHeight / storeyHeightModule))
       : null;
-    const effectiveStoreys = manuals.storeys ?? baseAutomaticStoreys;
+    const automaticGrossFloorArea = roofArea !== null && automaticStoreys !== null
+      ? roundToStep(roofArea * automaticStoreys, 10)
+      : null;
+    const automaticUsableFloorArea = automaticGrossFloorArea !== null
+      ? roundToStep((automaticGrossFloorArea * usableFloorAreaFactor) / 100, 5)
+      : null;
+    const automaticHeatedFloorArea = automaticUsableFloorArea;
 
-    // Nachgelagerte automatische Werte folgen dem jeweils verwendeten vorgelagerten Wert.
-    // Eine manuelle BGF unterbricht daher die Kette erst ab BGF; eine manuelle NFL erst ab NFL.
-    const automaticGrossFloorArea = roofArea !== null && effectiveStoreys !== null
+    // Verwendete Kette. Eine manuelle Eingabe unterbricht nur die nachgelagerte verwendete Kette.
+    const effectiveStoreys = manuals.storeys ?? automaticStoreys;
+    const derivedGrossFloorArea = roofArea !== null && effectiveStoreys !== null
       ? roundToStep(roofArea * effectiveStoreys, 10)
       : null;
-    const effectiveGrossFloorArea = manuals.grossFloorArea ?? automaticGrossFloorArea;
-    const automaticUsableFloorArea = effectiveGrossFloorArea !== null
+    const effectiveGrossFloorArea = manuals.grossFloorArea ?? derivedGrossFloorArea;
+    const derivedUsableFloorArea = effectiveGrossFloorArea !== null
       ? roundToStep((effectiveGrossFloorArea * usableFloorAreaFactor) / 100, 5)
       : null;
+    const effectiveUsableFloorArea = manuals.usableFloorArea ?? derivedUsableFloorArea;
 
-    // Die beheizte Nutzfläche bleibt vorerst eine unabhängige Orientierungsschätzung.
-    // Sie reagiert bewusst noch nicht auf manuelle Änderungen von Geschoßen, BGF oder NFL.
-    const baseAutomaticGrossFloorArea = roofArea !== null && baseAutomaticStoreys !== null
-      ? roundToStep(roofArea * baseAutomaticStoreys, 10)
-      : null;
-    const automaticHeatedFloorArea = baseAutomaticGrossFloorArea !== null
-      ? roundToStep((baseAutomaticGrossFloorArea * usableFloorAreaFactor) / 100, 5)
-      : null;
+    // Beheizte Nutzfläche darf die verwendete Nutzfläche nie überschreiten.
+    let heatedFloorAreaWasLimited = false;
+    let requestedHeatedFloorArea = manuals.heatedFloorArea;
+    if (requestedHeatedFloorArea !== null && effectiveUsableFloorArea !== null && requestedHeatedFloorArea > effectiveUsableFloorArea) {
+      requestedHeatedFloorArea = effectiveUsableFloorArea;
+      manuals.heatedFloorArea = requestedHeatedFloorArea;
+      setInputValue('manualHeatedFloorAreaValue', requestedHeatedFloorArea);
+      heatedFloorAreaWasLimited = true;
+    }
+    const derivedHeatedFloorArea = effectiveUsableFloorArea;
+    const effectiveHeatedFloorArea = requestedHeatedFloorArea ?? derivedHeatedFloorArea;
 
     const automaticExteriorWall = perimeter !== null && medianHeight !== null
       ? roundToStep(perimeter * medianHeight, 10)
@@ -284,46 +294,47 @@
       ? roundToStep((automaticExteriorWall * windowShare) / 100, 5)
       : null;
     const effectiveRoofPitch = manuals.roofPitch;
-    const automaticRoofSlopeArea = roofArea !== null && effectiveRoofPitch !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
+    const derivedRoofSlopeArea = roofArea !== null && effectiveRoofPitch !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
       ? roundToStep(roofArea / Math.cos((effectiveRoofPitch * Math.PI) / 180), 10)
       : null;
-    const volumeFootprint = effectiveGrossFloorArea !== null && effectiveStoreys !== null && effectiveStoreys > 0
-      ? effectiveGrossFloorArea / effectiveStoreys
-      : roofArea;
-    const automaticVolume = volumeFootprint !== null && medianHeight !== null
-      ? roundToStep(volumeFootprint * medianHeight, 10)
+
+    // Äußeres geometrisches Bruttovolumen: unabhängig von BGF und Geschoßzahl.
+    const automaticVolume = roofArea !== null && medianHeight !== null
+      ? roundToStep(roofArea * medianHeight, 10)
       : null;
 
-    const automatic = {
-      storeys: baseAutomaticStoreys,
-      grossFloorArea: automaticGrossFloorArea,
-      usableFloorArea: automaticUsableFloorArea,
-      heatedFloorArea: automaticHeatedFloorArea,
-      exteriorWall: automaticExteriorWall,
-      windowArea: automaticWindowArea,
-      topFloorArea: automaticTopFloor,
-      basementArea: automaticBasement,
-      roofPitch: null,
-      roofSlopeArea: automaticRoofSlopeArea,
-      volume: automaticVolume,
+    const definitions = {
+      storeys: { automatic: automaticStoreys, derived: automaticStoreys, effective: effectiveStoreys },
+      grossFloorArea: { automatic: automaticGrossFloorArea, derived: derivedGrossFloorArea, effective: effectiveGrossFloorArea },
+      usableFloorArea: { automatic: automaticUsableFloorArea, derived: derivedUsableFloorArea, effective: effectiveUsableFloorArea },
+      heatedFloorArea: { automatic: automaticHeatedFloorArea, derived: derivedHeatedFloorArea, effective: effectiveHeatedFloorArea },
+      exteriorWall: { automatic: automaticExteriorWall, derived: automaticExteriorWall, effective: manuals.exteriorWall ?? automaticExteriorWall },
+      windowArea: { automatic: automaticWindowArea, derived: automaticWindowArea, effective: manuals.windowArea ?? automaticWindowArea },
+      topFloorArea: { automatic: automaticTopFloor, derived: automaticTopFloor, effective: manuals.topFloorArea ?? automaticTopFloor },
+      basementArea: { automatic: automaticBasement, derived: automaticBasement, effective: manuals.basementArea ?? automaticBasement },
+      roofPitch: { automatic: null, derived: null, effective: manuals.roofPitch },
+      roofSlopeArea: { automatic: derivedRoofSlopeArea, derived: derivedRoofSlopeArea, effective: manuals.roofSlopeArea ?? derivedRoofSlopeArea },
+      volume: { automatic: automaticVolume, derived: automaticVolume, effective: manuals.volume ?? automaticVolume },
     };
 
     const result = {
       storeyHeightModule,
       usableFloorAreaFactor,
       windowSharePercent: windowShare,
+      heatedFloorAreaWasLimited,
       fields: {},
     };
 
     estimateFieldConfig().forEach((config) => {
+      const definition = definitions[config.key] ?? { automatic: null, derived: null, effective: null };
       const manual = manuals[config.key];
-      const automaticValue = automatic[config.key] ?? null;
       result.fields[config.key] = {
-        automatic: automaticValue,
+        automatic: definition.automatic,
+        derived: definition.derived,
         manual,
-        effective: manual ?? automaticValue,
+        effective: definition.effective,
         unit: config.unit,
-        source: manual !== null ? 'manual' : 'automatic',
+        source: manual !== null ? (config.key === 'heatedFloorArea' && heatedFloorAreaWasLimited ? 'manual-limited' : 'manual') : 'automatic',
       };
     });
     return result;
@@ -338,9 +349,16 @@
       if (effective) {
         effective.textContent = config.format(item.effective);
         effective.classList.remove('estimate-used', 'is-manual', 'is-auto');
-        if (item.effective !== null) effective.classList.add('estimate-used', item.source === 'manual' ? 'is-manual' : 'is-auto');
+        if (item.effective !== null) effective.classList.add('estimate-used', item.source.startsWith('manual') ? 'is-manual' : 'is-auto');
       }
     });
+    const constraintNote = $('heatedFloorAreaConstraintNote');
+    if (constraintNote) {
+      constraintNote.hidden = !data.heatedFloorAreaWasLimited;
+      constraintNote.textContent = data.heatedFloorAreaWasLimited
+        ? 'Die beheizte Nutzfläche wurde auf die verwendete Nutzfläche begrenzt. Sie kann die Nutzfläche nicht überschreiten.'
+        : '';
+    }
   }
 
   function geometryEstimatesShared() {
@@ -349,14 +367,14 @@
       storeys: ['storeysAboveGround', 'Geschoße', 'Medianhöhe / Höhenmodul, ganzzahlig gerundet'],
       grossFloorArea: ['grossFloorArea', 'm²', 'Dachprojektion × verwendete oberirdische Geschoße'],
       usableFloorArea: ['usableFloorArea', 'm²', 'verwendete BGF × Nutzflächenfaktor'],
-      heatedFloorArea: ['heatedFloorArea', 'm²', 'ursprüngliche automatische Nutzfläche als unabhängige Erstannahme'],
+      heatedFloorArea: ['heatedFloorArea', 'm²', 'verwendete Nutzfläche; manuell höchstens bis zur Nutzfläche'],
       exteriorWall: ['exteriorWallGrossArea', 'm²', 'Gebäudeumfang × Medianhöhe'],
       windowArea: ['windowArea', 'm²', 'Außenwandfläche × Fensteranteil'],
       topFloorArea: ['topFloorArea', 'm²', 'Gebäudegrundfläche'],
       basementArea: ['basementCeilingArea', 'm²', 'Gebäudegrundfläche'],
       roofPitch: ['roofPitch', '°', 'manuelle Orientierung'],
       roofSlopeArea: ['roofSlopeArea', 'm²', 'Dachprojektion / cos(Dachneigung)'],
-      volume: ['grossVolume', 'm³', 'verwendete BGF / verwendete Geschoße × Medianhöhe'],
+      volume: ['grossVolume', 'm³', 'Dachprojektion × Medianhöhe; äußeres geometrisches Bruttovolumen'],
     };
 
     const geometry = {
@@ -377,9 +395,10 @@
       }),
     };
 
+    geometry.reference = {};
     Object.entries(data.fields).forEach(([key, item]) => {
       const [targetKey, unit, method] = fieldMap[key];
-      geometry[targetKey] = field(item.automatic, {
+      geometry[targetKey] = field(item.derived, {
         unit,
         origin: model.ORIGIN.DERIVED,
         source: 'Standortpass',
@@ -387,6 +406,13 @@
         quality: 'Orientierungswert',
         manualValue: item.manual,
         manualSource: 'Nutzereingabe Standortpass',
+      });
+      geometry.reference[targetKey] = field(item.automatic, {
+        unit,
+        origin: model.ORIGIN.DERIVED,
+        source: 'Standortpass Automatikreferenz',
+        method: `${method} · ohne manuelle Korrekturen`,
+        quality: 'Automatische Referenz',
       });
     });
 
