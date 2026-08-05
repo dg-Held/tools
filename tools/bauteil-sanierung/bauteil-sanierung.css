@@ -1019,7 +1019,7 @@
   .chart-marker--ambitious { fill: #d69d2f; }
 }
 
-/* V0.4 – klarere Ergebnisdarstellung und Fenstervarianten */
+/* V0.5 – Finalisierung Fenster, Haustür, Pflichtfelder und eigene SVGs */
 .component-selector {
   grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
 }
@@ -1077,3 +1077,26 @@
     object-fit: contain;
   }
 }
+
+
+/* V0.5 – gemeinsame Basisfelder und Pflichtstatus */
+.renovation-workspace [hidden] { display: none !important; }
+.input-grid--basis { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
+#uValueField.is-required-missing {
+  padding: .65rem;
+  border: 1px solid rgba(179, 68, 108, .55);
+  border-radius: var(--radius-md);
+  background: var(--color-secondary-soft);
+}
+#uValueField.is-required-missing input {
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 2px rgba(179, 68, 108, .12);
+}
+#uValueField.is-required-missing .required-message {
+  display: block !important;
+  margin-top: .3rem;
+  color: var(--color-secondary-dark);
+  font-weight: 750;
+}
+.impact-house.has-custom-artwork .impact-fallback-icon { display: none !important; }
+.impact-house.has-custom-artwork .impact-custom-image { display: block !important; }

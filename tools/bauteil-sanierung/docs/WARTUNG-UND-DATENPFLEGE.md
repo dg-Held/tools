@@ -1,7 +1,7 @@
 # Bauteil & Sanierung – Wartung und Datenpflege
 
 **Stand:** 05.08.2026  
-**Toolstand:** V0.4
+**Toolstand:** V0.5
 
 ## 1. Zentrale Dateien
 
@@ -47,7 +47,7 @@ Die BAUTEIL-DATEN-MASTER-Datei pflegt insbesondere:
 - sonstige Förderung,
 - manuelle Kosten- und Annahmenkorrekturen.
 
-## 3. Fensterdaten
+## 3. Fenster- und Haustürdaten
 
 Austauschvarianten:
 
@@ -55,7 +55,7 @@ Austauschvarianten:
 shared/data/measures/exchange-variants.json
 ```
 
-Aktiv sind Basis-Austausch, empfohlener Mindeststandard und ambitionierte Variante. Die konkreten Richtpreise werden über das Kostenmodell `window_replace` den Stufen niedrig, mittel und hoch zugeordnet.
+Für Fenster und Haustür sind Basis-Austausch, empfohlener Mindeststandard und ambitionierte Variante aktiv. Die konkreten Richtpreise werden über das Kostenmodell `window_replace` den Stufen niedrig, mittel und hoch zugeordnet.
 
 Nutzungsdauer und Instandhaltung:
 
@@ -64,7 +64,9 @@ shared/data/standards/economics/component-lifetimes.json
 ```
 
 - Holzrahmen: 30 Jahre, 1,0 %/a,
-- Aluminiumrahmen: 30 Jahre, 0,5 %/a.
+- Aluminiumrahmen: 30 Jahre, 0,5 %/a,
+- Kunststoff und Holz-Aluminium: gekennzeichnete Projekt-Fallbacks,
+- Haustür: gekennzeichneter Projekt-Fallback.
 
 Bei Änderungen müssen Quelle, Ausgabe, Status und Versionsdatum gemeinsam aktualisiert werden.
 
@@ -79,7 +81,7 @@ Die Nutzungsdauerwerte der Dämmmaßnahmen bleiben als `project-fallback` gekenn
 - Kostenband unten ≤ Mitte ≤ oben.
 - Sowiesokosten dürfen Vollkosten nicht überschreiten.
 - Fenster werden pro m² Fensterfläche gerechnet.
-- Außentüren benötigen später eine eigene Stück-/Flächenlogik und sind noch nicht aktiviert.
+- Haustüren werden kostenseitig pro Stück und energetisch über die Türfläche gerechnet.
 
 ## 6. Eigene SVG-Grafiken
 
@@ -103,7 +105,7 @@ Fachformeln dürfen nicht in der Oberfläche dupliziert werden. Änderungen ben�
 1. Versionsanhebung,
 2. Syntaxprüfung,
 3. Regressionstest Dämmmaßnahmen,
-4. Regressionstest Fenster,
+4. Regressionstest Fenster und Haustür,
 5. Prüfung von Projektimport/-export,
 6. Druckprüfung,
 7. Dokumentationsupdate.
@@ -115,8 +117,13 @@ Fachformeln dürfen nicht in der Oberfläche dupliziert werden. Änderungen ben�
 3. Ziel-U-Werte logisch ordnen.
 4. Kostenstufen niedrig ≤ mittel ≤ hoch.
 5. Fensterfläche und Bestands-U-Wert aus Energiefluss übernehmen.
-6. Holz-/Aluminium-Instandhaltung prüfen.
-7. Kostenoptimum und Amortisation getrennt prüfen.
-8. Förderungen als Fixbetrag und Prozentwerte testen.
-9. Ausdruck ohne vollständige Variantentabelle prüfen.
-10. Eigene SVGs und Fallback-Grafik testen.
+6. Rahmenmaterialien und Herkunft der Nutzungsdauer prüfen.
+7. Haustürkosten über Stückzahl und Energie über Fläche prüfen.
+8. Kostenoptimum und Amortisation getrennt prüfen.
+9. Förderungen als Fixbetrag und Prozentwerte testen.
+10. Ausdruck ohne vollständige Variantentabelle prüfen.
+11. Eigene SVGs und Fallback-Grafik testen.
+
+## 9. Baujahreswerte und Geometrie
+
+Bestands-U-Wert-Vorschläge werden aus `shared/data/building/existing-u-values.json` geladen. Neue Bauteile benötigen dort eine eindeutige Komponentenzuordnung. Die gemeinsame BGF→Volumen-Ableitung liegt in `shared/js/project-store.js`; sie darf nicht noch einmal lokal in anderen Tools dupliziert werden. Der Standortpass zeigt denselben Rechenweg.

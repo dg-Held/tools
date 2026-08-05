@@ -60,9 +60,14 @@
       id: 'windows', dataId: 'window_external', label: 'Fenster', short: 'Fenster', supported: true,
       areaPath: 'building.geometry.windowArea', uPath: 'building.thermal.envelope.windows.uValue',
       energyFlowId: 'windows', targetId: 'window_external', costModelId: 'window_replace',
-      boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: false, measureType: 'exchange',
+      boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: false, measureType: 'exchange', costQuantityMode: 'area',
     },
-    { id: 'doors', dataId: 'door_external', label: 'Außentür', short: 'Tür', supported: false },
+    {
+      id: 'doors', dataId: 'door_external', label: 'Haustür / Außentür', short: 'Haustür', supported: true,
+      areaPath: 'building.geometry.doorArea', uPath: 'building.thermal.envelope.doors.uValue',
+      energyFlowId: 'doors', targetId: 'door_external', costModelId: 'door_replace',
+      boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: false, measureType: 'exchange', costQuantityMode: 'count',
+    },
   ];
 
   const ORIGIN_LABELS = {
@@ -91,6 +96,7 @@
   let financeConfig = null;
   let energyPricesConfig = null;
   let emissionFactorsConfig = null;
+  let existingUValuesConfig = null;
   let activeComponentId = 'exteriorWall';
   let variants = [];
   let enrichedVariants = [];
@@ -180,6 +186,23 @@
     return component?.measureType === 'exchange';
   }
 
+  function isWindowComponent(component = activeComponent()) {
+    return component?.id === 'windows';
+  }
+
+  function isDoorComponent(component = activeComponent()) {
+    return component?.id === 'doors';
+  }
+
+  function frameMaterialText(value) {
+    return ({
+      wood: 'Holz',
+      aluminium: 'Aluminium',
+      plastic: 'Kunststoff',
+      wood_aluminium: 'Holz-Aluminium',
+    })[value] ?? 'nicht festgelegt';
+  }
+
   function exchangeConfigFor(component = activeComponent()) {
     return exchangeVariantsConfig?.components?.[component.targetId] ?? null;
   }
@@ -242,11 +265,74 @@
     input.value = digits === null ? String(value) : Number(value).toFixed(digits);
   }
 
+  function constructionPeriodForYear(year) {
+    const numericYear = Number(year);
+    if (!Number.isFinite(numericYear)) return null;
+    return (existingUValuesConfig?.periods ?? []).find((period) => {
+      const minimum = period.year_min ?? Number.NEGATIVE_INFINITY;
+      const maximum = period.year_max ?? Number.POSITIVE_INFINITY;
+      return numericYear >= minimum && numericYear <= maximum;
+    }) ?? null;
+  }
+
+  function constructionComponentId(component = activeComponent()) {
+    return component.id === 'doors' ? 'exteriorDoor' : component.id;
+  }
+
+  function constructionUValueSuggestion(component, year) {
+    const period = constructionPeriodForYear(year);
+    if (!period) return null;
+    const componentId = constructionComponentId(component);
+    const value = finite(existingUValuesConfig?.components?.[componentId]?.values?.[period.id], null);
+    return value === null ? null : { value, period };
+  }
+
+  function ensureConstructionUValueCandidate(project, component) {
+    if (!component.uPath) return project;
+    const year = valueAt(project, 'building.profile.constructionYear', null);
+    const suggestion = constructionUValueSuggestion(component, year);
+    const fieldValue = getPath(project, component.uPath, null);
+    const currentFallback = fieldValue?.candidates?.[model.ORIGIN.FALLBACK] ?? null;
+    const isConstructionFallback = String(currentFallback?.source ?? '').startsWith('U-Wert-Vorschlag · Bauperiode');
+
+    if (suggestion) {
+      const source = `U-Wert-Vorschlag · Bauperiode ${suggestion.period.label}`;
+      if (finite(currentFallback?.value, null) !== suggestion.value || currentFallback?.source !== source) {
+        suppressProjectRender = true;
+        store.setFieldCandidate(component.uPath, model.ORIGIN.FALLBACK, suggestion.value, {
+          unit: 'W/m²K',
+          source,
+          method: 'Bestandsvorschlag nach Jahr der Baubewilligung',
+          dataDate: existingUValuesConfig?.data_date ?? null,
+          quality: 'Beratungsannahme; tatsächlichen Aufbau und Sanierungsstand prüfen',
+        });
+        suppressProjectRender = false;
+        return store.get();
+      }
+    } else if (isConstructionFallback) {
+      suppressProjectRender = true;
+      store.clearFieldCandidate(component.uPath, model.ORIGIN.FALLBACK);
+      suppressProjectRender = false;
+      return store.get();
+    }
+    return project;
+  }
+
   function componentProjectValues(project, component) {
     const draft = projectDraft(project, component.id);
     const areaInfo = component.areaPath ? describeAt(project, component.areaPath) : { value: draft.areaM2 ?? null, origin: null, source: null };
     const uInfo = component.uPath ? describeAt(project, component.uPath) : { value: draft.existingUValue ?? null, origin: null, source: null };
     return { areaInfo, uInfo, draft };
+  }
+
+  function updateRequiredInputState() {
+    const uValue = inputNumber('existingUValue', null);
+    const missing = !(uValue > 0);
+    const host = $('uValueField');
+    host?.classList.toggle('is-required-missing', missing);
+    if ($('existingUValue')) $('existingUValue').setAttribute('aria-invalid', missing ? 'true' : 'false');
+    if ($('uValueRequiredMessage')) $('uValueRequiredMessage').hidden = !missing;
+    if (missing && $('uValueSource')) $('uValueSource').textContent = 'Bitte U-Wert eingeben oder Baujahr verwenden.';
   }
 
   function energyFlowComponent(project, component) {
@@ -302,40 +388,75 @@
       doors: 'aussentuer',
     };
     const slug = slugs[component.id] ?? 'bauteil';
-    const before = $('impactBeforeImage');
-    const after = $('impactAfterImage');
     const pairs = [
-      [before, `../../assets/svg/tools/bauteil-sanierung/bestand-${slug}.svg`],
-      [after, `../../assets/svg/tools/bauteil-sanierung/sanierung-${slug}.svg`],
+      [$('impactBeforeImage'), `../../assets/svg/tools/bauteil-sanierung/bestand-${slug}.svg`],
+      [$('impactAfterImage'), `../../assets/svg/tools/bauteil-sanierung/sanierung-${slug}.svg`],
     ];
     pairs.forEach(([image, src]) => {
       if (!image) return;
-      const fallback = image.nextElementSibling;
+      const host = image.closest('.impact-house');
+      const fallback = host?.querySelector('.impact-fallback-icon') ?? image.nextElementSibling;
+      host?.classList.remove('has-custom-artwork');
       image.hidden = true;
-      if (fallback) fallback.hidden = false;
-      image.onload = () => { image.hidden = false; if (fallback) fallback.hidden = true; };
-      image.onerror = () => { image.hidden = true; if (fallback) fallback.hidden = false; };
-      image.src = src;
+      image.style.display = 'none';
+      if (fallback) {
+        fallback.hidden = false;
+        fallback.style.display = '';
+      }
+      image.onload = () => {
+        image.hidden = false;
+        image.style.display = 'block';
+        host?.classList.add('has-custom-artwork');
+        if (fallback) {
+          fallback.hidden = true;
+          fallback.style.display = 'none';
+        }
+      };
+      image.onerror = () => {
+        image.hidden = true;
+        image.style.display = 'none';
+        host?.classList.remove('has-custom-artwork');
+        if (fallback) {
+          fallback.hidden = false;
+          fallback.style.display = '';
+        }
+      };
+      image.src = `${src}?v=6`;
     });
   }
 
   function renderComponentMode(component = activeComponent()) {
     const exchange = isExchangeComponent(component);
+    const windowComponent = isWindowComponent(component);
+    const doorComponent = isDoorComponent(component);
     if ($('lambdaField')) $('lambdaField').hidden = exchange;
-    if ($('windowFrameField')) $('windowFrameField').hidden = !exchange;
+    if ($('windowFrameField')) $('windowFrameField').hidden = !windowComponent;
+    if ($('exchangeCountField')) $('exchangeCountField').hidden = !doorComponent;
     if ($('lambdaCustomWrap')) $('lambdaCustomWrap').hidden = exchange || $('lambdaSelect').value !== 'custom';
     if ($('baseCostField')) $('baseCostField').hidden = exchange;
     if ($('variableCostField')) $('variableCostField').hidden = exchange;
     document.querySelectorAll('.window-cost-field').forEach((field) => { field.hidden = !exchange; });
-    if ($('maintenanceField')) $('maintenanceField').hidden = !exchange;
-    if ($('variantSectionTitle')) $('variantSectionTitle').textContent = exchange ? 'Fenstervarianten automatisch untersuchen' : 'Dämmstandard automatisch untersuchen';
+    if ($('maintenanceField')) $('maintenanceField').hidden = !windowComponent;
+    if ($('variantSectionTitle')) $('variantSectionTitle').textContent = exchange ? `${component.label}-Varianten automatisch untersuchen` : 'Dämmstandard automatisch untersuchen';
     if ($('variantModeBadge')) $('variantModeBadge').textContent = exchange ? 'diskrete Varianten' : '2-cm-Schritte';
     if ($('variantPrimaryHeader')) $('variantPrimaryHeader').textContent = exchange ? 'Variante' : 'Dämmung';
+
+    const unit = doorComponent ? '€/Stk.' : '€/m²';
+    const prefix = doorComponent ? 'Haustür' : 'Fenster';
+    if ($('exchangeBasicCostLabel')) $('exchangeBasicCostLabel').textContent = `${prefix} Basis-Austausch`;
+    if ($('exchangeRecommendedCostLabel')) $('exchangeRecommendedCostLabel').textContent = `${prefix} Mindeststandard`;
+    if ($('exchangeAmbitiousCostLabel')) $('exchangeAmbitiousCostLabel').textContent = `${prefix} ambitioniert`;
+    ['exchangeBasicCostUnit', 'exchangeRecommendedCostUnit', 'exchangeAmbitiousCostUnit'].forEach((id) => { if ($(id)) $(id).textContent = unit; });
+    if ($('sunkCostUnit')) $('sunkCostUnit').textContent = unit;
     updateImpactArtwork(component);
   }
 
   function costModelFor(component = activeComponent()) {
     return (costConfig?.models ?? []).find((item) => item.id === component.costModelId) ?? null;
+  }
+
+  function costUnitFor(component = activeComponent()) {
+    return isDoorComponent(component) ? '€/Stk.' : '€/m²';
   }
 
   function lifetimeFor(component = activeComponent(), frameMaterial = null) {
@@ -426,17 +547,29 @@
   function renderFromProject(project) {
     if (suppressProjectRender) return;
     const component = activeComponent();
+    project = ensureConstructionUValueCandidate(project, component);
     const { areaInfo, uInfo, draft } = componentProjectValues(project, component);
     const target = targetForComponent(component);
     const climate = climateContext(project);
     const flowComponent = energyFlowComponent(project, component);
     const financeDefaults = financeConfig?.defaults ?? FALLBACK_FINANCE;
-    const frameMaterial = draft.frameMaterial ?? exchangeConfigFor(component)?.default_frame_material ?? 'wood';
+    const frameMaterial = isWindowComponent(component)
+      ? (draft.frameMaterial ?? exchangeConfigFor(component)?.default_frame_material ?? 'wood')
+      : null;
     const costDefaults = defaultCostValues(component, frameMaterial);
     renderComponentMode(component);
 
+    const constructionYearInfo = describeAt(project, 'building.profile.constructionYear');
+    setInput('constructionYear', constructionYearInfo.value, 0);
+    $('constructionYearSource').textContent = constructionYearInfo.value !== null
+      ? `${ORIGIN_LABELS[constructionYearInfo.origin] ?? 'Projektwert'}${constructionYearInfo.source ? ` · ${constructionYearInfo.source}` : ''}`
+      : 'optional; dient als U-Wert-Vorschlag';
+    if ($('constructionYear')) $('constructionYear').dataset.userEdited = 'false';
+
     setInput('areaM2', areaInfo.value, 0);
     setInput('existingUValue', uInfo.value, 2);
+    if ($('areaM2')) $('areaM2').dataset.userEdited = 'false';
+    if ($('existingUValue')) $('existingUValue').dataset.userEdited = 'false';
     $('areaSource').textContent = areaInfo.value !== null
       ? `${ORIGIN_LABELS[areaInfo.origin] ?? 'Projektwert'}${areaInfo.source ? ` · ${areaInfo.source}` : ''}`
       : 'noch kein Wert vorhanden';
@@ -446,7 +579,8 @@
 
     if (isExchangeComponent(component)) {
       if (selectedExchangeVariantId === null && draft.selectedExchangeVariantId) selectedExchangeVariantId = draft.selectedExchangeVariantId;
-      $('windowFrameMaterial').value = frameMaterial;
+      if (isWindowComponent(component)) $('windowFrameMaterial').value = frameMaterial;
+      if (isDoorComponent(component)) setInput('exchangeCount', draft.exchangeCount ?? 1, 0);
     } else {
       if (selectedThicknessCm === null && draft.selectedThicknessCm !== null && draft.selectedThicknessCm !== undefined) selectedThicknessCm = finite(draft.selectedThicknessCm, null);
       const lambdaValue = finite(draft.lambdaWmk, 0.035);
@@ -530,7 +664,7 @@
     $('costDataStatus').textContent = costDefaults.baseCostEurM2 !== null ? modelStatus : 'Kostenwerte ergänzen';
     const costRange = costDefaults.model?.range_eur_m2;
     $('costSummaryModel').textContent = costRange?.low !== undefined && costRange?.high !== undefined
-      ? `ca. ${formatNumber(costRange.low)}–${formatNumber(costRange.high)} €/m²`
+      ? `ca. ${formatNumber(costRange.low)}–${formatNumber(costRange.high)} ${costUnitFor(component)}`
       : costDefaults.baseCostEurM2 !== null ? 'Richtwert automatisch geladen' : 'noch kein Richtwert';
     $('costSummaryModelNote').textContent = `${costDefaults.model?.label ?? component.label} · ${modelStatus}`;
     $('costSummarySunk').textContent = $('renewalContext').value === 'renewal_due' && inputNumber('sunkCostEurM2', 0) > 0
@@ -539,6 +673,7 @@
     $('costSummaryFinance').textContent = 'Standardannahmen geladen';
     $('costSummaryFinanceNote').textContent = `${formatNumber(inputNumber('periodYears', 30))} Jahre · ${formatNumber(inputNumber('interestRatePercent', 3), 1)} % Zins · Sensitivität empfohlen`;
 
+    updateRequiredInputState();
     renderGeometryStatus(project);
     const addressInput = $('renAddressInput');
     if (addressInput && document.activeElement !== addressInput) addressInput.value = project.project?.addressLabel || '';
@@ -563,9 +698,11 @@
     return {
       component,
       areaM2: inputNumber('areaM2', 0),
+      constructionYear: inputNumber('constructionYear', null),
       existingUValue: inputNumber('existingUValue', 0),
       lambdaWmk: selectedLambda,
-      frameMaterial: $('windowFrameMaterial')?.value ?? null,
+      frameMaterial: isWindowComponent(component) ? ($('windowFrameMaterial')?.value ?? null) : null,
+      exchangeCount: isDoorComponent(component) ? Math.max(1, Math.round(inputNumber('exchangeCount', 1))) : null,
       annualEfficiency: inputNumber('annualEfficiency', 0.85),
       indoorTemperatureC: inputNumber('indoorTemperature', 20),
       boundaryFactor: inputNumber('boundaryFactor', component.boundaryFactor),
@@ -582,7 +719,7 @@
       windowAmbitiousCostEurM2: measureCore.roundToStep(inputNumber('windowAmbitiousCostEurM2', null), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
       sunkCostEurM2: measureCore.roundToStep(inputNumber('sunkCostEurM2', 0), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
       lifetimeYears: inputNumber('lifetimeYears', null),
-      maintenancePercent: inputNumber('maintenancePercent', 0),
+      maintenancePercent: isWindowComponent(component) ? inputNumber('maintenancePercent', 0) : 0,
       energyCarrierId: $('energyCarrierSelect').value,
       energyPriceEurKwh: inputNumber('energyPriceEurKwh', null),
       periodYears: inputNumber('periodYears', FALLBACK_FINANCE.period_years),
@@ -599,7 +736,7 @@
     const modelValue = costModelFor(inputs.component);
     const costRange = modelValue?.range_eur_m2;
     $('costSummaryModel').textContent = costRange?.low !== undefined && costRange?.high !== undefined
-      ? `ca. ${formatNumber(costRange.low)}–${formatNumber(costRange.high)} €/m²`
+      ? `ca. ${formatNumber(costRange.low)}–${formatNumber(costRange.high)} ${costUnitFor(inputs.component)}`
       : inputs.baseCostEurM2 !== null ? 'Richtwert automatisch geladen' : 'noch kein Richtwert';
     $('costSummaryModelNote').textContent = modelValue?.label ?? inputs.component.label;
     $('costSummarySunk').textContent = inputs.renewalContext === 'renewal_due' && (inputs.sunkCostEurM2 ?? 0) > 0
@@ -646,7 +783,7 @@
         : 0;
       return {
         id: item.id,
-        label: isExchangeComponent(inputs.component) ? (item.label ?? 'Fenstervariante') : `${item.thicknessCm} cm`,
+        label: isExchangeComponent(inputs.component) ? (item.label ?? `${inputs.component.label}-Variante`) : `${item.thicknessCm} cm`,
         capitalComponents,
         consumptionCosts: [{
           id: 'component-energy',
@@ -691,6 +828,7 @@
 
     variants = measureCore.createExchangeVariants({
       areaM2: inputs.areaM2,
+      costQuantity: isDoorComponent(inputs.component) ? inputs.exchangeCount : inputs.areaM2,
       existingUValue: inputs.existingUValue,
       variants: definitions,
       existingLossKwh: inputs.existingLossKwh,
@@ -739,7 +877,7 @@
     renderVariantsTable(inputs, recommendation);
     renderCharts(inputs, recommendation, economic, ambitious);
     buildPrintReport(inputs);
-    $('resultStatus').textContent = enrichedVariants.some((item) => item.economics.available) ? 'Fenster + Wirtschaftlichkeit' : 'Fenstervarianten';
+    $('resultStatus').textContent = enrichedVariants.some((item) => item.economics.available) ? `${inputs.component.label} + Wirtschaftlichkeit` : `${inputs.component.label}-Varianten`;
   }
 
   function calculateAndRender() {
@@ -1010,13 +1148,15 @@
 
     const benefits = coBenefitsConfig?.components?.[inputs.component.targetId] ?? {};
     const surfaceGain = oldSurface !== null && newSurface !== null ? Math.max(0, newSurface - oldSurface) : null;
-    const fallbackComfort = isExchangeComponent(inputs.component)
+    const fallbackComfort = isWindowComponent(inputs.component)
       ? 'Wärmere Innenoberflächen und weniger Kaltluftabfall können die Behaglichkeit in Fensternähe verbessern.'
+      : isDoorComponent(inputs.component)
+        ? 'Eine besser gedämmte Haustür kann kalte Oberflächen, Zugerscheinungen und Wärmeverluste im Eingangsbereich reduzieren.'
       : null;
     $('comfortText').textContent = [
       benefits.winter_comfort ? `Winterkomfort: ${benefits.winter_comfort}.` : fallbackComfort,
       surfaceGain !== null ? `Innere Oberfläche überschlägig um ${formatNumber(surfaceGain, 1)} K wärmer.` : null,
-      benefits.moisture ? `${benefits.moisture}.` : isExchangeComponent(inputs.component) ? 'Das Kondensatrisiko an der Regeloberfläche sinkt; Anschlussfugen und Wärmebrücken bleiben separat zu prüfen.' : null,
+      benefits.moisture ? `${benefits.moisture}.` : isWindowComponent(inputs.component) ? 'Das Kondensatrisiko an der Regeloberfläche sinkt; Anschlussfugen und Wärmebrücken bleiben separat zu prüfen.' : isDoorComponent(inputs.component) ? 'Türanschlüsse, Schwelle, Luftdichtheit und Wärmebrücken bleiben separat zu prüfen.' : null,
       'Wärmebrücken und Anschlüsse bleiben separat zu planen.',
     ].filter(Boolean).join(' ');
   }
@@ -1101,7 +1241,7 @@
     const labels = Object.fromEntries(enrichedVariants.map((item) => [exchange ? item.order : item.thicknessCm, exchange ? (item.shortLabel ?? item.label) : `${formatNumber(item.thicknessCm)} cm`]));
     const markerX = (item) => item ? (exchange ? item.order : item.thicknessCm) : null;
     $('costChart').innerHTML = costPoints.length ? svgLineChart(costPoints, {
-      ariaLabel: exchange ? 'Gesamtkosten nach Fenstervariante' : 'Gesamtkosten nach Dämmdicke',
+      ariaLabel: exchange ? `Gesamtkosten nach ${inputs.component.label}-Variante` : 'Gesamtkosten nach Dämmdicke',
       yFormatter: (value) => `${formatNumber(roundDisplay(value, 500) / 1000, 1)} T€`,
       xTicks: exchange ? costPoints.map((point) => point.x) : undefined,
       xFormatter: exchange ? (value) => labels[value] ?? String(value) : undefined,
@@ -1115,7 +1255,7 @@
     const paybackItems = enrichedVariants.filter((item) => (exchange ? item.role !== 'reference' : item.thicknessCm > 0) && item.economics.paybackYears !== null);
     const paybackPoints = paybackItems.map((item) => ({ x: exchange ? item.order : item.thicknessCm, y: item.economics.paybackYears }));
     $('paybackChart').innerHTML = paybackPoints.length ? svgLineChart(paybackPoints, {
-      ariaLabel: exchange ? 'Dynamische Amortisationsdauer nach Fenstervariante' : 'Dynamische Amortisationsdauer nach Dämmdicke',
+      ariaLabel: exchange ? `Dynamische Amortisationsdauer nach ${inputs.component.label}-Variante` : 'Dynamische Amortisationsdauer nach Dämmdicke',
       yFormatter: (value) => `${formatNumber(value, 1)} a`,
       xTicks: exchange ? paybackPoints.map((point) => point.x) : undefined,
       xFormatter: exchange ? (value) => labels[value] ?? String(value) : undefined,
@@ -1127,13 +1267,34 @@
     const inputs = currentInputs();
     const component = inputs.component;
     suppressProjectRender = true;
-    if (component.areaPath) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.4' });
-    if (component.uPath) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.4' });
-    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.4' });
-    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.4' });
+
+    const constructionYearInput = $('constructionYear');
+    if (constructionYearInput?.dataset.userEdited === 'true') {
+      if (inputs.constructionYear === null) store.clearFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL);
+      else store.setFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL, Math.round(inputs.constructionYear), { unit: 'Jahr', source: 'Nutzereingabe Bauteil & Sanierung V0.5' });
+      constructionYearInput.dataset.userEdited = 'false';
+    }
+
+    const areaInput = $('areaM2');
+    if (component.areaPath && areaInput?.dataset.userEdited === 'true') {
+      if (inputs.areaM2 > 0) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.5' });
+      else store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL);
+      areaInput.dataset.userEdited = 'false';
+    }
+
+    const uInput = $('existingUValue');
+    if (component.uPath && uInput?.dataset.userEdited === 'true') {
+      if (inputs.existingUValue > 0) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.5' });
+      else store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL);
+      uInput.dataset.userEdited = 'false';
+    }
+
+    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.5' });
+    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.5' });
     writeDraft({
       lambdaWmk: inputs.lambdaWmk,
       frameMaterial: inputs.frameMaterial,
+      exchangeCount: inputs.exchangeCount,
       annualEfficiency: inputs.annualEfficiency,
       indoorTemperatureC: inputs.indoorTemperatureC,
       boundaryFactor: inputs.boundaryFactor,
@@ -1163,7 +1324,9 @@
       selectedThicknessCm,
       selectedExchangeVariantId,
     });
+    ensureConstructionUValueCandidate(store.get(), component);
     suppressProjectRender = false;
+    updateRequiredInputState();
   }
 
   function saveMeasure() {
@@ -1184,7 +1347,7 @@
       status: 'draft-selected',
       existingState: { areaM2: inputs.areaM2, uValue: inputs.existingUValue },
       selectedVariant: isExchangeComponent(inputs.component)
-        ? { id: selected.exchangeId, label: selected.label, uValue: selected.newUValue, frameMaterial: inputs.frameMaterial }
+        ? { id: selected.exchangeId, label: selected.label, uValue: selected.newUValue, frameMaterial: inputs.frameMaterial, count: inputs.exchangeCount }
         : { thicknessCm: selected.thicknessCm, uValue: selected.newUValue, lambdaWmk: inputs.lambdaWmk },
       targetProfile: {
         recommendedUValue: target?.recommended ?? null,
@@ -1196,7 +1359,9 @@
         renewalContext: inputs.renewalContext,
         baseCostEurM2: inputs.baseCostEurM2,
         variableCostEurM2Cm: inputs.variableCostEurM2Cm,
-        windowCostsEurM2: isExchangeComponent(inputs.component) ? {
+        exchangeCosts: isExchangeComponent(inputs.component) ? {
+          unit: costUnitFor(inputs.component),
+          quantity: isDoorComponent(inputs.component) ? inputs.exchangeCount : inputs.areaM2,
           basic: inputs.windowBasicCostEurM2,
           recommended: inputs.windowRecommendedCostEurM2,
           ambitious: inputs.windowAmbitiousCostEurM2,
@@ -1521,10 +1686,12 @@
     const afterArtwork = $('impactAfterImage') && !$('impactAfterImage').hidden
       ? `<img class="print-impact-image" src="${escapeHtml($('impactAfterImage').src)}" alt="">`
       : '';
-    const thirdBasisLabel = isExchangeComponent(inputs.component) ? 'Rahmenmaterial' : 'λ-Wert';
-    const thirdBasisValue = isExchangeComponent(inputs.component)
-      ? (inputs.frameMaterial === 'aluminium' ? 'Aluminium' : 'Holz')
-      : `${formatNumber(inputs.lambdaWmk, 3)} W/mK`;
+    const thirdBasisLabel = isWindowComponent(inputs.component) ? 'Rahmenmaterial' : isDoorComponent(inputs.component) ? 'Anzahl' : 'λ-Wert';
+    const thirdBasisValue = isWindowComponent(inputs.component)
+      ? frameMaterialText(inputs.frameMaterial)
+      : isDoorComponent(inputs.component)
+        ? `${formatNumber(inputs.exchangeCount)} Stk.`
+        : `${formatNumber(inputs.lambdaWmk, 3)} W/mK`;
 
     $('renovationPrintReport').innerHTML = `
       <section class="print-hero">
@@ -1597,6 +1764,7 @@
       calculateAndRender();
     });
     $('windowFrameMaterial').addEventListener('change', () => {
+      if (!isWindowComponent()) return;
       const defaults = defaultCostValues(activeComponent(), $('windowFrameMaterial').value);
       setInput('lifetimeYears', defaults.lifetimeYears, 0);
       setInput('maintenancePercent', defaults.maintenancePercent, 1);
@@ -1648,6 +1816,15 @@
         : 'nicht angesetzt';
     });
 
+    ['constructionYear', 'areaM2', 'existingUValue'].forEach((id) => {
+      const input = $(id);
+      if (!input) return;
+      input.addEventListener('input', () => {
+        input.dataset.userEdited = 'true';
+        updateRequiredInputState();
+      });
+    });
+
     const calculationInputs = document.querySelectorAll('.renovation-workspace input, .renovation-workspace select');
     calculationInputs.forEach((input) => {
       if (['componentSelect', 'selectedVariantSelect', 'lambdaSelect', 'energyCarrierSelect', 'stateFundingMode', 'federalFundingMode', 'otherFundingMode', 'windowFrameMaterial'].includes(input.id)) return;
@@ -1678,7 +1855,7 @@
       ? requested
       : COMPONENTS.some((item) => item.id === stored && item.supported) ? stored : 'exteriorWall';
 
-    [targetsConfig, lambdaConfig, coBenefitsConfig, exchangeVariantsConfig, costConfig, lifetimeConfig, financeConfig, energyPricesConfig, emissionFactorsConfig] = await Promise.all([
+    [targetsConfig, lambdaConfig, coBenefitsConfig, exchangeVariantsConfig, costConfig, lifetimeConfig, financeConfig, energyPricesConfig, emissionFactorsConfig, existingUValuesConfig] = await Promise.all([
       loadJson('measures/envelope-targets.json', { components: {} }),
       loadJson('measures/lambda-values.json', { values: [{ value: 0.035, label: '0,035 W/mK', active: true }] }),
       loadJson('measures/co-benefits.json', { components: {} }),
@@ -1688,6 +1865,7 @@
       loadJson('economics/financial-defaults.json', { defaults: FALLBACK_FINANCE, rounding: {} }),
       loadJson('economics/energy-prices.json', { items: [] }),
       loadJson('emissions/emission-factors.json', { items: [] }),
+      loadJson('building/existing-u-values.json', { periods: [], components: {} }),
     ]);
 
     populateLambdaOptions();

@@ -9,7 +9,7 @@
 <link href="../../shared/css/tokens.css" rel="stylesheet"/>
 <link href="../../shared/css/components.css" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="bauteil-sanierung.css?v=4" rel="stylesheet"/>
+<link href="bauteil-sanierung.css?v=5" rel="stylesheet"/>
 </head>
 <body data-tool-mode="envelope-renovation">
 <header class="site-header no-print">
@@ -25,7 +25,7 @@
 </header>
 <main class="renovation-page">
 <section class="container tool-intro no-print">
-<p class="eyebrow">Tool · Arbeitsversion V0.4</p>
+<p class="eyebrow">Tool · Arbeitsversion V0.5</p>
 <h1>Bauteil &amp; Sanierung</h1>
 <p>Dämm- und Austauschvarianten technisch vergleichen und Mindeststandard, Kostenoptimum, Amortisation, CO₂ sowie Wohnkomfort gemeinsam betrachten. Projektwerte aus dem Energiefluss werden automatisch übernommen.</p>
 </section>
@@ -53,12 +53,14 @@
 <span class="status-chip" id="projectLinkStatus">Projektwerte werden geprüft</span>
 </div>
 <div class="component-selector" id="componentSelector" role="list" aria-label="Bauteil auswählen"></div>
-<div class="input-grid input-grid--four">
+<div class="input-grid input-grid--basis">
 <label><span>Bauteil</span><select id="componentSelect"></select></label>
+<label><span>Baujahr / Baubewilligung</span><input id="constructionYear" min="1500" max="2100" step="1" type="number"/><small id="constructionYearSource">optional; dient als U-Wert-Vorschlag</small></label>
 <label><span>Fläche</span><div class="input-with-unit"><input id="areaM2" min="0" step="1" type="number"/><em>m²</em></div><small id="areaSource">–</small></label>
-<label><span>U-Wert Bestand</span><div class="input-with-unit"><input id="existingUValue" min="0.01" step="0.01" type="number"/><em>W/m²K</em></div><small id="uValueSource">–</small></label>
+<label id="uValueField"><span>U-Wert Bestand</span><div class="input-with-unit"><input id="existingUValue" min="0.01" step="0.01" type="number"/><em>W/m²K</em></div><small id="uValueSource">–</small><small class="required-message" id="uValueRequiredMessage" hidden>Für die Berechnung wird ein Bestands-U-Wert benötigt.</small></label>
 <label id="lambdaField"><span>Wärmeleitfähigkeit λ</span><select id="lambdaSelect"></select><small>materialneutral; Standard 0,035 W/mK</small></label>
-<label id="windowFrameField" hidden><span>Rahmenmaterial</span><select id="windowFrameMaterial"><option value="wood">Holzrahmen</option><option value="aluminium">Aluminiumrahmen</option></select><small>beeinflusst Nutzungsdauer-/Instandhaltungsansatz</small></label>
+<label id="windowFrameField" hidden><span id="frameMaterialLabel">Rahmenmaterial</span><select id="windowFrameMaterial"><option value="wood">Holzrahmen</option><option value="plastic">Kunststoffrahmen</option><option value="wood_aluminium">Holz-Aluminium-Rahmen</option><option value="aluminium">Aluminiumrahmen</option></select><small>beeinflusst Nutzungsdauer-/Instandhaltungsansatz</small></label>
+<label id="exchangeCountField" hidden><span>Anzahl Haustüren</span><div class="input-with-unit"><input id="exchangeCount" min="1" step="1" type="number" value="1"/><em>Stk.</em></div><small>für Kosten; die Fläche bleibt Grundlage der Energieeinsparung</small></label>
 </div>
 <div class="custom-lambda-row" id="lambdaCustomWrap" hidden>
 <label><span>Eigener λ-Wert</span><div class="input-with-unit"><input id="lambdaCustom" min="0.015" max="0.2" step="0.001" type="number"/><em>W/mK</em></div></label>
@@ -110,10 +112,10 @@
 <div class="input-grid input-grid--three">
 <label id="baseCostField"><span>Vollkosten-Sockel</span><div class="input-with-unit"><input id="baseCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
 <label id="variableCostField"><span>Mehrkosten je cm</span><div class="input-with-unit"><input id="variableCostEurM2Cm" min="0" step="0.5" type="number"/><em>€/m²·cm</em></div></label>
-<label class="window-cost-field" hidden><span>Fenster Basis-Austausch</span><div class="input-with-unit"><input id="windowBasicCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
-<label class="window-cost-field" hidden><span>Fenster Mindeststandard</span><div class="input-with-unit"><input id="windowRecommendedCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
-<label class="window-cost-field" hidden><span>Fenster ambitioniert</span><div class="input-with-unit"><input id="windowAmbitiousCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
-<label><span>Sowiesokosten</span><div class="input-with-unit"><input id="sunkCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
+<label class="window-cost-field" hidden><span id="exchangeBasicCostLabel">Fenster Basis-Austausch</span><div class="input-with-unit"><input id="windowBasicCostEurM2" min="0" step="10" type="number"/><em id="exchangeBasicCostUnit">€/m²</em></div></label>
+<label class="window-cost-field" hidden><span id="exchangeRecommendedCostLabel">Fenster Mindeststandard</span><div class="input-with-unit"><input id="windowRecommendedCostEurM2" min="0" step="10" type="number"/><em id="exchangeRecommendedCostUnit">€/m²</em></div></label>
+<label class="window-cost-field" hidden><span id="exchangeAmbitiousCostLabel">Fenster ambitioniert</span><div class="input-with-unit"><input id="windowAmbitiousCostEurM2" min="0" step="10" type="number"/><em id="exchangeAmbitiousCostUnit">€/m²</em></div></label>
+<label><span>Sowiesokosten</span><div class="input-with-unit"><input id="sunkCostEurM2" min="0" step="10" type="number"/><em id="sunkCostUnit">€/m²</em></div></label>
 <label><span>Nutzungsdauer</span><div class="input-with-unit"><input id="lifetimeYears" min="1" step="1" type="number"/><em>Jahre</em></div><small id="lifetimeSource">zentraler Standardwert; überschreibbar</small></label>
 <label id="maintenanceField" hidden><span>Jährliche Instandhaltung</span><div class="input-with-unit"><input id="maintenancePercent" min="0" step="0.1" type="number"/><em>% der Investition/a</em></div><small>informativer Normwert nach Rahmenmaterial</small></label>
 <label><span>Energiepreis</span><div class="input-with-unit"><input id="energyPriceEurKwh" min="0" step="0.001" type="number"/><em>€/kWh</em></div></label>
@@ -236,13 +238,13 @@
 <section aria-label="Druckbericht Bauteil und Sanierung" class="container renovation-print-report print-only" id="renovationPrintReport"></section>
 <div data-report-actions data-report-actions-label="Drucken / PDF"></div>
 </main>
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.4 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.5 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
 <script src="../../shared/js/data-model.js?v=2"></script>
 <script src="../../shared/js/project-migrations.js?v=1"></script>
 <script src="../../shared/js/value-resolver.js?v=1"></script>
-<script src="../../shared/js/project-store.js?v=2"></script>
+<script src="../../shared/js/project-store.js?v=3"></script>
 <script src="../../shared/js/project-header.js?v=2"></script>
 <script src="../../shared/js/project-address-manager.js?v=1"></script>
 <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
@@ -256,7 +258,7 @@
 <script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script>
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=1"></script>
-<script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=4"></script>
-<script src="bauteil-sanierung.js?v=4"></script>
+<script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=5"></script>
+<script src="bauteil-sanierung.js?v=5"></script>
 </body>
 </html>

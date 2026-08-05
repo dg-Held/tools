@@ -64,8 +64,46 @@
     }));
   }
 
+  function finiteNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function roundToStep(value, step) {
+    const number = finiteNumber(value);
+    if (number === null || !(step > 0)) return number;
+    return Math.round(number / step) * step;
+  }
+
+  function applySharedBuildingDerivations() {
+    const grossFloorArea = finiteNumber(resolver.value(getPath('building.geometry.grossFloorArea', null), null));
+    const storeys = finiteNumber(resolver.value(getPath('building.geometry.storeysAboveGround', null), null));
+    const medianHeight = finiteNumber(resolver.value(getPath('building.geometry.heightMedian', null), null));
+    const storeyHeight = finiteNumber(resolver.value(getPath('building.geometry.storeyHeightModule', null), 3.2)) ?? 3.2;
+    if (!(grossFloorArea > 0) || !(storeys > 0)) return;
+
+    const effectiveHeight = medianHeight > 0 ? medianHeight : storeys * storeyHeight;
+    const derivedVolume = roundToStep((grossFloorArea / storeys) * effectiveHeight, 10);
+    if (!(derivedVolume > 0)) return;
+
+    const path = 'building.geometry.grossVolume';
+    const current = getPath(path, null);
+    const currentDerived = resolver.isField(current) ? current.candidates?.[model.ORIGIN.DERIVED] : null;
+    const method = 'verwendete BGF / verwendete Geschoße × Medianhöhe; ohne Medianhöhe: BGF × Höhenmodul';
+    if (finiteNumber(currentDerived?.value) === derivedVolume && currentDerived?.method === method) return;
+
+    assignPathWithoutPersist(path, resolver.withCandidate(current, model.ORIGIN.DERIVED, derivedVolume, {
+      unit: 'm³',
+      source: 'Gemeinsame Gebäudeableitung',
+      method,
+      modelVersion: 'building-geometry-v1.1',
+      quality: 'überschlägige Geometrie; manueller Volumenwert hat Vorrang',
+    }));
+  }
+
   function persist({ notifyListeners = true } = {}) {
     state.project.updatedAt = new Date().toISOString();
+    applySharedBuildingDerivations();
     state = normalize(state);
     try {
       global.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));

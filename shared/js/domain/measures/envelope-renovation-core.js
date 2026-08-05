@@ -5,7 +5,7 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.EnvelopeRenovationCore = Object.freeze(api);
 })(typeof window !== 'undefined' ? window : globalThis, function envelopeFactory() {
-  const MODEL_VERSION = '0.4.0';
+  const MODEL_VERSION = '0.5.0';
   const EPSILON = 1e-12;
 
   function finite(value, fallback = 0) {
@@ -265,18 +265,20 @@
 
   function investmentForExchange({
     areaM2,
+    costQuantity = null,
     fullCostEurM2,
     sunkCostEurM2,
     renewalContext,
     isReference = false,
   }) {
     const area = Math.max(0, finite(areaM2, 0));
+    const quantity = Math.max(0, optionalFinite(costQuantity) ?? area);
     const fullRate = Math.max(0, finite(fullCostEurM2, 0));
     const sunkRate = Math.max(0, finite(sunkCostEurM2, 0));
     const isRenewal = renewalContext === 'renewal_due';
 
     if (isReference) {
-      const referenceCost = isRenewal ? area * sunkRate : 0;
+      const referenceCost = isRenewal ? quantity * sunkRate : 0;
       return {
         fullInvestmentEur: referenceCost,
         sunkCostEur: isRenewal ? referenceCost : 0,
@@ -284,8 +286,8 @@
       };
     }
 
-    const full = area * fullRate;
-    const sunk = isRenewal ? Math.min(full, area * sunkRate) : 0;
+    const full = quantity * fullRate;
+    const sunk = isRenewal ? Math.min(full, quantity * sunkRate) : 0;
     return {
       fullInvestmentEur: full,
       sunkCostEur: sunk,
@@ -297,6 +299,7 @@
     const definitions = Array.isArray(inputs.variants) ? inputs.variants : [];
     const referenceInvestment = investmentForExchange({
       areaM2: inputs.areaM2,
+      costQuantity: inputs.costQuantity,
       fullCostEurM2: 0,
       sunkCostEurM2: inputs.sunkCostEurM2,
       renewalContext: inputs.renewalContext,
@@ -336,6 +339,7 @@
       const fullCostEurM2 = Math.max(0, finite(definition.fullCostEurM2 ?? definition.full_cost_eur_m2, 0));
       const investment = investmentForExchange({
         areaM2: inputs.areaM2,
+        costQuantity: inputs.costQuantity,
         fullCostEurM2,
         sunkCostEurM2: inputs.sunkCostEurM2,
         renewalContext: inputs.renewalContext,

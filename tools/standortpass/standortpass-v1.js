@@ -287,8 +287,11 @@
     const automaticRoofSlopeArea = roofArea !== null && effectiveRoofPitch !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
       ? roundToStep(roofArea / Math.cos((effectiveRoofPitch * Math.PI) / 180), 10)
       : null;
-    const automaticVolume = roofArea !== null && medianHeight !== null
-      ? roundToStep(roofArea * medianHeight, 10)
+    const volumeFootprint = effectiveGrossFloorArea !== null && effectiveStoreys !== null && effectiveStoreys > 0
+      ? effectiveGrossFloorArea / effectiveStoreys
+      : roofArea;
+    const automaticVolume = volumeFootprint !== null && medianHeight !== null
+      ? roundToStep(volumeFootprint * medianHeight, 10)
       : null;
 
     const automatic = {
@@ -353,7 +356,7 @@
       basementArea: ['basementCeilingArea', 'm²', 'Gebäudegrundfläche'],
       roofPitch: ['roofPitch', '°', 'manuelle Orientierung'],
       roofSlopeArea: ['roofSlopeArea', 'm²', 'Dachprojektion / cos(Dachneigung)'],
-      volume: ['grossVolume', 'm³', 'Gebäudegrundfläche × Medianhöhe'],
+      volume: ['grossVolume', 'm³', 'verwendete BGF / verwendete Geschoße × Medianhöhe'],
     };
 
     const geometry = {

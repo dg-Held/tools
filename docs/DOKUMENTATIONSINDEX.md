@@ -3,6 +3,12 @@
 **Stand:** 05.08.2026  
 **Projektmodell:** Schema 2.0
 
+## 0. Aktuelle Übergabe für neue Chats
+
+- `docs/PROJEKTSTATUS_UND_SYSTEMUEBERSICHT.md`
+
+Diese Datei enthält den kompakten verbindlichen Gesamtstand und wird bei jedem Paket aktualisiert.
+
 ## 1. Grundarchitektur
 
 - `docs/ARCHITEKTUR-V1.md`
@@ -41,25 +47,26 @@ Der V3-Code kann nach externer ZIP-Sicherung von der Website entfernt bleiben.
 
 Energiefluss diagnostiziert Verbrauch und Gebäudehülle. Maßnahmen und Wirtschaftlichkeit werden im eigenständigen Tool „Bauteil & Sanierung“ untersucht.
 
-## 6. Bauteil & Sanierung – Arbeitsversion V0.4
+## 6. Bauteil & Sanierung – Arbeitsversion V0.5
 
-- `docs/AENDERUNGEN-BAUTEIL-UND-SANIERUNG-V0-4.md`
-- `docs/INSTALLATION-BAUTEIL-UND-SANIERUNG-V0-4.md`
-- `docs/TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-4.md`
+- `docs/AENDERUNGEN-BAUTEIL-UND-SANIERUNG-V0-5.md`
+- `docs/INSTALLATION-BAUTEIL-UND-SANIERUNG-V0-5.md`
+- `docs/TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-5.md`
 - `tools/bauteil-sanierung/docs/METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md`
 - `tools/bauteil-sanierung/docs/WARTUNG-UND-DATENPFLEGE.md`
 - `tools/bauteil-sanierung/docs/DOKUMENTATIONSSTAND.json`
 
-V0.4 unterstützt:
+V0.5 unterstützt:
 
 - Außenwand,
 - Dach/Dachschräge,
 - oberste Geschoßdecke,
 - Kellerdecke,
 - Boden gegen Erdreich,
-- Fenster als diskrete Austauschmaßnahme.
+- Fenster als diskrete Austauschmaßnahme,
+- Haustür/Außentür als diskrete Austauschmaßnahme.
 
-Außentüren bleiben im Datenmodell vorbereitet.
+Baujahr-Fallback, U-Wert-Pflichtstatus, eigene SVGs und BGF→Volumen-Nachführung sind integriert.
 
 ## 7. Gemeinsamer Wirtschaftlichkeitskern
 
@@ -79,7 +86,7 @@ node tests/validate-oenorm-b8110-4.js
 shared/js/domain/measures/envelope-renovation-core.js
 ```
 
-Version V0.4 unterstützt kontinuierliche Dämmdicken und diskrete Austauschvarianten.
+Version V0.5 unterstützt kontinuierliche Dämmdicken sowie diskrete Fenster- und Türvarianten.
 
 ## 9. Zentrale Daten
 

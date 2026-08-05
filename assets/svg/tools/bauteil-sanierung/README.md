@@ -44,3 +44,6 @@ Beispiel Fenster:
 assets/svg/tools/bauteil-sanierung/bestand-fenster.svg
 assets/svg/tools/bauteil-sanierung/sanierung-fenster.svg
 ```
+
+- `bestand-aussentuer.svg`
+- `sanierung-aussentuer.svg`

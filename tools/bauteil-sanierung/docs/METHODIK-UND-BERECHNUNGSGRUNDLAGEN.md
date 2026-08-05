@@ -1,8 +1,8 @@
 # Bauteil & Sanierung – Methodik und Berechnungsgrundlagen
 
 **Stand:** 05.08.2026  
-**Toolstand:** Arbeitsversion V0.4  
-**Maßnahmenkern:** `EnvelopeRenovationCore 0.4.0`  
+**Toolstand:** Arbeitsversion V0.5  
+**Maßnahmenkern:** `EnvelopeRenovationCore 0.5.0`  
 **Wirtschaftlichkeitskern:** `EnergyEconomicsCore 1.0.0`
 
 ## 1. Zweck und Abgrenzung
@@ -16,9 +16,8 @@ Unterstützt werden:
 - oberste Geschoßdecke,
 - Kellerdecke,
 - Boden gegen Erdreich,
-- Fenster.
-
-Außentüren sind im Datenmodell vorbereitet, aber noch nicht als fertige Oberfläche aktiviert.
+- Fenster,
+- Haustür/Außentür.
 
 ## 2. Eigenständigkeit und gemeinsame Projektbasis
 
@@ -40,17 +39,21 @@ U_neu = 1 / (1/U_Bestand + d/λ)
 
 Die erforderliche Dicke für einen Ziel-U-Wert wird aus derselben Beziehung abgeleitet. Die Beratungstabelle verwendet 2-cm-Schritte; das wirtschaftliche Optimum wird intern feiner untersucht.
 
-### 3.2 Austauschmaßnahmen Fenster
+### 3.2 Austauschmaßnahmen Fenster und Türen
 
-Fenster werden als diskrete Varianten mit festgelegtem U-Wert und zugeordneter Richtkostenstufe verglichen:
+Fenster und Türen werden als diskrete Varianten mit festgelegtem U-Wert und zugeordneter Richtkostenstufe verglichen:
 
 - Basis-Austausch,
 - empfohlener Mindeststandard,
 - ambitionierte Variante.
 
-Eine kontinuierliche Dämmdickenberechnung und ein λ-Wert sind bei Fenstern nicht anwendbar.
+Eine kontinuierliche Dämmdickenberechnung und ein λ-Wert sind bei Fenstern und Türen nicht anwendbar. Fensterkosten werden über die Fensterfläche, Haustürkosten über die Stückzahl berechnet; die Energieeinsparung bleibt auch bei der Tür flächenbezogen.
 
-## 4. Empfohlener Mindeststandard
+## 4. Baujahr und empfohlener Mindeststandard
+
+Wenn kein besserer Bestands-U-Wert vorhanden ist, kann das Jahr der Baubewilligung einen sichtbaren Vorschlag aus der gemeinsamen Baujahrestabelle liefern. Der Vorschlag bleibt eine Beratungsannahme; ein manuell bestätigter U-Wert hat Vorrang. Ohne gültigen Bestands-U-Wert wird keine Berechnung durchgeführt.
+
+### Empfohlener Mindeststandard
 
 Der **empfohlene Mindeststandard** ist die untere Grenze der fachlichen Beratungsempfehlung. Er ist ausdrücklich kein gesetzlicher Mindestwert. Das Tool stellt daneben den wirtschaftlichen Bereich beziehungsweise das Kostenoptimum und einen ambitionierten Standard dar.
 
@@ -99,13 +102,14 @@ Die Temperaturkorrektur ist nur bei der Fallbackberechnung wirksam. Bei Bauteile
 Vollkosten = Fläche × (Sockelkosten + Mehrkosten je cm × Dämmdicke)
 ```
 
-### 7.2 Fenster
+### 7.2 Fenster und Türen
 
 ```text
-Vollkosten = Fensterfläche × Richtpreis der Austauschvariante
+Fenster: Vollkosten = Fensterfläche × Richtpreis der Austauschvariante
+Haustür: Vollkosten = Anzahl × Richtpreis der Austauschvariante
 ```
 
-Bei ohnehin notwendiger Erneuerung wird die Referenzmaßnahme mit Sowiesokosten angesetzt. Bei Fenstern bildet der Basis-Austausch die wirtschaftliche Vergleichsvariante; der energetische und finanzielle Zusatznutzen höherer Qualitätsstufen wird gegenüber diesem Basis-Austausch beurteilt:
+Bei ohnehin notwendiger Erneuerung wird die Referenzmaßnahme mit Sowiesokosten angesetzt. Bei Fenster und Haustür bildet der Basis-Austausch die wirtschaftliche Vergleichsvariante; der energetische und finanzielle Zusatznutzen höherer Qualitätsstufen wird gegenüber diesem Basis-Austausch beurteilt:
 
 ```text
 Gesamtkosten
@@ -125,7 +129,7 @@ Förderungen werden nicht automatisch vorgeschlagen. Die Beraterin oder der Bera
 
 Je Position sind Fixbetrag, Prozent der Vollkosten oder Prozent der energetischen Mehrkosten möglich. Nur bestätigte Eingaben werden berücksichtigt. Das technische Kostenoptimum bleibt von der Förderung getrennt.
 
-## 9. Nutzungsdauer und Instandhaltung Fenster
+## 9. Nutzungsdauer und Instandhaltung Austauschbauteile
 
 Der informative Anhang D der ÖNORM EN 15459-1:2017 liefert für die aktivierten Fensterarten:
 
@@ -134,7 +138,7 @@ Der informative Anhang D der ÖNORM EN 15459-1:2017 liefert für die aktivierten
 | Holzrahmen | 30 Jahre | 1,0 % der Anfangsinvestition |
 | Aluminiumrahmen | 30 Jahre | 0,5 % der Anfangsinvestition |
 
-Diese Werte sind informative Richtwerte. Nationale Anhänge, projektspezifische Angaben oder bessere dokumentierte Werte können sie ersetzen.
+Diese Werte sind informative Richtwerte. Kunststoff und Holz-Aluminium verwenden mangels eindeutigem Eintrag transparente Projekt-Fallbacks. Für Haustüren liegt im bereitgestellten Auszug kein direkt zuordenbarer Eintrag vor; die Nutzungsdauer bleibt daher überschreibbarer Projekt-Fallback. Nationale Anhänge, projektspezifische Angaben oder bessere dokumentierte Werte können alle Vorschläge ersetzen.
 
 Für die opaken Dämmmaßnahmen enthielt der bereitgestellte Auszug keine direkt zuordenbaren Datensätze. Die dort verwendeten Nutzungsdauern bleiben deshalb transparente, überschreibbare Projekt-Fallbacks.
 
@@ -165,7 +169,11 @@ Die innere Oberflächentemperatur wird überschlägig aus U-Wert, Innen-/Grenzte
 
 Wärmebrücken, Luftdichtheit, Feuchteschutz, Montagefugen, Rahmenanteile und Anschlussdetails sind separat zu prüfen.
 
-## 12. Optionale SVG-Grafiken
+## 12. Gemeinsame BGF-Volumen-Ableitung
+
+Ein automatisch abgeleitetes Gebäudevolumen wird projektweit aus verwendeter BGF, verwendeter Geschoßzahl und Medianhöhe nachgeführt. Fehlt die Medianhöhe, wird das Höhenmodul verwendet. Ein manuell bestätigtes Volumen behält immer Vorrang.
+
+## 13. Optionale SVG-Grafiken
 
 Eigene Grafiken können unter
 
@@ -175,7 +183,7 @@ assets/svg/tools/bauteil-sanierung/
 
 abgelegt werden. Fehlt eine Datei, bleibt die integrierte Fallback-Grafik sichtbar. Geladene SVGs werden auch in den Druckbericht übernommen. Die Namen stehen in der dortigen `README.md`.
 
-## 13. Ausdruck
+## 14. Ausdruck
 
 Der Druckbericht zeigt kompakt:
 
@@ -189,6 +197,6 @@ Der Druckbericht zeigt kompakt:
 
 Die vollständige Tabelle „Alle Varianten vergleichen“ wird bewusst nicht gedruckt.
 
-## 14. Aussagegrenzen
+## 15. Aussagegrenzen
 
 Beratungshilfe, kein Energieausweis, keine Ausführungsplanung, Förderzusage oder Rechtsauskunft. Ergebnisse hängen wesentlich von Kosten, Nutzungsdauer, Instandhaltung, Zinssatz, Preisentwicklung, Energiepreis und Ausgangslage ab. Quellen, Datenstände und projektspezifische Abweichungen sind zu dokumentieren.
