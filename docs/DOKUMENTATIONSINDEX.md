@@ -1,6 +1,6 @@
 # Dokumentationsindex – Tools für Energieberatung
 
-**Stand:** 04.08.2026  
+**Stand:** 05.08.2026  
 **Projektmodell:** Schema 2.0
 
 ## 1. Grundarchitektur
@@ -14,14 +14,13 @@
 
 - `tools/standortpass/docs/METHODIK-UND-DATENBASIS.md`
 - `tools/standortpass/docs/WARTUNG-UND-VALIDIERUNG.md`
-- `tools/standortpass/docs/26-08-03 GEMEINSAME-DATENBASIS.md`
 
 ## 3. Klima am Standort
 
 - `tools/klima/docs/METHODIK-UND-DATENBASIS.md`
 - `tools/klima/docs/WARTUNG-INCA-JAHRESPAKETE.md`
 
-Klima und Heizlast bleiben getrennte Oberflächen, verwenden aber dieselbe Klimabasis.
+Klima und Heizlast sind getrennte Oberflächen, verwenden aber dieselbe Klimabasis.
 
 ## 4. Heizlast
 
@@ -32,7 +31,7 @@ Klima und Heizlast bleiben getrennte Oberflächen, verwenden aber dieselbe Klima
 
 ### V3 – extern archivierter Referenzstand
 
-Der V3-Code kann nach externer ZIP-Sicherung von der Website entfernt werden. Eine verbleibende Statusnotiz ist nicht für den Betrieb erforderlich.
+Der V3-Code kann nach externer ZIP-Sicherung von der Website entfernt bleiben.
 
 ### V4.4 – funktional abgeschlossen
 
@@ -40,16 +39,27 @@ Der V3-Code kann nach externer ZIP-Sicherung von der Website entfernt werden. Ei
 - `tools/energiefluss-v4/docs/WARTUNG-UND-VALIDIERUNG.md`
 - `tools/energiefluss-v4/docs/DOKUMENTATIONSSTAND.json`
 
-V4.4 diagnostiziert Verbrauch und Gebäudehülle. Maßnahmen, Kosten und Wirtschaftlichkeit werden bewusst nicht mehr in diese Seite eingebaut.
+Energiefluss diagnostiziert Verbrauch und Gebäudehülle. Maßnahmen und Wirtschaftlichkeit werden im eigenständigen Tool „Bauteil & Sanierung“ untersucht.
 
-## 6. Bauteil & Sanierung – Arbeitsversion V0.2
+## 6. Bauteil & Sanierung – Arbeitsversion V0.4
 
-- `docs/FACHKONZEPT-BAUTEIL-UND-SANIERUNG-V1.md`
+- `docs/AENDERUNGEN-BAUTEIL-UND-SANIERUNG-V0-4.md`
+- `docs/INSTALLATION-BAUTEIL-UND-SANIERUNG-V0-4.md`
+- `docs/TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-4.md`
 - `tools/bauteil-sanierung/docs/METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md`
 - `tools/bauteil-sanierung/docs/WARTUNG-UND-DATENPFLEGE.md`
-- `docs/TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-2.md`
+- `tools/bauteil-sanierung/docs/DOKUMENTATIONSSTAND.json`
 
-V0.2 unterstützt Außenwand, Dach, OGD, Kellerdecke und Boden als Dämmmaßnahmen. Fenster und Außentüren sind im Datenmodell vorbereitet und folgen als diskrete Austauschvarianten. Kosten, Energiepreise und Emissionsfaktoren werden aus den zentralen Datenpaketen vorgeschlagen. Förderungen bleiben bewusst freie projektbezogene Eingaben.
+V0.4 unterstützt:
+
+- Außenwand,
+- Dach/Dachschräge,
+- oberste Geschoßdecke,
+- Kellerdecke,
+- Boden gegen Erdreich,
+- Fenster als diskrete Austauschmaßnahme.
+
+Außentüren bleiben im Datenmodell vorbereitet.
 
 ## 7. Gemeinsamer Wirtschaftlichkeitskern
 
@@ -63,43 +73,44 @@ Validierung:
 node tests/validate-oenorm-b8110-4.js
 ```
 
-Der Core bildet die für das Fachkonzept benötigten Verfahren der ÖNORM B 8110-4:2024 ab. Die Benutzeroberfläche darf erst nach vollständiger Eingabe-, Bericht- und Quellenlogik als normgemäß bezeichnet werden.
+## 8. Gemeinsamer Maßnahmenkern
 
-## 8. Zentrale veränderliche Daten
+```text
+shared/js/domain/measures/envelope-renovation-core.js
+```
+
+Version V0.4 unterstützt kontinuierliche Dämmdicken und diskrete Austauschvarianten.
+
+## 9. Zentrale Daten
 
 ```text
 shared/data/
-├── addresses/
 ├── building/
-│   ├── existing-u-values.json
-│   └── envelope-evaluation.json
 ├── climate/
-│   └── inca/
-├── measures/
 ├── costs/
 ├── economics/
 ├── emissions/
-├── funding/
+├── measures/
+│   ├── envelope-targets.json
+│   └── exchange-variants.json
 └── standards/
-    ├── energy-flow-v4-defaults.json
+    ├── economics/
+    │   └── component-lifetimes.json
     └── oib/
+        └── envelope-u-values.json
 ```
 
-## 9. Dokumentationsregel
+Förderungen sind keine automatisch gepflegten Standarddaten. Sie werden projektbezogen als Landes-, Bundes- und sonstige Förderung bestätigt.
+
+## 10. Dokumentationsregel
 
 Bei fachlichen Änderungen gleichzeitig prüfen:
 
-1. Rechenkern oder Datenpaket
-2. sichtbare Beschriftung und Methodik
-3. Methodikdokument
-4. Wartungs-/Validierungsdokument
-5. Modellversion und Datenstand
-6. Regressionstest
-7. Druckbericht
-8. Quellen und Lizenzgrenzen
-
-## Bauteil & Sanierung V0.3
-- `AENDERUNGEN-BAUTEIL-UND-SANIERUNG-V0-3.md`
-- `INSTALLATION-BAUTEIL-UND-SANIERUNG-V0-3.md`
-- `TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-3.md`
-- `tools/bauteil-sanierung/docs/`
+1. Rechenkern oder Datenpaket,
+2. sichtbare Beschriftung und Methodik,
+3. Methodikdokument,
+4. Wartungs-/Validierungsdokument,
+5. Modellversion und Datenstand,
+6. Regressionstest,
+7. Druckbericht,
+8. Quellen und Lizenzgrenzen.

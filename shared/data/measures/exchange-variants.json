@@ -1,27 +1,19 @@
 {
   "schema": "energy-tools-envelope-exchange-variants",
-  "version": "2026-08-04-prepared-v0.3",
-  "status": "prepared-not-yet-active",
-  "notice": "Datenstruktur für diskrete Fenster- und Türvarianten. Werte vor Aktivierung mit Kosten- und Produktdaten der Masterdatei abgleichen.",
+  "version": "2026-08-05-v0.4",
+  "status": "active-window-v1-door-prepared",
+  "notice": "Diskrete Austauschvarianten. Kostenstufen werden aus dem zentralen Richtkostenmodell low/middle/high übernommen und bleiben in den erweiterten Annahmen überschreibbar.",
   "components": {
     "window_external": {
       "label": "Fenster",
       "area_path": "building.geometry.windowArea",
       "u_value_path": "building.thermal.envelope.windows.uValue",
       "cost_model_id": "window_replace",
+      "default_frame_material": "wood",
       "variants": [
-        {
-          "id": "window_recommended",
-          "label": "Empfehlung",
-          "u_value": 1.0,
-          "active": true
-        },
-        {
-          "id": "window_ambitious",
-          "label": "Ambitioniert",
-          "u_value": 0.9,
-          "active": true
-        }
+        {"id":"window_basic","label":"Basis-Austausch","short_label":"Basis","u_value":1.1,"cost_tier":"low","role":"basic","active":true},
+        {"id":"window_recommended","label":"Empfohlener Mindeststandard","short_label":"Mindeststandard","u_value":1.0,"cost_tier":"middle","role":"recommended","active":true},
+        {"id":"window_ambitious","label":"Ambitioniert","short_label":"Ambitioniert","u_value":0.9,"cost_tier":"high","role":"ambitious","active":true}
       ]
     },
     "door_external": {
@@ -30,18 +22,8 @@
       "u_value_path": "building.thermal.envelope.doors.uValue",
       "cost_model_id": "door_replace",
       "variants": [
-        {
-          "id": "door_recommended",
-          "label": "Empfehlung",
-          "u_value": 1.1,
-          "active": true
-        },
-        {
-          "id": "door_ambitious",
-          "label": "Ambitioniert",
-          "u_value": 1.0,
-          "active": true
-        }
+        {"id":"door_recommended","label":"Empfohlener Mindeststandard","u_value":1.1,"role":"recommended","active":true},
+        {"id":"door_ambitious","label":"Ambitioniert","u_value":1.0,"role":"ambitious","active":true}
       ]
     }
   }

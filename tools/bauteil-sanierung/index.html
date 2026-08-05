@@ -9,7 +9,7 @@
 <link href="../../shared/css/tokens.css" rel="stylesheet"/>
 <link href="../../shared/css/components.css" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="bauteil-sanierung.css?v=3" rel="stylesheet"/>
+<link href="bauteil-sanierung.css?v=4" rel="stylesheet"/>
 </head>
 <body data-tool-mode="envelope-renovation">
 <header class="site-header no-print">
@@ -25,9 +25,9 @@
 </header>
 <main class="renovation-page">
 <section class="container tool-intro no-print">
-<p class="eyebrow">Tool · Arbeitsversion V0.3</p>
+<p class="eyebrow">Tool · Arbeitsversion V0.4</p>
 <h1>Bauteil &amp; Sanierung</h1>
-<p>Dämmstärken technisch vergleichen und Empfehlung, Kostenoptimum, Amortisation, CO₂ sowie Wohnkomfort gemeinsam betrachten. Projektwerte aus dem Energiefluss werden automatisch übernommen.</p>
+<p>Dämm- und Austauschvarianten technisch vergleichen und Mindeststandard, Kostenoptimum, Amortisation, CO₂ sowie Wohnkomfort gemeinsam betrachten. Projektwerte aus dem Energiefluss werden automatisch übernommen.</p>
 </section>
 <div data-project-header></div>
 
@@ -57,7 +57,8 @@
 <label><span>Bauteil</span><select id="componentSelect"></select></label>
 <label><span>Fläche</span><div class="input-with-unit"><input id="areaM2" min="0" step="1" type="number"/><em>m²</em></div><small id="areaSource">–</small></label>
 <label><span>U-Wert Bestand</span><div class="input-with-unit"><input id="existingUValue" min="0.01" step="0.01" type="number"/><em>W/m²K</em></div><small id="uValueSource">–</small></label>
-<label><span>Wärmeleitfähigkeit λ</span><select id="lambdaSelect"></select><small>materialneutral; Standard 0,035 W/mK</small></label>
+<label id="lambdaField"><span>Wärmeleitfähigkeit λ</span><select id="lambdaSelect"></select><small>materialneutral; Standard 0,035 W/mK</small></label>
+<label id="windowFrameField" hidden><span>Rahmenmaterial</span><select id="windowFrameMaterial"><option value="wood">Holzrahmen</option><option value="aluminium">Aluminiumrahmen</option></select><small>beeinflusst Nutzungsdauer-/Instandhaltungsansatz</small></label>
 </div>
 <div class="custom-lambda-row" id="lambdaCustomWrap" hidden>
 <label><span>Eigener λ-Wert</span><div class="input-with-unit"><input id="lambdaCustom" min="0.015" max="0.2" step="0.001" type="number"/><em>W/mK</em></div></label>
@@ -80,12 +81,11 @@
 
 <article class="ren-card ren-card--targets">
 <div class="section-heading">
-<div><p class="eyebrow">2 · Varianten</p><h2>Dämmstandard automatisch untersuchen</h2></div>
-<span class="section-badge">2-cm-Schritte</span>
+<div><p class="eyebrow">2 · Varianten</p><h2 id="variantSectionTitle">Sanierungsvarianten automatisch untersuchen</h2></div>
+<span class="section-badge" id="variantModeBadge">2-cm-Schritte</span>
 </div>
-<p class="section-note">Intern wird exakt gerechnet. Angezeigt werden bewusst gerundete Dämmdicken, U-Werte und Kosten.</p>
 <div class="target-preview target-preview--two">
-<div><span>Empfehlung</span><strong id="recommendedTarget">–</strong><small id="recommendedThickness">–</small></div>
+<div><span>Empfohlener Mindeststandard</span><strong id="recommendedTarget">–</strong><small id="recommendedThickness">untere Grenze der Beratungsempfehlung</small></div>
 <div><span>Ambitioniert</span><strong id="ambitiousTarget">–</strong><small id="ambitiousThickness">–</small></div>
 </div>
 <div class="notice notice--soft">Gesetzliche Mindestanforderungen sind keine energetische Empfehlung. Bei langlebigen Maßnahmen zählen Behaglichkeit, Sowiesokosten, Energieeinsparung, Lebensdauer und künftige Anforderungen gemeinsam.</div>
@@ -96,7 +96,6 @@
 <div><p class="eyebrow">3 · Kosten</p><h2>Kosten und Wirtschaftlichkeit</h2></div>
 <span class="status-chip" id="costDataStatus">Voreinstellungen werden geladen</span>
 </div>
-<p class="section-note">Im Normalfall genügen die automatisch bereitgestellten Richtwerte. Angezeigt werden zuerst nur die verständlichen Summen; sämtliche Annahmen bleiben aufklappbar und überschreibbar.</p>
 <div class="input-grid input-grid--two">
 <label><span>Ausgangslage</span><select id="renewalContext"><option value="energy_only">rein energetische Maßnahme</option><option value="renewal_due">Erneuerung ohnehin erforderlich</option></select></label>
 <label><span>Energieträger</span><select id="energyCarrierSelect"></select><small>Energiepreis und CO₂-Faktor werden vorgeschlagen.</small></label>
@@ -109,10 +108,14 @@
 <details class="advanced-inputs">
 <summary>Kosten- und Finanzannahmen prüfen</summary>
 <div class="input-grid input-grid--three">
-<label><span>Vollkosten-Sockel</span><div class="input-with-unit"><input id="baseCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
-<label><span>Mehrkosten je cm</span><div class="input-with-unit"><input id="variableCostEurM2Cm" min="0" step="0.5" type="number"/><em>€/m²·cm</em></div></label>
+<label id="baseCostField"><span>Vollkosten-Sockel</span><div class="input-with-unit"><input id="baseCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
+<label id="variableCostField"><span>Mehrkosten je cm</span><div class="input-with-unit"><input id="variableCostEurM2Cm" min="0" step="0.5" type="number"/><em>€/m²·cm</em></div></label>
+<label class="window-cost-field" hidden><span>Fenster Basis-Austausch</span><div class="input-with-unit"><input id="windowBasicCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
+<label class="window-cost-field" hidden><span>Fenster Mindeststandard</span><div class="input-with-unit"><input id="windowRecommendedCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
+<label class="window-cost-field" hidden><span>Fenster ambitioniert</span><div class="input-with-unit"><input id="windowAmbitiousCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
 <label><span>Sowiesokosten</span><div class="input-with-unit"><input id="sunkCostEurM2" min="0" step="10" type="number"/><em>€/m²</em></div></label>
 <label><span>Nutzungsdauer</span><div class="input-with-unit"><input id="lifetimeYears" min="1" step="1" type="number"/><em>Jahre</em></div><small id="lifetimeSource">zentraler Standardwert; überschreibbar</small></label>
+<label id="maintenanceField" hidden><span>Jährliche Instandhaltung</span><div class="input-with-unit"><input id="maintenancePercent" min="0" step="0.1" type="number"/><em>% der Investition/a</em></div><small>informativer Normwert nach Rahmenmaterial</small></label>
 <label><span>Energiepreis</span><div class="input-with-unit"><input id="energyPriceEurKwh" min="0" step="0.001" type="number"/><em>€/kWh</em></div></label>
 <label><span>Emissionsfaktor</span><div class="input-with-unit"><input id="emissionFactorKgKwh" min="0" step="0.001" type="number"/><em>kg CO₂e/kWh</em></div></label>
 <label><span>Betrachtungszeitraum</span><div class="input-with-unit"><input id="periodYears" min="1" max="100" step="1" type="number"/><em>Jahre</em></div></label>
@@ -123,7 +126,7 @@
 </div>
 <p class="inline-note">Die Voreinstellungen sind transparent dokumentiert. Für belastbare Projektergebnisse können alle Werte überschrieben werden; eine Sensitivitätsbetrachtung bleibt empfohlen.</p>
 </details>
-<details class="advanced-inputs">
+<details class="advanced-inputs funding-inputs" open>
 <summary>Förderungen manuell berücksichtigen</summary>
 <p class="inline-note">Förderungen werden nicht automatisch vorgeschlagen. Nur bestätigte projektbezogene Angaben werden abgezogen.</p>
 <div class="funding-grid">
@@ -136,11 +139,11 @@
 
 <article class="ren-card ren-card--results">
 <div class="section-heading">
-<div><p class="eyebrow">4 · Ergebnis</p><h2>Empfehlung, Wirtschaftlichkeit und Komfort</h2></div>
+<div><p class="eyebrow">4 · Ergebnis</p><h2>Mindeststandard, Wirtschaftlichkeit und Komfort</h2></div>
 <span class="section-badge section-badge--berry" id="resultStatus">Berechnung</span>
 </div>
 <div class="result-cards">
-<article data-card="recommendation"><span>Empfehlung</span><strong id="recommendationCardValue">–</strong><p id="recommendationCardText">–</p><button class="quiet-button compact-button" data-select-special="recommendation" type="button">Variante wählen</button></article>
+<article data-card="recommendation"><span>Empfohlener Mindeststandard</span><strong id="recommendationCardValue">–</strong><p id="recommendationCardText">–</p><button class="quiet-button compact-button" data-select-special="recommendation" type="button">Mindeststandard wählen</button></article>
 <article data-card="economic"><span>Wirtschaftlicher Bereich</span><strong id="economicCardValue">–</strong><p id="economicCardText">Kostenangaben ergänzen.</p><button class="quiet-button compact-button" data-select-special="economic" type="button">Optimum wählen</button></article>
 <article data-card="ambitious"><span>Ambitioniert</span><strong id="ambitiousCardValue">–</strong><p id="ambitiousCardText">–</p><button class="quiet-button compact-button" data-select-special="ambitious" type="button">Variante wählen</button></article>
 </div>
@@ -162,12 +165,6 @@
 </div>
 <div class="selected-variant">
 <div class="selected-heading"><div><span>Ausgewählte Variante</span><strong id="selectedVariantTitle">–</strong></div><select id="selectedVariantSelect" aria-label="Variante auswählen"></select></div>
-<div class="selected-kpis">
-<div><span>U-Wert neu</span><strong id="selectedUValue">–</strong></div>
-<div><span>Energieeinsparung</span><strong id="selectedEnergySaving">–</strong><small id="selectedAnnualCostSaving">–</small></div>
-<div><span>CO₂-Einsparung</span><strong id="selectedCo2Saving">–</strong></div>
-<div><span>Oberflächentemperatur</span><strong id="selectedSurfaceTemperature">–</strong></div>
-</div>
 <div class="cost-bridge" id="costBridge">
 <div><span>Gesamtkosten</span><strong id="bridgeFullCost">–</strong></div>
 <div class="is-minus"><span>− Sowiesokosten</span><strong id="bridgeSunkCost">–</strong></div>
@@ -180,11 +177,12 @@
 <div class="impact-panel">
   <div class="impact-panel__head">
     <div><span class="eyebrow">Sanierung auf einen Blick</span><h3>Bestand und ausgewählte Variante</h3></div>
-    <small>Die Grafik fasst die wichtigsten Wirkungen bewusst gerundet zusammen.</small>
+    <small id="impactVariantLabel">Die Grafik fasst die ausgewählte Variante bewusst gerundet zusammen.</small>
   </div>
   <div class="impact-infographic" aria-label="Infografik Bestand im Vergleich zur Sanierung">
     <div class="impact-house impact-house--before">
-      <svg aria-hidden="true" viewBox="0 0 140 120"><path d="M14 57 70 13l56 44v51H14z"/><path d="M44 108V69h52v39"/><path class="impact-wave" d="M5 31c16 8 26 8 42 0M93 31c16 8 26 8 42 0"/></svg>
+      <img class="impact-custom-image" id="impactBeforeImage" alt="Grafik Bestand" hidden/>
+      <svg class="impact-fallback-icon" aria-hidden="true" viewBox="0 0 140 120"><path d="M14 57 70 13l56 44v51H14z"/><path d="M44 108V69h52v39"/><path class="impact-wave" d="M5 31c16 8 26 8 42 0M93 31c16 8 26 8 42 0"/></svg>
       <span>Bestand</span>
       <strong id="impactBeforeU">U –</strong>
       <small id="impactBeforeSurface">Oberfläche –</small>
@@ -194,9 +192,12 @@
       <div><span>Heizkosten</span><strong id="impactCost">–</strong></div>
       <div><span>CO₂</span><strong id="impactCo2">–</strong></div>
       <div><span>Wohnkomfort</span><strong id="impactComfort">–</strong></div>
+      <div><span>Gesamtkosten</span><strong id="impactTotalCost">–</strong></div>
+      <div><span>Amortisation</span><strong id="impactPayback">–</strong></div>
     </div>
     <div class="impact-house impact-house--after">
-      <svg aria-hidden="true" viewBox="0 0 140 120"><path d="M14 57 70 13l56 44v51H14z"/><path d="M44 108V69h52v39"/><path class="impact-shield" d="M111 17c15 4 20 9 20 9v20c0 15-9 25-20 31-11-6-20-16-20-31V26s5-5 20-9z"/></svg>
+      <img class="impact-custom-image" id="impactAfterImage" alt="Grafik Sanierung" hidden/>
+      <svg class="impact-fallback-icon" aria-hidden="true" viewBox="0 0 140 120"><path d="M14 57 70 13l56 44v51H14z"/><path d="M44 108V69h52v39"/><path class="impact-shield" d="M111 17c15 4 20 9 20 9v20c0 15-9 25-20 31-11-6-20-16-20-31V26s5-5 20-9z"/></svg>
       <span>Sanierung</span>
       <strong id="impactAfterU">U –</strong>
       <small id="impactAfterSurface">Oberfläche –</small>
@@ -211,17 +212,19 @@
 <article class="ren-card ren-card--table">
 <details id="variantsComparisonDetails">
 <summary>Alle Varianten vergleichen</summary>
-<div class="variants-table-wrap"><table class="variants-table"><thead><tr><th>Dämmung</th><th>U-Wert</th><th>Energie</th><th>Investition</th><th>Gesamtkosten</th><th>Amortisation</th><th></th></tr></thead><tbody id="variantsTableBody"></tbody></table></div>
+<div class="variants-table-wrap"><table class="variants-table"><thead><tr><th id="variantPrimaryHeader">Dämmung</th><th>U-Wert</th><th>Energie</th><th>Investition</th><th>Gesamtkosten</th><th>Amortisation</th><th></th></tr></thead><tbody id="variantsTableBody"></tbody></table></div>
 </details>
 </article>
 
 <details class="ren-methodology">
 <summary>Methodik, Formeln, Annahmen und Grenzen</summary>
 <div class="methodology-grid">
-<div><h3>U-Wert und Dämmdicke</h3><p><code>U<sub>neu</sub> = 1 / (1/U<sub>Bestand</sub> + d/λ)</code>. Die notwendige Dicke für einen Ziel-U-Wert wird aus derselben Beziehung abgeleitet.</p></div>
+<div><h3>U-Wert und Sanierungsvariante</h3><p>Bei Dämmmaßnahmen gilt <code>U<sub>neu</sub> = 1 / (1/U<sub>Bestand</sub> + d/λ)</code>. Fenster werden als diskrete Austauschvarianten mit vorgegebenem U-Wert verglichen.</p></div>
 <div><h3>Energieeinsparung</h3><p>Vorrangig wird der im Energiefluss kalibrierte Bauteilverlust proportional zum Verhältnis der U-Werte reduziert. Ohne Energiefluss wird überschlägig mit <code>A × ΔU × Heizgradstunden</code> gerechnet.</p></div>
-<div><h3>Wirtschaftlichkeit</h3><p>Diskrete Varianten werden mit Barwerten, Annuitäten und dynamischer Amortisation verglichen. Intern wird exakt gerechnet; die Beratungsausgabe wird bewusst gerundet.</p></div>
-<div><h3>Sowiesokosten</h3><p>Bei ohnehin anstehender Erneuerung wird die Referenzvariante mit den Sowiesokosten angesetzt. Dadurch wird die energetische Mehrinvestition sachgerecht von der gesamten Baumaßnahme getrennt.</p></div>
+<div><h3>Rundung und Darstellung</h3><p>Intern wird mit voller Rechengenauigkeit gearbeitet. Angezeigt werden bewusst gerundete Dämmdicken, U-Werte, Richtpreise und Summen, damit keine Scheingenauigkeit entsteht.</p></div>
+<div><h3>Empfohlener Mindeststandard</h3><p>Der empfohlene Mindeststandard ist die untere Grenze der fachlichen Beratungsempfehlung – kein gesetzlicher Mindestwert. Ambitionierte oder wirtschaftlich günstigere Varianten können darüber hinausgehen.</p></div>
+<div><h3>Wirtschaftlichkeit</h3><p>Varianten werden mit Barwerten, Annuitäten und dynamischer Amortisation verglichen. Automatisch geladene Richtwerte und Finanzannahmen bleiben aufklappbar und projektspezifisch überschreibbar.</p></div>
+<div><h3>Sowiesokosten</h3><p>Bei ohnehin anstehender Erneuerung wird eine passende Referenzvariante angesetzt. Bei Fenstern ist das der Basis-Austausch; höhere Qualitätsstufen werden wirtschaftlich gegenüber dieser ohnehin erforderlichen Variante verglichen.</p></div>
 <div><h3>Kostenoptimum</h3><p>Das technische Kostenoptimum ist die Variante mit den geringsten Gesamtkosten über den Betrachtungszeitraum – ohne Förderung. Der wirtschaftliche Bereich umfasst Varianten nahe diesem Minimum.</p></div>
 <div><h3>Analytisches Optimum</h3><p>Die vereinfachte optimale Dämmdicke nach Anhang B der ÖNORM B 8110-4 ist nur ergänzende Orientierung für opake Bauteile gegen Außenluft und ersetzt nicht den vollständigen Variantenvergleich.</p></div>
 <div><h3>Behaglichkeit</h3><p>Die innere Oberflächentemperatur wird überschlägig aus U-Wert, Innen-/Grenztemperatur und innerem Wärmeübergangswiderstand ermittelt. Wärmebrücken und Anschlussdetails sind separat zu prüfen.</p></div>
@@ -233,7 +236,7 @@
 <section aria-label="Druckbericht Bauteil und Sanierung" class="container renovation-print-report print-only" id="renovationPrintReport"></section>
 <div data-report-actions data-report-actions-label="Drucken / PDF"></div>
 </main>
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.3 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.4 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
 <script src="../../shared/js/data-model.js?v=2"></script>
@@ -253,7 +256,7 @@
 <script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script>
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=1"></script>
-<script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=2"></script>
-<script src="bauteil-sanierung.js?v=3"></script>
+<script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=4"></script>
+<script src="bauteil-sanierung.js?v=4"></script>
 </body>
 </html>

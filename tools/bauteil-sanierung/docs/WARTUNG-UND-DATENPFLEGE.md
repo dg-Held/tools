@@ -1,88 +1,122 @@
 # Bauteil & Sanierung – Wartung und Datenpflege
 
-**Stand:** 04.08.2026  
-**Toolstand:** V0.2
+**Stand:** 05.08.2026  
+**Toolstand:** V0.4
 
 ## 1. Zentrale Dateien
 
 ```text
 shared/data/measures/envelope-targets.json
+shared/data/measures/exchange-variants.json
 shared/data/measures/lambda-values.json
 shared/data/measures/co-benefits.json
 shared/data/costs/renovation-costs.json
-shared/data/costs/lifetimes.json
+shared/data/standards/economics/component-lifetimes.json
+shared/data/standards/oib/envelope-u-values.json
 shared/data/economics/financial-defaults.json
 shared/data/economics/energy-prices.json
 shared/data/emissions/emission-factors.json
-shared/data/funding/funding.json
 ```
 
-Diese Dateien sind die Website-Datenpakete der wartbaren Excel-Masterdatei.
+Förderungen werden nicht als automatisch gepflegte Datensätze geladen. Sie bleiben freie Projektangaben.
 
-## 2. Datenstatus V0.2
+## 2. Datenabgrenzung
 
-Befüllt sind:
+### Pflege-Excel
 
-- Ziel-U-Werte und rechtliche Prüfwerte,
-- λ-Auswahl,
-- qualitative Komforthinweise,
-- bestätigte EAT-Kostenkennwerte für WDVS, OGD, Kellerdecke und Fenster,
-- klar als Vorschlag markierte Kosten für hinterlüftete Fassade, Dach, Boden und Außentür,
-- Energiepreise und betriebliche Emissionsfaktoren aus der Masterdatei,
-- Finanzannahmen und Rundungsregeln.
+Die BAUTEIL-DATEN-MASTER-Datei pflegt insbesondere:
 
-Noch zu bestätigen sind:
+- fachliche Empfehlung und ambitionierten Standard,
+- Bestands-U-Werte nach Bauperiode,
+- λ-Werte,
+- Richtkosten und Sowiesokosten,
+- Energiepreise,
+- Emissionsfaktoren,
+- Finanzannahmen,
+- qualitative Komfort- und Ökologiehinweise.
 
-- vorgeschlagene Nutzungsdauern,
-- vorgeschlagene Kostenkennwerte der bisher nicht belegten Maßnahmen,
-- projektspezifische Förderungen.
+### Feste Standards
 
-## 3. Förderungen
+- OIB-Prüfwerte: `shared/data/standards/oib/envelope-u-values.json`
+- Nutzungsdauern: `shared/data/standards/economics/component-lifetimes.json`
 
-Förderungen werden nicht als automatische Programmdaten gepflegt. Im Projekt stehen drei freie Felder bereit:
+### Projektbezogen
 
 - Landesförderung,
 - Bundesförderung,
-- sonstige Förderung.
+- sonstige Förderung,
+- manuelle Kosten- und Annahmenkorrekturen.
 
-Je Feld kann zwischen Fixbetrag, Prozent der Vollkosten und Prozent der energetischen Mehrkosten gewählt werden. Nur bewusst eingegebene Werte werden berücksichtigt.
+## 3. Fensterdaten
 
-## 4. Pflegeprinzip
+Austauschvarianten:
 
-- Quellwerte bleiben in Excel exakt erhalten.
-- Website-Richtpreise werden bewusst auf 10 €/m² bereitgestellt.
-- Rechenkerne arbeiten intern ohne Ergebnisrundung.
-- Summen werden erst für Anzeige und Ausdruck auf 500 € gerundet.
-- Jeder aktive Datensatz benötigt Quelle, Datenstand, Region und Aktivstatus.
-- Projektvorschläge dürfen erst nach fachlicher Prüfung als bestätigte Richtwerte gekennzeichnet werden.
+```text
+shared/data/measures/exchange-variants.json
+```
 
-## 5. Validierung nach Datenupdate
+Aktiv sind Basis-Austausch, empfohlener Mindeststandard und ambitionierte Variante. Die konkreten Richtpreise werden über das Kostenmodell `window_replace` den Stufen niedrig, mittel und hoch zugeordnet.
 
-1. JSON-Syntax prüfen.
-2. Eindeutige IDs prüfen.
-3. Aktive Datensätze besitzen Zahlen und Quellen.
-4. Kostenband unten ≤ Mitte ≤ oben.
-5. Sowiesokosten ≤ Vollkosten.
-6. Empfehlung und ambitionierter Zielwert sind plausibel angeordnet.
-7. Außenwand, Dach, OGD, Kellerdecke und Boden mit je einem Testprojekt rechnen.
-8. Fördereingaben als Fixbetrag und Prozentwert prüfen.
-9. Ausdruck sowie Projekt-Export/-Import prüfen.
+Nutzungsdauer und Instandhaltung:
 
-## 6. Rechenkerne
+```text
+shared/data/standards/economics/component-lifetimes.json
+```
+
+- Holzrahmen: 30 Jahre, 1,0 %/a,
+- Aluminiumrahmen: 30 Jahre, 0,5 %/a.
+
+Bei Änderungen müssen Quelle, Ausgabe, Status und Versionsdatum gemeinsam aktualisiert werden.
+
+## 4. Opake Bauteile
+
+Die Nutzungsdauerwerte der Dämmmaßnahmen bleiben als `project-fallback` gekennzeichnet, solange kein direkt passender, dokumentierter Norm- oder Katalogwert bestätigt wurde. Sie dürfen in der Oberfläche überschrieben werden und dürfen in Berichten nicht als zwingende Normwerte bezeichnet werden.
+
+## 5. Richtkosten
+
+- Quellwerte bleiben exakt dokumentiert.
+- Website-Richtpreise werden auf 10 €/m² bereitgestellt.
+- Kostenband unten ≤ Mitte ≤ oben.
+- Sowiesokosten dürfen Vollkosten nicht überschreiten.
+- Fenster werden pro m² Fensterfläche gerechnet.
+- Außentüren benötigen später eine eigene Stück-/Flächenlogik und sind noch nicht aktiviert.
+
+## 6. Eigene SVG-Grafiken
+
+Pfad:
+
+```text
+assets/svg/tools/bauteil-sanierung/
+```
+
+Die Dateinamen sind in `README.md` dokumentiert. SVGs sollen ohne externe Schrift- oder Bildreferenzen gespeichert werden. Nach Austausch Browsercache mit Strg+F5 leeren.
+
+## 7. Rechenkerne
 
 ```text
 shared/js/domain/measures/envelope-renovation-core.js
 shared/js/domain/economics/economics-core.js
 ```
 
-Fachformeln dürfen nicht in der Oberfläche dupliziert werden. Änderungen benötigen Versionsanhebung, Tests und Dokumentation.
+Fachformeln dürfen nicht in der Oberfläche dupliziert werden. Änderungen benötigen:
 
+1. Versionsanhebung,
+2. Syntaxprüfung,
+3. Regressionstest Dämmmaßnahmen,
+4. Regressionstest Fenster,
+5. Prüfung von Projektimport/-export,
+6. Druckprüfung,
+7. Dokumentationsupdate.
 
-## Datenabgrenzung V0.3
+## 8. Validierung nach Datenupdate
 
-- OIB-Prüfwerte: `shared/data/standards/oib/envelope-u-values.json`
-- Empfehlungen: `shared/data/measures/envelope-targets.json`
-- Nutzungsdauern: `shared/data/standards/economics/component-lifetimes.json`
-- Fenster/Türen Vorbereitung: `shared/data/measures/exchange-variants.json`
-
-Die Master-Exceldatei pflegt weder OIB-Prüfwerte noch Nutzungsdauern oder automatische Förderwerte.
+1. JSON-Syntax prüfen.
+2. IDs auf Eindeutigkeit prüfen.
+3. Ziel-U-Werte logisch ordnen.
+4. Kostenstufen niedrig ≤ mittel ≤ hoch.
+5. Fensterfläche und Bestands-U-Wert aus Energiefluss übernehmen.
+6. Holz-/Aluminium-Instandhaltung prüfen.
+7. Kostenoptimum und Amortisation getrennt prüfen.
+8. Förderungen als Fixbetrag und Prozentwerte testen.
+9. Ausdruck ohne vollständige Variantentabelle prüfen.
+10. Eigene SVGs und Fallback-Grafik testen.

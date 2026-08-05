@@ -30,33 +30,38 @@
       id: 'exteriorWall', dataId: 'wall_external', label: 'Außenwand', short: 'Außenwand', supported: true,
       areaPath: 'building.geometry.opaqueExteriorWallArea', uPath: 'building.thermal.envelope.exteriorWall.uValue',
       energyFlowId: 'exteriorWall', targetId: 'wall_external', costModelId: 'wall_wdvs',
-      boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: true,
+      boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: true, measureType: 'insulation',
     },
     {
       id: 'topFloorCeiling', dataId: 'roof_top_ceiling', label: 'Oberste Geschoßdecke', short: 'OGD', supported: true,
       areaPath: 'building.geometry.topFloorArea', uPath: 'building.thermal.envelope.topFloorCeiling.uValue',
       energyFlowId: 'topFloorCeiling', targetId: 'roof_top_ceiling', costModelId: 'top_ceiling',
-      boundaryFactor: 0.8, rsi: 0.10, boundaryKind: 'unheated', analyticAllowed: false,
+      boundaryFactor: 0.8, rsi: 0.10, boundaryKind: 'unheated', analyticAllowed: false, measureType: 'insulation',
     },
     {
       id: 'roof', dataId: 'roof_top_ceiling', label: 'Dach / Dachschräge', short: 'Dach', supported: true,
       areaPath: 'building.geometry.roofSlopeArea', uPath: 'building.thermal.envelope.roof.uValue',
       energyFlowId: 'roof', targetId: 'roof_top_ceiling', costModelId: 'roof',
-      boundaryFactor: 1.0, rsi: 0.10, boundaryKind: 'outside', analyticAllowed: true,
+      boundaryFactor: 1.0, rsi: 0.10, boundaryKind: 'outside', analyticAllowed: true, measureType: 'insulation',
     },
     {
       id: 'basementCeiling', dataId: 'ceiling_unheated', label: 'Kellerdecke / UG-Decke', short: 'Kellerdecke', supported: true,
       areaPath: 'building.geometry.basementCeilingArea', uPath: 'building.thermal.envelope.basementCeiling.uValue',
       energyFlowId: 'basementCeiling', targetId: 'ceiling_unheated', costModelId: 'basement_ceiling',
-      boundaryFactor: 0.5, rsi: 0.17, boundaryKind: 'unheated', analyticAllowed: false,
+      boundaryFactor: 0.5, rsi: 0.17, boundaryKind: 'unheated', analyticAllowed: false, measureType: 'insulation',
     },
     {
       id: 'groundFloor', dataId: 'floor_ground', label: 'Boden gegen Erdreich', short: 'Boden', supported: true,
       areaPath: 'building.geometry.groundFloorArea', uPath: 'building.thermal.envelope.groundFloor.uValue',
       energyFlowId: 'groundFloor', targetId: 'floor_ground', costModelId: 'ground_floor',
-      boundaryFactor: 0.5, rsi: 0.17, boundaryKind: 'ground', analyticAllowed: false,
+      boundaryFactor: 0.5, rsi: 0.17, boundaryKind: 'ground', analyticAllowed: false, measureType: 'insulation',
     },
-    { id: 'windows', dataId: 'window_external', label: 'Fenster', short: 'Fenster', supported: false },
+    {
+      id: 'windows', dataId: 'window_external', label: 'Fenster', short: 'Fenster', supported: true,
+      areaPath: 'building.geometry.windowArea', uPath: 'building.thermal.envelope.windows.uValue',
+      energyFlowId: 'windows', targetId: 'window_external', costModelId: 'window_replace',
+      boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: false, measureType: 'exchange',
+    },
     { id: 'doors', dataId: 'door_external', label: 'Außentür', short: 'Tür', supported: false },
   ];
 
@@ -80,6 +85,7 @@
   let targetsConfig = null;
   let lambdaConfig = null;
   let coBenefitsConfig = null;
+  let exchangeVariantsConfig = null;
   let costConfig = null;
   let lifetimeConfig = null;
   let financeConfig = null;
@@ -89,6 +95,7 @@
   let variants = [];
   let enrichedVariants = [];
   let selectedThicknessCm = null;
+  let selectedExchangeVariantId = null;
   let specialVariants = { recommendation: null, economic: null, ambitious: null };
   let optimizationMeta = { rawEconomicThicknessCm: null, rawShortestPaybackThicknessCm: null, economicRangeCm: null };
   let climateCalculationRunning = false;
@@ -169,6 +176,37 @@
     return COMPONENTS.find((item) => item.id === activeComponentId) ?? COMPONENTS[0];
   }
 
+  function isExchangeComponent(component = activeComponent()) {
+    return component?.measureType === 'exchange';
+  }
+
+  function exchangeConfigFor(component = activeComponent()) {
+    return exchangeVariantsConfig?.components?.[component.targetId] ?? null;
+  }
+
+  function currentSelectedVariant() {
+    if (isExchangeComponent()) {
+      return enrichedVariants.find((item) => item.exchangeId === selectedExchangeVariantId) ?? enrichedVariants[1] ?? enrichedVariants[0] ?? null;
+    }
+    return enrichedAtThickness(selectedThicknessCm) ?? enrichedVariants[0] ?? null;
+  }
+
+  function setSelectedVariant(item) {
+    if (!item) return;
+    if (isExchangeComponent()) selectedExchangeVariantId = item.exchangeId ?? item.id;
+    else selectedThicknessCm = item.thicknessCm;
+  }
+
+  function variantPrimaryText(item) {
+    if (!item) return '–';
+    return isExchangeComponent() ? (item.shortLabel ?? item.label ?? 'Variante') : `${formatNumber(item.thicknessCm)} cm`;
+  }
+
+  function variantLongText(item) {
+    if (!item) return '–';
+    return isExchangeComponent() ? (item.label ?? 'Fenstervariante') : (item.thicknessCm > 0 ? `${formatNumber(item.thicknessCm)} cm Zusatzdämmung` : 'Bestand / Referenz');
+  }
+
   function targetForComponent(component = activeComponent()) {
     return targetsConfig?.components?.[component.targetId] ?? null;
   }
@@ -236,7 +274,7 @@
     host.innerHTML = COMPONENTS.map((component) => `
       <button class="component-choice ${component.id === activeComponentId ? 'is-active' : ''} ${component.supported ? '' : 'is-planned'}" data-component-choice="${component.id}" type="button" ${component.supported ? '' : 'disabled'}>
         <strong>${escapeHtml(component.short)}</strong>
-        <span>${component.supported ? 'Dämmmaßnahme' : 'Austausch vorbereitet'}</span>
+        <span>${component.supported ? (component.measureType === 'exchange' ? 'Austauschmaßnahme' : 'Dämmmaßnahme') : 'Austausch vorbereitet'}</span>
       </button>`).join('');
     host.querySelectorAll('[data-component-choice]').forEach((button) => {
       button.addEventListener('click', () => selectComponent(button.dataset.componentChoice));
@@ -253,12 +291,61 @@
     select.innerHTML = values.map((item) => `<option value="${item.value}">${escapeHtml(item.label)}</option>`).join('') + '<option value="custom">eigener Wert</option>';
   }
 
+  function updateImpactArtwork(component = activeComponent()) {
+    const slugs = {
+      exteriorWall: 'aussenwand',
+      topFloorCeiling: 'ogd',
+      roof: 'dach',
+      basementCeiling: 'kellerdecke',
+      groundFloor: 'boden',
+      windows: 'fenster',
+      doors: 'aussentuer',
+    };
+    const slug = slugs[component.id] ?? 'bauteil';
+    const before = $('impactBeforeImage');
+    const after = $('impactAfterImage');
+    const pairs = [
+      [before, `../../assets/svg/tools/bauteil-sanierung/bestand-${slug}.svg`],
+      [after, `../../assets/svg/tools/bauteil-sanierung/sanierung-${slug}.svg`],
+    ];
+    pairs.forEach(([image, src]) => {
+      if (!image) return;
+      const fallback = image.nextElementSibling;
+      image.hidden = true;
+      if (fallback) fallback.hidden = false;
+      image.onload = () => { image.hidden = false; if (fallback) fallback.hidden = true; };
+      image.onerror = () => { image.hidden = true; if (fallback) fallback.hidden = false; };
+      image.src = src;
+    });
+  }
+
+  function renderComponentMode(component = activeComponent()) {
+    const exchange = isExchangeComponent(component);
+    if ($('lambdaField')) $('lambdaField').hidden = exchange;
+    if ($('windowFrameField')) $('windowFrameField').hidden = !exchange;
+    if ($('lambdaCustomWrap')) $('lambdaCustomWrap').hidden = exchange || $('lambdaSelect').value !== 'custom';
+    if ($('baseCostField')) $('baseCostField').hidden = exchange;
+    if ($('variableCostField')) $('variableCostField').hidden = exchange;
+    document.querySelectorAll('.window-cost-field').forEach((field) => { field.hidden = !exchange; });
+    if ($('maintenanceField')) $('maintenanceField').hidden = !exchange;
+    if ($('variantSectionTitle')) $('variantSectionTitle').textContent = exchange ? 'Fenstervarianten automatisch untersuchen' : 'Dämmstandard automatisch untersuchen';
+    if ($('variantModeBadge')) $('variantModeBadge').textContent = exchange ? 'diskrete Varianten' : '2-cm-Schritte';
+    if ($('variantPrimaryHeader')) $('variantPrimaryHeader').textContent = exchange ? 'Variante' : 'Dämmung';
+    updateImpactArtwork(component);
+  }
+
   function costModelFor(component = activeComponent()) {
     return (costConfig?.models ?? []).find((item) => item.id === component.costModelId) ?? null;
   }
 
-  function lifetimeFor(component = activeComponent()) {
-    return (lifetimeConfig?.items ?? []).find((item) => item.cost_model_id === component.costModelId || item.id === component.costModelId) ?? null;
+  function lifetimeFor(component = activeComponent(), frameMaterial = null) {
+    const items = lifetimeConfig?.items ?? [];
+    if (isExchangeComponent(component) && frameMaterial) {
+      return items.find((item) => item.cost_model_id === component.costModelId && item.frame_material === frameMaterial) ?? null;
+    }
+    return items.find((item) => item.cost_model_id === component.costModelId && !item.frame_material)
+      ?? items.find((item) => item.cost_model_id === component.costModelId)
+      ?? null;
   }
 
   function energyCarrierItems() {
@@ -303,15 +390,20 @@
     });
   }
 
-  function defaultCostValues(component = activeComponent()) {
+  function defaultCostValues(component = activeComponent(), frameMaterial = null) {
     const modelValue = costModelFor(component);
-    const lifetimeValue = lifetimeFor(component);
+    const lifetimeValue = lifetimeFor(component, frameMaterial);
     return {
       model: modelValue,
+      lifetime: lifetimeValue,
       baseCostEurM2: finite(modelValue?.base_cost_eur_m2, null),
       variableCostEurM2Cm: finite(modelValue?.variable_cost_eur_m2_cm, null),
       sunkCostEurM2: finite(modelValue?.sunk_cost_eur_m2, 0),
+      windowBasicCostEurM2: finite(modelValue?.range_eur_m2?.low, null),
+      windowRecommendedCostEurM2: finite(modelValue?.range_eur_m2?.middle, finite(modelValue?.base_cost_eur_m2, null)),
+      windowAmbitiousCostEurM2: finite(modelValue?.range_eur_m2?.high, null),
       lifetimeYears: finite(lifetimeValue?.years, null),
+      maintenancePercent: finite(lifetimeValue?.maintenance_percent_initial_per_year, 0),
     };
   }
 
@@ -323,6 +415,7 @@
     store.setPath('modules.bauteilSanierung.selectedComponentId', activeComponentId);
     suppressProjectRender = false;
     selectedThicknessCm = null;
+    selectedExchangeVariantId = null;
     renderComponentSelector();
     renderFromProject(store.get());
     const url = new URL(global.location.href);
@@ -338,7 +431,9 @@
     const climate = climateContext(project);
     const flowComponent = energyFlowComponent(project, component);
     const financeDefaults = financeConfig?.defaults ?? FALLBACK_FINANCE;
-    const costDefaults = defaultCostValues(component);
+    const frameMaterial = draft.frameMaterial ?? exchangeConfigFor(component)?.default_frame_material ?? 'wood';
+    const costDefaults = defaultCostValues(component, frameMaterial);
+    renderComponentMode(component);
 
     setInput('areaM2', areaInfo.value, 0);
     setInput('existingUValue', uInfo.value, 2);
@@ -349,12 +444,17 @@
       ? `${ORIGIN_LABELS[uInfo.origin] ?? 'Projektwert'}${uInfo.source ? ` · ${uInfo.source}` : ''}`
       : 'noch kein Wert vorhanden';
 
-    if (selectedThicknessCm === null && draft.selectedThicknessCm !== null && draft.selectedThicknessCm !== undefined) selectedThicknessCm = finite(draft.selectedThicknessCm, null);
-    const lambdaValue = finite(draft.lambdaWmk, 0.035);
-    const lambdaOption = Array.from($('lambdaSelect').options).find((option) => finite(option.value, null) === lambdaValue);
-    $('lambdaSelect').value = lambdaOption ? String(lambdaValue) : 'custom';
-    setInput('lambdaCustom', lambdaValue, 3);
-    $('lambdaCustomWrap').hidden = $('lambdaSelect').value !== 'custom';
+    if (isExchangeComponent(component)) {
+      if (selectedExchangeVariantId === null && draft.selectedExchangeVariantId) selectedExchangeVariantId = draft.selectedExchangeVariantId;
+      $('windowFrameMaterial').value = frameMaterial;
+    } else {
+      if (selectedThicknessCm === null && draft.selectedThicknessCm !== null && draft.selectedThicknessCm !== undefined) selectedThicknessCm = finite(draft.selectedThicknessCm, null);
+      const lambdaValue = finite(draft.lambdaWmk, 0.035);
+      const lambdaOption = Array.from($('lambdaSelect').options).find((option) => finite(option.value, null) === lambdaValue);
+      $('lambdaSelect').value = lambdaOption ? String(lambdaValue) : 'custom';
+      setInput('lambdaCustom', lambdaValue, 3);
+      $('lambdaCustomWrap').hidden = $('lambdaSelect').value !== 'custom';
+    }
 
     setInput('annualEfficiency', draft.annualEfficiency ?? valueAt(project, 'systems.heating.usefulHeatFactor', 0.85), 2);
     setInput('indoorTemperature', draft.indoorTemperatureC ?? valueAt(project, 'building.thermal.indoorTemperature', 20), 1);
@@ -368,13 +468,17 @@
     $('renewalContext').value = draft.renewalContext ?? 'renewal_due';
     setInput('baseCostEurM2', draft.baseCostEurM2 ?? costDefaults.baseCostEurM2, 0);
     setInput('variableCostEurM2Cm', draft.variableCostEurM2Cm ?? costDefaults.variableCostEurM2Cm, 1);
+    setInput('windowBasicCostEurM2', draft.windowBasicCostEurM2 ?? costDefaults.windowBasicCostEurM2, 0);
+    setInput('windowRecommendedCostEurM2', draft.windowRecommendedCostEurM2 ?? costDefaults.windowRecommendedCostEurM2, 0);
+    setInput('windowAmbitiousCostEurM2', draft.windowAmbitiousCostEurM2 ?? costDefaults.windowAmbitiousCostEurM2, 0);
     setInput('sunkCostEurM2', draft.sunkCostEurM2 ?? costDefaults.sunkCostEurM2, 0);
     setInput('lifetimeYears', draft.lifetimeYears ?? costDefaults.lifetimeYears, 0);
+    setInput('maintenancePercent', draft.maintenancePercent ?? costDefaults.maintenancePercent, 1);
     if ($('lifetimeSource')) $('lifetimeSource').textContent = draft.lifetimeYears !== undefined && draft.lifetimeYears !== null
       ? 'manuell / projektspezifisch'
-      : lifetimeConfig?.status === 'temporary-fallback-pending-readable-standard-excerpt'
-        ? 'vorläufiger Fallback – Normauszug noch lesbar nachreichen'
-        : 'zentraler Standardwert; überschreibbar';
+      : costDefaults.lifetime?.status === 'norm-informative'
+        ? `informativer Normwert · ${costDefaults.lifetime?.label ?? 'ÖNORM EN 15459-1:2017, Anhang D'}`
+        : 'transparenter Projekt-Fallback; kein direkt zuordenbarer Normeintrag';
 
     const selectedCarrier = populateEnergyCarrierOptions(draft.energyCarrierId);
     const carrier = carrierDefaults(selectedCarrier);
@@ -398,6 +502,11 @@
     const ambitious = target?.ambitious;
     $('recommendedTarget').textContent = recommended ? `U ≤ ${formatNumber(recommended, 2)} W/m²K` : 'noch offen';
     $('ambitiousTarget').textContent = ambitious ? `U ≤ ${formatNumber(ambitious, 2)} W/m²K` : 'noch offen';
+    if (isExchangeComponent(component)) {
+      const exchange = exchangeConfigFor(component);
+      $('recommendedThickness').textContent = exchange?.variants?.find((item) => item.role === 'recommended')?.label ?? 'diskrete Austauschvariante';
+      $('ambitiousThickness').textContent = exchange?.variants?.find((item) => item.role === 'ambitious')?.label ?? 'diskrete Austauschvariante';
+    }
 
     if (flowComponent?.lossKwh > 0) {
       $('climateStrip').dataset.level = 'good';
@@ -441,9 +550,11 @@
     const project = store.get();
     const flowComponent = energyFlowComponent(project, component);
     const climate = climateContext(project);
-    const selectedLambda = $('lambdaSelect').value === 'custom'
-      ? inputNumber('lambdaCustom', null)
-      : finite($('lambdaSelect').value, null);
+    const selectedLambda = isExchangeComponent(component)
+      ? null
+      : ($('lambdaSelect').value === 'custom'
+        ? inputNumber('lambdaCustom', null)
+        : finite($('lambdaSelect').value, null));
     const fundingEntries = [
       { id: 'state', label: 'Landesförderung', mode: $('stateFundingMode').value, value: inputNumber('stateFundingValue', 0) },
       { id: 'federal', label: 'Bundesförderung', mode: $('federalFundingMode').value, value: inputNumber('federalFundingValue', 0) },
@@ -454,6 +565,7 @@
       areaM2: inputNumber('areaM2', 0),
       existingUValue: inputNumber('existingUValue', 0),
       lambdaWmk: selectedLambda,
+      frameMaterial: $('windowFrameMaterial')?.value ?? null,
       annualEfficiency: inputNumber('annualEfficiency', 0.85),
       indoorTemperatureC: inputNumber('indoorTemperature', 20),
       boundaryFactor: inputNumber('boundaryFactor', component.boundaryFactor),
@@ -465,8 +577,12 @@
       renewalContext: $('renewalContext').value,
       baseCostEurM2: measureCore.roundToStep(inputNumber('baseCostEurM2', null), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
       variableCostEurM2Cm: inputNumber('variableCostEurM2Cm', null),
+      windowBasicCostEurM2: measureCore.roundToStep(inputNumber('windowBasicCostEurM2', null), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
+      windowRecommendedCostEurM2: measureCore.roundToStep(inputNumber('windowRecommendedCostEurM2', null), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
+      windowAmbitiousCostEurM2: measureCore.roundToStep(inputNumber('windowAmbitiousCostEurM2', null), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
       sunkCostEurM2: measureCore.roundToStep(inputNumber('sunkCostEurM2', 0), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
       lifetimeYears: inputNumber('lifetimeYears', null),
+      maintenancePercent: inputNumber('maintenancePercent', 0),
       energyCarrierId: $('energyCarrierSelect').value,
       energyPriceEurKwh: inputNumber('energyPriceEurKwh', null),
       periodYears: inputNumber('periodYears', FALLBACK_FINANCE.period_years),
@@ -490,12 +606,16 @@
       ? 'automatisch berücksichtigt'
       : 'nicht angesetzt';
     $('costSummaryFinance').textContent = 'Standardannahmen geladen';
-    $('costSummaryFinanceNote').textContent = `${formatNumber(inputs.periodYears)} Jahre · ${formatNumber(inputs.interestRatePercent, 1)} % Zins · Sensitivität empfohlen`;
+    $('costSummaryFinanceNote').textContent = isExchangeComponent(inputs.component)
+      ? `${formatNumber(inputs.lifetimeYears)} Jahre Nutzungsdauer · ${formatNumber(inputs.maintenancePercent, 1)} % Instandhaltung/a · ${formatNumber(inputs.interestRatePercent, 1)} % Zins`
+      : `${formatNumber(inputs.periodYears)} Jahre · ${formatNumber(inputs.interestRatePercent, 1)} % Zins · Sensitivität empfohlen`;
   }
 
   function variantEconomics(variant, reference, inputs) {
-    const costReady = inputs.baseCostEurM2 !== null
-      && inputs.variableCostEurM2Cm !== null
+    const costInputsReady = isExchangeComponent(inputs.component)
+      ? Number.isFinite(Number(variant.fullCostEurM2))
+      : inputs.baseCostEurM2 !== null && inputs.variableCostEurM2Cm !== null;
+    const costReady = costInputsReady
       && hasPositive(inputs.lifetimeYears)
       && inputs.energyPriceEurKwh !== null
       && variant.energy.available;
@@ -526,7 +646,7 @@
         : 0;
       return {
         id: item.id,
-        label: `${item.thicknessCm} cm`,
+        label: isExchangeComponent(inputs.component) ? (item.label ?? 'Fenstervariante') : `${item.thicknessCm} cm`,
         capitalComponents,
         consumptionCosts: [{
           id: 'component-energy',
@@ -534,30 +654,110 @@
           annualCost: annualEnergyCost,
           priceFactor: energyFactor,
         }],
-        operationCosts: [],
+        operationCosts: item.annualMaintenanceEurA > 0 ? [{
+          id: 'component-maintenance',
+          label: 'Instandhaltung',
+          annualCost: item.annualMaintenanceEurA,
+          priceFactor: investmentFactor,
+        }] : [],
       };
     };
 
     const economicVariant = toEconomicVariant(variant);
     const economicReference = toEconomicVariant(reference);
     const result = economicsCore.calculateVariant(economicVariant, assumptions);
-    const crossings = variant.thicknessCm > 0
+    const isMeasureVariant = isExchangeComponent(inputs.component) ? variant.role !== 'reference' : variant.thicknessCm > 0;
+    const crossings = isMeasureVariant
       ? economicsCore.findCrossings(economicVariant, economicReference, assumptions, 'cumulative')
       : [];
     const payback = crossings.find((entry) => entry.type === 'amortisation')?.year ?? null;
     return { available: true, result, paybackYears: payback, assumptions };
   }
 
+  function calculateAndRenderExchange(inputs) {
+    const config = exchangeConfigFor(inputs.component);
+    const definitions = (config?.variants ?? []).filter((item) => item.active !== false).map((definition) => {
+      const tier = definition.cost_tier ?? 'middle';
+      const fullCostEurM2 = tier === 'low'
+        ? inputs.windowBasicCostEurM2
+        : tier === 'high' ? inputs.windowAmbitiousCostEurM2 : inputs.windowRecommendedCostEurM2;
+      return {
+        ...definition,
+        uValue: definition.u_value,
+        shortLabel: definition.short_label ?? definition.label,
+        fullCostEurM2,
+      };
+    });
+
+    variants = measureCore.createExchangeVariants({
+      areaM2: inputs.areaM2,
+      existingUValue: inputs.existingUValue,
+      variants: definitions,
+      existingLossKwh: inputs.existingLossKwh,
+      heatingDegreeHoursKh: inputs.heatingDegreeHoursKh,
+      boundaryFactor: inputs.boundaryFactor,
+      annualEfficiency: inputs.annualEfficiency,
+      renewalContext: inputs.renewalContext,
+      sunkCostEurM2: inputs.sunkCostEurM2 ?? 0,
+      fundingEntries: inputs.fundingEntries,
+      energyPriceEurKwh: inputs.energyPriceEurKwh,
+      emissionFactorKgKwh: inputs.emissionFactorKgKwh,
+      maintenancePercentInitialPerYear: inputs.maintenancePercent,
+    });
+    const existingReference = variants[0];
+    // Bei ohnehin fälligem Fenstertausch ist der Basis-Austausch die wirtschaftliche
+    // Referenz: Die zusätzliche Qualität muss sich gegenüber der ohnehin erforderlichen
+    // Austauschvariante rechnen, nicht gegenüber dem unveränderten alten Fenster.
+    const economicReferenceRaw = inputs.renewalContext === 'renewal_due'
+      ? (variants.find((item) => item.role === 'basic') ?? existingReference)
+      : existingReference;
+    enrichedVariants = variants.map((variant) => ({
+      ...variant,
+      economics: variantEconomics(variant, economicReferenceRaw, inputs),
+    }));
+
+    const recommendation = enrichedVariants.find((item) => item.role === 'recommended') ?? enrichedVariants[1] ?? null;
+    const ambitious = enrichedVariants.find((item) => item.role === 'ambitious') ?? enrichedVariants.at(-1) ?? null;
+    const withEconomics = enrichedVariants.filter((item) => item.economics.available)
+      .filter((item) => inputs.renewalContext !== 'renewal_due' || item.role !== 'reference');
+    const economic = withEconomics.length
+      ? withEconomics.reduce((best, item) => item.economics.result.totalPresentValue < best.economics.result.totalPresentValue ? item : best)
+      : null;
+    const shortestPayback = withEconomics
+      .filter((item) => item.role !== 'reference' && item.economics.paybackYears !== null)
+      .sort((a, b) => a.economics.paybackYears - b.economics.paybackYears)[0] ?? null;
+
+    specialVariants = { recommendation, economic, ambitious };
+    optimizationMeta = { rawEconomicThicknessCm: null, rawShortestPaybackThicknessCm: null, economicRangeCm: null };
+    if (!selectedExchangeVariantId || !enrichedVariants.some((item) => item.exchangeId === selectedExchangeVariantId)) {
+      selectedExchangeVariantId = recommendation?.exchangeId ?? enrichedVariants[1]?.exchangeId ?? enrichedVariants[0]?.exchangeId ?? null;
+    }
+
+    renderSummaryCards(inputs, recommendation, economic, ambitious, shortestPayback);
+    renderVariantSelect();
+    renderSelectedVariant(inputs);
+    renderVariantsTable(inputs, recommendation);
+    renderCharts(inputs, recommendation, economic, ambitious);
+    buildPrintReport(inputs);
+    $('resultStatus').textContent = enrichedVariants.some((item) => item.economics.available) ? 'Fenster + Wirtschaftlichkeit' : 'Fenstervarianten';
+  }
+
   function calculateAndRender() {
     const inputs = currentInputs();
     renderAssumptionSummary(inputs);
     const target = targetForComponent(inputs.component);
-    const technicalReady = hasPositive(inputs.areaM2) && hasPositive(inputs.existingUValue) && hasPositive(inputs.lambdaWmk);
+    const technicalReady = hasPositive(inputs.areaM2) && hasPositive(inputs.existingUValue)
+      && (isExchangeComponent(inputs.component) || hasPositive(inputs.lambdaWmk));
 
     if (!technicalReady) {
       variants = [];
       enrichedVariants = [];
-      renderEmptyResults('Fläche, Bestands-U-Wert und λ-Wert ergänzen.');
+      renderEmptyResults(isExchangeComponent(inputs.component) ? 'Fläche und Bestands-U-Wert ergänzen.' : 'Fläche, Bestands-U-Wert und λ-Wert ergänzen.');
+      return;
+    }
+
+    if (isExchangeComponent(inputs.component)) {
+      calculateAndRenderExchange(inputs);
       return;
     }
 
@@ -679,37 +879,44 @@
     $('ambitiousCardText').textContent = message;
     $('selectedVariantSelect').innerHTML = '';
     $('selectedVariantTitle').textContent = '–';
-    ['selectedUValue','selectedEnergySaving','selectedAnnualCostSaving','selectedCo2Saving','selectedSurfaceTemperature','bridgeFullCost','bridgeSunkCost','bridgeEnergeticCost','bridgeSubsidy','bridgeOwnInvestment','impactBeforeU','impactBeforeSurface','impactAfterU','impactAfterSurface','impactEnergy','impactCost','impactCo2','impactComfort'].forEach((id) => { if ($(id)) $(id).textContent = '–'; });
+    ['selectedUValue','selectedEnergySaving','selectedAnnualCostSaving','selectedCo2Saving','selectedSurfaceTemperature','bridgeFullCost','bridgeSunkCost','bridgeEnergeticCost','bridgeSubsidy','bridgeOwnInvestment','impactBeforeU','impactBeforeSurface','impactAfterU','impactAfterSurface','impactEnergy','impactCost','impactCo2','impactComfort','impactTotalCost','impactPayback','impactVariantLabel'].forEach((id) => { if ($(id)) $(id).textContent = '–'; });
     $('variantsTableBody').innerHTML = '';
     $('costChart').innerHTML = '<p>Kostenangaben ergänzen.</p>';
     $('paybackChart').innerHTML = '<p>Kostenangaben ergänzen.</p>';
   }
 
   function renderSummaryCards(inputs, recommendation, economic, ambitious, shortestPayback) {
-    $('recommendationCardValue').textContent = recommendation ? `${formatNumber(recommendation.thicknessCm)} cm` : '–';
+    const exchange = isExchangeComponent(inputs.component);
+    $('recommendationCardValue').textContent = recommendation ? variantPrimaryText(recommendation) : '–';
     $('recommendationCardText').textContent = recommendation
-      ? `U ≈ ${formatNumber(recommendation.newUValue, 2)} W/m²K${recommendation.energy.available ? ` · ${formatEnergy(recommendation.energy.deliveredSavingsKwh)} weniger Endenergie` : ''}`
-      : 'Kein Empfehlungspunkt verfügbar.';
+      ? `${exchange ? recommendation.label : `U ≈ ${formatNumber(recommendation.newUValue, 2)} W/m²K`}. Untere Grenze der fachlichen Beratungsempfehlung; kein gesetzlicher Mindestwert.${recommendation.energy.available ? ` ${formatEnergy(recommendation.energy.deliveredSavingsKwh)} weniger Endenergie.` : ''}`
+      : 'Kein empfohlener Mindeststandard verfügbar.';
 
     if (economic) {
-      const rawRange = optimizationMeta.economicRangeCm;
-      const lower = rawRange ? measureCore.roundToStep(rawRange[0], 2) : economic.thicknessCm;
-      const upper = rawRange ? measureCore.roundToStep(rawRange[1], 2) : economic.thicknessCm;
-      $('economicCardValue').textContent = `${formatNumber(economic.thicknessCm)} cm`;
-      $('economicCardText').textContent = `Kostenminimum; wirtschaftlicher Bereich ca. ${formatNumber(lower)}–${formatNumber(upper)} cm${shortestPayback ? `. Kürzeste Amortisation bei ${formatNumber(shortestPayback.thicknessCm)} cm: ${formatNumber(shortestPayback.economics.paybackYears, 1)} Jahre.` : '.'}`;
+      $('economicCardValue').textContent = variantPrimaryText(economic);
+      if (exchange) {
+        $('economicCardText').textContent = `${economic.label}. Niedrigste Gesamtkosten im Betrachtungszeitraum${shortestPayback ? `; kürzeste Amortisation bei ${shortestPayback.label}: ${formatNumber(shortestPayback.economics.paybackYears, 1)} Jahre.` : '.'}`;
+      } else {
+        const rawRange = optimizationMeta.economicRangeCm;
+        const lower = rawRange ? measureCore.roundToStep(rawRange[0], 2) : economic.thicknessCm;
+        const upper = rawRange ? measureCore.roundToStep(rawRange[1], 2) : economic.thicknessCm;
+        $('economicCardText').textContent = `Kostenminimum; wirtschaftlicher Bereich ca. ${formatNumber(lower)}–${formatNumber(upper)} cm${shortestPayback ? `. Kürzeste Amortisation bei ${formatNumber(shortestPayback.thicknessCm)} cm: ${formatNumber(shortestPayback.economics.paybackYears, 1)} Jahre.` : '.'}`;
+      }
     } else {
       $('economicCardValue').textContent = 'noch offen';
       $('economicCardText').textContent = 'Kosten, Nutzungsdauer und Energiepreis ergänzen.';
     }
 
-    $('ambitiousCardValue').textContent = ambitious ? `${formatNumber(ambitious.thicknessCm)} cm` : '–';
+    $('ambitiousCardValue').textContent = ambitious ? variantPrimaryText(ambitious) : '–';
     $('ambitiousCardText').textContent = ambitious
-      ? `U ≈ ${formatNumber(ambitious.newUValue, 2)} W/m²K${ambitious.energy.available ? ` · zusätzliche Komfort- und CO₂-Wirkung` : ''}`
+      ? `${exchange ? ambitious.label : `U ≈ ${formatNumber(ambitious.newUValue, 2)} W/m²K`}${ambitious.energy.available ? ' · zusätzliche Komfort- und CO₂-Wirkung' : ''}`
       : 'Kein ambitionierter Punkt verfügbar.';
 
-    const analytic = calculateAnalyticOptimum(inputs);
-    if (analytic !== null && economic) {
-      $('economicCardText').textContent += ` Analytische Orientierung: ca. ${formatNumber(measureCore.roundToStep(analytic, 2))} cm.`;
+    if (!exchange) {
+      const analytic = calculateAnalyticOptimum(inputs);
+      if (analytic !== null && economic) {
+        $('economicCardText').textContent += ` Analytische Orientierung: ca. ${formatNumber(measureCore.roundToStep(analytic, 2))} cm.`;
+      }
     }
   }
 
@@ -735,11 +942,17 @@
 
   function renderVariantSelect() {
     const select = $('selectedVariantSelect');
-    select.innerHTML = enrichedVariants.map((item) => `<option value="${item.thicknessCm}">${formatNumber(item.thicknessCm)} cm · U ${formatNumber(item.newUValue, 2)}</option>`).join('');
-    const selected = enrichedAtThickness(selectedThicknessCm) ?? enrichedVariants[0];
+    select.innerHTML = enrichedVariants.map((item) => {
+      const value = isExchangeComponent() ? item.exchangeId : item.thicknessCm;
+      const label = isExchangeComponent()
+        ? `${item.label} · U ${formatNumber(item.newUValue, 2)}`
+        : `${formatNumber(item.thicknessCm)} cm · U ${formatNumber(item.newUValue, 2)}`;
+      return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
+    }).join('');
+    const selected = currentSelectedVariant();
     if (selected) {
-      selectedThicknessCm = selected.thicknessCm;
-      select.value = String(selected.thicknessCm);
+      setSelectedVariant(selected);
+      select.value = String(isExchangeComponent() ? selected.exchangeId : selected.thicknessCm);
     }
   }
 
@@ -749,17 +962,14 @@
   }
 
   function renderSelectedVariant(inputs) {
-    const selected = enrichedAtThickness(selectedThicknessCm) ?? enrichedVariants[0];
+    const selected = currentSelectedVariant();
     if (!selected) return;
-    selectedThicknessCm = selected.thicknessCm;
-    $('selectedVariantTitle').textContent = selected.thicknessCm > 0 ? `${formatNumber(selected.thicknessCm)} cm Zusatzdämmung` : 'Bestand / Referenz';
-    $('selectedUValue').textContent = `${formatNumber(selected.newUValue, 2)} W/m²K`;
-    $('selectedEnergySaving').textContent = selected.energy.available ? formatEnergy(selected.energy.deliveredSavingsKwh) : 'Energiegrundlage fehlt';
+    setSelectedVariant(selected);
+    $('selectedVariantTitle').textContent = variantLongText(selected);
+
     const annualCostSaving = selected.energy.available && Number.isFinite(Number(inputs.energyPriceEurKwh))
       ? selected.energy.deliveredSavingsKwh * inputs.energyPriceEurKwh
       : null;
-    $('selectedAnnualCostSaving').textContent = annualCostSaving !== null ? `≈ ${formatAnnualMoney(annualCostSaving)}` : 'Energiepreis ergänzen';
-    $('selectedCo2Saving').textContent = selected.co2SavingsKgA !== null ? formatCo2(selected.co2SavingsKgA) : 'Faktor ergänzen';
 
     const oldSurface = measureCore.surfaceTemperatureC({
       indoorTemperatureC: inputs.indoorTemperatureC,
@@ -773,10 +983,8 @@
       uValue: selected.newUValue,
       internalSurfaceResistanceM2KW: inputs.component.rsi,
     });
-    $('selectedSurfaceTemperature').textContent = oldSurface !== null && newSurface !== null
-      ? `${formatNumber(oldSurface, 1)} → ${formatNumber(newSurface, 1)} °C`
-      : '–';
 
+    if ($('impactVariantLabel')) $('impactVariantLabel').textContent = `Ausgewählt: ${variantLongText(selected)} · U ${formatNumber(selected.newUValue, 2)} W/m²K`;
     if ($('impactBeforeU')) $('impactBeforeU').textContent = `U ${formatNumber(inputs.existingUValue, 2)} W/m²K`;
     if ($('impactAfterU')) $('impactAfterU').textContent = `U ${formatNumber(selected.newUValue, 2)} W/m²K`;
     if ($('impactBeforeSurface')) $('impactBeforeSurface').textContent = oldSurface !== null ? `Oberfläche ${formatNumber(oldSurface, 1)} °C` : 'Oberfläche –';
@@ -786,8 +994,14 @@
     if ($('impactCo2')) $('impactCo2').textContent = selected.co2SavingsKgA !== null ? `− ${formatCo2(selected.co2SavingsKgA)}` : 'noch offen';
     const surfaceGainForGraphic = oldSurface !== null && newSurface !== null ? Math.max(0, newSurface - oldSurface) : null;
     if ($('impactComfort')) $('impactComfort').textContent = surfaceGainForGraphic !== null ? `+ ${formatNumber(surfaceGainForGraphic, 1)} K Oberfläche` : 'wärmere Oberfläche';
+    if ($('impactTotalCost')) $('impactTotalCost').textContent = formatMoney(selected.investment.fullInvestmentEur);
+    if ($('impactPayback')) $('impactPayback').textContent = selected.economics?.paybackYears !== null && selected.economics?.paybackYears !== undefined
+      ? `${formatNumber(selected.economics.paybackYears, 1)} Jahre`
+      : 'nicht ermittelt';
 
-    const costsAvailable = inputs.baseCostEurM2 !== null && inputs.variableCostEurM2Cm !== null;
+    const costsAvailable = isExchangeComponent(inputs.component)
+      ? [inputs.windowBasicCostEurM2, inputs.windowRecommendedCostEurM2, inputs.windowAmbitiousCostEurM2].some((value) => value !== null)
+      : inputs.baseCostEurM2 !== null && inputs.variableCostEurM2Cm !== null;
     $('bridgeFullCost').textContent = costsAvailable ? formatMoney(selected.investment.fullInvestmentEur) : 'Kosten ergänzen';
     $('bridgeSunkCost').textContent = costsAvailable ? formatMoney(selected.investment.sunkCostEur) : '–';
     $('bridgeEnergeticCost').textContent = costsAvailable ? formatMoney(selected.investment.energeticAdditionalEur) : '–';
@@ -796,32 +1010,47 @@
 
     const benefits = coBenefitsConfig?.components?.[inputs.component.targetId] ?? {};
     const surfaceGain = oldSurface !== null && newSurface !== null ? Math.max(0, newSurface - oldSurface) : null;
+    const fallbackComfort = isExchangeComponent(inputs.component)
+      ? 'Wärmere Innenoberflächen und weniger Kaltluftabfall können die Behaglichkeit in Fensternähe verbessern.'
+      : null;
     $('comfortText').textContent = [
-      benefits.winter_comfort ? `Winterkomfort: ${benefits.winter_comfort}.` : null,
+      benefits.winter_comfort ? `Winterkomfort: ${benefits.winter_comfort}.` : fallbackComfort,
       surfaceGain !== null ? `Innere Oberfläche überschlägig um ${formatNumber(surfaceGain, 1)} K wärmer.` : null,
-      benefits.moisture ? `${benefits.moisture}.` : null,
+      benefits.moisture ? `${benefits.moisture}.` : isExchangeComponent(inputs.component) ? 'Das Kondensatrisiko an der Regeloberfläche sinkt; Anschlussfugen und Wärmebrücken bleiben separat zu prüfen.' : null,
       'Wärmebrücken und Anschlüsse bleiben separat zu planen.',
     ].filter(Boolean).join(' ');
   }
 
   function renderVariantsTable(inputs, recommendation) {
     const body = $('variantsTableBody');
+    const selected = currentSelectedVariant();
     body.innerHTML = enrichedVariants.map((item) => {
       const economicText = item.economics.available ? formatMoney(item.economics.result.totalPresentValue) : '–';
       const payback = item.economics.paybackYears !== null ? `${formatNumber(item.economics.paybackYears, 1)} a` : '–';
-      const invest = hasPositive(inputs.baseCostEurM2) || hasPositive(inputs.variableCostEurM2Cm) ? formatMoney(item.investment.fullInvestmentEur) : '–';
-      return `<tr class="${Math.abs(item.thicknessCm - selectedThicknessCm) < 1e-6 ? 'is-selected' : ''} ${recommendation && item.thicknessCm === recommendation.thicknessCm ? 'is-recommended' : ''}">
-        <td>${formatNumber(item.thicknessCm)} cm</td>
+      const invest = formatMoney(item.investment.fullInvestmentEur);
+      const primary = isExchangeComponent(inputs.component) ? item.label : `${formatNumber(item.thicknessCm)} cm`;
+      const isSelected = isExchangeComponent(inputs.component)
+        ? item.exchangeId === selected?.exchangeId
+        : Math.abs(item.thicknessCm - selected?.thicknessCm) < 1e-6;
+      const isRecommended = isExchangeComponent(inputs.component)
+        ? item.exchangeId === recommendation?.exchangeId
+        : recommendation && item.thicknessCm === recommendation.thicknessCm;
+      const selectValue = isExchangeComponent(inputs.component) ? item.exchangeId : item.thicknessCm;
+      return `<tr class="${isSelected ? 'is-selected' : ''} ${isRecommended ? 'is-recommended' : ''}">
+        <td>${escapeHtml(primary)}</td>
         <td>${formatNumber(item.newUValue, 2)}</td>
         <td>${item.energy.available ? formatEnergy(item.energy.deliveredSavingsKwh) : '–'}</td>
         <td>${invest}</td>
         <td>${economicText}</td>
         <td>${payback}</td>
-        <td><button class="table-select-button" data-select-thickness="${item.thicknessCm}" type="button">wählen</button></td>
+        <td><button class="table-select-button" data-select-variant="${escapeHtml(selectValue)}" type="button">wählen</button></td>
       </tr>`;
     }).join('');
-    body.querySelectorAll('[data-select-thickness]').forEach((button) => button.addEventListener('click', () => {
-      selectedThicknessCm = Number(button.dataset.selectThickness);
+    body.querySelectorAll('[data-select-variant]').forEach((button) => button.addEventListener('click', () => {
+      const item = isExchangeComponent(inputs.component)
+        ? enrichedVariants.find((entry) => entry.exchangeId === button.dataset.selectVariant)
+        : enrichedAtThickness(Number(button.dataset.selectVariant));
+      setSelectedVariant(item);
       renderVariantSelect();
       renderSelectedVariant(inputs);
       renderVariantsTable(inputs, recommendation);
@@ -848,7 +1077,7 @@
     const sx = (x) => pad.left + (maxX === minX ? 0 : (x - minX) / (maxX - minX) * innerW);
     const sy = (y) => pad.top + innerH - (maxY === minY ? 0 : (y - minY) / (maxY - minY) * innerH);
     const path = points.map((p, index) => `${index ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
-    const xTicks = [minX, Math.round((minX + maxX) / 2), maxX];
+    const xTicks = options.xTicks ?? [minX, Math.round((minX + maxX) / 2), maxX];
     const yTicks = [minY, (minY + maxY) / 2, maxY];
     const markers = (options.markers ?? []).filter(Boolean).map((marker) => {
       const point = points.find((p) => p.x === marker.x);
@@ -859,29 +1088,37 @@
       <g class="chart-grid">${yTicks.map((tick) => `<line x1="${pad.left}" x2="${width - pad.right}" y1="${sy(tick)}" y2="${sy(tick)}"/><text x="${pad.left - 8}" y="${sy(tick) + 4}" text-anchor="end">${escapeHtml(options.yFormatter(tick))}</text>`).join('')}</g>
       <line class="chart-axis" x1="${pad.left}" x2="${pad.left}" y1="${pad.top}" y2="${height - pad.bottom}"/>
       <line class="chart-axis" x1="${pad.left}" x2="${width - pad.right}" y1="${height - pad.bottom}" y2="${height - pad.bottom}"/>
-      ${xTicks.map((tick) => `<text class="chart-label" x="${sx(tick)}" y="${height - 16}" text-anchor="middle">${formatNumber(tick)} cm</text>`).join('')}
+      ${xTicks.map((tick) => `<text class="chart-label" x="${sx(tick)}" y="${height - 16}" text-anchor="middle">${escapeHtml(options.xFormatter ? options.xFormatter(tick) : `${formatNumber(tick)} cm`)}</text>`).join('')}
       <path class="chart-line" d="${path}" fill="none"/>
-      ${points.map((p) => `<circle class="chart-point" cx="${sx(p.x)}" cy="${sy(p.y)}" r="3"><title>${formatNumber(p.x)} cm: ${escapeHtml(options.yFormatter(p.y))}</title></circle>`).join('')}
+      ${points.map((p) => `<circle class="chart-point" cx="${sx(p.x)}" cy="${sy(p.y)}" r="3"><title>${escapeHtml(options.xFormatter ? options.xFormatter(p.x) : `${formatNumber(p.x)} cm`)}: ${escapeHtml(options.yFormatter(p.y))}</title></circle>`).join('')}
       ${markers}
     </svg>`;
   }
 
   function renderCharts(inputs, recommendation, economic, ambitious) {
-    const costPoints = enrichedVariants.filter((item) => item.economics.available).map((item) => ({ x: item.thicknessCm, y: item.economics.result.totalPresentValue }));
+    const exchange = isExchangeComponent(inputs.component);
+    const costPoints = enrichedVariants.filter((item) => item.economics.available).map((item) => ({ x: exchange ? item.order : item.thicknessCm, y: item.economics.result.totalPresentValue }));
+    const labels = Object.fromEntries(enrichedVariants.map((item) => [exchange ? item.order : item.thicknessCm, exchange ? (item.shortLabel ?? item.label) : `${formatNumber(item.thicknessCm)} cm`]));
+    const markerX = (item) => item ? (exchange ? item.order : item.thicknessCm) : null;
     $('costChart').innerHTML = costPoints.length ? svgLineChart(costPoints, {
-      ariaLabel: 'Gesamtkosten nach Dämmdicke',
+      ariaLabel: exchange ? 'Gesamtkosten nach Fenstervariante' : 'Gesamtkosten nach Dämmdicke',
       yFormatter: (value) => `${formatNumber(roundDisplay(value, 500) / 1000, 1)} T€`,
+      xTicks: exchange ? costPoints.map((point) => point.x) : undefined,
+      xFormatter: exchange ? (value) => labels[value] ?? String(value) : undefined,
       markers: [
-        recommendation ? { x: recommendation.thicknessCm, kind: 'recommendation', label: 'Empfehlung' } : null,
-        economic ? { x: economic.thicknessCm, kind: 'economic', label: 'Kostenoptimum' } : null,
-        ambitious ? { x: ambitious.thicknessCm, kind: 'ambitious', label: 'Ambitioniert' } : null,
+        recommendation ? { x: markerX(recommendation), kind: 'recommendation', label: 'Empfohlener Mindeststandard' } : null,
+        economic ? { x: markerX(economic), kind: 'economic', label: 'Kostenoptimum' } : null,
+        ambitious ? { x: markerX(ambitious), kind: 'ambitious', label: 'Ambitioniert' } : null,
       ],
     }) : '<p>Kosten, Nutzungsdauer und Energiepreis ergänzen.</p>';
 
-    const paybackPoints = enrichedVariants.filter((item) => item.thicknessCm > 0 && item.economics.paybackYears !== null).map((item) => ({ x: item.thicknessCm, y: item.economics.paybackYears }));
+    const paybackItems = enrichedVariants.filter((item) => (exchange ? item.role !== 'reference' : item.thicknessCm > 0) && item.economics.paybackYears !== null);
+    const paybackPoints = paybackItems.map((item) => ({ x: exchange ? item.order : item.thicknessCm, y: item.economics.paybackYears }));
     $('paybackChart').innerHTML = paybackPoints.length ? svgLineChart(paybackPoints, {
-      ariaLabel: 'Dynamische Amortisationsdauer nach Dämmdicke',
+      ariaLabel: exchange ? 'Dynamische Amortisationsdauer nach Fenstervariante' : 'Dynamische Amortisationsdauer nach Dämmdicke',
       yFormatter: (value) => `${formatNumber(value, 1)} a`,
+      xTicks: exchange ? paybackPoints.map((point) => point.x) : undefined,
+      xFormatter: exchange ? (value) => labels[value] ?? String(value) : undefined,
       markers: [],
     }) : '<p>Innerhalb des Betrachtungszeitraums keine dynamische Amortisation ermittelt oder Kostenangaben fehlen.</p>';
   }
@@ -890,12 +1127,13 @@
     const inputs = currentInputs();
     const component = inputs.component;
     suppressProjectRender = true;
-    if (component.areaPath) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.2' });
-    if (component.uPath) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.2' });
-    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.2' });
-    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.2' });
+    if (component.areaPath) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.4' });
+    if (component.uPath) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.4' });
+    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.4' });
+    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.4' });
     writeDraft({
       lambdaWmk: inputs.lambdaWmk,
+      frameMaterial: inputs.frameMaterial,
       annualEfficiency: inputs.annualEfficiency,
       indoorTemperatureC: inputs.indoorTemperatureC,
       boundaryFactor: inputs.boundaryFactor,
@@ -903,8 +1141,12 @@
       renewalContext: inputs.renewalContext,
       baseCostEurM2: inputs.baseCostEurM2,
       variableCostEurM2Cm: inputs.variableCostEurM2Cm,
+      windowBasicCostEurM2: inputs.windowBasicCostEurM2,
+      windowRecommendedCostEurM2: inputs.windowRecommendedCostEurM2,
+      windowAmbitiousCostEurM2: inputs.windowAmbitiousCostEurM2,
       sunkCostEurM2: inputs.sunkCostEurM2,
       lifetimeYears: inputs.lifetimeYears,
+      maintenancePercent: inputs.maintenancePercent,
       energyCarrierId: inputs.energyCarrierId,
       energyPriceEurKwh: inputs.energyPriceEurKwh,
       periodYears: inputs.periodYears,
@@ -919,13 +1161,14 @@
       },
       emissionFactorKgKwh: inputs.emissionFactorKgKwh,
       selectedThicknessCm,
+      selectedExchangeVariantId,
     });
     suppressProjectRender = false;
   }
 
   function saveMeasure() {
     const inputs = currentInputs();
-    const selected = enrichedAtThickness(selectedThicknessCm);
+    const selected = currentSelectedVariant();
     if (!selected) return;
     persistVisibleInputs();
     const measureId = `envelope-${inputs.component.id}`;
@@ -935,12 +1178,14 @@
     const measure = {
       id: measureId,
       category: 'envelope',
-      type: 'insulation',
+      type: isExchangeComponent(inputs.component) ? 'exchange' : 'insulation',
       componentId: inputs.component.id,
       title: `${inputs.component.label} sanieren`,
       status: 'draft-selected',
       existingState: { areaM2: inputs.areaM2, uValue: inputs.existingUValue },
-      selectedVariant: { thicknessCm: selected.thicknessCm, uValue: selected.newUValue, lambdaWmk: inputs.lambdaWmk },
+      selectedVariant: isExchangeComponent(inputs.component)
+        ? { id: selected.exchangeId, label: selected.label, uValue: selected.newUValue, frameMaterial: inputs.frameMaterial }
+        : { thicknessCm: selected.thicknessCm, uValue: selected.newUValue, lambdaWmk: inputs.lambdaWmk },
       targetProfile: {
         recommendedUValue: target?.recommended ?? null,
         ambitiousUValue: target?.ambitious ?? null,
@@ -951,6 +1196,13 @@
         renewalContext: inputs.renewalContext,
         baseCostEurM2: inputs.baseCostEurM2,
         variableCostEurM2Cm: inputs.variableCostEurM2Cm,
+        windowCostsEurM2: isExchangeComponent(inputs.component) ? {
+          basic: inputs.windowBasicCostEurM2,
+          recommended: inputs.windowRecommendedCostEurM2,
+          ambitious: inputs.windowAmbitiousCostEurM2,
+        } : null,
+        frameMaterial: inputs.frameMaterial,
+        maintenancePercent: inputs.maintenancePercent,
         lifetimeYears: inputs.lifetimeYears,
         fullInvestmentEur: selected.investment.fullInvestmentEur,
       },
@@ -1233,7 +1485,7 @@
   }
 
   function buildPrintReport(inputs = currentInputs()) {
-    const selected = enrichedAtThickness(selectedThicknessCm);
+    const selected = currentSelectedVariant();
     const project = store.get();
     const target = targetForComponent(inputs.component);
     if (!selected) {
@@ -1257,50 +1509,50 @@
     const annualCostSaving = selected.energy.available && Number.isFinite(Number(inputs.energyPriceEurKwh))
       ? selected.energy.deliveredSavingsKwh * inputs.energyPriceEurKwh
       : null;
-
     const shortlist = [specialVariants.recommendation, specialVariants.economic, specialVariants.ambitious]
       .filter(Boolean)
-      .filter((item, index, array) => array.findIndex((entry) => entry.thicknessCm === item.thicknessCm) === index);
-
+      .filter((item, index, array) => array.findIndex((entry) => (isExchangeComponent(inputs.component) ? entry.exchangeId === item.exchangeId : entry.thicknessCm === item.thicknessCm)) === index);
     const costChartMarkup = $('costChart')?.querySelector('svg')?.outerHTML ?? '';
     const paybackChartMarkup = $('paybackChart')?.querySelector('svg')?.outerHTML ?? '';
+    const variantColumnLabel = isExchangeComponent(inputs.component) ? 'Variante' : 'Dämmung';
+    const beforeArtwork = $('impactBeforeImage') && !$('impactBeforeImage').hidden
+      ? `<img class="print-impact-image" src="${escapeHtml($('impactBeforeImage').src)}" alt="">`
+      : '';
+    const afterArtwork = $('impactAfterImage') && !$('impactAfterImage').hidden
+      ? `<img class="print-impact-image" src="${escapeHtml($('impactAfterImage').src)}" alt="">`
+      : '';
+    const thirdBasisLabel = isExchangeComponent(inputs.component) ? 'Rahmenmaterial' : 'λ-Wert';
+    const thirdBasisValue = isExchangeComponent(inputs.component)
+      ? (inputs.frameMaterial === 'aluminium' ? 'Aluminium' : 'Holz')
+      : `${formatNumber(inputs.lambdaWmk, 3)} W/mK`;
 
     $('renovationPrintReport').innerHTML = `
       <section class="print-hero">
         <p class="eyebrow">Bauteil &amp; Sanierung</p>
         <h1>${escapeHtml(inputs.component.label)}</h1>
-        <p>${escapeHtml(project.project?.addressLabel || 'ohne Standort')}</p>
+        <p>${escapeHtml(project.project?.addressLabel || 'ohne Standort')} · ${escapeHtml(variantLongText(selected))}</p>
       </section>
 
       <section class="print-summary-grid">
         <div><span>Fläche</span><strong>${formatNumber(inputs.areaM2)} m²</strong></div>
         <div><span>U-Wert Bestand</span><strong>${formatNumber(inputs.existingUValue, 2)} W/m²K</strong></div>
-        <div><span>λ-Wert</span><strong>${formatNumber(inputs.lambdaWmk, 3)} W/mK</strong></div>
-      </section>
-
-      <section class="print-selected">
-        <h2>Ausgewählte Variante</h2>
-        <div class="print-kpi-grid">
-          <div><span>Dämmstärke</span><strong>${formatNumber(selected.thicknessCm)} cm</strong></div>
-          <div><span>U-Wert neu</span><strong>${formatNumber(selected.newUValue, 2)} W/m²K</strong></div>
-          <div><span>Energieeinsparung</span><strong>${selected.energy.available ? formatEnergy(selected.energy.deliveredSavingsKwh) : 'nicht berechnet'}</strong><small>${annualCostSaving !== null ? `≈ ${formatAnnualMoney(annualCostSaving)}` : ''}</small></div>
-          <div><span>CO₂-Einsparung</span><strong>${selected.co2SavingsKgA !== null ? formatCo2(selected.co2SavingsKgA) : 'nicht berechnet'}</strong></div>
-          <div><span>Gesamtkosten</span><strong>${formatMoney(selected.investment.fullInvestmentEur)}</strong></div>
-          <div><span>Amortisation</span><strong>${selected.economics.paybackYears !== null ? `${formatNumber(selected.economics.paybackYears, 1)} Jahre` : 'nicht ermittelt'}</strong></div>
-        </div>
+        <div><span>${thirdBasisLabel}</span><strong>${thirdBasisValue}</strong></div>
       </section>
 
       <section class="print-impact">
         <h2>Sanierung auf einen Blick</h2>
+        <p class="print-variant-label">${escapeHtml(variantLongText(selected))} · U ${formatNumber(selected.newUValue, 2)} W/m²K</p>
         <div class="print-impact-grid">
-          <div class="print-impact-house print-impact-house--before"><span>Bestand</span><strong>U ${formatNumber(inputs.existingUValue, 2)}</strong><small>${oldSurface !== null ? `Oberfläche ${formatNumber(oldSurface, 1)} °C` : ''}</small></div>
+          <div class="print-impact-house print-impact-house--before">${beforeArtwork}<span>Bestand</span><strong>U ${formatNumber(inputs.existingUValue, 2)}</strong><small>${oldSurface !== null ? `Oberfläche ${formatNumber(oldSurface, 1)} °C` : ''}</small></div>
           <div class="print-impact-benefits">
             <div><span>Energie</span><strong>${selected.energy.available ? `− ${formatEnergy(selected.energy.deliveredSavingsKwh)}` : '–'}</strong></div>
             <div><span>Heizkosten</span><strong>${annualCostSaving !== null ? `− ${formatAnnualMoney(annualCostSaving)}` : '–'}</strong></div>
             <div><span>CO₂</span><strong>${selected.co2SavingsKgA !== null ? `− ${formatCo2(selected.co2SavingsKgA)}` : '–'}</strong></div>
             <div><span>Komfort</span><strong>${surfaceGain !== null ? `+ ${formatNumber(surfaceGain, 1)} K Oberfläche` : 'wärmere Oberfläche'}</strong></div>
+            <div><span>Gesamtkosten</span><strong>${formatMoney(selected.investment.fullInvestmentEur)}</strong></div>
+            <div><span>Amortisation</span><strong>${selected.economics.paybackYears !== null ? `${formatNumber(selected.economics.paybackYears, 1)} Jahre` : 'nicht ermittelt'}</strong></div>
           </div>
-          <div class="print-impact-house print-impact-house--after"><span>Sanierung</span><strong>U ${formatNumber(selected.newUValue, 2)}</strong><small>${newSurface !== null ? `Oberfläche ${formatNumber(newSurface, 1)} °C` : ''}</small></div>
+          <div class="print-impact-house print-impact-house--after">${afterArtwork}<span>Sanierung</span><strong>U ${formatNumber(selected.newUValue, 2)}</strong><small>${newSurface !== null ? `Oberfläche ${formatNumber(newSurface, 1)} °C` : ''}</small></div>
         </div>
       </section>
 
@@ -1322,31 +1574,17 @@
 
       <section>
         <h2>Orientierungspunkte</h2>
-        <table class="print-variants"><thead><tr><th>Bereich</th><th>Dämmung</th><th>U-Wert</th><th>Gesamtkosten</th><th>Amortisation</th></tr></thead><tbody>
+        <table class="print-variants"><thead><tr><th>Bereich</th><th>${variantColumnLabel}</th><th>U-Wert</th><th>Gesamtkosten</th><th>Amortisation</th></tr></thead><tbody>
           ${shortlist.map((item) => {
-            const label = item === specialVariants.recommendation ? 'Empfehlung' : item === specialVariants.economic ? 'Kostenoptimum' : 'Ambitioniert';
-            return `<tr><td>${label}</td><td>${formatNumber(item.thicknessCm)} cm</td><td>${formatNumber(item.newUValue, 2)}</td><td>${item.economics.available ? formatMoney(item.economics.result.totalPresentValue) : '–'}</td><td>${item.economics.paybackYears !== null ? `${formatNumber(item.economics.paybackYears, 1)} a` : '–'}</td></tr>`;
+            const label = item === specialVariants.recommendation ? 'Empfohlener Mindeststandard' : item === specialVariants.economic ? 'Kostenoptimum' : 'Ambitioniert';
+            return `<tr><td>${label}</td><td>${escapeHtml(variantPrimaryText(item))}</td><td>${formatNumber(item.newUValue, 2)}</td><td>${item.economics.available ? formatMoney(item.economics.result.totalPresentValue) : '–'}</td><td>${item.economics.paybackYears !== null ? `${formatNumber(item.economics.paybackYears, 1)} a` : '–'}</td></tr>`;
           }).join('')}
-        </tbody></table>
-      </section>
-
-      <section class="print-all-variants">
-        <h2>Alle Varianten</h2>
-        <table class="print-variants"><thead><tr><th>Dämmung</th><th>U-Wert</th><th>Energieeinsparung</th><th>Investition</th><th>Gesamtkosten</th><th>Amortisation</th></tr></thead><tbody>
-          ${enrichedVariants.map((item) => `<tr class="${Math.abs(item.thicknessCm - selected.thicknessCm) < 1e-6 ? 'is-selected' : ''}">
-            <td>${formatNumber(item.thicknessCm)} cm</td>
-            <td>${formatNumber(item.newUValue, 2)}</td>
-            <td>${item.energy.available ? formatEnergy(item.energy.deliveredSavingsKwh) : '–'}</td>
-            <td>${formatMoney(item.investment.fullInvestmentEur)}</td>
-            <td>${item.economics.available ? formatMoney(item.economics.result.totalPresentValue) : '–'}</td>
-            <td>${item.economics.paybackYears !== null ? `${formatNumber(item.economics.paybackYears, 1)} a` : '–'}</td>
-          </tr>`).join('')}
         </tbody></table>
       </section>
 
       <section class="print-method-note">
         <h2>Grundlagen und Grenzen</h2>
-        <p>Empfehlung U ≤ ${target?.recommended ? formatNumber(target.recommended, 2) : '–'} W/m²K; ambitioniert U ≤ ${target?.ambitious ? formatNumber(target.ambitious, 2) : '–'} W/m²K. Interne Berechnung ohne Rundung, Darstellung: Dämmdicke in 2-cm-Schritten, Richtpreise auf 10 €/m² und Summen auf 500 €. Beratungshilfe; aktuelle rechtliche, förderbezogene und bauphysikalische Anforderungen projektbezogen prüfen.</p>
+        <p>Empfohlener Mindeststandard U ≤ ${target?.recommended ? formatNumber(target.recommended, 2) : '–'} W/m²K; ambitioniert U ≤ ${target?.ambitious ? formatNumber(target.ambitious, 2) : '–'} W/m²K. Der empfohlene Mindeststandard ist die untere Grenze der fachlichen Beratungsempfehlung und kein gesetzlicher Mindestwert. Intern wird exakt gerechnet; die Darstellung wird bewusst gerundet. Beratungshilfe; aktuelle rechtliche, förderbezogene und bauphysikalische Anforderungen projektbezogen prüfen.</p>
       </section>`;
   }
 
@@ -1358,8 +1596,21 @@
       if (!custom) setInput('lambdaCustom', Number($('lambdaSelect').value), 3);
       calculateAndRender();
     });
+    $('windowFrameMaterial').addEventListener('change', () => {
+      const defaults = defaultCostValues(activeComponent(), $('windowFrameMaterial').value);
+      setInput('lifetimeYears', defaults.lifetimeYears, 0);
+      setInput('maintenancePercent', defaults.maintenancePercent, 1);
+      if ($('lifetimeSource')) $('lifetimeSource').textContent = defaults.lifetime?.status === 'norm-informative'
+        ? `informativer Normwert · ${defaults.lifetime?.label ?? 'ÖNORM EN 15459-1:2017, Anhang D'}`
+        : 'transparenter Projekt-Fallback';
+      calculateAndRender();
+      persistVisibleInputs();
+    });
     $('selectedVariantSelect').addEventListener('change', () => {
-      selectedThicknessCm = Number($('selectedVariantSelect').value);
+      const item = isExchangeComponent()
+        ? enrichedVariants.find((entry) => entry.exchangeId === $('selectedVariantSelect').value)
+        : enrichedAtThickness(Number($('selectedVariantSelect').value));
+      setSelectedVariant(item);
       const inputs = currentInputs();
       renderSelectedVariant(inputs);
       renderVariantsTable(inputs, specialVariants.recommendation);
@@ -1368,7 +1619,7 @@
     document.querySelectorAll('[data-select-special]').forEach((button) => button.addEventListener('click', () => {
       const item = specialVariants[button.dataset.selectSpecial];
       if (!item) return;
-      selectedThicknessCm = item.thicknessCm;
+      setSelectedVariant(item);
       renderVariantSelect();
       const inputs = currentInputs();
       renderSelectedVariant(inputs);
@@ -1399,7 +1650,7 @@
 
     const calculationInputs = document.querySelectorAll('.renovation-workspace input, .renovation-workspace select');
     calculationInputs.forEach((input) => {
-      if (['componentSelect', 'selectedVariantSelect', 'lambdaSelect', 'energyCarrierSelect', 'stateFundingMode', 'federalFundingMode', 'otherFundingMode'].includes(input.id)) return;
+      if (['componentSelect', 'selectedVariantSelect', 'lambdaSelect', 'energyCarrierSelect', 'stateFundingMode', 'federalFundingMode', 'otherFundingMode', 'windowFrameMaterial'].includes(input.id)) return;
       input.addEventListener('input', calculateAndRender);
       input.addEventListener('change', persistVisibleInputs);
     });
@@ -1427,10 +1678,11 @@
       ? requested
       : COMPONENTS.some((item) => item.id === stored && item.supported) ? stored : 'exteriorWall';
 
-    [targetsConfig, lambdaConfig, coBenefitsConfig, costConfig, lifetimeConfig, financeConfig, energyPricesConfig, emissionFactorsConfig] = await Promise.all([
+    [targetsConfig, lambdaConfig, coBenefitsConfig, exchangeVariantsConfig, costConfig, lifetimeConfig, financeConfig, energyPricesConfig, emissionFactorsConfig] = await Promise.all([
       loadJson('measures/envelope-targets.json', { components: {} }),
       loadJson('measures/lambda-values.json', { values: [{ value: 0.035, label: '0,035 W/mK', active: true }] }),
       loadJson('measures/co-benefits.json', { components: {} }),
+      loadJson('measures/exchange-variants.json', { components: {} }),
       loadJson('costs/renovation-costs.json', { models: [] }),
       loadJson('standards/economics/component-lifetimes.json', { items: [] }),
       loadJson('economics/financial-defaults.json', { defaults: FALLBACK_FINANCE, rounding: {} }),

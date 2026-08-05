@@ -1,9 +1,9 @@
 {
   "schema": "energy-tools-envelope-targets",
-  "version": "2026-08-04-v0.3",
-  "data_date": "2026-08-04",
+  "version": "2026-08-05-v0.4",
+  "data_date": "2026-08-05",
   "status": "advisory-targets",
-  "notice": "Beratungsempfehlung und ambitionierter Standard. Rechtliche OIB-Prüfdaten liegen getrennt unter shared/data/standards/oib/envelope-u-values.json.",
+  "notice": "Empfohlener Mindeststandard als untere Grenze der fachlichen Beratungsempfehlung sowie ambitionierter Standard. Rechtliche OIB-Prüfdaten liegen getrennt unter shared/data/standards/oib/envelope-u-values.json.",
   "components": {
     "wall_external": {
       "label": "Außenwand gegen Außenluft",

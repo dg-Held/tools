@@ -5,7 +5,7 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.EnvelopeRenovationCore = Object.freeze(api);
 })(typeof window !== 'undefined' ? window : globalThis, function envelopeFactory() {
-  const MODEL_VERSION = '0.2.0';
+  const MODEL_VERSION = '0.4.0';
   const EPSILON = 1e-12;
 
   function finite(value, fallback = 0) {
@@ -262,6 +262,124 @@
     });
   }
 
+
+  function investmentForExchange({
+    areaM2,
+    fullCostEurM2,
+    sunkCostEurM2,
+    renewalContext,
+    isReference = false,
+  }) {
+    const area = Math.max(0, finite(areaM2, 0));
+    const fullRate = Math.max(0, finite(fullCostEurM2, 0));
+    const sunkRate = Math.max(0, finite(sunkCostEurM2, 0));
+    const isRenewal = renewalContext === 'renewal_due';
+
+    if (isReference) {
+      const referenceCost = isRenewal ? area * sunkRate : 0;
+      return {
+        fullInvestmentEur: referenceCost,
+        sunkCostEur: isRenewal ? referenceCost : 0,
+        energeticAdditionalEur: 0,
+      };
+    }
+
+    const full = area * fullRate;
+    const sunk = isRenewal ? Math.min(full, area * sunkRate) : 0;
+    return {
+      fullInvestmentEur: full,
+      sunkCostEur: sunk,
+      energeticAdditionalEur: Math.max(0, full - sunk),
+    };
+  }
+
+  function createExchangeVariants(inputs) {
+    const definitions = Array.isArray(inputs.variants) ? inputs.variants : [];
+    const referenceInvestment = investmentForExchange({
+      areaM2: inputs.areaM2,
+      fullCostEurM2: 0,
+      sunkCostEurM2: inputs.sunkCostEurM2,
+      renewalContext: inputs.renewalContext,
+      isReference: true,
+    });
+    const referenceEnergy = energyEffect({
+      areaM2: inputs.areaM2,
+      existingUValue: inputs.existingUValue,
+      newUValue: inputs.existingUValue,
+      existingLossKwh: inputs.existingLossKwh,
+      heatingDegreeHoursKh: inputs.heatingDegreeHoursKh,
+      boundaryFactor: inputs.boundaryFactor,
+      annualEfficiency: inputs.annualEfficiency,
+    });
+    const reference = {
+      id: 'existing-reference',
+      exchangeId: 'existing-reference',
+      label: 'Bestand / keine Maßnahme',
+      shortLabel: 'Bestand',
+      role: 'reference',
+      order: 0,
+      newUValue: finite(inputs.existingUValue, 0),
+      energy: referenceEnergy,
+      investment: referenceInvestment,
+      subsidyEur: 0,
+      fundingItems: [],
+      paymentAfterSubsidyEur: referenceInvestment.fullInvestmentEur,
+      relevantOwnInvestmentEur: 0,
+      energyCostSavingsEurA: 0,
+      co2SavingsKgA: 0,
+      annualMaintenanceEurA: 0,
+      fullCostEurM2: inputs.renewalContext === 'renewal_due' ? finite(inputs.sunkCostEurM2, 0) : 0,
+    };
+
+    const items = definitions.map((definition, index) => {
+      const newUValue = finite(definition.uValue ?? definition.u_value, 0);
+      const fullCostEurM2 = Math.max(0, finite(definition.fullCostEurM2 ?? definition.full_cost_eur_m2, 0));
+      const investment = investmentForExchange({
+        areaM2: inputs.areaM2,
+        fullCostEurM2,
+        sunkCostEurM2: inputs.sunkCostEurM2,
+        renewalContext: inputs.renewalContext,
+      });
+      const energy = energyEffect({
+        areaM2: inputs.areaM2,
+        existingUValue: inputs.existingUValue,
+        newUValue,
+        existingLossKwh: inputs.existingLossKwh,
+        heatingDegreeHoursKh: inputs.heatingDegreeHoursKh,
+        boundaryFactor: inputs.boundaryFactor,
+        annualEfficiency: inputs.annualEfficiency,
+      });
+      const funding = fundingForInvestment(inputs.fundingEntries, investment);
+      const energyCostSavingsEurA = energy.available && optionalFinite(inputs.energyPriceEurKwh) !== null
+        ? energy.deliveredSavingsKwh * finite(inputs.energyPriceEurKwh, 0)
+        : null;
+      const co2SavingsKgA = energy.available && optionalFinite(inputs.emissionFactorKgKwh) !== null
+        ? energy.deliveredSavingsKwh * finite(inputs.emissionFactorKgKwh, 0)
+        : null;
+      const maintenancePercent = Math.max(0, finite(inputs.maintenancePercentInitialPerYear, 0));
+      return {
+        id: definition.id ?? `exchange-${index + 1}`,
+        exchangeId: definition.id ?? `exchange-${index + 1}`,
+        label: definition.label ?? `Variante ${index + 1}`,
+        shortLabel: definition.shortLabel ?? definition.short_label ?? definition.label ?? `Variante ${index + 1}`,
+        role: definition.role ?? null,
+        order: index + 1,
+        newUValue,
+        energy,
+        investment,
+        subsidyEur: funding.totalEur,
+        fundingItems: funding.items,
+        paymentAfterSubsidyEur: Math.max(0, investment.fullInvestmentEur - funding.totalEur),
+        relevantOwnInvestmentEur: Math.max(0, investment.energeticAdditionalEur - funding.totalEur),
+        energyCostSavingsEurA,
+        co2SavingsKgA,
+        annualMaintenanceEurA: investment.fullInvestmentEur * maintenancePercent / 100,
+        fullCostEurM2,
+      };
+    });
+    return [reference, ...items];
+  }
+
   return {
     MODEL_VERSION,
     finite,
@@ -274,9 +392,11 @@
     usefulLossFromClimate,
     energyEffect,
     investmentForThickness,
+    investmentForExchange,
     subsidyForInvestment,
     fundingForInvestment,
     createThicknesses,
     createVariants,
+    createExchangeVariants,
   };
 });

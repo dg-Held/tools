@@ -1,9 +1,12 @@
 {
   "tool": "Bauteil & Sanierung",
-  "version": "0.3",
-  "date": "2026-08-04",
+  "version": "0.4",
+  "date": "2026-08-05",
   "status": "Arbeitsversion",
   "methodology": "METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md",
   "maintenance": "WARTUNG-UND-DATENPFLEGE.md",
-  "lifetimes_source_status": "pending-readable-EN15459-1-annex-D-excerpt"
+  "measure_core_version": "0.4.0",
+  "window_exchange_status": "active",
+  "door_exchange_status": "prepared",
+  "lifetimes_source_status": "window-values-from-informative-EN15459-1-annex-D-extract; opaque-measures-project-fallback"
 }

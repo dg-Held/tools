@@ -1,70 +1,23 @@
 {
   "schema": "energy-tools-component-lifetimes",
-  "version": "2026-08-04-transition-v0.3",
-  "data_date": "2026-08-04",
-  "status": "temporary-fallback-pending-readable-standard-excerpt",
-  "notice": "Die Nutzungsdauern werden nicht mehr in der pflegbaren Master-Excel geführt. Die bereitgestellte PDF-Datei mit Anhang D enthielt beim technischen Auslesen nur leere Seiten/Platzhalter. Die bisherigen Prototypwerte bleiben daher vorübergehend als transparent überschreibbare Fallbacks aktiv und dürfen nicht als bestätigte Normwerte bezeichnet werden.",
-  "intended_source": {
-    "title": "ÖNORM EN 15459-1:2017, Anhang D",
+  "version": "2026-08-05-v0.4",
+  "data_date": "2017-12-01",
+  "status": "mixed-normative-informative-and-project-fallback",
+  "notice": "Fensterwerte stammen aus dem informativen Anhang D der ÖNORM EN 15459-1:2017. Für Dämmmaßnahmen enthält der bereitgestellte Auszug keine direkt zuordenbaren Nutzungsdauern; dort bleiben transparente, überschreibbare Projekt-Fallbacks aktiv.",
+  "source": {
+    "title": "ÖNORM EN 15459-1:2017, Anhang D – Daten für Komponenten",
     "source_id": "SRC_EN15459_D",
-    "status": "pending-readable-excerpt"
+    "nature": "informative Richtwerte; nationale Anhänge oder projektspezifische Werte können ersetzen oder ergänzen"
   },
   "items": [
-    {
-      "id": "wall_wdvs",
-      "cost_model_id": "wall_wdvs",
-      "years": 40,
-      "active": true,
-      "status": "temporary-fallback"
-    },
-    {
-      "id": "wall_ventilated",
-      "cost_model_id": "wall_ventilated",
-      "years": 50,
-      "active": true,
-      "status": "temporary-fallback"
-    },
-    {
-      "id": "top_ceiling",
-      "cost_model_id": "top_ceiling",
-      "years": 50,
-      "active": true,
-      "status": "temporary-fallback"
-    },
-    {
-      "id": "roof",
-      "cost_model_id": "roof",
-      "years": 40,
-      "active": true,
-      "status": "temporary-fallback"
-    },
-    {
-      "id": "basement_ceiling",
-      "cost_model_id": "basement_ceiling",
-      "years": 50,
-      "active": true,
-      "status": "temporary-fallback"
-    },
-    {
-      "id": "ground_floor",
-      "cost_model_id": "ground_floor",
-      "years": 50,
-      "active": true,
-      "status": "temporary-fallback"
-    },
-    {
-      "id": "window_replace",
-      "cost_model_id": "window_replace",
-      "years": 35,
-      "active": true,
-      "status": "temporary-fallback"
-    },
-    {
-      "id": "door_replace",
-      "cost_model_id": "door_replace",
-      "years": 30,
-      "active": true,
-      "status": "temporary-fallback"
-    }
+    {"id":"wall_wdvs","cost_model_id":"wall_wdvs","years":40,"active":true,"status":"project-fallback","source_id":"PROJECT_DECISION","note":"Im bereitgestellten Normauszug kein direkt zuordenbarer WDVS-Eintrag."},
+    {"id":"wall_ventilated","cost_model_id":"wall_ventilated","years":50,"active":true,"status":"project-fallback","source_id":"PROJECT_DECISION","note":"Im bereitgestellten Normauszug kein direkt zuordenbarer Fassadensystem-Eintrag."},
+    {"id":"top_ceiling","cost_model_id":"top_ceiling","years":50,"active":true,"status":"project-fallback","source_id":"PROJECT_DECISION","note":"Im bereitgestellten Normauszug kein direkt zuordenbarer Dämmmaßnahmen-Eintrag."},
+    {"id":"roof","cost_model_id":"roof","years":40,"active":true,"status":"project-fallback","source_id":"PROJECT_DECISION","note":"Im bereitgestellten Normauszug kein direkt zuordenbarer Dach-Dämmmaßnahmen-Eintrag."},
+    {"id":"basement_ceiling","cost_model_id":"basement_ceiling","years":50,"active":true,"status":"project-fallback","source_id":"PROJECT_DECISION","note":"Im bereitgestellten Normauszug kein direkt zuordenbarer Dämmmaßnahmen-Eintrag."},
+    {"id":"ground_floor","cost_model_id":"ground_floor","years":50,"active":true,"status":"project-fallback","source_id":"PROJECT_DECISION","note":"Im bereitgestellten Normauszug kein direkt zuordenbarer Boden-Dämmmaßnahmen-Eintrag."},
+    {"id":"window_wood","cost_model_id":"window_replace","frame_material":"wood","label":"Fenster – Holzrahmen","years":30,"maintenance_percent_initial_per_year":1.0,"disposal_percent_initial":null,"active":true,"status":"norm-informative","source_id":"SRC_EN15459_D"},
+    {"id":"window_aluminium","cost_model_id":"window_replace","frame_material":"aluminium","label":"Fenster – Aluminiumrahmen","years":30,"maintenance_percent_initial_per_year":0.5,"disposal_percent_initial":null,"active":true,"status":"norm-informative","source_id":"SRC_EN15459_D"},
+    {"id":"door_replace","cost_model_id":"door_replace","years":30,"active":true,"status":"project-fallback","source_id":"PROJECT_DECISION","note":"Im bereitgestellten Normauszug kein direkt zuordenbarer Außentür-Eintrag."}
   ]
 }

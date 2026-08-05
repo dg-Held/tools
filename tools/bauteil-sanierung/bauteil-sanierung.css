@@ -1018,3 +1018,62 @@
   .chart-marker--economic { fill: #b3446c; }
   .chart-marker--ambitious { fill: #d69d2f; }
 }
+
+/* V0.4 – klarere Ergebnisdarstellung und Fenstervarianten */
+.component-selector {
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+}
+
+.variants-table tr.is-recommended td:first-child::after {
+  content: " Mindeststandard";
+}
+
+.funding-inputs {
+  border-top-color: rgba(179, 68, 108, .35);
+}
+.funding-inputs > summary {
+  color: var(--color-secondary-dark);
+}
+
+.impact-custom-image,
+.impact-fallback-icon {
+  width: 105px;
+  max-width: 82%;
+  max-height: 118px;
+  margin-bottom: .25rem;
+  object-fit: contain;
+}
+.impact-custom-image[hidden],
+.impact-fallback-icon[hidden] {
+  display: none !important;
+}
+.impact-custom-image {
+  display: block;
+}
+
+.impact-benefits {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.print-variant-label {
+  margin: -1mm 0 3mm;
+  color: #526562;
+  font-size: 8.5pt;
+  font-weight: 700;
+}
+
+@media print {
+  .print-impact-benefits {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media print {
+  .print-impact-image {
+    display: block;
+    width: 22mm;
+    height: 18mm;
+    margin: 0 auto 1.5mm;
+    object-fit: contain;
+  }
+}
