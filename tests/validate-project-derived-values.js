@@ -26,16 +26,14 @@ for (const file of ['shared/js/data-model.js', 'shared/js/project-migrations.js'
 const store = context.EnergyToolsProjectStore;
 const model = context.EnergyToolsDataModel;
 const resolver = context.EnergyToolsValueResolver;
-const value = (path) => resolver.value(store.getPath(path, null), null);
-const origin = (path) => resolver.describe(store.getPath(path, null)).origin;
-const auto = (path) => resolver.describe(store.getPath(path, null)).automaticValue;
+const value = (fieldPath) => resolver.value(store.getPath(fieldPath, null), null);
+const origin = (fieldPath) => resolver.describe(store.getPath(fieldPath, null)).origin;
 
-// Amtliche Geometrie: 100 m² Dachprojektion, 9,6 m Medianhöhe, Standardmodul 3,2 m.
+// Amtliche Referenz: 100 m² Dachprojektion, 40 m Umfang und 9,6 m Medianhöhe.
 store.batch(() => {
   store.setFieldCandidate('building.geometry.footprintArea', model.ORIGIN.OFFICIAL, 100, { unit: 'm²' });
+  store.setFieldCandidate('building.geometry.perimeter', model.ORIGIN.OFFICIAL, 40, { unit: 'm' });
   store.setFieldCandidate('building.geometry.heightMedian', model.ORIGIN.OFFICIAL, 9.6, { unit: 'm' });
-  store.setFieldCandidate('building.geometry.storeyHeightModule', model.ORIGIN.FALLBACK, 3.2, { unit: 'm' });
-  store.setFieldCandidate('building.geometry.usableFloorAreaFactor', model.ORIGIN.FALLBACK, 75, { unit: '%' });
 });
 assert.equal(value('building.geometry.storeysAboveGround'), 3);
 assert.equal(value('building.geometry.grossFloorArea'), 300);
@@ -45,52 +43,60 @@ assert.equal(value('building.geometry.grossVolume'), 960);
 assert.equal(value('building.thermal.heatedSharePercent'), 100);
 assert.equal(value('building.thermal.heatedVolume'), 960);
 assert.equal(value('building.geometry.reference.grossFloorArea'), 300);
+assert.equal(value('building.geometry.reference.grossVolume'), 960);
 
-// Manuelle Geschoßzahl führt die verwendete BGF/NFL nach; automatische Referenz und Volumen bleiben gleich.
+// Manuelle Geschoßzahl führt BGF/NFL nach; die wirksame Grundfläche bleibt 100 m².
 store.setFieldCandidate('building.geometry.storeysAboveGround', model.ORIGIN.MANUAL, 2, { unit: null });
 assert.equal(value('building.geometry.grossFloorArea'), 200);
 assert.equal(value('building.geometry.usableFloorArea'), 150);
-assert.equal(value('building.geometry.heatedFloorArea'), 150);
-assert.equal(value('building.geometry.reference.grossFloorArea'), 300);
+assert.equal(value('building.geometry.topFloorArea'), 100);
 assert.equal(value('building.geometry.grossVolume'), 960);
+assert.equal(value('building.geometry.reference.grossFloorArea'), 300);
 
-// Manuelle BGF unterbricht die verwendete Kette ab BGF; NFL folgt der BGF.
+// Bekannte BGF hat Vorrang. Hüllflächen und Volumen folgen der wirksamen Grundfläche BGF/Geschoße.
 store.setFieldCandidate('building.geometry.grossFloorArea', model.ORIGIN.MANUAL, 260, { unit: 'm²' });
 assert.equal(value('building.geometry.grossFloorArea'), 260);
 assert.equal(value('building.geometry.usableFloorArea'), 195);
-assert.equal(value('building.geometry.heatedFloorArea'), 195);
-assert.equal(value('building.geometry.grossVolume'), 960);
+assert.equal(value('building.geometry.topFloorArea'), 130);
+assert.equal(value('building.geometry.grossVolume'), 1250);
+assert.equal(value('building.geometry.exteriorWallGrossArea'), 440);
 
-// Manuelle NFL unterbricht die Kette; beheizte NFL wird nachgeführt.
+// Ohne manuelle BGF wird sie aus einer bekannten NFL mit BGF = NFL / 0,75 abgeleitet.
+store.clearFieldCandidate('building.geometry.grossFloorArea', model.ORIGIN.MANUAL);
 store.setFieldCandidate('building.geometry.usableFloorArea', model.ORIGIN.MANUAL, 180, { unit: 'm²' });
+assert.equal(value('building.geometry.grossFloorArea'), 240);
 assert.equal(value('building.geometry.usableFloorArea'), 180);
-assert.equal(value('building.geometry.heatedFloorArea'), 180);
+assert.equal(value('building.geometry.topFloorArea'), 120);
+assert.equal(value('building.geometry.grossVolume'), 1150);
+assert.equal(value('building.geometry.exteriorWallGrossArea'), 420);
 
-// Zu große beheizte NFL wird auf die Nutzfläche begrenzt.
+// Beheizter Anteil und beheizte Nutzfläche werden bidirektional synchronisiert.
+store.setFieldCandidate('building.thermal.heatedSharePercent', model.ORIGIN.MANUAL, 75, { unit: '%' });
+assert.equal(value('building.geometry.heatedFloorArea'), 135);
+assert.equal(value('building.thermal.heatedSharePercent'), 75);
+assert.equal(value('building.thermal.heatedVolume'), 860);
+
+// Zu große beheizte NFL wird auf die verwendete Nutzfläche begrenzt.
 store.setFieldCandidate('building.geometry.heatedFloorArea', model.ORIGIN.MANUAL, 220, { unit: 'm²' });
 assert.equal(value('building.geometry.heatedFloorArea'), 180);
+assert.equal(value('building.thermal.heatedSharePercent'), 100);
 assert.equal(origin('building.geometry.heatedFloorArea'), model.ORIGIN.MANUAL);
 assert.match(String(resolver.describe(store.getPath('building.geometry.heatedFloorArea')).note), /begrenzt/i);
 
-// Kleinere beheizte NFL erzeugt einen plausiblen beheizten Anteil und konditioniertes Volumen.
-store.setFieldCandidate('building.geometry.heatedFloorArea', model.ORIGIN.MANUAL, 135, { unit: 'm²' });
-assert.equal(value('building.thermal.heatedSharePercent'), 75);
-assert.equal(value('building.thermal.heatedVolume'), 720);
-
-// Manuelles Bruttovolumen behält Vorrang; automatischer Hintergrundwert bleibt 960 m³.
+// Manuelles Bruttovolumen behält Vorrang; konditioniertes Volumen folgt dem beheizten Anteil.
+store.setFieldCandidate('building.thermal.heatedSharePercent', model.ORIGIN.MANUAL, 75, { unit: '%' });
 store.setFieldCandidate('building.geometry.grossVolume', model.ORIGIN.MANUAL, 1100, { unit: 'm³' });
-store.setFieldCandidate('building.geometry.grossFloorArea', model.ORIGIN.MANUAL, 320, { unit: 'm²' });
 assert.equal(value('building.geometry.grossVolume'), 1100);
-assert.equal(auto('building.geometry.grossVolume'), 960);
+assert.equal(value('building.geometry.reference.grossVolume'), 960);
 assert.equal(value('building.thermal.heatedVolume'), 830);
 
 console.log(JSON.stringify({
   passed: true,
   automaticReferenceBgf: value('building.geometry.reference.grossFloorArea'),
+  automaticReferenceVolume: value('building.geometry.reference.grossVolume'),
   effectiveBgf: value('building.geometry.grossFloorArea'),
   effectiveNfl: value('building.geometry.usableFloorArea'),
   heatedNfl: value('building.geometry.heatedFloorArea'),
   grossVolume: value('building.geometry.grossVolume'),
-  automaticGrossVolume: auto('building.geometry.grossVolume'),
   heatedVolume: value('building.thermal.heatedVolume'),
 }, null, 2));

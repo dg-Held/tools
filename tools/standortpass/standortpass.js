@@ -1232,6 +1232,14 @@ function showSelectedBuilding(feature) {
   if ($('metricLengthRounded')) $('metricLengthRounded').textContent = length === null ? '–' : `ca. ${number0.format(roundTo(length, 1))} m`;
   $('metricHeightMedian').textContent = formatLength(medianHeight, 1);
   $('metricHeightMax').textContent = formatLength(maxHeight, 1);
+  if ($('metricVolumeRounded')) {
+    const volume = area !== null && medianHeight !== null
+      ? area * medianHeight
+      : null;
+    $('metricVolumeRounded').textContent = volume === null
+      ? '–'
+      : `ca. ${number0.format(roundTo(volume, 10))} m³`;
+  }
   $('metricStand').textContent = formatDate(attrs.STAND);
   $('metricUpdated').textContent = formatDate(attrs.UPDATETIMESTAMP);
 

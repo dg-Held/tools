@@ -604,14 +604,17 @@ tr:last-child td { border-bottom: 0; }
 }
 
 
-/* Infohinweise: Hover, Tastaturfokus und Antippen */
-.info-tip {
+/* Infohinweise: Nur das kleine i löst den Hinweis aus. */
+button.info-tip {
   position: relative;
   z-index: 8;
 
-  flex: 0 0 auto;
+  flex: 0 0 19px;
   width: 19px;
+  min-width: 19px;
+  max-width: 19px;
   height: 19px;
+  min-height: 19px;
   padding: 0;
 
   display: inline-grid;
@@ -630,31 +633,31 @@ tr:last-child td { border-bottom: 0; }
   cursor: help;
 }
 
-.info-tip:hover,
-.info-tip:focus-visible {
+button.info-tip:hover,
+button.info-tip:focus-visible {
   border-color: var(--turquoise);
   color: var(--text-dark);
   background: var(--turquoise-light);
   outline: none;
 }
 
-.info-tip::after {
+button.info-tip::after {
   content: attr(data-tooltip);
 
   position: absolute;
-  right: -2px;
-  top: calc(100% + 8px);
+  right: -4px;
+  bottom: calc(100% + 7px);
   z-index: 50;
 
-  width: min(270px, 72vw);
-  padding: .7rem .8rem;
+  width: min(230px, 68vw);
+  padding: .58rem .68rem;
 
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 9px;
 
-  font-size: .76rem;
+  font-size: .72rem;
   font-weight: 300;
-  line-height: 1.45;
+  line-height: 1.4;
   text-align: left;
 
   color: var(--text-light);
@@ -664,16 +667,16 @@ tr:last-child td { border-bottom: 0; }
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(-4px);
+  transform: translateY(3px);
 
   transition:
-    opacity 140ms ease,
-    transform 140ms ease,
-    visibility 140ms ease;
+    opacity 120ms ease,
+    transform 120ms ease,
+    visibility 120ms ease;
 }
 
-.info-tip:hover::after,
-.info-tip:focus-visible::after {
+button.info-tip:hover::after,
+button.info-tip:focus-visible::after {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
@@ -2824,4 +2827,30 @@ body[data-tool-mode="heating"] .heating-climate-summary {
 .heating-load-heading--full .method-note-inline {
   display: inline-flex;
   margin-top: .55rem;
+}
+
+
+/* Heizlast-Hinweise: ausschließlich das i ist interaktiv. */
+.heating-field-label,
+.compact-card-heading {
+  pointer-events: none;
+}
+.heating-field-label > *,
+.compact-card-heading > * {
+  pointer-events: auto;
+}
+button.info-tip {
+  isolation: isolate;
+}
+@media (hover: hover) and (pointer: fine) {
+  button.info-tip::after {
+    right: auto;
+    left: 50%;
+    bottom: calc(100% + 7px);
+    transform: translate(-50%, 3px);
+  }
+  button.info-tip:hover::after,
+  button.info-tip:focus-visible::after {
+    transform: translate(-50%, 0);
+  }
 }

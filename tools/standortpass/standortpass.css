@@ -2912,24 +2912,7 @@
   border: 1px solid rgb(var(--color-secondary-rgb) / .24);
 }
 
-/* Desktop: Info per Hover; Touch/Mobil weiterhin per Klick auf <details>. */
-.metric-info:not([open]) > .metric-info-popover {
-  display: none;
-}
-.metric-info[open] > .metric-info-popover {
-  display: block;
-}
-@media (hover: hover) and (pointer: fine) {
-  .metric-info:hover > .metric-info-popover,
-  .metric-info:focus-within > .metric-info-popover {
-    display: block;
-  }
-  .metric-info:hover .info-tip,
-  .metric-info:focus-within .info-tip {
-    border-color: var(--turquoise-dark);
-    background: var(--turquoise-light);
-  }
-}
+/* Infohinweise werden weiter unten ausschließlich am i-Icon aktiviert. */
 
 /* Solar-Zusatzdarstellung: Titelzeile wirklich über dem Ergebnisblock. */
 .solar-subtest-block {
@@ -2996,5 +2979,249 @@
 @media (max-width: 760px) {
   .estimate-settings--three {
     grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   STANDORTPASS V1.1 · VEREINFACHUNG UND GEOMETRIEKETTE
+========================================================= */
+
+/* Nur das kleine i reagiert auf Hover; die Karte selbst bleibt ruhig. */
+.metric-info:not([open]) > .metric-info-popover {
+  display: none;
+}
+.metric-info[open] > .metric-info-popover {
+  display: block;
+}
+@media (hover: hover) and (pointer: fine) {
+  .metric-info:not([open]) > summary:hover + .metric-info-popover,
+  .metric-info:focus-within > .metric-info-popover {
+    display: block;
+  }
+  .metric-info > summary:hover,
+  .metric-info:focus-within > summary {
+    border-color: var(--turquoise-dark);
+    background: var(--turquoise-light);
+  }
+}
+
+/* Kompakte Übersicht vor der Analyse; Details liegen im i. */
+.overview-panel {
+  margin-bottom: var(--space-3);
+  padding: clamp(1rem, 3vw, 1.35rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-large);
+  background: var(--white);
+  box-shadow: var(--shadow-soft);
+}
+.overview-panel .panel-heading {
+  margin-bottom: .7rem;
+}
+.project-overview-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.overview-result {
+  min-height: 84px;
+  padding: .72rem .78rem;
+}
+.overview-result .compact-card-heading > span {
+  font-size: .72rem;
+}
+.overview-result > strong {
+  margin-top: .25rem;
+  font-size: .98rem;
+}
+
+.report-run-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .55rem;
+  min-width: 0;
+}
+.report-run-summary > strong {
+  font-size: .98rem;
+}
+.report-info .metric-info-popover {
+  left: 0;
+  right: auto;
+}
+.report-progress {
+  flex: 1 1 100%;
+  width: 100%;
+}
+
+/* Sechs amtliche/abgeleitete Kennwerte als ruhiges 3×2-Raster. */
+.metric-grid-test--compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.metric--summary {
+  min-height: 104px;
+}
+
+/* Fixe Erstannahmen sind sichtbar, aber keine Eingaben. */
+.fixed-assumption-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin: .75rem 0;
+}
+.fixed-assumption-strip span {
+  padding: .42rem .68rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: .76rem;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+}
+.fixed-assumption-strip strong {
+  color: var(--turquoise-dark);
+}
+
+.estimate-details {
+  margin-top: .65rem;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--white);
+}
+.estimate-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  padding: .8rem .9rem;
+  list-style: none;
+  cursor: pointer;
+  color: var(--turquoise-dark);
+  font-weight: 700;
+}
+.estimate-details > summary::-webkit-details-marker { display: none; }
+.estimate-details > summary::before {
+  content: '▸';
+  flex: 0 0 auto;
+  transition: transform .18s ease;
+}
+.estimate-details[open] > summary::before { transform: rotate(90deg); }
+.estimate-details > summary span { margin-right: auto; }
+.estimate-details > summary small {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.estimate-details .estimate-table-wrap {
+  margin-top: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 15px 15px;
+}
+.estimate-key-row {
+  background: rgb(var(--color-primary-rgb) / .07);
+}
+.estimate-key-row th {
+  color: var(--turquoise-dark);
+}
+.derived-input-note {
+  display: inline-block;
+  max-width: 155px;
+  color: var(--text-muted);
+  font-size: .76rem;
+  line-height: 1.35;
+}
+.estimate-range-control {
+  display: grid;
+  grid-template-columns: auto minmax(150px, 1fr) auto auto;
+  align-items: center;
+  gap: .65rem;
+  min-width: 0;
+}
+.estimate-range-control input[type='range'] {
+  width: 100%;
+  min-width: 130px;
+  accent-color: var(--turquoise);
+}
+.estimate-range-control > span {
+  font-size: .72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.estimate-range-control > strong {
+  min-width: 3.3rem;
+  color: var(--turquoise-dark);
+  text-align: right;
+}
+.estimate-slider-row th,
+.estimate-slider-row td {
+  background: var(--surface-muted);
+}
+
+/* Lange WMS-/Dienstinformationen dürfen nie aus der Karte laufen. */
+.service-result,
+.solar-detail-controls,
+.solar-detail-controls__inner,
+.environment-source-details,
+.environment-source-details > div {
+  min-width: 0;
+  max-width: 100%;
+}
+.service-result,
+.solar-detail-controls__inner,
+.environment-source-details {
+  overflow: hidden;
+}
+.service-result pre,
+.service-result code,
+.service-result a,
+.solar-detail-controls__inner pre,
+.solar-detail-controls__inner code,
+.solar-detail-controls__inner a,
+.environment-source-details pre,
+.environment-source-details code,
+.environment-source-details a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.service-result table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.tool-next-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .65rem;
+}
+
+@media (max-width: 780px) {
+  .project-overview-grid,
+  .metric-grid-test--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .estimate-range-control {
+    grid-template-columns: auto minmax(100px, 1fr) auto;
+  }
+  .estimate-range-control > span:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .project-overview-grid,
+  .metric-grid-test--compact {
+    grid-template-columns: 1fr;
+  }
+  .report-run-card,
+  .report-run-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .estimate-range-control {
+    grid-template-columns: 1fr auto;
+  }
+  .estimate-range-control > span {
+    display: none;
   }
 }

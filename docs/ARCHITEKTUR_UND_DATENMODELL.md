@@ -107,37 +107,69 @@ Oberflächen dürfen Synonyme nicht als neue Speicherfelder anlegen. Ein manuell
 
 ## 6. Geometrieabhängigkeiten
 
-### Referenz
+Die gemeinsame Ableitung läuft unter `building-geometry-v1.3`. Sie hält eine unveränderte automatische Referenz und eine verwendete Kette mit manuellen Prioritäten parallel vor.
+
+### Feste Erstannahmen
 
 ```text
-storeys_ref = round(heightMedian / storeyHeightModule)
+storeyHeightModule = 3,2 m
+usableFloorAreaFactor = 0,75
+defaultWindowShare = 25 %
+```
+
+Diese Werte sind Beratungsannahmen, keine allgemein gültigen Normwerte. Sie werden zentral hinterlegt und nicht als manuelle Projektwerte gespeichert.
+
+### Automatische Referenz
+
+```text
+storeys_ref = round(heightMedian / 3,2 m)
 bgf_ref = footprintArea × storeys_ref
-nfl_ref = bgf_ref × usableFloorAreaFactor
+nfl_ref = bgf_ref × 0,75
 heatedFloorArea_ref = nfl_ref
 grossVolume_ref = footprintArea × heightMedian
 ```
 
-### Verwendet
+Die Referenzfelder unter `building.geometry.reference.*` reagieren nicht auf spätere Benutzereingaben.
+
+### Verwendete Flächenkette
 
 ```text
-storeys = manual oder storeys_ref
-bgf_derived = footprintArea × storeys
-bgf = manual oder bgf_derived
-nfl_derived = bgf × usableFloorAreaFactor
-nfl = manual oder nfl_derived
-heatedFloorArea_derived = nfl
-heatedFloorArea = manual oder derived, jedoch höchstens nfl
+storeys = manuell oder storeys_ref
+
+bgf =
+  manuelle BGF, sonst
+  manuelle NFL / 0,75, sonst
+  footprintArea × storeys
+
+nfl = manuelle NFL oder bgf × 0,75
+effectiveFootprint = bgf / storeys
 ```
 
-### Volumen
+Wenn BGF und NFL beide manuell bekannt sind, bleiben beide erhalten; eine Abweichung vom 0,75-Faktor ist als Prüfhilfe zu kennzeichnen, nicht automatisch zu überschreiben.
+
+### Beheizter Anteil
 
 ```text
-grossVolume = footprintArea × heightMedian
-heatedSharePercent = heatedFloorArea / nfl
-heatedVolume = grossVolume × heatedSharePercent
+heatedFloorArea = nfl × heatedSharePercent / 100
+heatedSharePercent = heatedFloorArea / nfl × 100
 ```
 
-Das Bruttovolumen reagiert daher nicht auf eine Änderung der Geschoßzahl oder BGF. Diese Größen beschreiben die innere Flächenorganisation, nicht die äußere Gebäudehülle.
+Der zuletzt geänderte manuelle Wert führt den jeweils anderen nach. Die beheizte Nutzfläche wird höchstens auf die verwendete NFL begrenzt.
+
+### Hüllflächen und Volumen
+
+```text
+footprintScale = √(effectiveFootprint / footprintArea)
+exteriorWallGrossArea = perimeter × footprintScale × heightMedian
+windowArea = exteriorWallGrossArea × windowSharePercent / 100
+opaqueExteriorWallArea = exteriorWallGrossArea − windowArea
+topFloorArea = basementCeilingArea = groundFloorArea = effectiveFootprint
+roofSlopeArea = effectiveFootprint / cos(roofPitch)
+grossVolume = effectiveFootprint × heightMedian
+heatedVolume = grossVolume × heatedSharePercent / 100
+```
+
+Die Quadratwurzel-Skalierung setzt eine ähnliche Gebäudeform voraus. Das verwendete Volumen reagiert bewusst auf eine korrigierte BGF/NFL, während `reference.grossVolume` die reine TIRIS-Automatik bewahrt. Ein direkt eingegebenes Volumen hat Vorrang. Das beheizte Volumen ist eine überschlägige Projektgröße und kein normativ bestimmtes Luftvolumen.
 
 ## 7. Maßnahmenmodell
 

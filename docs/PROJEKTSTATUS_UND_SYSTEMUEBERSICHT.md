@@ -119,34 +119,35 @@ beheizte NFL_verwendet = manuell oder NFL_verwendet
 
 Die beheizte Nutzfläche darf nie größer als die Nutzfläche sein. Eine zu große manuelle Eingabe wird auf die Nutzfläche begrenzt und mit einem Hinweis versehen.
 
-Das äußere geometrische Bruttovolumen ist unabhängig von BGF und Geschoßzahl:
+Die reine TIRIS-Referenz bleibt unverändert:
 
 ```text
-Bruttovolumen = Dachprojektion × Medianhöhe
+Bruttovolumen_ref = Dachprojektion × Medianhöhe
 ```
 
-Ein manuelles Bruttovolumen behält Vorrang; der automatische Wert bleibt erhalten.
-
-Zusätzlich wird vorbereitet beziehungsweise abgeleitet:
+In der verwendeten Geometriekette folgt das Volumen einer korrigierten BGF/NFL:
 
 ```text
-beheizter Anteil = beheizte NFL / NFL
+Grundfläche_verwendet = BGF / Geschoße
+Bruttovolumen = Grundfläche_verwendet × Medianhöhe
 beheiztes Volumen = Bruttovolumen × beheizter Anteil
 ```
 
-Das beheizte Volumen ist eine überschlägige Projektgröße und noch kein normativ bestimmtes Luftvolumen.
+Ein manuelles Bruttovolumen behält Vorrang. Referenz- und verwendeter Wert bleiben getrennt nachvollziehbar; das beheizte Volumen ist kein normativ bestimmtes Luftvolumen.
 
 ## 5. Aktuelle Werkzeuge
 
 ### Standortpass Energie & Gebäude
 
-Status: V1, fachlich weitgehend fertig; Geometriekette V1.2.
+Status: V1.1, fachlich weitgehend fertig; Geometriekette V1.3.
 
 - Adresse und TIRIS-Gebäudezuordnung,
 - gespeicherter Gebäude-/Polygon-Snapshot,
 - Orthofoto, Geländehöhe und Gebäudehöhen,
 - Dachprojektion, Umfang, Dachneigung und Dachfläche,
-- Geschoße, BGF, NFL, beheizte NFL und Bruttovolumen,
+- Geschoße und NFL als priorisierte Prüfeingaben; BGF wird bei bekannter NFL mit dem transparenten Beratungsfaktor 0,75 nachgeführt,
+- beheizter Anteil als 0–100-%-Regler sowie Fensteranteil als 10–50-%-Regler,
+- Hüllflächen und Bruttovolumen folgen der verwendeten Grundfläche; automatische TIRIS-Referenzen bleiben parallel erhalten,
 - Wärmeversorgung und Umweltwärmehinweise,
 - Solar-/Verschattungsinformationen,
 - Hochwasser, Naturgefahren, WLV, Radon, Denkmal- und Kulturkontext,
@@ -175,6 +176,7 @@ Status: eigenständiges, mit Klima verschränktes Tool.
 - editierbare Heizgrenztemperatur mit transparentem Vorschlag,
 - automatischer Gebäudezustandsvorschlag aus korrigiertem Verbrauchs-HWB beziehungsweise Ersatzkennwert; manuelle Auswahl hat Vorrang,
 - vorhandene Heizung und Dauerlinie,
+- zwei bis drei priorisierte Beratungsaussagen: Leistung für 90 % der Heizstunden, zusätzliche Spitzenleistung und bei vorhandenen Anlagendaten ein gemeinsamer Reserve-/Teillastabgleich,
 - technische Standortdaten auf beratungsrelevante Werte reduziert,
 - Quellen, Annahmen und JSON-Export unter „Methode und Datenbasis“,
 - direkte Übergänge zu Klima und Energiefluss,

@@ -42,7 +42,7 @@
       heated_share_percent: 100,
       storeys: 2,
       usable_floor_area_factor_percent: 75,
-      window_share_percent: 20,
+      window_share_percent: 25,
       storey_height_m: 3.2,
       internal_gains_w_m2: 2.7,
       solar_radiation_factor_kwh_m2a: 175,
@@ -335,7 +335,7 @@
     fallbackUpdate(updates, project, 'building.geometry.perimeter', geometry.perimeter, { unit: 'm', source: 'Energiefluss V4 Fallbackgeometrie', method: 'quadratischer Gebäudegrundriss' });
     fallbackUpdate(updates, project, 'building.geometry.heightMedian', geometry.heightMedian, { unit: 'm', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Geschoße × 3,2 m' });
     fallbackUpdate(updates, project, 'building.geometry.exteriorWallGrossArea', geometry.exteriorWallGrossArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Umfang × Höhe' });
-    fallbackUpdate(updates, project, 'building.geometry.windowArea', geometry.windowArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Außenwand brutto × 20 %' });
+    fallbackUpdate(updates, project, 'building.geometry.windowArea', geometry.windowArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Außenwand brutto × 25 %' });
     fallbackUpdate(updates, project, 'building.geometry.opaqueExteriorWallArea', geometry.opaqueWallArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Außenwand brutto − Fenster' });
     fallbackUpdate(updates, project, 'building.geometry.topFloorArea', geometry.footprintArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Gebäudegrundfläche' });
     fallbackUpdate(updates, project, 'building.geometry.roofSlopeArea', geometry.footprintArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Dachprojektion ohne bekannte Dachneigung' });
@@ -405,9 +405,30 @@
       else if (kind === 'condition-select') value = input.value;
       else value = input.value.trim() === '' ? null : Number(input.value);
       if (kind === 'number' && value !== null && !Number.isFinite(value)) return;
-      store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.3' });
+      if (path === 'building.thermal.heatedSharePercent') {
+        const project = store.get();
+        const usableFloorArea = finite(valueAt(project, 'building.geometry.usableFloorArea'), null);
+        const heatedFloorArea = value !== null && usableFloorArea !== null && usableFloorArea > 0
+          ? roundToStep(usableFloorArea * Math.max(0, Math.min(100, value)) / 100, 5)
+          : null;
+        store.setFieldCandidates([
+          { path, origin: model.ORIGIN.MANUAL, value, options: { unit: unit || null, source: 'Energiefluss V4.4' } },
+          { path: 'building.geometry.heatedFloorArea', origin: model.ORIGIN.MANUAL, value: heatedFloorArea, options: { unit: 'm²', source: 'Energiefluss V4.4', method: 'Nutzfläche × beheizter Anteil' } },
+        ]);
+      } else {
+        store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.4' });
+      }
     });
-    reset.addEventListener('click', () => store.clearFieldCandidate(path, model.ORIGIN.MANUAL));
+    reset.addEventListener('click', () => {
+      if (path === 'building.thermal.heatedSharePercent') {
+        store.setFieldCandidates([
+          { path, origin: model.ORIGIN.MANUAL, value: null },
+          { path: 'building.geometry.heatedFloorArea', origin: model.ORIGIN.MANUAL, value: null },
+        ]);
+      } else {
+        store.clearFieldCandidate(path, model.ORIGIN.MANUAL);
+      }
+    });
   }
 
   function renderValueField(host, project) {

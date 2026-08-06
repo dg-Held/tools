@@ -9,6 +9,10 @@
 
   const $ = (id) => document.getElementById(id);
   const clone = (value) => JSON.parse(JSON.stringify(value));
+  const STOREY_HEIGHT_MODULE_M = 3.2;
+  const USABLE_TO_GROSS_FACTOR = 0.75;
+  const DEFAULT_WINDOW_SHARE_PERCENT = 25;
+  const DEFAULT_HEATED_SHARE_PERCENT = 100;
 
   let lastUiSignature = '';
   let reportRunning = false;
@@ -103,7 +107,7 @@
         }),
         exteriorWallGrossArea: field(wallRaw, {
           unit: 'm²', origin: model.ORIGIN.DERIVED, source: 'Standortpass',
-          method: 'Gebäudeumfang × Medianhöhe', quality: 'Orientierungswert',
+          method: 'TIRIS-Umfang × Medianhöhe; bei geänderter Grundfläche geometrisch skaliert', quality: 'Orientierungswert',
         }),
       },
     };
@@ -233,9 +237,8 @@
     const roofArea = finiteNumber(attrs.Shape__Area);
     const perimeter = finiteNumber(attrs.Shape__Length);
     const medianHeight = finiteNumber(attrs.GEB_HOEHE_MEDIAN);
-    const storeyHeightModule = Math.max(2.3, Math.min(5, parseInputValue('storeyHeightModule') ?? 3.2));
-    const usableFloorAreaFactor = Math.max(40, Math.min(100, parseInputValue('usableFloorAreaFactor') ?? 75));
-    const windowShare = Math.max(0, Math.min(100, parseInputValue('windowSharePercent') ?? 20));
+    const windowShare = Math.max(10, Math.min(50, parseInputValue('windowSharePercent') ?? DEFAULT_WINDOW_SHARE_PERCENT));
+    const heatedShare = Math.max(0, Math.min(100, parseInputValue('heatedSharePercent') ?? DEFAULT_HEATED_SHARE_PERCENT));
 
     const manuals = {};
     estimateFieldConfig().forEach((config) => {
@@ -244,97 +247,131 @@
         manual = Math.max(1, Math.round(manual));
         setInputValue(config.manualId, manual);
       }
-      // Bei Flächen/Volumen bedeutet 0: manuelle Korrektur verwerfen und Automatik verwenden.
-      // Bei Dachneigung bleibt 0° ein gültiger manueller Wert (Flachdach).
+      if (config.key === 'heatedFloorArea') manual = null;
       if (config.key !== 'roofPitch' && manual !== null && manual <= 0) manual = null;
       manuals[config.key] = manual;
     });
 
-    // Vollständig automatische Referenzkette. Sie bleibt unabhängig von manuellen Korrekturen sichtbar.
     const automaticStoreys = medianHeight !== null
-      ? Math.max(1, Math.round(medianHeight / storeyHeightModule))
+      ? Math.max(1, Math.round(medianHeight / STOREY_HEIGHT_MODULE_M))
       : null;
     const automaticGrossFloorArea = roofArea !== null && automaticStoreys !== null
       ? roundToStep(roofArea * automaticStoreys, 10)
       : null;
     const automaticUsableFloorArea = automaticGrossFloorArea !== null
-      ? roundToStep((automaticGrossFloorArea * usableFloorAreaFactor) / 100, 5)
+      ? roundToStep(automaticGrossFloorArea * USABLE_TO_GROSS_FACTOR, 5)
       : null;
-    const automaticHeatedFloorArea = automaticUsableFloorArea;
-
-    // Verwendete Kette. Eine manuelle Eingabe unterbricht nur die nachgelagerte verwendete Kette.
-    const effectiveStoreys = manuals.storeys ?? automaticStoreys;
-    const derivedGrossFloorArea = roofArea !== null && effectiveStoreys !== null
-      ? roundToStep(roofArea * effectiveStoreys, 10)
+    const automaticHeatedFloorArea = automaticUsableFloorArea !== null
+      ? roundToStep(automaticUsableFloorArea * heatedShare / 100, 5)
       : null;
-    const effectiveGrossFloorArea = manuals.grossFloorArea ?? derivedGrossFloorArea;
-    const derivedUsableFloorArea = effectiveGrossFloorArea !== null
-      ? roundToStep((effectiveGrossFloorArea * usableFloorAreaFactor) / 100, 5)
-      : null;
-    const effectiveUsableFloorArea = manuals.usableFloorArea ?? derivedUsableFloorArea;
-
-    // Beheizte Nutzfläche darf die verwendete Nutzfläche nie überschreiten.
-    let heatedFloorAreaWasLimited = false;
-    let requestedHeatedFloorArea = manuals.heatedFloorArea;
-    if (requestedHeatedFloorArea !== null && effectiveUsableFloorArea !== null && requestedHeatedFloorArea > effectiveUsableFloorArea) {
-      requestedHeatedFloorArea = effectiveUsableFloorArea;
-      manuals.heatedFloorArea = requestedHeatedFloorArea;
-      setInputValue('manualHeatedFloorAreaValue', requestedHeatedFloorArea);
-      heatedFloorAreaWasLimited = true;
-    }
-    const derivedHeatedFloorArea = effectiveUsableFloorArea;
-    const effectiveHeatedFloorArea = requestedHeatedFloorArea ?? derivedHeatedFloorArea;
-
     const automaticExteriorWall = perimeter !== null && medianHeight !== null
       ? roundToStep(perimeter * medianHeight, 10)
       : null;
-    const automaticTopFloor = roofArea !== null ? roundToStep(roofArea, 10) : null;
-    const automaticBasement = roofArea !== null ? roundToStep(roofArea, 10) : null;
     const automaticWindowArea = automaticExteriorWall !== null
-      ? roundToStep((automaticExteriorWall * windowShare) / 100, 5)
+      ? roundToStep(automaticExteriorWall * windowShare / 100, 5)
       : null;
-    const effectiveRoofPitch = manuals.roofPitch;
-    const derivedRoofSlopeArea = roofArea !== null && effectiveRoofPitch !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
-      ? roundToStep(roofArea / Math.cos((effectiveRoofPitch * Math.PI) / 180), 10)
-      : null;
-
-    // Äußeres geometrisches Bruttovolumen: unabhängig von BGF und Geschoßzahl.
+    const automaticTopFloor = roofArea !== null ? roundToStep(roofArea, 10) : null;
+    const automaticBasement = automaticTopFloor;
+    const automaticRoofPitch = 0;
+    const automaticRoofSlopeArea = automaticTopFloor;
     const automaticVolume = roofArea !== null && medianHeight !== null
       ? roundToStep(roofArea * medianHeight, 10)
       : null;
+
+    const effectiveStoreys = manuals.storeys ?? automaticStoreys;
+    const grossFromStoreys = roofArea !== null && effectiveStoreys !== null
+      ? roundToStep(roofArea * effectiveStoreys, 10)
+      : null;
+    const grossFromUsable = manuals.usableFloorArea !== null
+      ? roundToStep(manuals.usableFloorArea / USABLE_TO_GROSS_FACTOR, 10)
+      : null;
+    const derivedGrossFloorArea = grossFromUsable ?? grossFromStoreys;
+    const effectiveGrossFloorArea = manuals.grossFloorArea ?? derivedGrossFloorArea;
+
+    const derivedUsableFloorArea = effectiveGrossFloorArea !== null
+      ? roundToStep(effectiveGrossFloorArea * USABLE_TO_GROSS_FACTOR, 5)
+      : null;
+    const effectiveUsableFloorArea = manuals.usableFloorArea ?? derivedUsableFloorArea;
+    const derivedHeatedFloorArea = effectiveUsableFloorArea !== null
+      ? roundToStep(effectiveUsableFloorArea * heatedShare / 100, 5)
+      : null;
+    const effectiveHeatedFloorArea = derivedHeatedFloorArea;
+
+    const effectiveFootprint = effectiveGrossFloorArea !== null && effectiveStoreys !== null && effectiveStoreys > 0
+      ? effectiveGrossFloorArea / effectiveStoreys
+      : roofArea;
+    const footprintScale = roofArea !== null && roofArea > 0 && effectiveFootprint !== null && effectiveFootprint > 0
+      ? Math.sqrt(effectiveFootprint / roofArea)
+      : 1;
+    const derivedExteriorWall = perimeter !== null && medianHeight !== null
+      ? roundToStep(perimeter * footprintScale * medianHeight, 10)
+      : null;
+    const effectiveExteriorWall = manuals.exteriorWall ?? derivedExteriorWall;
+    const derivedWindowArea = effectiveExteriorWall !== null
+      ? roundToStep(effectiveExteriorWall * windowShare / 100, 5)
+      : null;
+    const effectiveWindowArea = manuals.windowArea ?? derivedWindowArea;
+
+    const derivedTopFloor = effectiveFootprint !== null ? roundToStep(effectiveFootprint, 10) : null;
+    const derivedBasement = derivedTopFloor;
+    const effectiveTopFloor = manuals.topFloorArea ?? derivedTopFloor;
+    const effectiveBasement = manuals.basementArea ?? derivedBasement;
+    const effectiveRoofPitch = manuals.roofPitch ?? 0;
+    const roofProjectionForSlope = effectiveTopFloor ?? effectiveFootprint;
+    const derivedRoofSlopeArea = roofProjectionForSlope !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
+      ? roundToStep(roofProjectionForSlope / Math.cos((effectiveRoofPitch * Math.PI) / 180), 10)
+      : null;
+    const effectiveRoofSlopeArea = manuals.roofSlopeArea ?? derivedRoofSlopeArea;
+    const derivedVolume = effectiveFootprint !== null && medianHeight !== null
+      ? roundToStep(effectiveFootprint * medianHeight, 10)
+      : null;
+    const effectiveVolume = manuals.volume ?? derivedVolume;
+
+    const ratioConflict = manuals.grossFloorArea !== null && manuals.usableFloorArea !== null
+      ? Math.abs((manuals.usableFloorArea / manuals.grossFloorArea) - USABLE_TO_GROSS_FACTOR) > 0.08
+      : false;
 
     const definitions = {
       storeys: { automatic: automaticStoreys, derived: automaticStoreys, effective: effectiveStoreys },
       grossFloorArea: { automatic: automaticGrossFloorArea, derived: derivedGrossFloorArea, effective: effectiveGrossFloorArea },
       usableFloorArea: { automatic: automaticUsableFloorArea, derived: derivedUsableFloorArea, effective: effectiveUsableFloorArea },
       heatedFloorArea: { automatic: automaticHeatedFloorArea, derived: derivedHeatedFloorArea, effective: effectiveHeatedFloorArea },
-      exteriorWall: { automatic: automaticExteriorWall, derived: automaticExteriorWall, effective: manuals.exteriorWall ?? automaticExteriorWall },
-      windowArea: { automatic: automaticWindowArea, derived: automaticWindowArea, effective: manuals.windowArea ?? automaticWindowArea },
-      topFloorArea: { automatic: automaticTopFloor, derived: automaticTopFloor, effective: manuals.topFloorArea ?? automaticTopFloor },
-      basementArea: { automatic: automaticBasement, derived: automaticBasement, effective: manuals.basementArea ?? automaticBasement },
-      roofPitch: { automatic: null, derived: null, effective: manuals.roofPitch },
-      roofSlopeArea: { automatic: derivedRoofSlopeArea, derived: derivedRoofSlopeArea, effective: manuals.roofSlopeArea ?? derivedRoofSlopeArea },
-      volume: { automatic: automaticVolume, derived: automaticVolume, effective: manuals.volume ?? automaticVolume },
+      exteriorWall: { automatic: automaticExteriorWall, derived: derivedExteriorWall, effective: effectiveExteriorWall },
+      windowArea: { automatic: automaticWindowArea, derived: derivedWindowArea, effective: effectiveWindowArea },
+      topFloorArea: { automatic: automaticTopFloor, derived: derivedTopFloor, effective: effectiveTopFloor },
+      basementArea: { automatic: automaticBasement, derived: derivedBasement, effective: effectiveBasement },
+      roofPitch: { automatic: automaticRoofPitch, derived: effectiveRoofPitch, effective: effectiveRoofPitch },
+      roofSlopeArea: { automatic: automaticRoofSlopeArea, derived: derivedRoofSlopeArea, effective: effectiveRoofSlopeArea },
+      volume: { automatic: automaticVolume, derived: derivedVolume, effective: effectiveVolume },
     };
 
     const result = {
-      storeyHeightModule,
-      usableFloorAreaFactor,
+      storeyHeightModule: STOREY_HEIGHT_MODULE_M,
+      usableFloorAreaFactor: USABLE_TO_GROSS_FACTOR * 100,
       windowSharePercent: windowShare,
-      heatedFloorAreaWasLimited,
+      heatedSharePercent: heatedShare,
+      heatedFloorAreaWasLimited: false,
+      ratioConflict,
       fields: {},
     };
 
     estimateFieldConfig().forEach((config) => {
       const definition = definitions[config.key] ?? { automatic: null, derived: null, effective: null };
       const manual = manuals[config.key];
+      let source = manual !== null ? 'manual' : 'automatic';
+      if (config.key === 'grossFloorArea' && manual === null && manuals.usableFloorArea !== null) source = 'derived-manual-basis';
+      if (config.key === 'heatedFloorArea') source = heatedShare === DEFAULT_HEATED_SHARE_PERCENT ? 'automatic' : 'derived-manual-basis';
+      if (['exteriorWall', 'windowArea', 'topFloorArea', 'basementArea', 'roofSlopeArea', 'volume'].includes(config.key)
+          && manual === null && (manuals.usableFloorArea !== null || manuals.grossFloorArea !== null || manuals.storeys !== null)) {
+        source = 'derived-manual-basis';
+      }
       result.fields[config.key] = {
         automatic: definition.automatic,
         derived: definition.derived,
         manual,
         effective: definition.effective,
         unit: config.unit,
-        source: manual !== null ? (config.key === 'heatedFloorArea' && heatedFloorAreaWasLimited ? 'manual-limited' : 'manual') : 'automatic',
+        source,
       };
     });
     return result;
@@ -344,19 +381,26 @@
     const data = currentGeometryEstimates();
     estimateFieldConfig().forEach((config) => {
       const item = data.fields[config.key];
-      if ($(config.autoId)) $(config.autoId).textContent = config.key === 'roofPitch' ? '–' : config.format(item.automatic);
+      if ($(config.autoId)) $(config.autoId).textContent = config.format(item.automatic);
       const effective = $(config.effectiveId);
       if (effective) {
         effective.textContent = config.format(item.effective);
         effective.classList.remove('estimate-used', 'is-manual', 'is-auto');
-        if (item.effective !== null) effective.classList.add('estimate-used', item.source.startsWith('manual') ? 'is-manual' : 'is-auto');
+        if (item.effective !== null) effective.classList.add('estimate-used', item.source.includes('manual') ? 'is-manual' : 'is-auto');
       }
     });
+    if ($('heatedShareOutput')) $('heatedShareOutput').textContent = `${number0.format(data.heatedSharePercent)} %`;
+    if ($('windowShareOutput')) $('windowShareOutput').textContent = `${number0.format(data.windowSharePercent)} %`;
     const constraintNote = $('heatedFloorAreaConstraintNote');
     if (constraintNote) {
-      constraintNote.hidden = !data.heatedFloorAreaWasLimited;
-      constraintNote.textContent = data.heatedFloorAreaWasLimited
-        ? 'Die beheizte Nutzfläche wurde auf die verwendete Nutzfläche begrenzt. Sie kann die Nutzfläche nicht überschreiten.'
+      constraintNote.hidden = true;
+      constraintNote.textContent = '';
+    }
+    const consistencyNote = $('geometryConsistencyNote');
+    if (consistencyNote) {
+      consistencyNote.hidden = !data.ratioConflict;
+      consistencyNote.textContent = data.ratioConflict
+        ? 'BGF und NFL wurden beide manuell eingetragen und weichen deutlich vom 0,75-Faktor ab. Das ist zulässig; bitte prüfen, ob beide Flächen nach derselben Definition ermittelt wurden.'
         : '';
     }
   }
@@ -364,33 +408,36 @@
   function geometryEstimatesShared() {
     const data = currentGeometryEstimates();
     const fieldMap = {
-      storeys: ['storeysAboveGround', 'Geschoße', 'Medianhöhe / Höhenmodul, ganzzahlig gerundet'],
-      grossFloorArea: ['grossFloorArea', 'm²', 'Dachprojektion × verwendete oberirdische Geschoße'],
-      usableFloorArea: ['usableFloorArea', 'm²', 'verwendete BGF × Nutzflächenfaktor'],
-      heatedFloorArea: ['heatedFloorArea', 'm²', 'verwendete Nutzfläche; manuell höchstens bis zur Nutzfläche'],
-      exteriorWall: ['exteriorWallGrossArea', 'm²', 'Gebäudeumfang × Medianhöhe'],
+      storeys: ['storeysAboveGround', 'Geschoße', 'TIRIS-Medianhöhe / 3,2 m, ganzzahlig gerundet'],
+      grossFloorArea: ['grossFloorArea', 'm²', 'Dachprojektion × Geschoße; bei manueller NFL ersatzweise NFL / 0,75'],
+      usableFloorArea: ['usableFloorArea', 'm²', 'verwendete BGF × 0,75 oder manuelle Nutzfläche'],
+      heatedFloorArea: ['heatedFloorArea', 'm²', 'verwendete Nutzfläche × beheizter Anteil'],
+      exteriorWall: ['exteriorWallGrossArea', 'm²', 'TIRIS-Umfang × Medianhöhe; bei geänderter Grundfläche geometrisch skaliert'],
       windowArea: ['windowArea', 'm²', 'Außenwandfläche × Fensteranteil'],
-      topFloorArea: ['topFloorArea', 'm²', 'Gebäudegrundfläche'],
-      basementArea: ['basementCeilingArea', 'm²', 'Gebäudegrundfläche'],
-      roofPitch: ['roofPitch', '°', 'manuelle Orientierung'],
-      roofSlopeArea: ['roofSlopeArea', 'm²', 'Dachprojektion / cos(Dachneigung)'],
-      volume: ['grossVolume', 'm³', 'Dachprojektion × Medianhöhe; äußeres geometrisches Bruttovolumen'],
+      topFloorArea: ['topFloorArea', 'm²', 'verwendete BGF / Geschoße'],
+      basementArea: ['basementCeilingArea', 'm²', 'verwendete BGF / Geschoße'],
+      roofPitch: ['roofPitch', '°', 'Standard 0° oder manuelle Eingabe'],
+      roofSlopeArea: ['roofSlopeArea', 'm²', 'verwendete Grundfläche / cos(Dachneigung)'],
+      volume: ['grossVolume', 'm³', 'verwendete Grundfläche × Medianhöhe; äußeres geometrisches Bruttovolumen'],
     };
 
     const geometry = {
-      storeyHeightModule: field(3.2, {
-        unit: 'm', origin: model.ORIGIN.FALLBACK, source: 'Standortpass Standardannahme',
-        manualValue: Math.abs(data.storeyHeightModule - 3.2) > 0.001 ? data.storeyHeightModule : null,
+      storeyHeightModule: field(STOREY_HEIGHT_MODULE_M, {
+        unit: 'm', origin: model.ORIGIN.FALLBACK, source: 'Standortpass feste Erstannahme',
+        method: 'OIB-Referenz 3,0 m plus Zuschlag für äußere Gebäude-/Dachhöhe',
+      }),
+      usableFloorAreaFactor: field(USABLE_TO_GROSS_FACTOR * 100, {
+        unit: '%', origin: model.ORIGIN.FALLBACK, source: 'Standortpass feste Erstannahme',
+        method: 'vereinfachter Beratungsfaktor; kein allgemeiner Normwert',
+      }),
+      windowSharePercent: field(DEFAULT_WINDOW_SHARE_PERCENT, {
+        unit: '%', origin: model.ORIGIN.FALLBACK, source: 'Standortpass Standardannahme',
+        manualValue: Math.abs(data.windowSharePercent - DEFAULT_WINDOW_SHARE_PERCENT) > 0.001 ? data.windowSharePercent : null,
         manualSource: 'Nutzereingabe Standortpass',
       }),
-      usableFloorAreaFactor: field(75, {
+      heatedSharePercent: field(DEFAULT_HEATED_SHARE_PERCENT, {
         unit: '%', origin: model.ORIGIN.FALLBACK, source: 'Standortpass Standardannahme',
-        manualValue: Math.abs(data.usableFloorAreaFactor - 75) > 0.001 ? data.usableFloorAreaFactor : null,
-        manualSource: 'Nutzereingabe Standortpass',
-      }),
-      windowSharePercent: field(20, {
-        unit: '%', origin: model.ORIGIN.FALLBACK, source: 'Standortpass Standardannahme',
-        manualValue: Math.abs(data.windowSharePercent - 20) > 0.001 ? data.windowSharePercent : null,
+        manualValue: Math.abs(data.heatedSharePercent - DEFAULT_HEATED_SHARE_PERCENT) > 0.001 ? data.heatedSharePercent : null,
         manualSource: 'Nutzereingabe Standortpass',
       }),
     };
@@ -441,14 +488,14 @@
 
   function restoreGeometryEstimates(savedGeometry) {
     if (!savedGeometry) return;
-    setInputValue('storeyHeightModule', valueResolver.value(savedGeometry.storeyHeightModule, 3.2));
-    setInputValue('usableFloorAreaFactor', valueResolver.value(savedGeometry.usableFloorAreaFactor, 75));
-    setInputValue('windowSharePercent', valueResolver.value(savedGeometry.windowSharePercent, 20));
+    setInputValue('storeyHeightModule', STOREY_HEIGHT_MODULE_M);
+    setInputValue('usableFloorAreaFactor', USABLE_TO_GROSS_FACTOR * 100);
+    setInputValue('windowSharePercent', valueResolver.value(savedGeometry.windowSharePercent, DEFAULT_WINDOW_SHARE_PERCENT));
+    setInputValue('heatedSharePercent', valueResolver.value(savedGeometry.heatedSharePercent, DEFAULT_HEATED_SHARE_PERCENT));
     const mapping = {
       storeysAboveGround: 'manualStoreysValue',
       grossFloorArea: 'manualGrossFloorAreaValue',
       usableFloorArea: 'manualUsableFloorAreaValue',
-      heatedFloorArea: 'manualHeatedFloorAreaValue',
       exteriorWallGrossArea: 'manualExteriorWallValue',
       windowArea: 'manualWindowAreaValue',
       topFloorArea: 'manualTopFloorAreaValue',
@@ -460,14 +507,22 @@
     Object.entries(mapping).forEach(([key, id]) => {
       setInputValue(id, valueResolver.manualValue(savedGeometry[key], null));
     });
+    if (!savedGeometry.heatedSharePercent) {
+      const savedUsable = Number(valueResolver.value(savedGeometry.usableFloorArea, 0));
+      const savedHeated = Number(valueResolver.value(savedGeometry.heatedFloorArea, 0));
+      if (savedUsable > 0 && savedHeated >= 0) {
+        setInputValue('heatedSharePercent', Math.max(0, Math.min(100, Math.round(savedHeated / savedUsable * 100))));
+      }
+    }
     renderGeometryEstimates();
   }
 
   function resetGeometryEstimatesInputs() {
-    setInputValue('storeyHeightModule', 3.2);
-    setInputValue('usableFloorAreaFactor', 75);
-    setInputValue('windowSharePercent', 20);
-    ['manualStoreysValue', 'manualGrossFloorAreaValue', 'manualUsableFloorAreaValue', 'manualHeatedFloorAreaValue', 'manualExteriorWallValue', 'manualWindowAreaValue', 'manualTopFloorAreaValue', 'manualBasementAreaValue', 'manualRoofPitchValue', 'manualRoofSlopeAreaValue', 'manualVolumeValue']
+    setInputValue('storeyHeightModule', STOREY_HEIGHT_MODULE_M);
+    setInputValue('usableFloorAreaFactor', USABLE_TO_GROSS_FACTOR * 100);
+    setInputValue('windowSharePercent', DEFAULT_WINDOW_SHARE_PERCENT);
+    setInputValue('heatedSharePercent', DEFAULT_HEATED_SHARE_PERCENT);
+    ['manualStoreysValue', 'manualGrossFloorAreaValue', 'manualUsableFloorAreaValue', 'manualExteriorWallValue', 'manualWindowAreaValue', 'manualTopFloorAreaValue', 'manualBasementAreaValue', 'manualRoofPitchValue', 'manualRoofSlopeAreaValue', 'manualVolumeValue']
       .forEach((id) => setInputValue(id, null));
     renderGeometryEstimates();
   }
@@ -520,9 +575,10 @@
       radonStatus: statusText('radonStatus'),
       terrainHeight: terrainRaw?.elevation_m ?? null,
       reportStatus: statusText('reportRunStatus'),
-      storeyHeightModule: parseInputValue('storeyHeightModule') ?? 3.2,
-      usableFloorAreaFactor: parseInputValue('usableFloorAreaFactor') ?? 75,
-      windowSharePercent: parseInputValue('windowSharePercent') ?? 20,
+      storeyHeightModule: STOREY_HEIGHT_MODULE_M,
+      usableFloorAreaFactor: USABLE_TO_GROSS_FACTOR * 100,
+      windowSharePercent: parseInputValue('windowSharePercent') ?? DEFAULT_WINDOW_SHARE_PERCENT,
+      heatedSharePercent: parseInputValue('heatedSharePercent') ?? DEFAULT_HEATED_SHARE_PERCENT,
       geometryEstimateManuals: estimateFieldConfig().map((config) => parseInputValue(config.manualId)),
     });
     if (uiSignature === lastUiSignature) return;
@@ -562,7 +618,7 @@
       radonStatus: statusText('radonStatus'),
       reportStatus: statusText('reportRunStatus'),
       solar: compactSolarShared(),
-      version: '1.0.0',
+      version: '1.1.0',
       sharedArchitecture: '1.0',
       updatedAt: new Date().toISOString(),
     };
@@ -572,6 +628,9 @@
       ...(sharedBuilding.geometry || {}),
       ...geometryEstimatesShared(),
     };
+    sharedBuilding.thermal = {
+      ...(store.get().building?.thermal || {}),
+    };
 
     store.patch({
       project: addressRecord ? { addressLabel } : {},
@@ -580,12 +639,39 @@
       modules: { standortpass: modulePatch },
     });
 
+    const geometryEstimate = currentGeometryEstimates();
+    const manual = model.ORIGIN.MANUAL;
+    const manualUpdates = [
+      ['building.geometry.storeyHeightModule', null, 'm'],
+      ['building.geometry.usableFloorAreaFactor', null, '%'],
+      ['building.geometry.storeysAboveGround', parseInputValue('manualStoreysValue'), 'Geschoße'],
+      ['building.geometry.grossFloorArea', parseInputValue('manualGrossFloorAreaValue'), 'm²'],
+      ['building.geometry.usableFloorArea', parseInputValue('manualUsableFloorAreaValue'), 'm²'],
+      ['building.geometry.heatedFloorArea', Math.abs(geometryEstimate.heatedSharePercent - DEFAULT_HEATED_SHARE_PERCENT) > 0.001 ? geometryEstimate.fields.heatedFloorArea.effective : null, 'm²'],
+      ['building.thermal.heatedSharePercent', Math.abs(geometryEstimate.heatedSharePercent - DEFAULT_HEATED_SHARE_PERCENT) > 0.001 ? geometryEstimate.heatedSharePercent : null, '%'],
+      ['building.geometry.exteriorWallGrossArea', parseInputValue('manualExteriorWallValue'), 'm²'],
+      ['building.geometry.windowArea', parseInputValue('manualWindowAreaValue'), 'm²'],
+      ['building.geometry.topFloorArea', parseInputValue('manualTopFloorAreaValue'), 'm²'],
+      ['building.geometry.basementCeilingArea', parseInputValue('manualBasementAreaValue'), 'm²'],
+      ['building.geometry.roofPitch', parseInputValue('manualRoofPitchValue'), '°'],
+      ['building.geometry.roofSlopeArea', parseInputValue('manualRoofSlopeAreaValue'), 'm²'],
+      ['building.geometry.grossVolume', parseInputValue('manualVolumeValue'), 'm³'],
+      ['building.geometry.windowSharePercent', Math.abs(geometryEstimate.windowSharePercent - DEFAULT_WINDOW_SHARE_PERCENT) > 0.001 ? geometryEstimate.windowSharePercent : null, '%'],
+    ].map(([path, value, unit]) => ({
+      path,
+      origin: manual,
+      value,
+      options: { unit, source: 'Nutzereingabe Standortpass' },
+    }));
+    store.setFieldCandidates(manualUpdates);
+
     renderOverview();
   }
 
   function resultCard(label, status, detail, tone = 'neutral') {
     return `<article class="overview-result overview-result--${tone}">
-      <span>${label}</span><strong>${status}</strong><small>${detail}</small>
+      <div class="compact-card-heading"><span>${label}</span><details class="metric-info"><summary aria-label="Info zu ${label}" class="info-tip">i</summary><div class="metric-info-popover">${detail}</div></details></div>
+      <strong>${status}</strong>
     </article>`;
   }
 
@@ -606,8 +692,9 @@
   function renderOverview() {
     const overview = $('projectOverviewGrid');
     if (!overview) return;
-    const items = [
-      ['Bericht', text('reportRunStatus') || 'offen', reportHasRun ? 'Automatischer Prüflauf wurde ausgeführt.' : 'Nach Adressauswahl mit einem Klick erstellen.'],
+    const reportItem = ['Bericht', text('reportRunStatus') || 'offen', reportHasRun ? 'Automatischer Prüflauf wurde ausgeführt.' : 'Nach Adressauswahl mit einem Klick erstellen.'];
+    const items = reportHasRun ? [
+      reportItem,
       ['Standort', text('tirisLiveAddressStatus') || 'offen', text('selectedAddressLabel') || 'Adresse noch nicht gewählt'],
       ['Gebäude', text('buildingStatus') || 'offen', text('buildingMatchInfo') || 'Gebäude noch nicht geprüft'],
       ['Solar', solarOverviewStatus(), 'Sonnenbahn, Verschattung und Jahressolarstrahlung'],
@@ -615,8 +702,15 @@
       ['Naturgefahren', text('hazardStatus') || 'offen', 'HQ30/HQ100/HQ300 und TIRIS-Gefahrenhinweise'],
       ['Schutz & Radon', `${text('heritageStatus') || 'offen'} · ${text('radonStatus') || 'offen'}`, 'Denkmalschutz, Kulturkontext und Radonstatus'],
       ['Wärmenetz', 'TIRIS-Check', 'Automatische Schnittstelle noch in Klärung; Link folgt der Projektadresse.'],
-    ];
+    ] : [reportItem];
     overview.innerHTML = items.map(([label, status, detail]) => resultCard(label, status, detail, toneFromStatus(status.toLowerCase()))).join('');
+  }
+
+  function setMainToolAreasVisible(visible) {
+    ['area-building', 'area-heat', 'area-solar', 'area-risks'].forEach((id) => {
+      const area = $(id);
+      if (area) area.hidden = !visible;
+    });
   }
 
   function setReportStatus(label, state = 'muted') {
@@ -663,9 +757,10 @@
   async function runFullReport(options = {}) {
     if (reportRunning || !core.getSelectedAddress()) return;
     reportRunning = true;
+    setMainToolAreasVisible(true);
     const button = $('runReportButton');
     button.disabled = true;
-    button.textContent = 'Bericht wird erstellt …';
+    button.textContent = 'Standort wird analysiert …';
     setReportStatus('läuft …', 'working');
     $('reportRunMessage').textContent = 'Die Standortprüfungen werden nacheinander ausgeführt. Fehlgeschlagene Einzelprüfungen können anschließend direkt im jeweiligen Block wiederholt werden.';
     reportSteps.forEach((step) => setRetry(step, false));
@@ -709,7 +804,7 @@
     }
 
     button.disabled = false;
-    button.textContent = 'Bericht aktualisieren';
+    button.textContent = 'Standort aktualisieren';
     reportRunning = false;
 
     store.patch({ modules: { standortpass: {
@@ -932,12 +1027,13 @@
     setReportStatus('Adresse fehlt');
     const button = $('runReportButton');
     button.disabled = true;
-    button.textContent = 'Bericht erstellen';
+    button.textContent = 'Standort analysieren';
     $('reportRunMessage').textContent = 'Nach der Adressauswahl werden Gebäude, Höhenlage, Solar, Umweltwärme, Naturgefahren, Schutzstatus und Radon nacheinander geprüft.';
     $('reportProgress').hidden = true;
     $('reportProgressBar').style.width = '0%';
     reportSteps.forEach((step) => setRetry(step, false));
     $('printReportGrid').innerHTML = '';
+    setMainToolAreasVisible(false);
     resetGeometryEstimatesInputs();
     renderOverview();
   }
@@ -989,7 +1085,7 @@
     $('reportProgressBar').style.width = '0%';
     const button = $('runReportButton');
     button.disabled = false;
-    button.textContent = 'Bericht erstellen';
+    button.textContent = 'Standort analysieren';
     setReportStatus('bereit', 'success');
     $('reportRunMessage').textContent = 'Standort ist gewählt. Mit „Bericht erstellen“ werden alle verfügbaren Prüfungen automatisch nacheinander ausgeführt.';
     if (!hydrationRunning) {
@@ -1030,7 +1126,7 @@
     renderGeometryEstimates();
     if (reportHasRun && !reportRunning) {
       setReportStatus('aktualisieren');
-      $('runReportButton').textContent = 'Bericht aktualisieren';
+      $('runReportButton').textContent = 'Standort aktualisieren';
       $('reportRunMessage').textContent = 'Gebäudeauswahl geändert. Solar- und Risikoprüfung sollten mit „Bericht aktualisieren“ neu berechnet werden.';
     }
     syncProjectFromUi();
@@ -1060,7 +1156,7 @@
     window.requestAnimationFrame(() => window.print());
   });
 
-  ['storeyHeightModule', 'usableFloorAreaFactor', 'windowSharePercent', 'manualStoreysValue', 'manualGrossFloorAreaValue', 'manualUsableFloorAreaValue', 'manualHeatedFloorAreaValue', 'manualExteriorWallValue', 'manualWindowAreaValue', 'manualTopFloorAreaValue', 'manualBasementAreaValue', 'manualRoofPitchValue', 'manualRoofSlopeAreaValue', 'manualVolumeValue'].forEach((id) => {
+  ['heatedSharePercent', 'windowSharePercent', 'manualStoreysValue', 'manualGrossFloorAreaValue', 'manualUsableFloorAreaValue', 'manualExteriorWallValue', 'manualWindowAreaValue', 'manualTopFloorAreaValue', 'manualBasementAreaValue', 'manualRoofPitchValue', 'manualRoofSlopeAreaValue', 'manualVolumeValue'].forEach((id) => {
     $(id)?.addEventListener('input', () => {
       renderGeometryEstimates();
       buildPrintSummary();
@@ -1070,7 +1166,7 @@
       if (id === 'manualStoreysValue') {
         const value = parseInputValue(id);
         setInputValue(id, value === null ? null : Math.max(1, Math.round(value)));
-      } else if (!['manualRoofPitchValue', 'storeyHeightModule', 'usableFloorAreaFactor', 'windowSharePercent'].includes(id)) {
+      } else if (!['manualRoofPitchValue', 'heatedSharePercent', 'windowSharePercent'].includes(id)) {
         const value = parseInputValue(id);
         if (value !== null && value <= 0) setInputValue(id, null);
       }
@@ -1102,6 +1198,7 @@
   });
 
   renderGeometryEstimates();
+  setMainToolAreasVisible(false);
   renderOverview();
 
   // Persistierte Projekte stellen zuerst Standort und Gebäude-Snapshot wieder her.

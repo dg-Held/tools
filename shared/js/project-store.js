@@ -77,14 +77,27 @@
   }
 
   function applySharedBuildingDerivations() {
+    const STOREY_HEIGHT_MODULE_M = 3.2;
+    const USABLE_TO_GROSS_FACTOR = 0.75;
+    const DEFAULT_WINDOW_SHARE_PERCENT = 25;
+
     function selected(path, fallback = null) {
       return finiteNumber(resolver.value(getPath(path, null), fallback));
     }
 
-    function sameCandidate(path, origin, value, method) {
+    function candidate(path, origin) {
       const current = getPath(path, null);
-      const candidate = resolver.isField(current) ? current.candidates?.[origin] : null;
-      return finiteNumber(candidate?.value) === finiteNumber(value) && (method === undefined || candidate?.method === method);
+      return resolver.isField(current) ? current.candidates?.[origin] ?? null : null;
+    }
+
+    function candidateNumber(path, origin) {
+      return finiteNumber(candidate(path, origin)?.value);
+    }
+
+    function sameCandidate(path, origin, value, method) {
+      const currentCandidate = candidate(path, origin);
+      return finiteNumber(currentCandidate?.value) === finiteNumber(value)
+        && (method === undefined || currentCandidate?.method === method);
     }
 
     function setCandidate(path, origin, value, options = {}) {
@@ -94,113 +107,224 @@
       assignPathWithoutPersist(path, resolver.withCandidate(current, origin, value, options));
     }
 
+    function setOrClearCandidate(path, origin, value, options = {}) {
+      const current = getPath(path, null);
+      const next = value === null || value === undefined || value === ''
+        ? resolver.withoutCandidate(current, origin)
+        : resolver.withCandidate(current, origin, value, options);
+      assignPathWithoutPersist(path, next);
+    }
+
+    function timestamp(candidateValue) {
+      const value = Date.parse(candidateValue?.updatedAt || '');
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    // Diese zwei Werte sind bewusste, feste Erstannahmen des Standortpasses.
+    // Alte manuelle Varianten werden entfernt, damit alle Tools dieselbe Kette verwenden.
+    setOrClearCandidate('building.geometry.storeyHeightModule', model.ORIGIN.MANUAL, null);
+    setOrClearCandidate('building.geometry.usableFloorAreaFactor', model.ORIGIN.MANUAL, null);
+    setCandidate('building.geometry.storeyHeightModule', model.ORIGIN.FALLBACK, STOREY_HEIGHT_MODULE_M, {
+      unit: 'm', source: 'Gemeinsame Gebäudeableitung', method: 'feste Beratungsannahme', modelVersion: 'building-geometry-v1.3',
+    });
+    setCandidate('building.geometry.usableFloorAreaFactor', model.ORIGIN.FALLBACK, USABLE_TO_GROSS_FACTOR * 100, {
+      unit: '%', source: 'Gemeinsame Gebäudeableitung', method: 'feste Beratungsannahme; kein allgemeiner Normwert', modelVersion: 'building-geometry-v1.3',
+    });
+    setCandidate('building.geometry.windowSharePercent', model.ORIGIN.FALLBACK, DEFAULT_WINDOW_SHARE_PERCENT, {
+      unit: '%', source: 'Gemeinsame Gebäudeableitung', method: 'Fensteranteil an der Brutto-Außenwand', modelVersion: 'building-geometry-v1.3',
+    });
+
     const footprintArea = selected('building.geometry.footprintArea');
+    const perimeter = selected('building.geometry.perimeter');
     const medianHeight = selected('building.geometry.heightMedian');
-    const storeyHeightModule = selected('building.geometry.storeyHeightModule', 3.2) ?? 3.2;
-    const usableFloorAreaFactor = selected('building.geometry.usableFloorAreaFactor', 75) ?? 75;
+    const windowSharePercent = Math.max(0, Math.min(100, selected('building.geometry.windowSharePercent', DEFAULT_WINDOW_SHARE_PERCENT) ?? DEFAULT_WINDOW_SHARE_PERCENT));
+    const roofPitch = Math.max(0, Math.min(89, selected('building.geometry.roofPitch', 0) ?? 0));
 
     const automaticStoreys = medianHeight > 0
-      ? Math.max(1, Math.round(medianHeight / storeyHeightModule))
+      ? Math.max(1, Math.round(medianHeight / STOREY_HEIGHT_MODULE_M))
       : null;
     const automaticGrossFloorArea = footprintArea > 0 && automaticStoreys > 0
       ? roundToStep(footprintArea * automaticStoreys, 10)
       : null;
     const automaticUsableFloorArea = automaticGrossFloorArea > 0
-      ? roundToStep(automaticGrossFloorArea * usableFloorAreaFactor / 100, 5)
+      ? roundToStep(automaticGrossFloorArea * USABLE_TO_GROSS_FACTOR, 5)
+      : null;
+    const automaticExteriorWall = perimeter > 0 && medianHeight > 0
+      ? roundToStep(perimeter * medianHeight, 10)
+      : null;
+    const automaticWindowArea = automaticExteriorWall > 0
+      ? roundToStep(automaticExteriorWall * DEFAULT_WINDOW_SHARE_PERCENT / 100, 5)
       : null;
     const automaticGrossVolume = footprintArea > 0 && medianHeight > 0
       ? roundToStep(footprintArea * medianHeight, 10)
       : null;
 
     const referenceSource = 'Gemeinsame Gebäudeautomatik';
+    const referenceOptions = { source: referenceSource, modelVersion: 'building-geometry-v1.3', quality: 'automatische Referenz ohne manuelle Korrekturen' };
     if (automaticStoreys !== null) setCandidate('building.geometry.reference.storeysAboveGround', model.ORIGIN.DERIVED, automaticStoreys, {
-      unit: null,
-      source: referenceSource,
-      method: 'Medianhöhe / Höhenmodul, ganzzahlig gerundet',
-      modelVersion: 'building-geometry-v1.2',
-      quality: 'automatische Referenz ohne manuelle Korrekturen',
+      ...referenceOptions, unit: 'Geschoße', method: 'Medianhöhe / 3,2 m, ganzzahlig gerundet',
     });
     if (automaticGrossFloorArea !== null) setCandidate('building.geometry.reference.grossFloorArea', model.ORIGIN.DERIVED, automaticGrossFloorArea, {
-      unit: 'm²', source: referenceSource, method: 'Dachprojektion × automatische Geschoßzahl', modelVersion: 'building-geometry-v1.2', quality: 'automatische Referenz',
+      ...referenceOptions, unit: 'm²', method: 'Dachprojektion × automatische Geschoßzahl',
     });
     if (automaticUsableFloorArea !== null) {
       setCandidate('building.geometry.reference.usableFloorArea', model.ORIGIN.DERIVED, automaticUsableFloorArea, {
-        unit: 'm²', source: referenceSource, method: 'automatische BGF × Nutzflächenfaktor', modelVersion: 'building-geometry-v1.2', quality: 'automatische Referenz',
+        ...referenceOptions, unit: 'm²', method: 'automatische BGF × 0,75',
       });
       setCandidate('building.geometry.reference.heatedFloorArea', model.ORIGIN.DERIVED, automaticUsableFloorArea, {
-        unit: 'm²', source: referenceSource, method: 'automatische Nutzfläche als Erstannahme', modelVersion: 'building-geometry-v1.2', quality: 'automatische Referenz',
+        ...referenceOptions, unit: 'm²', method: 'automatische Nutzfläche × 100 % beheizter Anteil',
       });
     }
+    if (automaticExteriorWall !== null) setCandidate('building.geometry.reference.exteriorWallGrossArea', model.ORIGIN.DERIVED, automaticExteriorWall, {
+      ...referenceOptions, unit: 'm²', method: 'TIRIS-Umfang × Medianhöhe',
+    });
+    if (automaticWindowArea !== null) setCandidate('building.geometry.reference.windowArea', model.ORIGIN.DERIVED, automaticWindowArea, {
+      ...referenceOptions, unit: 'm²', method: 'automatische Außenwand × 25 %',
+    });
+    if (footprintArea > 0) {
+      for (const [key, method] of [
+        ['topFloorArea', 'Dachprojektion'],
+        ['basementCeilingArea', 'Dachprojektion'],
+        ['groundFloorArea', 'Dachprojektion'],
+        ['roofSlopeArea', 'Dachprojektion bei 0°'],
+      ]) {
+        setCandidate(`building.geometry.reference.${key}`, model.ORIGIN.DERIVED, roundToStep(footprintArea, 10), {
+          ...referenceOptions, unit: 'm²', method,
+        });
+      }
+    }
     if (automaticGrossVolume !== null) setCandidate('building.geometry.reference.grossVolume', model.ORIGIN.DERIVED, automaticGrossVolume, {
-      unit: 'm³', source: referenceSource, method: 'Dachprojektion × Medianhöhe', modelVersion: 'building-geometry-v1.2', quality: 'äußeres geometrisches Bruttovolumen',
+      ...referenceOptions, unit: 'm³', method: 'Dachprojektion × Medianhöhe', quality: 'äußeres geometrisches Bruttovolumen',
     });
 
-    // Verwendete Kette: manuelle Werte behalten Vorrang, abgeleitete Nachfolger werden aktualisiert.
+    // Verwendete Kette: Geschoße und NFL sind die wichtigsten Prüfeingaben.
     if (automaticStoreys !== null) setCandidate('building.geometry.storeysAboveGround', model.ORIGIN.DERIVED, automaticStoreys, {
-      unit: null,
-      source: 'Gemeinsame Gebäudeableitung',
-      method: 'Medianhöhe / Höhenmodul, ganzzahlig gerundet',
-      modelVersion: 'building-geometry-v1.2',
-      quality: 'Orientierungswert; manuelle Geschoßzahl hat Vorrang',
+      unit: 'Geschoße', source: 'Gemeinsame Gebäudeableitung', method: 'Medianhöhe / 3,2 m, ganzzahlig gerundet', modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert; manuelle Geschoßzahl hat Vorrang',
     });
-
     const effectiveStoreys = selected('building.geometry.storeysAboveGround', automaticStoreys);
-    const derivedGrossFloorArea = footprintArea > 0 && effectiveStoreys > 0
+    const manualGrossFloorArea = candidateNumber('building.geometry.grossFloorArea', model.ORIGIN.MANUAL);
+    const manualUsableFloorArea = candidateNumber('building.geometry.usableFloorArea', model.ORIGIN.MANUAL);
+    const grossFromManualUsable = manualUsableFloorArea > 0 && !(manualGrossFloorArea > 0)
+      ? roundToStep(manualUsableFloorArea / USABLE_TO_GROSS_FACTOR, 10)
+      : null;
+    const grossFromStoreys = footprintArea > 0 && effectiveStoreys > 0
       ? roundToStep(footprintArea * effectiveStoreys, 10)
       : null;
+    const derivedGrossFloorArea = grossFromManualUsable ?? grossFromStoreys;
     if (derivedGrossFloorArea !== null) setCandidate('building.geometry.grossFloorArea', model.ORIGIN.DERIVED, derivedGrossFloorArea, {
-      unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'Dachprojektion × verwendete Geschoßzahl', modelVersion: 'building-geometry-v1.2', quality: 'Orientierungswert; manuelle BGF hat Vorrang',
+      unit: 'm²', source: 'Gemeinsame Gebäudeableitung',
+      method: grossFromManualUsable !== null ? 'manuelle Nutzfläche / 0,75' : 'Dachprojektion × verwendete Geschoßzahl',
+      modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert; bekannte manuelle BGF hat Vorrang',
     });
 
     const effectiveGrossFloorArea = selected('building.geometry.grossFloorArea', derivedGrossFloorArea);
     const derivedUsableFloorArea = effectiveGrossFloorArea > 0
-      ? roundToStep(effectiveGrossFloorArea * usableFloorAreaFactor / 100, 5)
+      ? roundToStep(effectiveGrossFloorArea * USABLE_TO_GROSS_FACTOR, 5)
       : null;
     if (derivedUsableFloorArea !== null) setCandidate('building.geometry.usableFloorArea', model.ORIGIN.DERIVED, derivedUsableFloorArea, {
-      unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'verwendete BGF × Nutzflächenfaktor', modelVersion: 'building-geometry-v1.2', quality: 'Orientierungswert; manuelle Nutzfläche hat Vorrang',
+      unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'verwendete BGF × 0,75', modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert; manuelle Nutzfläche hat Vorrang',
     });
-
     const effectiveUsableFloorArea = selected('building.geometry.usableFloorArea', derivedUsableFloorArea);
-    if (effectiveUsableFloorArea > 0) {
-      const heatedPath = 'building.geometry.heatedFloorArea';
-      const heatedField = getPath(heatedPath, null);
-      const heatedManual = resolver.isField(heatedField) ? heatedField.candidates?.[model.ORIGIN.MANUAL] : null;
-      if (finiteNumber(heatedManual?.value) > effectiveUsableFloorArea) {
-        const originalValue = finiteNumber(heatedManual.value);
-        const next = resolver.withCandidate(heatedField, model.ORIGIN.MANUAL, effectiveUsableFloorArea, {
-          ...(heatedManual ?? {}),
-          unit: 'm²',
-          source: heatedManual?.source ?? 'Nutzereingabe',
-          note: `Auf die Nutzfläche begrenzt; vorherige Eingabe ${originalValue} m².`,
+
+    // Beheizter Anteil und beheizte Nutzfläche werden synchron gehalten.
+    const sharePath = 'building.thermal.heatedSharePercent';
+    const heatedPath = 'building.geometry.heatedFloorArea';
+    const manualShareCandidate = candidate(sharePath, model.ORIGIN.MANUAL);
+    const manualHeatedCandidate = candidate(heatedPath, model.ORIGIN.MANUAL);
+    let manualShare = finiteNumber(manualShareCandidate?.value);
+    let manualHeated = finiteNumber(manualHeatedCandidate?.value);
+    const shareIsNewer = timestamp(manualShareCandidate) >= timestamp(manualHeatedCandidate);
+
+    if (effectiveUsableFloorArea > 0 && (manualShare !== null || manualHeated !== null)) {
+      if (manualShare !== null && (manualHeated === null || shareIsNewer)) {
+        manualShare = Math.max(0, Math.min(100, manualShare));
+        manualHeated = roundToStep(effectiveUsableFloorArea * manualShare / 100, 5);
+        setOrClearCandidate(heatedPath, model.ORIGIN.MANUAL, manualHeated, {
+          unit: 'm²', source: manualShareCandidate?.source ?? 'Gemeinsame Gebäudeableitung', method: 'Nutzfläche × manueller beheizter Anteil', modelVersion: 'building-geometry-v1.3',
         });
-        assignPathWithoutPersist(heatedPath, next);
+      } else if (manualHeated !== null) {
+        manualHeated = Math.max(0, Math.min(effectiveUsableFloorArea, manualHeated));
+        manualShare = Math.round(manualHeated / effectiveUsableFloorArea * 100);
+        setOrClearCandidate(heatedPath, model.ORIGIN.MANUAL, manualHeated, {
+          ...(manualHeatedCandidate ?? {}), unit: 'm²', source: manualHeatedCandidate?.source ?? 'Nutzereingabe',
+          note: finiteNumber(manualHeatedCandidate?.value) > effectiveUsableFloorArea ? 'Auf die verwendete Nutzfläche begrenzt.' : manualHeatedCandidate?.note ?? null,
+        });
+        setOrClearCandidate(sharePath, model.ORIGIN.MANUAL, manualShare, {
+          unit: '%', source: manualHeatedCandidate?.source ?? 'Gemeinsame Gebäudeableitung', method: 'manuelle beheizte Nutzfläche / verwendete Nutzfläche', modelVersion: 'building-geometry-v1.3',
+        });
       }
-      setCandidate(heatedPath, model.ORIGIN.DERIVED, effectiveUsableFloorArea, {
-        unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'verwendete Nutzfläche als Erstannahme; maximal gleich Nutzfläche', modelVersion: 'building-geometry-v1.2', quality: 'Orientierungswert; manuelle beheizte Nutzfläche hat Vorrang bis zur Nutzfläche',
-      });
     }
 
-    const effectiveHeatedFloorArea = selected('building.geometry.heatedFloorArea', effectiveUsableFloorArea);
+    const effectiveManualShare = candidateNumber(sharePath, model.ORIGIN.MANUAL);
+    const derivedHeatedFloorArea = effectiveUsableFloorArea > 0
+      ? roundToStep(effectiveUsableFloorArea * Math.max(0, Math.min(100, effectiveManualShare ?? 100)) / 100, 5)
+      : null;
+    if (derivedHeatedFloorArea !== null) setCandidate(heatedPath, model.ORIGIN.DERIVED, derivedHeatedFloorArea, {
+      unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'verwendete Nutzfläche × beheizter Anteil', modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert',
+    });
+    const effectiveHeatedFloorArea = selected(heatedPath, derivedHeatedFloorArea);
     if (effectiveUsableFloorArea > 0 && effectiveHeatedFloorArea !== null) {
       const heatedShare = Math.max(0, Math.min(100, effectiveHeatedFloorArea / effectiveUsableFloorArea * 100));
-      setCandidate('building.thermal.heatedSharePercent', model.ORIGIN.DERIVED, Math.round(heatedShare), {
-        unit: '%', source: 'Gemeinsame Gebäudeableitung', method: 'beheizte Nutzfläche / Nutzfläche', modelVersion: 'building-geometry-v1.2', quality: 'Orientierungswert; manuelle Angabe hat Vorrang',
+      setCandidate(sharePath, model.ORIGIN.DERIVED, Math.round(heatedShare), {
+        unit: '%', source: 'Gemeinsame Gebäudeableitung', method: 'beheizte Nutzfläche / verwendete Nutzfläche', modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert',
       });
     }
 
-    // Äußeres geometrisches Volumen hängt nicht von der Geschoßzahl oder einer manuellen BGF ab.
-    if (automaticGrossVolume !== null) setCandidate('building.geometry.grossVolume', model.ORIGIN.DERIVED, automaticGrossVolume, {
-      unit: 'm³', source: 'Gemeinsame Gebäudeableitung', method: 'Dachprojektion × Medianhöhe', modelVersion: 'building-geometry-v1.2', quality: 'äußeres geometrisches Bruttovolumen; manueller Volumenwert hat Vorrang',
+    // Hüllflächen folgen der aus BGF und Geschoßzahl verwendeten Grundfläche.
+    const effectiveFootprint = effectiveGrossFloorArea > 0 && effectiveStoreys > 0
+      ? effectiveGrossFloorArea / effectiveStoreys
+      : footprintArea;
+    const footprintScale = footprintArea > 0 && effectiveFootprint > 0
+      ? Math.sqrt(effectiveFootprint / footprintArea)
+      : 1;
+    const derivedExteriorWall = perimeter > 0 && medianHeight > 0
+      ? roundToStep(perimeter * footprintScale * medianHeight, 10)
+      : null;
+    if (derivedExteriorWall !== null) setCandidate('building.geometry.exteriorWallGrossArea', model.ORIGIN.DERIVED, derivedExteriorWall, {
+      unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'TIRIS-Umfang × √(verwendete Grundfläche / TIRIS-Dachprojektion) × Medianhöhe', modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert; ähnliche Gebäudeform angenommen',
+    });
+    const effectiveExteriorWall = selected('building.geometry.exteriorWallGrossArea', derivedExteriorWall);
+    const derivedWindowArea = effectiveExteriorWall > 0
+      ? roundToStep(effectiveExteriorWall * windowSharePercent / 100, 5)
+      : null;
+    if (derivedWindowArea !== null) setCandidate('building.geometry.windowArea', model.ORIGIN.DERIVED, derivedWindowArea, {
+      unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'verwendete Brutto-Außenwand × Fensteranteil', modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert',
+    });
+    const effectiveWindowArea = selected('building.geometry.windowArea', derivedWindowArea);
+    if (effectiveExteriorWall > 0 && effectiveWindowArea !== null) setCandidate('building.geometry.opaqueExteriorWallArea', model.ORIGIN.DERIVED, Math.max(0, effectiveExteriorWall - effectiveWindowArea), {
+      unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'Brutto-Außenwand − Fensterfläche', modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert',
     });
 
-    // Separates konditioniertes Volumen für spätere Heizlast-/Lüftungsanwendungen.
-    const effectiveGrossVolume = selected('building.geometry.grossVolume', automaticGrossVolume);
-    const effectiveHeatedShare = selected('building.thermal.heatedSharePercent', 100);
-    if (effectiveGrossVolume > 0 && effectiveHeatedShare !== null) {
-      setCandidate('building.thermal.heatedVolume', model.ORIGIN.DERIVED, roundToStep(effectiveGrossVolume * Math.max(0, Math.min(100, effectiveHeatedShare)) / 100, 10), {
-        unit: 'm³', source: 'Gemeinsame Gebäudeableitung', method: 'geometrisches Bruttovolumen × beheizter Anteil', modelVersion: 'building-geometry-v1.2', quality: 'überschlägiges konditioniertes Volumen; noch kein normatives Luftvolumen',
+    if (effectiveFootprint > 0) {
+      const roundedFootprint = roundToStep(effectiveFootprint, 10);
+      for (const [path, method] of [
+        ['building.geometry.topFloorArea', 'verwendete BGF / Geschoße'],
+        ['building.geometry.basementCeilingArea', 'verwendete BGF / Geschoße'],
+        ['building.geometry.groundFloorArea', 'verwendete BGF / Geschoße'],
+      ]) {
+        setCandidate(path, model.ORIGIN.DERIVED, roundedFootprint, {
+          unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method, modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert',
+        });
+      }
+      const roofSlopeArea = roofPitch < 89
+        ? roundToStep(effectiveFootprint / Math.cos(roofPitch * Math.PI / 180), 10)
+        : null;
+      if (roofSlopeArea !== null) setCandidate('building.geometry.roofSlopeArea', model.ORIGIN.DERIVED, roofSlopeArea, {
+        unit: 'm²', source: 'Gemeinsame Gebäudeableitung', method: 'verwendete Grundfläche / cos(Dachneigung)', modelVersion: 'building-geometry-v1.3', quality: 'Orientierungswert',
       });
     }
+
+    const derivedGrossVolume = effectiveFootprint > 0 && medianHeight > 0
+      ? roundToStep(effectiveFootprint * medianHeight, 10)
+      : automaticGrossVolume;
+    if (derivedGrossVolume !== null) setCandidate('building.geometry.grossVolume', model.ORIGIN.DERIVED, derivedGrossVolume, {
+      unit: 'm³', source: 'Gemeinsame Gebäudeableitung', method: 'verwendete Grundfläche × Medianhöhe', modelVersion: 'building-geometry-v1.3', quality: 'äußeres geometrisches Bruttovolumen; manueller Volumenwert hat Vorrang',
+    });
+    const effectiveGrossVolume = selected('building.geometry.grossVolume', derivedGrossVolume);
+    const effectiveHeatedShare = selected(sharePath, 100);
+    if (effectiveGrossVolume > 0 && effectiveHeatedShare !== null) setCandidate('building.thermal.heatedVolume', model.ORIGIN.DERIVED, roundToStep(effectiveGrossVolume * Math.max(0, Math.min(100, effectiveHeatedShare)) / 100, 10), {
+      unit: 'm³', source: 'Gemeinsame Gebäudeableitung', method: 'geometrisches Bruttovolumen × beheizter Anteil', modelVersion: 'building-geometry-v1.3', quality: 'überschlägiges konditioniertes Volumen; kein normatives Luftvolumen',
+    });
   }
 
   function persist({ notifyListeners = true } = {}) {

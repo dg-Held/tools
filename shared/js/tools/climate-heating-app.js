@@ -7,6 +7,7 @@ const REQUEST_DELAY_MS = 260;
 const TOOL_MODE = document.body?.dataset.toolMode ?? 'combined';
 const IS_CLIMATE_TOOL = TOOL_MODE === 'climate';
 const IS_HEATING_TOOL = TOOL_MODE === 'heating';
+const HWB_USABLE_TO_GROSS_FACTOR = 0.75;
 
 function climatePeriodLabel() {
   return `${START_YEAR}–${END_YEAR}`;
@@ -92,6 +93,7 @@ const state = {
   heatingLimitManual: false,
   buildingConditionSuggestion: 'teilsanierter_bestand',
   buildingConditionManual: false,
+  hwbBgfMode: 'derived',
 };
 
 const projectStore = window.EnergyToolsProjectStore ?? null;
@@ -227,6 +229,57 @@ function buildingConditionInfo(project = projectStore?.get()) {
   };
 }
 
+function projectBgfInfo(project = projectStore?.get()) {
+  const field = project?.building?.geometry?.grossFloorArea;
+  return projectValueResolver?.describe(field) ?? {
+    value: sharedValue(field),
+    manualValue: null,
+    automaticValue: sharedValue(field),
+    isManual: false,
+  };
+}
+
+function derivedHwbBgf() {
+  const heatedArea = Number(elements?.heatedArea?.value);
+  return Number.isFinite(heatedArea) && heatedArea > 0
+    ? heatedArea / HWB_USABLE_TO_GROSS_FACTOR
+    : null;
+}
+
+function updateHwbBgfUi(options = {}) {
+  if (IS_CLIMATE_TOOL || !elements?.hwbBgf) return null;
+  if (state.hwbBgfMode === 'manual' && !options.reset) {
+    if (elements.hwbBgfProvenance) {
+      elements.hwbBgfProvenance.textContent = 'Manuell für den HWB-Vergleich eingetragen.';
+    }
+    if (elements.useHwbBgfSuggestion) elements.useHwbBgfSuggestion.hidden = false;
+    return readOptionalNumber(elements.hwbBgf);
+  }
+
+  const projectInfo = projectBgfInfo();
+  const projectValue = Number(projectInfo.value);
+  const hasProjectValue = Number.isFinite(projectValue) && projectValue > 0;
+  const derivedValue = derivedHwbBgf();
+
+  if (hasProjectValue) {
+    state.hwbBgfMode = 'project';
+    elements.hwbBgf.value = String(Math.round(projectValue));
+    if (elements.hwbBgfProvenance) {
+      elements.hwbBgfProvenance.textContent = `Projektwert übernommen: ${formatNumber(projectValue, 0)} m².`;
+    }
+  } else {
+    state.hwbBgfMode = 'derived';
+    elements.hwbBgf.value = derivedValue === null ? '' : String(Math.round(derivedValue));
+    if (elements.hwbBgfProvenance) {
+      elements.hwbBgfProvenance.textContent = derivedValue === null
+        ? 'Für den Vorschlag wird eine beheizte Nutzfläche benötigt.'
+        : `Automatisch: ${formatNumber(Number(elements.heatedArea.value), 0)} m² ÷ 0,75 = ${formatNumber(derivedValue, 0)} m² BGF.`;
+    }
+  }
+  if (elements.useHwbBgfSuggestion) elements.useHwbBgfSuggestion.hidden = true;
+  return readOptionalNumber(elements.hwbBgf);
+}
+
 function conditionFromHwb(value) {
   const hwb = Number(value);
   if (!Number.isFinite(hwb) || hwb < 0) return 'teilsanierter_bestand';
@@ -251,7 +304,7 @@ function consumptionHwbForCondition(inputs) {
     : savedBgf > 0
       ? savedBgf
       : heatedArea > 0
-        ? heatedArea / 0.8
+        ? heatedArea / HWB_USABLE_TO_GROSS_FACTOR
         : 0;
   if (!(roomHeatKwh >= 0) || !(bgfM2 > 0)) return null;
 
@@ -270,7 +323,7 @@ function consumptionHwbForCondition(inputs) {
     bgfM2,
     bgfSource: inputBgf > 0 || savedBgf > 0
       ? 'vorhandene Bruttogeschoßfläche'
-      : 'BGF-Fallback aus beheizter Nutzfläche ÷ 0,8',
+      : 'BGF-Fallback aus beheizter Nutzfläche ÷ 0,75',
     indoorTemperatureC,
     heatedSharePercent,
   };
@@ -398,17 +451,31 @@ function syncSharedInputs() {
   if (!inputs) return;
 
   const manual = projectModel.ORIGIN.MANUAL;
+  const project = projectStore.get();
+  const usableFloorArea = Number(sharedValue(project?.building?.geometry?.usableFloorArea));
+  const heatedSharePercent = Number.isFinite(usableFloorArea) && usableFloorArea > 0
+    ? Math.max(0, Math.min(100, Math.round(inputs.heatedAreaM2 / usableFloorArea * 100)))
+    : null;
   projectStore.setFieldCandidates([
     { path: 'consumption.heating.annualEnergy', origin: manual, value: inputs.annualConsumptionKwh, options: { unit: 'kWh/a', source: 'Heizlast' } },
     { path: 'systems.heating.usefulHeatFactor', origin: manual, value: inputs.usefulHeatFactor, options: { source: 'Heizlast' } },
     { path: 'systems.heating.hotWaterIncluded', origin: manual, value: inputs.hotWaterIncluded, options: { source: 'Heizlast' } },
     { path: 'usage.household.persons', origin: manual, value: inputs.persons, options: { unit: 'Personen', source: 'Heizlast' } },
     { path: 'building.geometry.heatedFloorArea', origin: manual, value: inputs.heatedAreaM2, options: { unit: 'm²', source: 'Heizlast' } },
+    { path: 'building.thermal.heatedSharePercent', origin: manual, value: heatedSharePercent, options: { unit: '%', source: 'Heizlast', method: 'beheizte Nutzfläche / Nutzfläche' } },
     { path: 'systems.heating.installedMaximum', origin: manual, value: inputs.installedMaximumKw, options: { unit: 'kW', source: 'Heizlast' } },
     { path: 'systems.heating.installedMinimum', origin: manual, value: inputs.installedMinimumKw, options: { unit: 'kW', source: 'Heizlast' } },
     { path: 'building.thermal.independentHwb', origin: manual, value: inputs.hwbKwhM2a, options: { unit: 'kWh/m²a', source: 'Heizlast' } },
-    { path: 'building.geometry.grossFloorArea', origin: manual, value: inputs.bgfM2, options: { unit: 'm²', source: 'Heizlast' } },
   ]);
+
+  if (state.hwbBgfMode === 'manual') {
+    projectStore.setFieldCandidate(
+      'building.geometry.grossFloorArea',
+      manual,
+      inputs.bgfM2,
+      { unit: 'm²', source: 'Nutzereingabe Heizlast' }
+    );
+  }
 
   projectStore.patch({
     modules: {
@@ -484,6 +551,7 @@ function restoreSharedInputs(project) {
   const installedMinimum = sharedValue(project?.systems?.heating?.installedMinimum);
   const hwb = sharedValue(project?.building?.thermal?.independentHwb);
   const bgf = sharedValue(project?.building?.geometry?.grossFloorArea);
+  const bgfInfo = projectBgfInfo(project);
   const limitInfo = heatingLimitInfo(project);
 
   const hasSavedInputs = [
@@ -502,6 +570,7 @@ function restoreSharedInputs(project) {
     elements.installedMaximum.value = '20';
     elements.installedMinimum.value = '';
     elements.hwbValue.value = '';
+    state.hwbBgfMode = 'derived';
     elements.hwbBgf.value = '';
     if (elements.heatingLimitTemperature) {
       elements.heatingLimitTemperature.value = '15';
@@ -532,6 +601,8 @@ function restoreSharedInputs(project) {
   if (condition) elements.buildingCondition.value = condition;
   state.heatingLimitManual = Boolean(limitInfo.isManual);
   state.buildingConditionManual = Boolean(conditionInfo.isManual);
+  state.hwbBgfMode = Number(bgfInfo.value) > 0 ? 'project' : 'derived';
+  updateHwbBgfUi();
 }
 function hydrateSharedProject(project = projectStore?.get()) {
   if (!projectStore || !project) return;
@@ -625,6 +696,8 @@ const elements = {
   heatingLimitMethodText: document.getElementById('heatingLimitMethodText'),
   hwbValue: document.getElementById('hwbValue'),
   hwbBgf: document.getElementById('hwbBgf'),
+  hwbBgfProvenance: document.getElementById('hwbBgfProvenance'),
+  useHwbBgfSuggestion: document.getElementById('useHwbBgfSuggestion'),
   consumptionMainResult: document.getElementById('consumptionMainResult'),
   areaMainResult: document.getElementById('areaMainResult'),
   installedMainResult: document.getElementById('installedMainResult'),
@@ -2071,7 +2144,6 @@ function infoTip(note) {
       type="button"
       aria-label="${safe}"
       data-tooltip="${safe}"
-      title="${safe}"
     >i</button>`;
 }
 
@@ -3001,6 +3073,15 @@ function updateHeatingLimitUi(inputs) {
   return inputs;
 }
 
+function dimensioningAssessment(factor) {
+  const value = Number(factor);
+  if (!Number.isFinite(value)) return { label: 'nicht bewertbar', note: 'Für die Einordnung werden installierte Maximalleistung und verbrauchsbasierte Heizlast benötigt.' };
+  if (value < 0.9) return { label: 'knapp', note: 'Die eingetragene Maximalleistung liegt unter der vereinfachten Heizlastabschätzung. Eingaben und Auslegung genauer prüfen.' };
+  if (value <= 1.35) return { label: 'nahe am Bedarf', note: 'Die installierte Maximalleistung liegt in der Nähe der vereinfachten Heizlastabschätzung.' };
+  if (value <= 1.8) return { label: 'deutliche Reserve', note: 'Die installierte Maximalleistung liegt merklich über der vereinfachten Heizlastabschätzung.' };
+  return { label: 'sehr hohe Reserve', note: 'Die installierte Maximalleistung liegt deutlich über der vereinfachten Heizlastabschätzung. Teillastverhalten und tatsächliche Betriebsdaten sind besonders interessant.' };
+}
+
 function renderHeatingCalculation() {
   if (IS_CLIMATE_TOOL || !state.currentResult) return;
 
@@ -3008,6 +3089,7 @@ function renderHeatingCalculation() {
     elements.hotWaterIncluded.value !== 'yes';
 
   try {
+    updateHwbBgfUi();
     const heatingInputs = updateHeatingLimitUi(
       updateBuildingConditionUi(getHeatingInputs())
     );
@@ -3058,50 +3140,67 @@ function renderHeatingCalculation() {
     }
 
     const cards = [];
-
-    if (comparison.dimensioning_factor !== null) {
-      cards.push(
-        heatingMetric(
-          'Leistungsverhältnis',
-          `${formatNumber(comparison.dimensioning_factor, 2)} ×`,
-          'Installierte Maximalleistung geteilt durch die verbrauchsbasierte Heizlastabschätzung. Ein Vergleichswert, keine automatische Bewertung.'
-        ),
-        heatingMetric(
-          'Auslastung bei NAT',
-          `${formatNumber(comparison.utilization_at_nat_percent, 0)} %`,
-          'Anteil der installierten Maximalleistung, der bei Normaußentemperatur gemäß der vereinfachten Gebäudekennlinie benötigt würde.'
-        ),
-        heatingMetric(
-          'Theoretische Volllast erst bei',
-          `${formatNumber(
-            comparison.theoretical_full_load_temperature_c,
-            1
-          )} °C`,
-          'Lineare Fortschreibung: Außentemperatur, bei der die installierte Maximalleistung rechnerisch vollständig benötigt würde.'
-        )
-      );
-    }
-
-    if (comparison.hours_below_minimum !== null) {
-      cards.push(
-        heatingMetric(
-          'Bedarf unter Mindestleistung',
-          `${formatNumber(comparison.hours_below_minimum)} h/a`,
-          'Hinweis auf mögliches Taktpotenzial. Die Zahl entspricht nicht der Anzahl tatsächlicher Brennerstarts.'
-        )
-      );
-    }
+    const coverage90Kw = Number(
+      comparison.power_for_90_percent_heating_hours_kw
+    );
+    const peakSupplementKw = Math.max(
+      Number(consumption.heat_load_kw) - coverage90Kw,
+      0
+    );
 
     cards.push(
       heatingMetric(
         'Leistung für 90 % der Heizstunden',
-        `${formatNumber(
-          comparison.power_for_90_percent_heating_hours_kw,
-          1
-        )} kW`,
-        'Während 90 % der Heizstunden liegt der rechnerische Bedarf höchstens bei dieser Leistung. Die verbleibende Spitzenlast muss bei einer kleineren Auslegung anderweitig gedeckt werden.'
+        `${formatNumber(coverage90Kw, 1)} kW`,
+        'Während 90 % der rechnerischen Heizstunden liegt der Bedarf höchstens bei dieser Leistung. Das ist besonders für bivalente Konzepte interessant.'
       )
     );
+
+    cards.push(
+      heatingMetric(
+        'Zusätzliche Spitzenleistung',
+        `${formatNumber(peakSupplementKw, 1)} kW`,
+        'Differenz zwischen der verbrauchsbasierten Heizlast und der 90-%-Leistung. Sie wird nur in den kältesten 10 % der Heizstunden vollständig benötigt.'
+      )
+    );
+
+    if (
+      comparison.dimensioning_factor !== null ||
+      comparison.hours_below_minimum !== null
+    ) {
+      const parts = [];
+      const notes = [];
+
+      if (comparison.dimensioning_factor !== null) {
+        const assessment = dimensioningAssessment(
+          comparison.dimensioning_factor
+        );
+        parts.push(
+          `${formatNumber(comparison.dimensioning_factor, 2)} × · ` +
+          assessment.label
+        );
+        notes.push(
+          `${assessment.note} Verhältnis = installierte Maximalleistung ÷ verbrauchsbasierte Heizlast.`
+        );
+      }
+
+      if (comparison.hours_below_minimum !== null) {
+        parts.push(
+          `${formatNumber(comparison.hours_below_minimum)} h/a unter Minimum`
+        );
+        notes.push(
+          'Rechnerische Heizstunden mit einem Bedarf unterhalb der eingetragenen Mindestleistung. Das ist eine Prüfhilfe, keine Prognose tatsächlicher Brennerstarts.'
+        );
+      }
+
+      cards.push(
+        heatingMetric(
+          'Anlagenabgleich',
+          parts.join(' · '),
+          notes.join(' ')
+        )
+      );
+    }
 
     elements.heatingResultGrid.innerHTML = cards.join('');
     renderHeatingChart(calculation);
@@ -3153,48 +3252,17 @@ function renderHeatingCalculation() {
 
     elements.calculationBasisValues.innerHTML = `
       <dl>
-        <div>
-          <dt>Nutzwärme gesamt</dt>
-          <dd>${formatNumber(
-            consumption.useful_heat_total_kwh
-          )} kWh/a</dd>
-        </div>
-        <div>
-          <dt>Warmwasserabzug</dt>
-          <dd>${formatNumber(
-            consumption.hot_water_kwh
-          )} kWh/a</dd>
-        </div>
-        <div>
-          <dt>Nutzwärme Raumheizung</dt>
-          <dd>${formatNumber(
-            consumption.room_heat_kwh
-          )} kWh/a</dd>
-        </div>
-        <div>
-          <dt>Vollbenutzungsstunden</dt>
-          <dd>${formatNumber(
-            calculation.assumptions.full_load_hours
-          )} h/a</dd>
-        </div>
-        <div>
-          <dt>Heizgrenztemperatur</dt>
-          <dd>${formatNumber(
-            calculation.assumptions.heating_limit_c,
-            1
-          )} °C</dd>
-        </div>
-        <div>
-          <dt>Rechnerische Reserve</dt>
-          <dd>${
-            comparison.reserve_percent !== null
-              ? `${formatNumber(
-                  comparison.reserve_percent,
-                  0
-                )} %`
-              : '–'
-          }</dd>
-        </div>
+        <div><dt>Nutzwärme gesamt</dt><dd>${formatNumber(consumption.useful_heat_total_kwh)} kWh/a</dd></div>
+        <div><dt>Warmwasserabzug</dt><dd>${formatNumber(consumption.hot_water_kwh)} kWh/a</dd></div>
+        <div><dt>Nutzwärme Raumheizung</dt><dd>${formatNumber(consumption.room_heat_kwh)} kWh/a</dd></div>
+        <div><dt>Vollbenutzungsstunden</dt><dd>${formatNumber(calculation.assumptions.full_load_hours)} h/a</dd></div>
+        <div><dt>Heizgrenztemperatur</dt><dd>${formatNumber(calculation.assumptions.heating_limit_c, 1)} °C</dd></div>
+        <div><dt>HWB-BGF</dt><dd>${hwb.bgf_m2 !== null ? `${formatNumber(hwb.bgf_m2, 0)} m² · ${state.hwbBgfMode === 'derived' ? 'aus NFL ÷ 0,75' : state.hwbBgfMode === 'project' ? 'Projektwert' : 'manuell'}` : '–'}</dd></div>
+        <div><dt>Leistungsverhältnis</dt><dd>${comparison.dimensioning_factor !== null ? `${formatNumber(comparison.dimensioning_factor, 2)} ×` : '–'}</dd></div>
+        <div><dt>Auslastung bei NAT</dt><dd>${comparison.utilization_at_nat_percent !== null ? `${formatNumber(comparison.utilization_at_nat_percent, 0)} %` : '–'}</dd></div>
+        <div><dt>Theoretische Volllasttemperatur</dt><dd>${comparison.theoretical_full_load_temperature_c !== null ? `${formatNumber(comparison.theoretical_full_load_temperature_c, 1)} °C` : '–'}</dd></div>
+        <div><dt>Rechnerische Reserve</dt><dd>${comparison.reserve_percent !== null ? `${formatNumber(comparison.reserve_percent, 0)} %` : '–'}</dd></div>
+        <div><dt>Bedarf unter Mindestleistung</dt><dd>${comparison.hours_below_minimum !== null ? `${formatNumber(comparison.hours_below_minimum)} h/a` : '–'}</dd></div>
       </dl>`;
 
     if (calculation.warnings.length > 0) {
@@ -3346,16 +3414,43 @@ async function runLocations(locations) {
   elements.installedMaximum,
   elements.installedMinimum,
   elements.hwbValue,
-  elements.hwbBgf,
 ].forEach((element) => {
   element.addEventListener('input', () => {
+    if (element === elements.heatedArea && state.hwbBgfMode === 'derived') updateHwbBgfUi();
     renderHeatingCalculation();
     syncSharedInputs();
   });
   element.addEventListener('change', () => {
+    if (element === elements.heatedArea && state.hwbBgfMode === 'derived') updateHwbBgfUi();
     renderHeatingCalculation();
     syncSharedInputs();
   });
+});
+
+elements.hwbBgf?.addEventListener('input', () => {
+  state.hwbBgfMode = elements.hwbBgf.value === '' ? 'derived' : 'manual';
+  if (elements.hwbBgfProvenance) {
+    elements.hwbBgfProvenance.textContent = state.hwbBgfMode === 'manual'
+      ? 'Manuell für den HWB-Vergleich eingetragen.'
+      : 'Automatische BGF wird wieder verwendet.';
+  }
+  if (elements.useHwbBgfSuggestion) elements.useHwbBgfSuggestion.hidden = state.hwbBgfMode !== 'manual';
+  renderHeatingCalculation();
+  syncSharedInputs();
+});
+
+elements.hwbBgf?.addEventListener('change', () => {
+  if (elements.hwbBgf.value === '') updateHwbBgfUi({ reset: true });
+  renderHeatingCalculation();
+  syncSharedInputs();
+});
+
+elements.useHwbBgfSuggestion?.addEventListener('click', () => {
+  projectStore?.clearFieldCandidate('building.geometry.grossFloorArea', projectModel.ORIGIN.MANUAL);
+  state.hwbBgfMode = 'derived';
+  updateHwbBgfUi({ reset: true });
+  renderHeatingCalculation();
+  syncSharedInputs();
 });
 
 elements.buildingCondition?.addEventListener('change', () => {

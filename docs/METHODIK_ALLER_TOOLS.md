@@ -6,16 +6,42 @@
 
 ### Geometrie
 
-- Dachprojektion: TIRIS `Shape__Area`.
-- Umfang: TIRIS `Shape__Length`.
-- Median-/Maximalhöhe: TIRIS-Gebäudeattribute.
-- Außenwand brutto: Umfang × Medianhöhe.
-- Fenster: Außenwand brutto × Fensteranteil.
-- OGD und unterster Abschluss: Dachprojektion als Orientierung.
-- Dachschräge: Dachprojektion / cos(Dachneigung).
-- Geschoße/BGF/NFL/Volumen: siehe `ARCHITEKTUR_UND_DATENMODELL.md`.
+Amtliche Ausgangswerte sind Dachprojektion (`Shape__Area`), Umfang (`Shape__Length`) sowie Median-/Maximalhöhe des gewählten TIRIS-Gebäudes. Daraus entsteht eine transparente Beratungskette:
 
-Alle Werte sind Orientierungswerte, manuell korrigierbar und mit Herkunft zu kennzeichnen.
+```text
+Geschoße_ref = round(Medianhöhe / 3,2 m)
+BGF_ref = Dachprojektion × Geschoße_ref
+NFL_ref = BGF_ref × 0,75
+```
+
+Das Höhenmodul von 3,2 m ist eine feste, bewusst gerundete Toolannahme. In OIB-Energiekennzahlen wurde für bestimmte Bezugsgrößen mit einer Geschoßhöhe von 3,0 m gerechnet; der Toolzuschlag von 0,2 m berücksichtigt überschlägig Deckenaufbau und Dachanteile. 3,2 m ist weder ein Messwert noch eine allgemein normativ festgelegte Geschoßhöhe.
+
+Der Faktor 0,75 ist eine einfache, eher großzügige Beratungsannahme und kein allgemeiner Normwert. Eine TU-Wien-Auswertung von 337 Ein- und Zweifamilienhäusern ergab einen Mittelwert von 67,56 %, einen Median von 67,41 % und für die mittleren 50 % der Objekte 63,39–71,60 % NUF/BGF. Für den Standortpass bleibt 0,75 als leicht nachvollziehbarer Standard fest hinterlegt; vorhandene Plan-, Energieausweis- oder Projektwerte haben immer Vorrang.
+
+Priorität der verwendeten Flächen:
+
+1. bekannte manuelle BGF,
+2. bekannte manuelle NFL mit `BGF = NFL / 0,75`,
+3. automatische BGF aus Dachprojektion und Geschoßzahl.
+
+Geschoßzahl und NFL sind die wichtigsten Prüfeingaben. Aus `Grundfläche_verwendet = BGF / Geschoße` werden OGD, unterster Abschluss und Gebäudevolumen nachgeführt. Die Außenwand wird bei geänderter Grundfläche über die Quadratwurzel des Flächenverhältnisses skaliert; dadurch folgt der Umfang bei ähnlicher Gebäudeform plausibler als bei linearer Skalierung.
+
+```text
+Außenwand = TIRIS-Umfang × √(Grundfläche_verwendet / Dachprojektion) × Medianhöhe
+Fenster = Außenwand × Fensteranteil
+OGD = Kellerdecke = Grundfläche_verwendet
+Dachschräge = Grundfläche_verwendet / cos(Dachneigung)
+Gebäudevolumen = Grundfläche_verwendet × Medianhöhe
+```
+
+Der Fensteranteil ist als Beratungsregler von 10 bis 50 % voreingestellt auf 25 %. Die OIB-Richtlinie 3 fordert für Aufenthaltsräume eine Lichteintrittsfläche bezogen auf die Bodenfläche des jeweiligen Raums; daraus folgt kein allgemeiner gesetzlicher Mindestanteil an der gesamten Fassadenfläche.
+
+Alle automatischen Werte bleiben Orientierungswerte. Manuelle Werte werden getrennt gespeichert, haben Vorrang und behalten ihre Herkunft.
+
+Quellennachweise:
+- TU Wien, *Verhältnis der Nutzungsfläche (NUF) zur Brutto-Grundfläche (BGF)*: https://repositum.tuwien.at/handle/20.500.12708/15291
+- OIB, Erläuternde Bemerkungen zur Richtlinie 6 (Bezugs-Geschoßhöhe 3 m in bestimmten Energiekennzahlen): https://www.oib.or.at/sites/default/files/erlaeuternde_bemerkungen_richtlinie_6_26.03.15_0.pdf
+- OIB-Richtlinie 3, Ausgabe Mai 2023 (Belichtung von Aufenthaltsräumen): https://www.oib.or.at/sites/default/files/oib-rl_3_ausgabe_mai_2023.pdf
 
 ### Standortprüfungen
 
@@ -38,10 +64,12 @@ Alle Werte sind Orientierungswerte, manuell korrigierbar und mit Herkunft zu ken
 - flächenbezogene Orientierung als Plausibilitätskorridor,
 - Klimagrundlage aus gemeinsamem Dienst; NAT wird für die Heizlast verwendet, TNAT,13 bleibt dem Klima-/Sommerkontext vorbehalten,
 - Heizgrenztemperatur manuell oder als transparenter Vorschlag,
-- Gebäudezustand automatisch aus dem korrigierten Verbrauchs-HWB vorgeschlagen; fehlt eine belastbare BGF, wird BGF = beheizte Nutzfläche / 0,80 als klar gekennzeichneter Ersatz angesetzt,
+- Gebäudezustand automatisch aus dem korrigierten Verbrauchs-HWB vorgeschlagen; fehlt eine belastbare BGF, wird BGF = beheizte Nutzfläche / 0,75 als klar gekennzeichneter Ersatz angesetzt,
 - Einordnung des Vorschlags: über 150 kWh/(m²a) unsanierter Altbau, 90–150 teilsanierter Bestand, 45–unter 90 sanierter Bestand, darunter neuerer Standard/Neubau,
 - eine manuelle Gebäudezustandsauswahl hat immer Vorrang,
 - technische Standortkarten zeigen nur für die Beratung relevante Zuordnungs-, Klima- und Höhenbezüge; interne KG-Nummern werden nicht als eigene Kennzahl ausgegeben,
+- sichtbar priorisiert werden die erforderliche Leistung für 90 % der Heizstunden, die zusätzliche Spitzenleistung und – bei eingetragenen Anlagenleistungen – ein gemeinsamer Anlagenabgleich mit Reserve- und Teillastprüfung,
+- Heizgradtage, Vollbenutzungsstunden, Temperaturkorrekturen und weitere Rechenzwischenwerte stehen nur unter „Methode und Datenbasis“,
 - keine Gleichsetzung mit einer vollständigen normativen Heizlastberechnung.
 
 ## Energiefluss V4
