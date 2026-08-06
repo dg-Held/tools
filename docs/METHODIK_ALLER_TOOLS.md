@@ -108,7 +108,22 @@ Der gemessene Verbrauch bleibt die Grundlage der sichtbaren Energiebilanz. U-Wer
 
 Der rechnerische Heizenergieverbrauch steht direkt beim Hüllvergleich. Der Klimastatus zeigt, ob der Vergleich noch berechnet oder mit dem vorhandenen Klimazeitraum aktualisiert wurde. Rechenweg, Annahmen, Datenherkunft und Grenzen stehen vollständig unter „Methode und Datenbasis“.
 
+Der Fensterflächenanteil ist im Energiefluss als gemeinsamer Regler von 10 bis 50 % sichtbar. Er bezieht sich auf die Brutto-Außenwand und führt – solange keine bewusst bestätigte Fensterfläche Vorrang hat – Fensterfläche, opake Außenwand und solare Gewinne gemeinsam nach. Beim bewussten Ändern des Reglers werden ältere manuelle Fenster-/opake Wandflächen verworfen, damit die neue Verhältnisannahme wirksam wird. Eine anschließend direkt eingegebene Fensterfläche wird wieder als genauerer Projektwert gespeichert.
+
 ## Bauteil & Sanierung
+
+### Schnelle Projektgrundlage
+
+Der normale Beratungsweg benötigt nur wenige sichtbare Prüfschritte:
+
+1. Adresse auswählen und Gebäudegeometrie analysieren,
+2. Baujahr/Baubewilligung prüfen,
+3. Nutzfläche (NFL) prüfen,
+4. gewünschtes Bauteil auswählen.
+
+Aus der gemeinsamen Gebäudegeometrie werden die Bauteilflächen übernommen. Aus einem bekannten Baujahr werden für alle unterstützten Bauteile Bauperioden-U-Werte als Vorschläge hinterlegt. Damit sind Außenwand, oberste Geschoßdecke, Dach, Kellerdecke/Boden, Fenster und Außentür grundsätzlich vorbereitet, ohne jedes Bauteil zuerst einzeln öffnen zu müssen. Tatsächliche Bauteilaufbauten, frühere Sanierungen und bekannte Flächen haben immer Vorrang.
+
+NFL und Baujahr allein ersetzen keine Geometrie: Für Außenwand, Fenster, Dach und Geschossflächen werden zusätzlich TIRIS-Geometrie oder bekannte manuelle Gebäudegrößen benötigt. Ist der Standort bereits im Projekt analysiert, genügt in der Regel die Prüfung von Baujahr und NFL.
 
 ### Opake Bauteile
 
@@ -118,7 +133,7 @@ R_neu = R_bestand + d / λ
 U_neu = 1 / R_neu
 ```
 
-Varianten werden intern genauer und sichtbar in 2-cm-Schritten gerechnet.
+Varianten werden intern genauer und sichtbar in 2-cm-Schritten gerechnet. Der frühere eigene Variantenblock entfällt; Mindeststandard, wirtschaftlicher Bereich und ambitionierte Variante werden direkt im Ergebnis gegenübergestellt.
 
 ### Fenster und Türen
 
@@ -126,8 +141,8 @@ Diskrete Austauschvarianten mit festem U-Wert und Preisniveau.
 
 Fenster:
 
-- Energie und Kosten nach Fensterfläche.
-- Rahmenmaterial beeinflusst Nutzungsdauer-/Instandhaltungsansatz.
+- Energie und Kosten nach Fensterfläche,
+- Rahmenmaterial beeinflusst Nutzungsdauer und Instandhaltung.
 
 Haustür:
 
@@ -137,9 +152,15 @@ Energiewirkung nach Gesamtfläche
 Investitionskosten nach Anzahl × Stückpreis
 ```
 
-### Wirtschaftlichkeit
+### Energiegrundlage
 
-Getrennt darstellen:
+Vorrangig wird der im Energiefluss kalibrierte Verlust des gewählten Bauteils verwendet. Fehlt er, wird mit Standortklima beziehungsweise dem transparenten HGT-Fallback gerechnet. Technische Korrekturen bleiben eingeklappt.
+
+### Kosten und Wirtschaftlichkeit
+
+Die sichtbaren Kostenkarten zeigen Richtkostenmodell, Sowiesokosten und Finanzannahmen; Detailerklärungen liegen am i-Symbol. Kosten- und Finanzannahmen sind standardmäßig eingeklappt, bestätigte Förderungen bleiben offen sichtbar.
+
+Getrennt dargestellt werden:
 
 - Vollkosten,
 - Sowiesokosten,

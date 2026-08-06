@@ -109,6 +109,7 @@
   let hybridAddressProvider = null;
   let addressSearchTimer = null;
   let addressSearchSequence = 0;
+  let pendingAddress = null;
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -318,6 +319,14 @@
     return project;
   }
 
+  function ensureConstructionUValueCandidates(project) {
+    let current = project;
+    COMPONENTS.filter((component) => component.supported).forEach((component) => {
+      current = ensureConstructionUValueCandidate(current, component);
+    });
+    return current;
+  }
+
   function componentProjectValues(project, component) {
     const draft = projectDraft(project, component.id);
     const areaInfo = component.areaPath ? describeAt(project, component.areaPath) : { value: draft.areaM2 ?? null, origin: null, source: null };
@@ -427,6 +436,7 @@
 
   function renderComponentMode(component = activeComponent()) {
     const exchange = isExchangeComponent(component);
+    if ($('activeComponentLabel')) $('activeComponentLabel').textContent = component.label;
     const windowComponent = isWindowComponent(component);
     const doorComponent = isDoorComponent(component);
     if ($('lambdaField')) $('lambdaField').hidden = exchange;
@@ -549,7 +559,7 @@
   function renderFromProject(project) {
     if (suppressProjectRender) return;
     const component = activeComponent();
-    project = ensureConstructionUValueCandidate(project, component);
+    project = ensureConstructionUValueCandidates(project);
     const { areaInfo, uInfo, draft } = componentProjectValues(project, component);
     const target = targetForComponent(component);
     const climate = climateContext(project);
@@ -567,6 +577,13 @@
       ? `${ORIGIN_LABELS[constructionYearInfo.origin] ?? 'Projektwert'}${constructionYearInfo.source ? ` · ${constructionYearInfo.source}` : ''}`
       : 'optional; dient als U-Wert-Vorschlag';
     if ($('constructionYear')) $('constructionYear').dataset.userEdited = 'false';
+
+    const usableFloorAreaInfo = describeAt(project, 'building.geometry.usableFloorArea');
+    setInput('usableFloorArea', usableFloorAreaInfo.value, 0);
+    if ($('usableFloorArea')) $('usableFloorArea').dataset.userEdited = 'false';
+    if ($('usableFloorAreaSource')) $('usableFloorAreaSource').textContent = usableFloorAreaInfo.value !== null
+      ? `${ORIGIN_LABELS[usableFloorAreaInfo.origin] ?? 'Projektwert'}${usableFloorAreaInfo.source ? ` · ${usableFloorAreaInfo.source}` : ''}`
+      : 'noch keine Nutzfläche vorhanden';
 
     setInput('areaM2', areaInfo.value, 0);
     setInput('existingUValue', uInfo.value, 2);
@@ -640,15 +657,6 @@
     });
     updateFundingUnits();
 
-    const recommended = target?.recommended;
-    const ambitious = target?.ambitious;
-    $('recommendedTarget').textContent = recommended ? `U ≤ ${formatNumber(recommended, 2)} W/m²K` : 'noch offen';
-    $('ambitiousTarget').textContent = ambitious ? `U ≤ ${formatNumber(ambitious, 2)} W/m²K` : 'noch offen';
-    if (isExchangeComponent(component)) {
-      const exchange = exchangeConfigFor(component);
-      $('recommendedThickness').textContent = exchange?.variants?.find((item) => item.role === 'recommended')?.label ?? 'diskrete Austauschvariante';
-      $('ambitiousThickness').textContent = exchange?.variants?.find((item) => item.role === 'ambitious')?.label ?? 'diskrete Austauschvariante';
-    }
 
     if (flowComponent?.lossKwh > 0) {
       $('climateStrip').dataset.level = 'good';
@@ -671,13 +679,34 @@
     const effectiveAreaReady = isDoorComponent(component)
       ? Math.max(1, Math.round(finite(draft.exchangeCount, 1))) * finite(draft.doorAreaPerUnitM2, 2.0) > 0
       : areaInfo.value > 0;
-    $('projectLinkStatus').textContent = effectiveAreaReady && uInfo.value ? 'Projektwerte übernommen' : 'Eingaben ergänzen';
+    const usableReady = finite(usableFloorAreaInfo.value, 0) > 0;
+    const yearReady = finite(constructionYearInfo.value, null) !== null;
+    $('projectLinkStatus').textContent = effectiveAreaReady && uInfo.value ? 'Bereit' : 'Eingaben ergänzen';
+    const basisHost = $('basisReadiness');
+    if (basisHost) {
+      const strong = basisHost.querySelector('strong');
+      const small = basisHost.querySelector('small');
+      basisHost.dataset.level = effectiveAreaReady && uInfo.value ? 'good' : usableReady || yearReady ? 'partial' : 'missing';
+      if (strong) strong.textContent = effectiveAreaReady && uInfo.value ? 'Bauteil vollständig' : usableReady && yearReady ? 'Grundlage vorhanden' : 'Grundlage ergänzen';
+      if (small) small.textContent = effectiveAreaReady && uInfo.value
+        ? `${component.label}: Fläche und Bestands-U-Wert verfügbar.`
+        : !usableReady && !yearReady
+          ? 'Baujahr und Nutzfläche beschleunigen alle Bauteilvorschläge.'
+          : !yearReady
+            ? 'Baujahr ergänzen, damit Bestands-U-Werte vorgeschlagen werden.'
+            : 'Standort oder Nutzfläche ergänzen, damit Bauteilflächen abgeleitet werden.';
+    }
     $('costDataStatus').textContent = costDefaults.baseCostEurM2 !== null ? modelStatus : 'Kostenwerte ergänzen';
     const costRange = costDefaults.model?.range_eur_m2;
     $('costSummaryModel').textContent = costRange?.low !== undefined && costRange?.high !== undefined
       ? `ca. ${formatNumber(costRange.low)}–${formatNumber(costRange.high)} ${costUnitFor(component)}`
       : costDefaults.baseCostEurM2 !== null ? 'Richtwert automatisch geladen' : 'noch kein Richtwert';
-    $('costSummaryModelNote').textContent = `${costDefaults.model?.label ?? component.label} · ${modelStatus}`;
+    $('costSummaryModelNote').textContent = modelStatus;
+    if ($('costSummaryModelInfo')) {
+      const text = `${costDefaults.model?.label ?? component.label}. Richtkosten werden automatisch vorgeschlagen und können unter Kosten- und Finanzannahmen überschrieben werden.`;
+      $('costSummaryModelInfo').dataset.tooltip = text;
+      $('costSummaryModelInfo').title = text;
+    }
     $('costSummarySunk').textContent = $('renewalContext').value === 'renewal_due' && inputNumber('sunkCostEurM2', 0) > 0
       ? 'automatisch berücksichtigt'
       : 'nicht angesetzt';
@@ -686,6 +715,7 @@
 
     updateRequiredInputState();
     renderGeometryStatus(project);
+    updateAddressAnalysisState(project);
     const addressInput = $('renAddressInput');
     if (addressInput && document.activeElement !== addressInput) addressInput.value = project.project?.addressLabel || '';
     calculateAndRender();
@@ -716,6 +746,7 @@
       areaM2: componentAreaM2,
       doorAreaPerUnitM2,
       constructionYear: inputNumber('constructionYear', null),
+      usableFloorAreaM2: inputNumber('usableFloorArea', null),
       existingUValue: inputNumber('existingUValue', 0),
       lambdaWmk: selectedLambda,
       frameMaterial: isWindowComponent(component) ? ($('windowFrameMaterial')?.value ?? null) : null,
@@ -755,7 +786,19 @@
     $('costSummaryModel').textContent = costRange?.low !== undefined && costRange?.high !== undefined
       ? `ca. ${formatNumber(costRange.low)}–${formatNumber(costRange.high)} ${costUnitFor(inputs.component)}`
       : inputs.baseCostEurM2 !== null ? 'Richtwert automatisch geladen' : 'noch kein Richtwert';
-    $('costSummaryModelNote').textContent = modelValue?.label ?? inputs.component.label;
+    $('costSummaryModelNote').textContent = modelValue?.status === 'confirmed' ? 'bestätigter Richtwert' : 'Vorschlag prüfen';
+    if ($('costSummaryModelInfo')) {
+      const text = `${modelValue?.label ?? inputs.component.label}. Kostenbasis: ${modelValue?.source ?? 'zentrale Richtkostendatei'}. Projektspezifische Angebote haben Vorrang.`;
+      $('costSummaryModelInfo').dataset.tooltip = text;
+      $('costSummaryModelInfo').title = text;
+    }
+    if ($('costSummarySunkInfo')) {
+      const text = inputs.renewalContext === 'renewal_due'
+        ? 'Die ohnehin erforderlichen Erneuerungskosten werden als Sowiesokosten abgezogen; wirtschaftlich bewertet wird die energetische Mehrinvestition.'
+        : 'Bei einer rein energetischen Maßnahme werden keine Sowiesokosten abgezogen.';
+      $('costSummarySunkInfo').dataset.tooltip = text;
+      $('costSummarySunkInfo').title = text;
+    }
     $('costSummarySunk').textContent = inputs.renewalContext === 'renewal_due' && (inputs.sunkCostEurM2 ?? 0) > 0
       ? 'automatisch berücksichtigt'
       : 'nicht angesetzt';
@@ -1002,9 +1045,6 @@
     if (selectedThicknessCm === null || !nearestVariant(selectedThicknessCm)) {
       selectedThicknessCm = recommendation?.thicknessCm ?? 0;
     }
-
-    $('recommendedThickness').textContent = recommendation ? `ca. ${formatNumber(recommendation.thicknessCm)} cm` : '–';
-    $('ambitiousThickness').textContent = ambitious ? `ca. ${formatNumber(ambitious.thicknessCm)} cm` : '–';
 
     renderSummaryCards(inputs, recommendation, economic, ambitious, shortestPayback);
     renderVariantSelect();
@@ -1288,15 +1328,25 @@
     const constructionYearInput = $('constructionYear');
     if (constructionYearInput?.dataset.userEdited === 'true') {
       if (inputs.constructionYear === null) store.clearFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL);
-      else store.setFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL, Math.round(inputs.constructionYear), { unit: 'Jahr', source: 'Nutzereingabe Bauteil & Sanierung V0.6' });
+      else store.setFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL, Math.round(inputs.constructionYear), { unit: 'Jahr', source: 'Nutzereingabe Bauteil & Sanierung V0.7' });
       constructionYearInput.dataset.userEdited = 'false';
+    }
+
+    const usableFloorAreaInput = $('usableFloorArea');
+    if (usableFloorAreaInput?.dataset.userEdited === 'true') {
+      if (inputs.usableFloorAreaM2 > 0) {
+        store.setFieldCandidate('building.geometry.usableFloorArea', model.ORIGIN.MANUAL, inputs.usableFloorAreaM2, { unit: 'm²', source: 'Nutzereingabe Bauteil & Sanierung V0.7' });
+      } else {
+        store.clearFieldCandidate('building.geometry.usableFloorArea', model.ORIGIN.MANUAL);
+      }
+      usableFloorAreaInput.dataset.userEdited = 'false';
     }
 
     const areaInput = $('areaM2');
     const doorAreaEdited = isDoorComponent(component)
       && ($('exchangeCount')?.dataset.userEdited === 'true' || $('doorAreaPerUnit')?.dataset.userEdited === 'true');
     if (component.areaPath && (areaInput?.dataset.userEdited === 'true' || doorAreaEdited)) {
-      if (inputs.areaM2 > 0) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.6', method: isDoorComponent(component) ? 'Anzahl × typische Fläche je Haustür' : null });
+      if (inputs.areaM2 > 0) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.7', method: isDoorComponent(component) ? 'Anzahl × typische Fläche je Haustür' : null });
       else store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL);
       if (areaInput) areaInput.dataset.userEdited = 'false';
       if ($('exchangeCount')) $('exchangeCount').dataset.userEdited = 'false';
@@ -1305,13 +1355,13 @@
 
     const uInput = $('existingUValue');
     if (component.uPath && uInput?.dataset.userEdited === 'true') {
-      if (inputs.existingUValue > 0) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.6' });
+      if (inputs.existingUValue > 0) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.7' });
       else store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL);
       uInput.dataset.userEdited = 'false';
     }
 
-    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.6' });
-    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.6' });
+    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.7' });
+    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.7' });
     writeDraft({
       lambdaWmk: inputs.lambdaWmk,
       frameMaterial: inputs.frameMaterial,
@@ -1346,7 +1396,7 @@
       selectedThicknessCm,
       selectedExchangeVariantId,
     });
-    ensureConstructionUValueCandidate(store.get(), component);
+    ensureConstructionUValueCandidates(store.get());
     suppressProjectRender = false;
     updateRequiredInputState();
   }
@@ -1424,6 +1474,22 @@
   }
 
 
+  function updateAddressAnalysisState(project = store.get()) {
+    const button = $('renAnalyzeLocation');
+    const hint = $('renAnalysisHint');
+    if (!button || !hint) return;
+    const address = pendingAddress ?? project.location?.addressRecord;
+    const hasAddress = Boolean(address && Number.isFinite(Number(address.latitude)) && Number.isFinite(Number(address.longitude)));
+    const hasGeometry = Boolean(project.building?.identity?.objectId || finite(valueAt(project, 'building.geometry.footprintArea'), null) > 0);
+    button.disabled = !hasAddress;
+    button.textContent = hasGeometry ? 'Standort aktualisieren' : 'Standort analysieren';
+    hint.textContent = !hasAddress
+      ? 'Zuerst eine Adresse auswählen.'
+      : hasGeometry
+        ? 'Gebäudegeometrie ist vorhanden und kann bei Bedarf aktualisiert werden.'
+        : 'Adresse ist ausgewählt; TIRIS-Gebäude noch analysieren.';
+  }
+
   function renderGeometryStatus(project = store.get()) {
     const chip = $('geometryStatus');
     if (!chip) return;
@@ -1467,6 +1533,8 @@
     $('renBuildingCandidates').hidden = true;
     $('geometryStatus').textContent = `Gebäude ${feature.attributes?.OBJECTID ?? ''} übernommen`;
     $('geometryStatus').className = 'status-chip is-success';
+    pendingAddress = null;
+    updateAddressAnalysisState(store.get());
   }
 
   function renderBuildingCandidates(result) {
@@ -1538,7 +1606,8 @@
     $('renAddressStatus').textContent = resolution.usedFallback
       ? (resolution.warning || 'BEV-Adresse übernommen; kein eindeutiger TIRIS-Live-Treffer.')
       : 'TIRIS-Live-Adresse übernommen.';
-    await loadGeometryForAddress(selected);
+    pendingAddress = selected;
+    updateAddressAnalysisState(store.get());
   }
 
   function renderAddressResults(results, guidance = '') {
@@ -1568,7 +1637,7 @@
       if (sequence !== addressSearchSequence) return;
       renderAddressResults(result.results ?? [], result.guidance ?? '');
       $('renAddressStatus').textContent = result.results?.length
-        ? 'Adresse auswählen. Danach wird das TIRIS-Gebäude automatisch geprüft.'
+        ? 'Adresse auswählen und anschließend den Standort analysieren.'
         : (result.guidance || 'Keine Adresse gefunden.');
     } catch (error) {
       if (sequence !== addressSearchSequence) return;
@@ -1595,15 +1664,17 @@
       const visibleText = input.value;
       addressSearchTimer = global.setTimeout(() => searchAddress(visibleText), 280);
     });
-    $('renUseProjectAddress').addEventListener('click', () => {
+    pendingAddress = store.get().location?.addressRecord ?? null;
+    updateAddressAnalysisState(store.get());
+    $('renAnalyzeLocation').addEventListener('click', async () => {
       const project = store.get();
-      const record = project.location?.addressRecord;
-      if (!record) {
-        $('renAddressStatus').textContent = 'Im Projekt ist noch keine bestätigte Adresse mit Koordinaten vorhanden.';
+      const address = pendingAddress ?? project.location?.addressRecord;
+      if (!address || !Number.isFinite(Number(address.latitude)) || !Number.isFinite(Number(address.longitude))) {
+        $('renAddressStatus').textContent = 'Zuerst eine Adresse auswählen.';
         return;
       }
-      input.value = record.label || project.project?.addressLabel || '';
-      loadGeometryForAddress(record);
+      await loadGeometryForAddress(address);
+      updateAddressAnalysisState(store.get());
     });
   }
 
@@ -1841,7 +1912,7 @@
         : 'nicht angesetzt';
     });
 
-    ['constructionYear', 'areaM2', 'existingUValue', 'exchangeCount', 'doorAreaPerUnit'].forEach((id) => {
+    ['constructionYear', 'usableFloorArea', 'areaM2', 'existingUValue', 'exchangeCount', 'doorAreaPerUnit'].forEach((id) => {
       const input = $(id);
       if (!input) return;
       input.addEventListener('input', () => {
@@ -1857,6 +1928,19 @@
       input.addEventListener('change', persistVisibleInputs);
     });
 
+    document.querySelectorAll('.info-tip').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const open = !button.classList.contains('is-open');
+        document.querySelectorAll('.info-tip.is-open').forEach((item) => item.classList.remove('is-open'));
+        button.classList.toggle('is-open', open);
+      });
+    });
+    document.addEventListener('click', () => document.querySelectorAll('.info-tip.is-open').forEach((item) => item.classList.remove('is-open')));
+    $('printRenovationBottomButton')?.addEventListener('click', () => {
+      global.dispatchEvent(new CustomEvent('energy-tools:prepare-print'));
+      global.requestAnimationFrame(() => global.print());
+    });
     global.addEventListener('energy-tools:prepare-print', () => buildPrintReport());
     store.subscribe((project) => renderFromProject(project));
   }
@@ -1892,6 +1976,11 @@
       loadJson('emissions/emission-factors.json', { items: [] }),
       loadJson('building/existing-u-values.json', { periods: [], components: {} }),
     ]);
+
+    if ($('renUValueDataVersion')) $('renUValueDataVersion').textContent = `Bauperiodenpaket V${existingUValuesConfig?.version ?? '–'}`;
+    if ($('renTargetDataVersion')) $('renTargetDataVersion').textContent = `Beratungsziele V${targetsConfig?.version ?? '–'}`;
+    if ($('renCostDataVersion')) $('renCostDataVersion').textContent = `Richtkostenpaket V${costConfig?.version ?? '–'}`;
+    if ($('renEconomicsDataVersion')) $('renEconomicsDataVersion').textContent = `ÖNORM B 8110-4:2024 · Rechenkern V${economicsCore?.MODEL_VERSION ?? '–'}`;
 
     populateLambdaOptions();
     populateEnergyCarrierOptions();

@@ -9,7 +9,7 @@
 <link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/components.css?v=3" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="bauteil-sanierung.css?v=6" rel="stylesheet"/>
+<link href="bauteil-sanierung.css?v=7" rel="stylesheet"/>
 </head>
 <body data-tool-mode="envelope-renovation">
 <header class="site-header no-print">
@@ -25,46 +25,54 @@
 </header>
 <main class="renovation-page">
 <section class="container tool-intro no-print">
-<p class="eyebrow">Tool · Arbeitsversion V0.6</p>
+<p class="eyebrow">Gebäude · Bauteile</p>
 <h1>Bauteil &amp; Sanierung</h1>
-<p>Dämm- und Austauschvarianten technisch vergleichen und Mindeststandard, Kostenoptimum, Amortisation, CO₂ sowie Wohnkomfort gemeinsam betrachten. Projektwerte aus dem Energiefluss werden automatisch übernommen.</p>
+<p class="tool-lead">Bauteile schnell bewerten und Sanierungsvarianten technisch, wirtschaftlich und hinsichtlich Wohnkomfort vergleichen.</p>
 </section>
 <div data-project-header></div>
 
 <section class="container address-card shared-address-card no-print" data-address-section>
-  <div class="section-heading section-heading--compact">
-    <div><p class="eyebrow">Standort</p><h2>Standort auswählen</h2></div>
-    <span class="status-chip" id="geometryStatus">Projektwerte werden geprüft</span>
-  </div>
-  
-  <div class="address-field-meta">
-    <span id="renAddressLabel">PLZ, Gemeinde, Straße und Hausnummer</span>
-    <span class="address-provider-label">BEV-Vorschläge 2026-04-01 · TIRIS live</span>
-  </div>
-  <div class="address-search-row">
-    <label><span class="visually-hidden">PLZ, Gemeinde, Straße und Hausnummer</span><input aria-labelledby="renAddressLabel" autocomplete="off" id="renAddressInput" placeholder="z. B. 6123 Dorfstraße 1" type="search"/></label>
-    <button class="quiet-button" id="renUseProjectAddress" type="button">Projektadresse übernehmen</button>
-  </div>
-  <small id="renAddressStatus"></small>
-  <div class="address-results" hidden id="renAddressResults"></div>
-  <div class="building-candidates" hidden id="renBuildingCandidates"></div>
+<div class="section-heading section-heading--compact shared-address-heading">
+<div><p class="eyebrow">Gebäudestandort</p><h2>Standort auswählen</h2></div>
+<span class="status-chip" id="geometryStatus">Bereit</span>
+</div>
+<div class="address-field-meta">
+<span id="renAddressLabel">PLZ, Gemeinde, Straße und Hausnummer</span>
+<span class="address-provider-label">BEV-Vorschläge 2026-04-01 · TIRIS live</span>
+</div>
+<div class="address-search-control">
+<label class="address-search-field"><span class="visually-hidden">PLZ, Gemeinde, Straße und Hausnummer</span><input aria-autocomplete="list" aria-controls="renAddressResults" aria-expanded="false" aria-labelledby="renAddressLabel" autocomplete="off" id="renAddressInput" placeholder="z. B. 6123 Dorfstraße 1" type="search"/></label>
+<div class="address-results" hidden id="renAddressResults" role="listbox"></div>
+</div>
+<p aria-live="polite" class="compact-address-status" id="renAddressStatus"></p>
+<div class="building-candidates" hidden id="renBuildingCandidates"></div>
+<div class="analysis-action-row">
+<button class="primary-button analysis-button" disabled id="renAnalyzeLocation" type="button">Standort analysieren</button>
+<p class="analysis-hint" id="renAnalysisHint">Zuerst eine Adresse auswählen.</p>
+</div>
 </section>
 
 <section class="container renovation-workspace no-print">
 <article class="ren-card ren-card--input">
 <div class="section-heading">
-<div><p class="eyebrow">1 · Bestand</p><h2>Bauteil und Ausgangslage prüfen</h2></div>
+<div><p class="eyebrow">1 · Bestand</p><h2>Gebäudegrundlage und Bauteil prüfen</h2></div>
 <span class="status-chip" id="projectLinkStatus">Projektwerte werden geprüft</span>
 </div>
+<p class="section-note">Baujahr, Nutzfläche und Standortgeometrie bilden die schnelle Grundlage. Bauteilfläche und Bestands-U-Wert werden vorgeschlagen und können korrigiert werden.</p>
+<div class="project-basis-grid">
+<label><span>Baujahr / Baubewilligung</span><input id="constructionYear" min="1500" max="2100" placeholder="z. B. 1970" step="1" type="number"/><small id="constructionYearSource">optional; dient als U-Wert-Vorschlag</small></label>
+<label><span>Nutzfläche (NFL)</span><div class="input-with-unit"><input id="usableFloorArea" min="0" step="1" type="number"/><em>m²</em></div><small id="usableFloorAreaSource">aus Projekt oder Gebäudeableitung</small></label>
+<div class="basis-readiness" id="basisReadiness"><span>Berechnungsgrundlage</span><strong>Wird geprüft</strong><small>Standort, Baujahr und Nutzfläche werden zusammengeführt.</small></div>
+</div>
 <div class="component-selector" id="componentSelector" role="list" aria-label="Bauteil auswählen"></div>
-<div class="input-grid input-grid--basis">
-<label><span>Bauteil</span><select id="componentSelect"></select></label>
-<label><span>Baujahr / Baubewilligung</span><input id="constructionYear" min="1500" max="2100" step="1" type="number"/><small id="constructionYearSource">optional; dient als U-Wert-Vorschlag</small></label>
-<label id="areaField"><span>Fläche</span><div class="input-with-unit"><input id="areaM2" min="0" step="1" type="number"/><em>m²</em></div><small id="areaSource">–</small></label>
+<select id="componentSelect" hidden aria-hidden="true" tabindex="-1"></select>
+<div class="component-input-heading"><div><span>Gewähltes Bauteil</span><strong id="activeComponentLabel">Außenwand</strong></div><small>Nur abweichende Werte überschreiben.</small></div>
+<div class="input-grid input-grid--basis component-input-grid">
+<label id="areaField"><span>Bauteilfläche</span><div class="input-with-unit"><input id="areaM2" min="0" step="1" type="number"/><em>m²</em></div><small id="areaSource">–</small></label>
 <label id="uValueField"><span>U-Wert Bestand</span><div class="input-with-unit"><input id="existingUValue" min="0.01" step="0.01" type="number"/><em>W/m²K</em></div><small id="uValueSource">–</small><small class="required-message" id="uValueRequiredMessage" hidden>Für die Berechnung wird ein Bestands-U-Wert benötigt.</small></label>
-<label id="lambdaField"><span>Wärmeleitfähigkeit λ</span><select id="lambdaSelect"></select><small>materialneutral; Standard 0,035 W/mK</small></label>
-<label id="windowFrameField" hidden><span id="frameMaterialLabel">Rahmenmaterial</span><select id="windowFrameMaterial"><option value="wood">Holzrahmen</option><option value="plastic">Kunststoffrahmen</option><option value="wood_aluminium">Holz-Aluminium-Rahmen</option><option value="aluminium">Aluminiumrahmen</option></select><small>beeinflusst Nutzungsdauer-/Instandhaltungsansatz</small></label>
-<label id="exchangeCountField" hidden><span>Anzahl Haustüren</span><div class="input-with-unit"><input id="exchangeCount" min="1" step="1" type="number" value="1"/><em>Stk.</em></div><small>Kosten werden nach Stückzahl berechnet.</small></label>
+<label id="lambdaField"><span>Wärmeleitfähigkeit λ</span><select id="lambdaSelect"></select><small>Standard 0,035 W/mK; Material später festlegen.</small></label>
+<label id="windowFrameField" hidden><span id="frameMaterialLabel">Rahmenmaterial</span><select id="windowFrameMaterial"><option value="wood">Holzrahmen</option><option value="plastic">Kunststoffrahmen</option><option value="wood_aluminium">Holz-Aluminium-Rahmen</option><option value="aluminium">Aluminiumrahmen</option></select><small>für Nutzungsdauer und Instandhaltung</small></label>
+<label id="exchangeCountField" hidden><span>Anzahl Haustüren</span><div class="input-with-unit"><input id="exchangeCount" min="1" step="1" type="number" value="1"/><em>Stk.</em></div><small>Kosten nach Stückzahl.</small></label>
 </div>
 <div class="custom-lambda-row" id="lambdaCustomWrap" hidden>
 <label><span>Eigener λ-Wert</span><div class="input-with-unit"><input id="lambdaCustom" min="0.015" max="0.2" step="0.001" type="number"/><em>W/mK</em></div></label>
@@ -76,31 +84,20 @@
 <details class="advanced-inputs">
 <summary>Erweiterte technische Eingaben</summary>
 <div class="input-grid input-grid--four">
-<label><span>Nutzwärmefaktor (JNG / JAZ)</span><div class="input-with-unit"><input id="annualEfficiency" min="0.05" max="10" step="0.01" type="number"/><em>–</em></div><small>aus Projekt oder Voreinstellung</small></label>
-<label><span>HGT 22/14</span><div class="input-with-unit"><input id="heatingDegreeDays" min="0" step="1" type="number"/><em>Kd/a</em></div><small id="hgtSource">Fallback Tirol: 3.500 Kd/a</small></label>
-<label><span>Temperaturkorrektur</span><input id="boundaryFactor" min="0.1" max="1.5" step="0.05" type="number"/><small>nur als Fallback ohne Energiefluss; Außenluft = 1,0</small></label>
+<label><span>Nutzwärmefaktor (JNG / JAZ)</span><div class="input-with-unit"><input id="annualEfficiency" min="0.05" max="10" step="0.01" type="number"/><em>–</em></div><small>gemeinsamer Projektwert</small></label>
+<label><span>Heizgradtage HGT 22/14</span><div class="input-with-unit"><input id="heatingDegreeDays" min="0" step="1" type="number"/><em>Kd/a</em></div><small id="hgtSource">Fallback Tirol: 3.500 Kd/a</small></label>
+<label><span>Temperaturkorrektur</span><input id="boundaryFactor" min="0.1" max="1.5" step="0.05" type="number"/><small>nur ohne kalibrierten Energiefluss</small></label>
 <label><span>Raumtemperatur</span><div class="input-with-unit"><input id="indoorTemperature" min="10" max="30" step="0.5" type="number"/><em>°C</em></div></label>
-<label id="doorAreaPerUnitField" hidden><span>Typische Fläche je Haustür</span><div class="input-with-unit"><input id="doorAreaPerUnit" min="0.5" max="10" step="0.1" type="number" value="2.0"/><em>m²/Stk.</em></div><small>nur für die Energiewirkung; Kosten weiterhin nach Stückzahl</small></label>
+<label id="doorAreaPerUnitField" hidden><span>Typische Fläche je Haustür</span><div class="input-with-unit"><input id="doorAreaPerUnit" min="0.5" max="10" step="0.1" type="number" value="2.0"/><em>m²/Stk.</em></div><small>nur für die Energiewirkung</small></label>
 </div>
-<p class="inline-note">Der HGT-Wert wird nicht aus den aktuellen INCA-Heizgradstunden geraten. Für den normalen Variantenvergleich genügt die kalibrierte Energiefluss-Basis oder die direkte Standortklimarechnung. Bei unbeheizten Bereichen und Erdreich kann die Temperaturkorrektur die überschlägige Klimarechnung deutlich verändern.</p>
 </details>
 </article>
 
-<article class="ren-card ren-card--targets">
-<div class="section-heading">
-<div><p class="eyebrow">2 · Varianten</p><h2 id="variantSectionTitle">Sanierungsvarianten automatisch untersuchen</h2></div>
-<span class="section-badge" id="variantModeBadge">2-cm-Schritte</span>
-</div>
-<div class="target-preview target-preview--two">
-<div><span>Empfohlener Mindeststandard</span><strong id="recommendedTarget">–</strong><small id="recommendedThickness">untere Grenze der Beratungsempfehlung</small></div>
-<div><span>Ambitioniert</span><strong id="ambitiousTarget">–</strong><small id="ambitiousThickness">–</small></div>
-</div>
-<div class="notice notice--soft">Gesetzliche Mindestanforderungen sind keine energetische Empfehlung. Bei langlebigen Maßnahmen zählen Behaglichkeit, Sowiesokosten, Energieeinsparung, Lebensdauer und künftige Anforderungen gemeinsam.</div>
-</article>
+
 
 <article class="ren-card ren-card--economics">
 <div class="section-heading">
-<div><p class="eyebrow">3 · Kosten</p><h2>Kosten und Wirtschaftlichkeit</h2></div>
+<div><p class="eyebrow">2 · Kosten</p><h2>Kosten und Wirtschaftlichkeit</h2></div>
 <span class="status-chip" id="costDataStatus">Voreinstellungen werden geladen</span>
 </div>
 <div class="input-grid input-grid--two">
@@ -108,9 +105,9 @@
 <label><span>Energieträger</span><select id="energyCarrierSelect"></select><small>Energiepreis und CO₂-Faktor werden vorgeschlagen.</small></label>
 </div>
 <div class="assumption-summary">
-<div><span>Richtkostenmodell</span><strong id="costSummaryModel">–</strong><small id="costSummaryModelNote">–</small></div>
-<div><span>Sowiesokosten</span><strong id="costSummarySunk">–</strong><small>nur bei ohnehin anstehender Erneuerung</small></div>
-<div><span>Finanzannahmen</span><strong id="costSummaryFinance">–</strong><small id="costSummaryFinanceNote">–</small></div>
+<div><div class="assumption-heading"><span>Richtkostenmodell</span><button aria-label="Information zum Richtkostenmodell" class="info-tip" data-tooltip="Richtkosten werden passend zum gewählten Bauteil vorgeschlagen und bleiben überschreibbar." id="costSummaryModelInfo" type="button">i</button></div><strong id="costSummaryModel">–</strong><small id="costSummaryModelNote">Vorschlag prüfen</small></div>
+<div><div class="assumption-heading"><span>Sowiesokosten</span><button aria-label="Information zu Sowiesokosten" class="info-tip" data-tooltip="Kosten, die bei einer ohnehin erforderlichen Erneuerung auch ohne energetische Verbesserung anfallen würden." id="costSummarySunkInfo" type="button">i</button></div><strong id="costSummarySunk">–</strong><small>abhängig von der Ausgangslage</small></div>
+<div><div class="assumption-heading"><span>Finanzannahmen</span><button aria-label="Information zu Finanzannahmen" class="info-tip" data-tooltip="Betrachtungszeitraum, Zinssatz und Preisentwicklungen beeinflussen Kostenoptimum und Amortisation." id="costSummaryFinanceInfo" type="button">i</button></div><strong id="costSummaryFinance">–</strong><small id="costSummaryFinanceNote">–</small></div>
 </div>
 <details class="advanced-inputs">
 <summary>Kosten- und Finanzannahmen prüfen</summary>
@@ -146,30 +143,27 @@
 
 <article class="ren-card ren-card--results">
 <div class="section-heading">
-<div><p class="eyebrow">4 · Ergebnis</p><h2>Mindeststandard, Wirtschaftlichkeit und Komfort</h2></div>
+<div><p class="eyebrow">3 · Ergebnis</p><h2>Mindeststandard, Wirtschaftlichkeit und Komfort</h2></div>
 <span class="section-badge section-badge--berry" id="resultStatus">Berechnung</span>
 </div>
 <div class="result-cards">
-<article data-card="recommendation"><span>Empfohlener Mindeststandard</span><strong id="recommendationCardValue">–</strong><p id="recommendationCardText">–</p><button class="quiet-button compact-button" data-select-special="recommendation" type="button">Mindeststandard wählen</button></article>
-<article data-card="economic"><span>Wirtschaftlicher Bereich</span><strong id="economicCardValue">–</strong><p id="economicCardText">Kostenangaben ergänzen.</p><button class="quiet-button compact-button" data-select-special="economic" type="button">Optimum wählen</button></article>
-<article data-card="ambitious"><span>Ambitioniert</span><strong id="ambitiousCardValue">–</strong><p id="ambitiousCardText">–</p><button class="quiet-button compact-button" data-select-special="ambitious" type="button">Variante wählen</button></article>
+<article data-card="recommendation"><div class="result-card-heading"><span>Empfohlener Mindeststandard</span><button aria-label="Information zum empfohlenen Mindeststandard" class="info-tip" data-tooltip="Untere Grenze der fachlichen Beratungsempfehlung; kein gesetzlicher Mindestwert." type="button">i</button></div><strong id="recommendationCardValue">–</strong><p id="recommendationCardText">–</p><button class="quiet-button compact-button" data-select-special="recommendation" type="button">Mindeststandard wählen</button></article>
+<article data-card="economic"><div class="result-card-heading"><span>Wirtschaftlicher Bereich</span><button aria-label="Information zum wirtschaftlichen Bereich" class="info-tip" data-tooltip="Varianten nahe den geringsten Gesamtkosten im gewählten Betrachtungszeitraum." type="button">i</button></div><strong id="economicCardValue">–</strong><p id="economicCardText">Kostenangaben ergänzen.</p><button class="quiet-button compact-button" data-select-special="economic" type="button">Optimum wählen</button></article>
+<article data-card="ambitious"><div class="result-card-heading"><span>Ambitioniert</span><button aria-label="Information zur ambitionierten Variante" class="info-tip" data-tooltip="Weitergehende Variante mit zusätzlicher Energie-, Komfort- und CO₂-Wirkung." type="button">i</button></div><strong id="ambitiousCardValue">–</strong><p id="ambitiousCardText">–</p><button class="quiet-button compact-button" data-select-special="ambitious" type="button">Variante wählen</button></article>
 </div>
 <div class="charts-grid">
 <section>
       <h3>Gesamtkosten im Betrachtungszeitraum</h3>
       <div class="chart-host" id="costChart"><p>Kostenangaben ergänzen.</p></div>
-      <p class="chart-explanation">Je tiefer die Kurve, desto geringer sind Investition und laufende Energiekosten zusammen über den gewählten Zeitraum. Das Minimum markiert das langfristige Kostenoptimum.</p>
+      <p class="chart-explanation">Investition und laufende Energiekosten gemeinsam; das Minimum markiert das Kostenoptimum.</p>
     </section>
     <section>
       <h3>Dynamische Amortisation</h3>
       <div class="chart-host" id="paybackChart"><p>Kostenangaben ergänzen.</p></div>
-      <p class="chart-explanation">Die Amortisation zeigt, wann die Mehrinvestition durch abgezinste Einsparungen aufgeholt wird. Eine kürzere Amortisation ist nicht automatisch die Variante mit den niedrigsten Gesamtkosten.</p>
+      <p class="chart-explanation">Zeitpunkt, an dem die abgezinsten Einsparungen die Mehrinvestition ausgleichen.</p>
     </section>
 </div>
-<div class="comparison-explainer">
-  <strong>Zwei verschiedene Blickwinkel</strong>
-  <p><b>Amortisation</b> fragt nach dem Zeitpunkt, an dem sich die Mehrinvestition rechnet. <b>Kostenoptimum</b> sucht die geringsten Gesamtkosten über die gesamte Nutzungsdauer. Beide Ergebnisse können deshalb bei unterschiedlichen Dämmstärken liegen.</p>
-</div>
+<p class="inline-note result-method-note">Amortisation und Kostenoptimum beantworten unterschiedliche Fragen und können daher bei verschiedenen Varianten liegen.</p>
 <div class="selected-variant">
 <div class="selected-heading"><div><span>Ausgewählte Variante</span><strong id="selectedVariantTitle">–</strong></div><select id="selectedVariantSelect" aria-label="Variante auswählen"></select></div>
 <div class="cost-bridge" id="costBridge">
@@ -224,8 +218,18 @@
 </article>
 
 <details class="ren-methodology">
-<summary>Methodik, Formeln, Annahmen und Grenzen</summary>
+<summary>Methode und Datenbasis</summary>
+<div class="ren-method-data-strip">
+<span><strong>Adresse</strong> Projekt / BEV · 01.04.2026</span>
+<span><strong>Geometrie</strong> TIRIS · gemeinsame Projektbasis</span>
+<span><strong>U-Werte</strong> <span id="renUValueDataVersion">lokales Bauperiodenpaket</span></span>
+<span><strong>Zielwerte</strong> <span id="renTargetDataVersion">lokales Beratungspaket</span></span>
+<span><strong>Kosten</strong> <span id="renCostDataVersion">lokales Richtkostenpaket</span></span>
+<span><strong>Wirtschaftlichkeit</strong> <span id="renEconomicsDataVersion">ÖNORM-orientierter Rechenkern</span></span>
+</div>
 <div class="methodology-grid">
+<div><h3>Gemeinsame Projektgrundlage</h3><p>Standortgeometrie, Nutzfläche, Baujahr, Nutzwärmefaktor und Raumtemperatur werden aus dem gemeinsamen Projekt übernommen. Eine manuelle Eingabe hat Vorrang vor automatischen Ableitungen.</p></div>
+<div><h3>Bauteilflächen und U-Werte</h3><p>Die Bauteilfläche stammt vorrangig aus der gemeinsamen Gebäudegeometrie. Bestands-U-Werte werden aus bestätigten Werten oder – falls nur ein Baujahr vorliegt – aus der zugeordneten Bauperiode vorgeschlagen. Tatsächliche Aufbauten und frühere Sanierungen sind zu prüfen.</p></div>
 <div><h3>U-Wert und Sanierungsvariante</h3><p>Bei Dämmmaßnahmen gilt <code>U<sub>neu</sub> = 1 / (1/U<sub>Bestand</sub> + d/λ)</code>. Fenster werden als diskrete Austauschvarianten mit vorgegebenem U-Wert verglichen.</p></div>
 <div><h3>Energieeinsparung</h3><p>Vorrangig wird der im Energiefluss kalibrierte Bauteilverlust proportional zum Verhältnis der U-Werte reduziert. Ohne Energiefluss wird überschlägig mit <code>A × ΔU × Heizgradstunden</code> gerechnet.</p></div>
 <div><h3>Rundung und Darstellung</h3><p>Intern wird mit voller Rechengenauigkeit gearbeitet. Angezeigt werden bewusst gerundete Dämmdicken, U-Werte, Richtpreise und Summen, damit keine Scheingenauigkeit entsteht.</p></div>
@@ -241,15 +245,20 @@
 </section>
 
 <section aria-label="Druckbericht Bauteil und Sanierung" class="container renovation-print-report print-only" id="renovationPrintReport"></section>
-<div data-report-actions data-report-actions-label="Drucken / PDF"></div>
+<section class="container bottom-report-actions no-print tool-next-actions">
+<a class="primary-button button-link" href="../standortpass/index.html">Standortpass</a>
+<a class="primary-button button-link" href="../energiefluss-v4/index.html">Energiefluss</a>
+<a class="primary-button button-link" href="../heizlast/index.html">Heizlast</a>
+<button class="secondary-button" id="printRenovationBottomButton" type="button">Drucken / PDF</button>
+</section>
 </main>
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.6 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.7 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
 <script src="../../shared/js/data-model.js?v=2"></script>
 <script src="../../shared/js/project-migrations.js?v=1"></script>
 <script src="../../shared/js/value-resolver.js?v=1"></script>
-<script src="../../shared/js/project-store.js?v=6"></script>
+<script src="../../shared/js/project-store.js?v=7"></script>
 <script src="../../shared/js/project-header.js?v=2"></script>
 <script src="../../shared/js/project-address-manager.js?v=2"></script>
 <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
@@ -264,6 +273,6 @@
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=1"></script>
 <script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=5"></script>
-<script src="bauteil-sanierung.js?v=7"></script>
+<script src="bauteil-sanierung.js?v=8"></script>
 </body>
 </html>

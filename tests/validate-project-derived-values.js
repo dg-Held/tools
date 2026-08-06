@@ -71,6 +71,13 @@ assert.equal(value('building.geometry.topFloorArea'), 120);
 assert.equal(value('building.geometry.roofSlopeArea'), 100);
 assert.equal(value('building.geometry.grossVolume'), 1150);
 assert.equal(value('building.geometry.exteriorWallGrossArea'), 420);
+assert.equal(value('building.geometry.windowArea'), 105);
+assert.equal(value('building.geometry.opaqueExteriorWallArea'), 315);
+
+// Der gemeinsame Fensterflächenanteil führt Fenster und opake Außenwand nach.
+store.setFieldCandidate('building.geometry.windowSharePercent', model.ORIGIN.MANUAL, 30, { unit: '%' });
+assert.equal(value('building.geometry.windowArea'), 125);
+assert.equal(value('building.geometry.opaqueExteriorWallArea'), 295);
 
 // Die Dachfläche bleibt am amtlichen Dachpolygon und folgt nur der Dachneigung.
 store.setFieldCandidate('building.geometry.roofPitch', model.ORIGIN.MANUAL, 30, { unit: '°' });

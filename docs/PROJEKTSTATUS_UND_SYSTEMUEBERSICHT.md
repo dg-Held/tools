@@ -190,6 +190,7 @@ Status: funktional abgeschlossen; Vereinfachungs- und Konsistenzschleife umgeset
 
 - verkürzte, an Klima und Heizlast angeglichene Einleitung sowie gemeinsame Projektkopf- und Adresslogik,
 - Grunddaten mit gemeinsamen Projektbezeichnungen: Nutzfläche (NFL), davon beheizt, Personen, Heizenergieverbrauch, Nutzwärmefaktor (JNG/JAZ) und Warmwasser enthalten,
+- Fensterflächenanteil direkt regelbar; Fensterfläche, opake Außenwand und solare Gewinne werden gemeinsam nachgeführt,
 - Baujahr/Baubewilligung bleibt eine wichtige optionale Prüfeingabe; 1970 wird nur als Beispiel gezeigt und nicht automatisch gespeichert,
 - oberirdische Geschoße, BGF, Gebäudevolumen, Raumtemperatur und Gebäudezustand liegen kompakt im erweiterten Prüfbereich,
 - NFL-, BGF-, Geschoß-, Volumen- und Hüllflächenwerte verwenden dieselbe Geometriekette wie der Standortpass; die Dachfläche bleibt am TIRIS-Dachpolygon,
@@ -205,9 +206,9 @@ Status: funktional abgeschlossen; Vereinfachungs- und Konsistenzschleife umgeset
 - sichtbare Flächenrundung: Fenster 5 m², übrige Hüllflächen 10 m²,
 - direkte Übergabe an Bauteil & Sanierung.
 
-### Bauteil & Sanierung V0.6
+### Bauteil & Sanierung V0.7
 
-Status: Abschlussstand vor Freigabe als erste stabile Version.
+Status: Vereinfachungsschleife umgesetzt; praktische V1.0-Prüfung noch offen.
 
 Dämmmaßnahmen:
 
@@ -224,14 +225,17 @@ Austauschmaßnahmen:
 
 Funktionen:
 
-- eigenständiger Adress- und Geometrieeinstieg,
-- Baujahr als U-Wert-Fallback,
+- an Klima, Heizlast und Energiefluss angeglichener Adress- und Geometrieeinstieg mit bewusstem Analysebutton,
+- kompakte Projektbasis aus Baujahr/Baubewilligung und Nutzfläche (NFL),
+- Baujahr legt U-Wert-Vorschläge für alle unterstützten Bauteile vor, nicht nur für das gerade geöffnete Bauteil,
+- gemeinsame Geometrie liefert die Bauteilflächen; abweichende Werte bleiben überschreibbar,
 - Berry-Pflichtkennzeichnung bei fehlendem Bestands-U-Wert,
+- separaten Variantenblock entfernt; Mindeststandard, wirtschaftlicher Bereich und ambitionierte Variante stehen direkt im Ergebnis,
 - Dämmdicken in 2-cm-Schritten bei exakter interner Rechnung,
 - diskrete Fenster- und Türvarianten,
 - Kostenoptimum und dynamische Amortisation getrennt,
 - Energie, Heizkosten, Betriebs-CO₂ und Oberflächentemperatur,
-- Sowiesokosten und drei manuelle Förderpositionen,
+- vereinheitlichte Kostenkarten mit i-Hinweisen, eingeklappte Kosten-/Finanzannahmen und drei offen sichtbare Förderpositionen,
 - Infografik „Sanierung auf einen Blick“,
 - eigene SVGs mit Fallback,
 - gemeinsame Projektmaßnahme.
@@ -320,7 +324,7 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 
 ## 9. Nächste Schritte
 
-1. V0.6 praktisch testen und Bauteil & Sanierung als V1.0 freigeben.
+1. V0.7 praktisch mit typischen Beratungsfällen testen und anschließend Bauteil & Sanierung als V1.0 freigeben.
 2. Master-Excel vervollständigen und Excel→JSON-Export umsetzen.
 3. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen.
 4. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren.

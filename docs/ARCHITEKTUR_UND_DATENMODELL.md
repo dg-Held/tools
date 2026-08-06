@@ -80,6 +80,9 @@ building.geometry.storeysAboveGround
 building.geometry.grossFloorArea
 building.geometry.usableFloorArea
 building.geometry.heatedFloorArea
+building.geometry.windowSharePercent
+building.geometry.windowArea
+building.geometry.opaqueExteriorWallArea
 building.geometry.grossVolume
 building.geometry.reference.*
 building.thermal.heatedSharePercent
@@ -107,7 +110,7 @@ Oberflächen dürfen Synonyme nicht als neue Speicherfelder anlegen. Ein manuell
 
 ## 6. Geometrieabhängigkeiten
 
-Die gemeinsame Ableitung läuft unter `building-geometry-v1.3`. Sie hält eine unveränderte automatische Referenz und eine verwendete Kette mit manuellen Prioritäten parallel vor.
+Die gemeinsame Ableitung läuft unter `building-geometry-v1.4`. Sie hält eine unveränderte automatische Referenz und eine verwendete Kette mit manuellen Prioritäten parallel vor.
 
 ### Feste Erstannahmen
 
@@ -164,10 +167,12 @@ exteriorWallGrossArea = perimeter × footprintScale × heightMedian
 windowArea = exteriorWallGrossArea × windowSharePercent / 100
 opaqueExteriorWallArea = exteriorWallGrossArea − windowArea
 topFloorArea = basementCeilingArea = groundFloorArea = effectiveFootprint
-roofSlopeArea = effectiveFootprint / cos(roofPitch)
+roofSlopeArea = footprintArea / cos(roofPitch)
 grossVolume = effectiveFootprint × heightMedian
 heatedVolume = grossVolume × heatedSharePercent / 100
 ```
+
+Der Fensterflächenanteil ist ein gemeinsamer Projektwert. Eine direkt bestätigte Fensterfläche hat grundsätzlich Vorrang; wird der Verhältnisregler im Energiefluss bewusst geändert, werden ältere manuelle Fenster-/opake Wandflächen zurückgesetzt, damit die neue Verhältnisannahme wirksam wird.
 
 Die Quadratwurzel-Skalierung setzt eine ähnliche Gebäudeform voraus. Das verwendete Volumen reagiert bewusst auf eine korrigierte BGF/NFL, während `reference.grossVolume` die reine TIRIS-Automatik bewahrt. Ein direkt eingegebenes Volumen hat Vorrang. Das beheizte Volumen ist eine überschlägige Projektgröße und kein normativ bestimmtes Luftvolumen.
 

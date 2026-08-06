@@ -505,6 +505,12 @@
           { path, origin: model.ORIGIN.MANUAL, value, options: { unit: unit || null, source: 'Energiefluss V4.4' } },
           { path: 'building.geometry.heatedFloorArea', origin: model.ORIGIN.MANUAL, value: heatedFloorArea, options: { unit: 'm²', source: 'Energiefluss V4.4', method: 'Nutzfläche × beheizter Anteil' } },
         ]);
+      } else if (path === 'building.geometry.windowSharePercent') {
+        store.setFieldCandidates([
+          { path, origin: model.ORIGIN.MANUAL, value, options: { unit: '%', source: 'Energiefluss V4.4', method: 'Fensteranteil an der Brutto-Außenwand' } },
+          { path: 'building.geometry.windowArea', origin: model.ORIGIN.MANUAL, value: null },
+          { path: 'building.geometry.opaqueExteriorWallArea', origin: model.ORIGIN.MANUAL, value: null },
+        ]);
       } else {
         store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.4' });
       }
@@ -514,6 +520,12 @@
         store.setFieldCandidates([
           { path, origin: model.ORIGIN.MANUAL, value: null },
           { path: 'building.geometry.heatedFloorArea', origin: model.ORIGIN.MANUAL, value: null },
+        ]);
+      } else if (path === 'building.geometry.windowSharePercent') {
+        store.setFieldCandidates([
+          { path, origin: model.ORIGIN.MANUAL, value: null },
+          { path: 'building.geometry.windowArea', origin: model.ORIGIN.MANUAL, value: null },
+          { path: 'building.geometry.opaqueExteriorWallArea', origin: model.ORIGIN.MANUAL, value: null },
         ]);
       } else {
         store.clearFieldCandidate(path, model.ORIGIN.MANUAL);
@@ -587,7 +599,19 @@
         if (rawValue !== null && !Number.isFinite(rawValue)) return;
         const value = rawValue === null ? null : roundToStep(rawValue, component.areaStep);
         area.value = value === null ? '' : String(value);
-        store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` });
+        if (component.id === 'windows') {
+          const project = store.get();
+          const grossWallArea = finite(valueAt(project, 'building.geometry.exteriorWallGrossArea'), null);
+          const sharePercent = value !== null && grossWallArea > 0
+            ? Math.max(0, Math.min(100, value / grossWallArea * 100))
+            : null;
+          store.setFieldCandidates([
+            { path: component.areaPath, origin: model.ORIGIN.MANUAL, value, options: { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` } },
+            { path: 'building.geometry.windowSharePercent', origin: model.ORIGIN.MANUAL, value: sharePercent, options: { unit: '%', source: 'Energiefluss V4.4', method: 'manuelle Fensterfläche / Brutto-Außenwand' } },
+          ]);
+        } else {
+          store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` });
+        }
       });
       uValue.addEventListener('change', () => {
         if (rendering) return;
@@ -595,7 +619,16 @@
         if (value !== null && !Number.isFinite(value)) return;
         store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4.4' });
       });
-      resetArea.addEventListener('click', () => store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL));
+      resetArea.addEventListener('click', () => {
+        if (component.id === 'windows') {
+          store.setFieldCandidates([
+            { path: component.areaPath, origin: model.ORIGIN.MANUAL, value: null },
+            { path: 'building.geometry.windowSharePercent', origin: model.ORIGIN.MANUAL, value: null },
+          ]);
+        } else {
+          store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL);
+        }
+      });
       resetU.addEventListener('click', () => store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL));
     });
   }

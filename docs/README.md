@@ -1,7 +1,7 @@
 # Dokumentation – Tools für Energieberatung
 
 **Stand:** 06.08.2026  
-**Gültiger Projektstand:** Standortpass V1.1, Klima, Heizlast, Energiefluss V4.4, Bauteil & Sanierung V0.6 und lokale Excel→JSON-Datenpipeline V1.
+**Gültiger Projektstand:** Standortpass V1.1, Klima, Heizlast, Energiefluss V4.4, Bauteil & Sanierung V0.7 und lokale Excel→JSON-Datenpipeline V1.
 
 Diese Hauptdokumentation ersetzt die bisherigen kleinen Änderungs-, Installations-, Test- und Versionsdateien. Für neue Chats zuerst `PROJEKTSTATUS_UND_SYSTEMUEBERSICHT.md` bereitstellen.
 
