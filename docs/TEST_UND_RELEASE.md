@@ -1,6 +1,6 @@
 # Test und Release
 
-**Stand:** 05.08.2026
+**Stand:** 06.08.2026
 
 ## Installation kleiner Austauschpakete
 
@@ -47,7 +47,13 @@ Erwartung:
 - fehlender U-Wert blockiert Berechnung und wird Berry markiert,
 - eigene SVGs ersetzen Fallback vollständig,
 - Förderung und Sowiesokosten,
-- Speichern der Maßnahme,
+- Speichern der manuell gewählten Maßnahme,
+- automatische Maßnahmenpakete erzeugen: Mindeststandard, wirtschaftlich, ambitioniert,
+- automatisch erzeugte Einträge tragen `automatic-proposal / not-reviewed`,
+- manuell gespeicherte Maßnahmen bleiben beim Aktualisieren der Pakete erhalten,
+- Änderung an Fläche, U-Wert oder Finanzannahme markiert vorhandene Pakete als veraltet,
+- Bauteile ohne Kostenmodell erhalten technische, aber keine vorgetäuschte wirtschaftliche Variante,
+- Bestand, der einen Ziel-U-Wert bereits erfüllt, erzeugt keine Null-Maßnahme im Paket,
 - Ausdruck mit Farben und Infografik.
 
 ### Excel→JSON-Datenpipeline
@@ -74,8 +80,11 @@ Erwartung:
 ## Automatisierte Tests
 
 ```text
+node tests/validate-building-data.js
 node tests/validate-project-derived-values.js
 node tests/validate-envelope-renovation-core.js
+node tests/validate-envelope-auto-package-contract.js
+node tests/validate-oenorm-b8110-4.js
 ```
 
 Zusätzlich JavaScript-Syntax und alle JSON-Dateien prüfen. Für die Datenpipeline außerdem `python tools/data-build/bauteil_data_export.py --help` testen.

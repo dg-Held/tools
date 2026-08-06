@@ -7,7 +7,7 @@
 1. Master-Excel fachlich vervollständigen und freizugebende Zeilen aktivieren.
 2. Umgesetzte Excel→JSON-Datenpipeline gegen die lokale Masterdatei testen.
 3. Vier reale Referenzfälle (Außenwand, Dach/OGD, Kellerdecke, Fenster/Haustür) gegenrechnen.
-4. Nach fachlicher Datenvalidierung Bauteil & Sanierung als V1.0 einfrieren.
+4. Automatische Maßnahmenpakete praktisch validieren und Bauteil & Sanierung anschließend als V1.0 einfrieren.
 
 ## Danach
 

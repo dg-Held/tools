@@ -87,6 +87,12 @@
     disposal_price_escalation_percent: 2,
   };
 
+  const AUTO_PACKAGE_PROFILES = [
+    { id: 'recommended', resultKey: 'recommendation', label: 'Mindeststandard', scenarioId: 'envelope-package-recommended' },
+    { id: 'economic', label: 'Wirtschaftlich', scenarioId: 'envelope-package-economic' },
+    { id: 'ambitious', label: 'Ambitioniert', scenarioId: 'envelope-package-ambitious' },
+  ];
+
   let targetsConfig = null;
   let lambdaConfig = null;
   let coBenefitsConfig = null;
@@ -110,6 +116,7 @@
   let addressSearchTimer = null;
   let addressSearchSequence = 0;
   let pendingAddress = null;
+  let automaticPackageGenerationRunning = false;
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -332,6 +339,491 @@
     const areaInfo = component.areaPath ? describeAt(project, component.areaPath) : { value: draft.areaM2 ?? null, origin: null, source: null };
     const uInfo = component.uPath ? describeAt(project, component.uPath) : { value: draft.existingUValue ?? null, origin: null, source: null };
     return { areaInfo, uInfo, draft };
+  }
+
+  function hashText(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+
+  function nearestFromVariants(items, thicknessCm) {
+    if (thicknessCm === null || thicknessCm === undefined || !items.length) return null;
+    return items.reduce((best, item) => Math.abs(item.thicknessCm - thicknessCm) < Math.abs(best.thicknessCm - thicknessCm) ? item : best);
+  }
+
+  function automaticInputsForComponent(project, component) {
+    const { areaInfo, uInfo, draft } = componentProjectValues(project, component);
+    const climate = climateContext(project);
+    const flowComponent = energyFlowComponent(project, component);
+    const financeDefaults = financeConfig?.defaults ?? FALLBACK_FINANCE;
+    const frameMaterial = component.id === 'windows'
+      ? (draft.frameMaterial ?? exchangeConfigFor(component)?.default_frame_material ?? 'wood')
+      : null;
+    const costDefaults = defaultCostValues(component, frameMaterial);
+    const carrierId = energyCarrierItems().some((item) => item.id === draft.energyCarrierId)
+      ? draft.energyCarrierId
+      : (energyCarrierItems().find((item) => item.id === 'oil')?.id ?? energyCarrierItems()[0]?.id ?? 'custom');
+    const carrier = carrierDefaults(carrierId);
+    const funding = fundingDraft(draft);
+    const fundingEntries = ['state', 'federal', 'other'].map((id) => ({
+      id,
+      label: id === 'state' ? 'Landesförderung' : id === 'federal' ? 'Bundesförderung' : 'Sonstige Förderung',
+      mode: funding[id]?.mode ?? 'none',
+      value: finite(funding[id]?.value, 0),
+    }));
+    const exchangeCount = component.id === 'doors' ? Math.max(1, Math.round(finite(draft.exchangeCount, 1))) : null;
+    const doorAreaPerUnitM2 = component.id === 'doors'
+      ? finite(draft.doorAreaPerUnitM2, areaInfo.value > 0 ? areaInfo.value / exchangeCount : 2.0)
+      : null;
+    const areaM2 = component.id === 'doors'
+      ? Math.max(0, exchangeCount * Math.max(0, doorAreaPerUnitM2 ?? 0))
+      : finite(areaInfo.value, 0);
+    const lambdaWmk = component.measureType === 'exchange' ? null : finite(draft.lambdaWmk, 0.035);
+
+    return {
+      component,
+      areaInfo,
+      uInfo,
+      areaM2,
+      doorAreaPerUnitM2,
+      constructionYear: finite(valueAt(project, 'building.profile.constructionYear'), null),
+      usableFloorAreaM2: finite(valueAt(project, 'building.geometry.usableFloorArea'), null),
+      existingUValue: finite(uInfo.value, 0),
+      lambdaWmk,
+      frameMaterial,
+      exchangeCount,
+      annualEfficiency: finite(draft.annualEfficiency ?? valueAt(project, 'systems.heating.usefulHeatFactor', 0.85), 0.85),
+      indoorTemperatureC: finite(draft.indoorTemperatureC ?? valueAt(project, 'building.thermal.indoorTemperature', 20), 20),
+      boundaryFactor: finite(draft.boundaryFactor, component.boundaryFactor),
+      heatingDegreeDaysKd: finite(draft.heatingDegreeDaysKd, HGT_FALLBACK_TIROL),
+      existingLossKwh: finite(flowComponent?.lossKwh, null),
+      heatingDegreeHoursKh: climate.heatingDegreeHoursKh,
+      natC: climate.natC,
+      period: climate.period,
+      renewalContext: draft.renewalContext ?? 'renewal_due',
+      baseCostEurM2: measureCore.roundToStep(finite(draft.baseCostEurM2, costDefaults.baseCostEurM2), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
+      variableCostEurM2Cm: finite(draft.variableCostEurM2Cm, costDefaults.variableCostEurM2Cm),
+      windowBasicCostEurM2: measureCore.roundToStep(finite(draft.windowBasicCostEurM2, costDefaults.windowBasicCostEurM2), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
+      windowRecommendedCostEurM2: measureCore.roundToStep(finite(draft.windowRecommendedCostEurM2, costDefaults.windowRecommendedCostEurM2), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
+      windowAmbitiousCostEurM2: measureCore.roundToStep(finite(draft.windowAmbitiousCostEurM2, costDefaults.windowAmbitiousCostEurM2), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
+      sunkCostEurM2: measureCore.roundToStep(finite(draft.sunkCostEurM2, costDefaults.sunkCostEurM2), financeConfig?.rounding?.cost_per_m2_eur ?? 10),
+      lifetimeYears: finite(draft.lifetimeYears, costDefaults.lifetimeYears),
+      maintenancePercent: component.id === 'windows' ? finite(draft.maintenancePercent, costDefaults.maintenancePercent) : 0,
+      energyCarrierId: carrierId,
+      energyPriceEurKwh: finite(draft.energyPriceEurKwh, carrier.price),
+      periodYears: finite(draft.periodYears, financeDefaults.period_years),
+      interestRatePercent: finite(draft.interestRatePercent, financeDefaults.interest_rate_percent),
+      energyEscalationPercent: finite(draft.energyEscalationPercent, financeDefaults.energy_price_escalation_percent),
+      investmentEscalationPercent: finite(draft.investmentEscalationPercent, financeDefaults.investment_price_escalation_percent),
+      disposalEscalationPercent: finite(draft.disposalEscalationPercent, financeDefaults.disposal_price_escalation_percent),
+      fundingEntries,
+      emissionFactorKgKwh: finite(draft.emissionFactorKgKwh, carrier.emissionFactor),
+      draft,
+      costDefaults,
+    };
+  }
+
+  function automaticComponentReadiness(inputs) {
+    const technicalReady = hasPositive(inputs.areaM2)
+      && hasPositive(inputs.existingUValue)
+      && (isExchangeComponent(inputs.component) || hasPositive(inputs.lambdaWmk));
+    const energyReady = hasPositive(inputs.existingLossKwh) || hasPositive(inputs.heatingDegreeHoursKh);
+    const costReady = isExchangeComponent(inputs.component)
+      ? [inputs.windowBasicCostEurM2, inputs.windowRecommendedCostEurM2, inputs.windowAmbitiousCostEurM2].some((value) => hasPositive(value))
+      : inputs.baseCostEurM2 !== null && inputs.variableCostEurM2Cm !== null;
+    const economicsReady = technicalReady && energyReady && costReady && hasPositive(inputs.lifetimeYears) && inputs.energyPriceEurKwh !== null;
+    const missing = [];
+    if (!hasPositive(inputs.areaM2)) missing.push('Fläche');
+    if (!hasPositive(inputs.existingUValue)) missing.push('U-Wert');
+    if (!isExchangeComponent(inputs.component) && !hasPositive(inputs.lambdaWmk)) missing.push('λ-Wert');
+    if (technicalReady && !energyReady) missing.push('Energiegrundlage');
+    if (technicalReady && !costReady) missing.push('Kostenmodell');
+    return { technicalReady, energyReady, costReady, economicsReady, missing };
+  }
+
+  function automaticProposalFingerprint(project) {
+    const payload = {
+      model: 'envelope-auto-packages-v1',
+      versions: {
+        targets: targetsConfig?.version ?? null,
+        costs: costConfig?.version ?? null,
+        exchange: exchangeVariantsConfig?.version ?? null,
+        finance: financeConfig?.version ?? null,
+        measureCore: measureCore.MODEL_VERSION,
+        economicsCore: economicsCore.MODEL_VERSION,
+      },
+      components: COMPONENTS.filter((component) => component.supported).map((component) => {
+        const inputs = automaticInputsForComponent(project, component);
+        return {
+          id: component.id,
+          areaM2: inputs.areaM2,
+          existingUValue: inputs.existingUValue,
+          lambdaWmk: inputs.lambdaWmk,
+          existingLossKwh: inputs.existingLossKwh,
+          heatingDegreeHoursKh: inputs.heatingDegreeHoursKh,
+          boundaryFactor: inputs.boundaryFactor,
+          annualEfficiency: inputs.annualEfficiency,
+          renewalContext: inputs.renewalContext,
+          baseCostEurM2: inputs.baseCostEurM2,
+          variableCostEurM2Cm: inputs.variableCostEurM2Cm,
+          windowBasicCostEurM2: inputs.windowBasicCostEurM2,
+          windowRecommendedCostEurM2: inputs.windowRecommendedCostEurM2,
+          windowAmbitiousCostEurM2: inputs.windowAmbitiousCostEurM2,
+          sunkCostEurM2: inputs.sunkCostEurM2,
+          lifetimeYears: inputs.lifetimeYears,
+          maintenancePercent: inputs.maintenancePercent,
+          energyPriceEurKwh: inputs.energyPriceEurKwh,
+          periodYears: inputs.periodYears,
+          interestRatePercent: inputs.interestRatePercent,
+          energyEscalationPercent: inputs.energyEscalationPercent,
+          investmentEscalationPercent: inputs.investmentEscalationPercent,
+          disposalEscalationPercent: inputs.disposalEscalationPercent,
+          fundingEntries: inputs.fundingEntries,
+        };
+      }),
+    };
+    return hashText(JSON.stringify(payload));
+  }
+
+  function computeAutomaticComponentProposals(inputs) {
+    const readiness = automaticComponentReadiness(inputs);
+    if (!readiness.technicalReady) return { readiness, recommendation: null, economic: null, ambitious: null };
+
+    if (isExchangeComponent(inputs.component)) {
+      const config = exchangeConfigFor(inputs.component);
+      const definitions = (config?.variants ?? []).filter((item) => item.active !== false).map((definition) => {
+        const tier = definition.cost_tier ?? 'middle';
+        const fullCostEurM2 = tier === 'low'
+          ? inputs.windowBasicCostEurM2
+          : tier === 'high' ? inputs.windowAmbitiousCostEurM2 : inputs.windowRecommendedCostEurM2;
+        return { ...definition, uValue: definition.u_value, shortLabel: definition.short_label ?? definition.label, fullCostEurM2 };
+      });
+      const raw = measureCore.createExchangeVariants({
+        areaM2: inputs.areaM2,
+        costQuantity: isDoorComponent(inputs.component) ? inputs.exchangeCount : inputs.areaM2,
+        existingUValue: inputs.existingUValue,
+        variants: definitions,
+        existingLossKwh: inputs.existingLossKwh,
+        heatingDegreeHoursKh: inputs.heatingDegreeHoursKh,
+        boundaryFactor: inputs.boundaryFactor,
+        annualEfficiency: inputs.annualEfficiency,
+        renewalContext: inputs.renewalContext,
+        sunkCostEurM2: inputs.sunkCostEurM2 ?? 0,
+        fundingEntries: inputs.fundingEntries,
+        energyPriceEurKwh: inputs.energyPriceEurKwh,
+        emissionFactorKgKwh: inputs.emissionFactorKgKwh,
+        maintenancePercentInitialPerYear: inputs.maintenancePercent,
+      });
+      const reference = inputs.renewalContext === 'renewal_due'
+        ? (raw.find((item) => item.role === 'basic') ?? raw[0])
+        : raw[0];
+      const enriched = raw.map((item) => ({ ...item, economics: variantEconomics(item, reference, inputs) }));
+      const economicCandidates = enriched.filter((item) => item.role !== 'reference' && item.economics.available);
+      return {
+        readiness,
+        recommendation: enriched.find((item) => item.role === 'recommended') ?? enriched[1] ?? null,
+        economic: economicCandidates.length
+          ? economicCandidates.reduce((best, item) => item.economics.result.totalPresentValue < best.economics.result.totalPresentValue ? item : best)
+          : null,
+        ambitious: enriched.find((item) => item.role === 'ambitious') ?? enriched.at(-1) ?? null,
+      };
+    }
+
+    const target = targetForComponent(inputs.component);
+    const displayRaw = measureCore.createVariants({
+      areaM2: inputs.areaM2,
+      existingUValue: inputs.existingUValue,
+      lambdaWmk: inputs.lambdaWmk,
+      maximumThicknessCm: 30,
+      thicknessStepCm: 2,
+      existingLossKwh: inputs.existingLossKwh,
+      heatingDegreeHoursKh: inputs.heatingDegreeHoursKh,
+      boundaryFactor: inputs.boundaryFactor,
+      annualEfficiency: inputs.annualEfficiency,
+      renewalContext: inputs.renewalContext,
+      baseCostEurM2: inputs.baseCostEurM2 ?? 0,
+      variableCostEurM2Cm: inputs.variableCostEurM2Cm ?? 0,
+      sunkCostEurM2: inputs.sunkCostEurM2 ?? 0,
+      fundingEntries: inputs.fundingEntries,
+      energyPriceEurKwh: inputs.energyPriceEurKwh,
+      emissionFactorKgKwh: inputs.emissionFactorKgKwh,
+    });
+    const displayReference = displayRaw[0];
+    const display = displayRaw.map((item) => ({ ...item, economics: variantEconomics(item, displayReference, inputs) }));
+    const recommendationRaw = measureCore.requiredThicknessCm(inputs.existingUValue, target?.recommended, inputs.lambdaWmk);
+    const ambitiousRaw = measureCore.requiredThicknessCm(inputs.existingUValue, target?.ambitious, inputs.lambdaWmk);
+    const recommendation = nearestFromVariants(display, recommendationRaw === null ? null : measureCore.ceilToStep(recommendationRaw, 2));
+    const ambitious = nearestFromVariants(display, ambitiousRaw === null ? null : measureCore.ceilToStep(ambitiousRaw, 2));
+
+    const denseRaw = measureCore.createVariants({
+      areaM2: inputs.areaM2,
+      existingUValue: inputs.existingUValue,
+      lambdaWmk: inputs.lambdaWmk,
+      thicknessesCm: measureCore.createThicknesses(30, 0.25),
+      existingLossKwh: inputs.existingLossKwh,
+      heatingDegreeHoursKh: inputs.heatingDegreeHoursKh,
+      boundaryFactor: inputs.boundaryFactor,
+      annualEfficiency: inputs.annualEfficiency,
+      renewalContext: inputs.renewalContext,
+      baseCostEurM2: inputs.baseCostEurM2 ?? 0,
+      variableCostEurM2Cm: inputs.variableCostEurM2Cm ?? 0,
+      sunkCostEurM2: inputs.sunkCostEurM2 ?? 0,
+      fundingEntries: inputs.fundingEntries,
+      energyPriceEurKwh: inputs.energyPriceEurKwh,
+      emissionFactorKgKwh: inputs.emissionFactorKgKwh,
+    });
+    const denseReference = denseRaw[0];
+    const dense = denseRaw.map((item) => ({ ...item, economics: variantEconomics(item, denseReference, inputs) }));
+    const economicCandidates = dense.filter((item) => item.thicknessCm > 0 && item.economics.available);
+    const economicRaw = economicCandidates.length
+      ? economicCandidates.reduce((best, item) => item.economics.result.totalPresentValue < best.economics.result.totalPresentValue ? item : best)
+      : null;
+    const economic = economicRaw
+      ? nearestFromVariants(display, measureCore.roundToStep(economicRaw.thicknessCm, 2))
+      : null;
+    return { readiness, recommendation, economic, ambitious };
+  }
+
+  function buildMeasureRecord(inputs, selected, options = {}) {
+    if (!selected) return null;
+    const target = targetForComponent(inputs.component);
+    const oldSurface = measureCore.surfaceTemperatureC({
+      indoorTemperatureC: inputs.indoorTemperatureC,
+      boundaryTemperatureC: boundaryTemperature(inputs),
+      uValue: inputs.existingUValue,
+      internalSurfaceResistanceM2KW: inputs.component.rsi,
+    });
+    const newSurface = measureCore.surfaceTemperatureC({
+      indoorTemperatureC: inputs.indoorTemperatureC,
+      boundaryTemperatureC: boundaryTemperature(inputs),
+      uValue: selected.newUValue,
+      internalSurfaceResistanceM2KW: inputs.component.rsi,
+    });
+    return {
+      id: options.id ?? `envelope-${inputs.component.id}`,
+      category: 'envelope',
+      type: isExchangeComponent(inputs.component) ? 'exchange' : 'insulation',
+      componentId: inputs.component.id,
+      title: options.title ?? `${inputs.component.label} sanieren`,
+      status: options.status ?? 'draft-selected',
+      reviewStatus: options.reviewStatus ?? 'reviewed-in-tool',
+      proposalProfile: options.profile ?? null,
+      autoGenerated: Boolean(options.autoGenerated),
+      generatedBy: options.autoGenerated ? 'Bauteil & Sanierung V0.8' : null,
+      existingState: {
+        areaM2: inputs.areaM2,
+        uValue: inputs.existingUValue,
+        areaOrigin: inputs.areaInfo?.origin ?? null,
+        uValueOrigin: inputs.uInfo?.origin ?? null,
+      },
+      selectedVariant: isExchangeComponent(inputs.component)
+        ? { id: selected.exchangeId, label: selected.label, uValue: selected.newUValue, frameMaterial: inputs.frameMaterial, count: inputs.exchangeCount, areaPerUnitM2: inputs.doorAreaPerUnitM2, totalAreaM2: inputs.areaM2 }
+        : { thicknessCm: selected.thicknessCm, uValue: selected.newUValue, lambdaWmk: inputs.lambdaWmk },
+      targetProfile: {
+        recommendedUValue: target?.recommended ?? null,
+        ambitiousUValue: target?.ambitious ?? null,
+        sourceVersion: targetsConfig?.version ?? null,
+      },
+      energyEffect: clone(selected.energy),
+      costModel: {
+        renewalContext: inputs.renewalContext,
+        baseCostEurM2: inputs.baseCostEurM2,
+        variableCostEurM2Cm: inputs.variableCostEurM2Cm,
+        exchangeCosts: isExchangeComponent(inputs.component) ? {
+          unit: costUnitFor(inputs.component),
+          quantity: isDoorComponent(inputs.component) ? inputs.exchangeCount : inputs.areaM2,
+          basic: inputs.windowBasicCostEurM2,
+          recommended: inputs.windowRecommendedCostEurM2,
+          ambitious: inputs.windowAmbitiousCostEurM2,
+        } : null,
+        frameMaterial: inputs.frameMaterial,
+        maintenancePercent: inputs.maintenancePercent,
+        lifetimeYears: inputs.lifetimeYears,
+        fullInvestmentEur: selected.investment.fullInvestmentEur,
+      },
+      sunkCosts: { rate: inputs.sunkCostEurM2, unit: costUnitFor(inputs.component), rateEurM2: inputs.sunkCostEurM2, totalEur: selected.investment.sunkCostEur },
+      funding: { entries: clone(selected.fundingItems ?? []), amountEur: selected.subsidyEur, confirmed: (selected.fundingItems ?? []).some((item) => item.confirmed) },
+      financialAssumptions: {
+        periodYears: inputs.periodYears,
+        interestRatePercent: inputs.interestRatePercent,
+        energyEscalationPercent: inputs.energyEscalationPercent,
+        investmentEscalationPercent: inputs.investmentEscalationPercent,
+        disposalEscalationPercent: inputs.disposalEscalationPercent,
+      },
+      economicsResult: selected.economics?.available ? {
+        totalPresentValueEur: selected.economics.result.totalPresentValue,
+        annuityEurA: selected.economics.result.annuity,
+        amortisationYears: selected.economics.paybackYears,
+      } : null,
+      co2Effect: { annualKg: selected.co2SavingsKgA, factorKgKwh: inputs.emissionFactorKgKwh },
+      comfortEffect: { existingSurfaceTemperatureC: oldSurface, renovatedSurfaceTemperatureC: newSurface },
+      comments: options.autoGenerated ? 'Automatischer Vorschlag – fachlich und projektspezifisch prüfen.' : '',
+      sourceVersions: {
+        measureCore: measureCore.MODEL_VERSION,
+        economicsCore: economicsCore.MODEL_VERSION,
+        targets: targetsConfig?.version ?? null,
+        costs: costConfig?.version ?? null,
+      },
+      displayRounding: clone(financeConfig?.rounding ?? {}),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  function renderAutomaticPackageSummary(project = store.get()) {
+    const inputsByComponent = COMPONENTS.filter((component) => component.supported).map((component) => ({
+      component,
+      inputs: automaticInputsForComponent(project, component),
+    }));
+    const readinessRows = inputsByComponent.map(({ component, inputs }) => ({ component, inputs, readiness: automaticComponentReadiness(inputs) }));
+    const preparedCount = readinessRows.filter((row) => row.readiness.technicalReady).length;
+    const summary = project.modules?.bauteilSanierung?.autoPackages ?? null;
+    const currentFingerprint = automaticProposalFingerprint(project);
+    const stale = Boolean(summary?.fingerprint && summary.fingerprint !== currentFingerprint);
+    const packageCounts = summary?.packageCounts ?? { recommended: 0, economic: 0, ambitious: 0 };
+
+    $('autoPreparedValue').textContent = `${preparedCount} von ${readinessRows.length}`;
+    $('autoPreparedNote').textContent = preparedCount === readinessRows.length
+      ? 'Alle unterstützten Bauteile besitzen Fläche und Bestands-U-Wert.'
+      : `${readinessRows.length - preparedCount} Bauteil${readinessRows.length - preparedCount === 1 ? '' : 'e'} benötigen noch Fläche oder U-Wert.`;
+    $('autoProposalValue').textContent = summary ? String(summary.proposalCount ?? 0) : '0';
+    $('autoRecommendedCount').textContent = String(packageCounts.recommended ?? 0);
+    $('autoEconomicCount').textContent = String(packageCounts.economic ?? 0);
+    $('autoAmbitiousCount').textContent = String(packageCounts.ambitious ?? 0);
+    $('autoPackageValue').textContent = summary ? (stale ? 'Aktualisieren' : `${summary.packageCount ?? 0} Pakete`) : '–';
+    $('autoPackageNote').textContent = summary
+      ? stale ? 'Projektwerte wurden geändert; gespeicherte Vorschläge sind als veraltet markiert.' : `Stand ${new Date(summary.generatedAt).toLocaleString('de-AT')}`
+      : 'Noch keine Pakete im Projekt gespeichert.';
+    $('autoPackageStatus').textContent = summary ? (stale ? 'Vorschläge veraltet' : 'Vorschläge aktuell') : 'Noch nicht erstellt';
+    $('autoPackageStatus').className = `status-chip ${summary && !stale ? 'is-success' : stale ? 'is-working' : ''}`.trim();
+    $('generateAutoPackages').disabled = preparedCount === 0 || automaticPackageGenerationRunning;
+    $('generateAutoPackages').textContent = automaticPackageGenerationRunning
+      ? 'Vorschläge werden erstellt …'
+      : summary ? 'Vorschläge aktualisieren' : 'Vorschläge erstellen';
+    $('autoPackageActionNote').textContent = preparedCount === 0
+      ? 'Zuerst Standort beziehungsweise Bauteilflächen und mindestens einen Bestands-U-Wert bereitstellen.'
+      : readinessRows.some((row) => row.readiness.technicalReady && !row.readiness.economicsReady)
+        ? 'Technische Pakete sind möglich; wirtschaftliche Vorschläge fehlen bei Bauteilen ohne Energie- oder Kostenbasis.'
+        : 'Alle vorbereiteten Bauteile können technisch und wirtschaftlich ausgewertet werden.';
+
+    const storedRows = summary?.components ?? [];
+    $('autoPackageDetailsBody').innerHTML = readinessRows.map((row) => {
+      const stored = storedRows.find((item) => item.componentId === row.component.id);
+      const basis = row.readiness.technicalReady
+        ? `${formatNumber(row.inputs.areaM2)} m² · U ${formatNumber(row.inputs.existingUValue, 2)}`
+        : `fehlt: ${row.readiness.missing.join(', ') || 'Grundlage'}`;
+      const cell = (profile) => stored?.profiles?.[profile]
+        ? `<span class="auto-package-cell-ready">${escapeHtml(stored.profiles[profile])}</span>`
+        : '<span class="auto-package-cell-missing">–</span>';
+      return `<tr><td><strong>${escapeHtml(row.component.label)}</strong></td><td>${escapeHtml(basis)}</td><td>${cell('recommended')}</td><td>${cell('economic')}</td><td>${cell('ambitious')}</td></tr>`;
+    }).join('');
+  }
+
+  function createAutomaticPackages() {
+    if (automaticPackageGenerationRunning) return;
+    automaticPackageGenerationRunning = true;
+    renderAutomaticPackageSummary(store.get());
+    try {
+      let project = ensureConstructionUValueCandidates(store.get());
+      project = store.get();
+      const generatedAt = new Date().toISOString();
+      const proposals = {};
+      const packageMeasureIds = { recommended: [], economic: [], ambitious: [] };
+      const components = [];
+
+      COMPONENTS.filter((component) => component.supported).forEach((component) => {
+        const inputs = automaticInputsForComponent(project, component);
+        const result = computeAutomaticComponentProposals(inputs);
+        const profiles = {};
+        AUTO_PACKAGE_PROFILES.forEach((profile) => {
+          const selected = result[profile.resultKey ?? profile.id];
+          if (!selected) return;
+          if (!isExchangeComponent(component) && !(selected.thicknessCm > 0)) {
+            profiles[profile.id] = 'Bestand erfüllt Ziel';
+            return;
+          }
+          const measureId = `auto-envelope-${component.id}-${profile.id}`;
+          const measure = buildMeasureRecord(inputs, selected, {
+            id: measureId,
+            title: `${component.label} · ${profile.label}`,
+            status: 'automatic-proposal',
+            reviewStatus: 'not-reviewed',
+            profile: profile.id,
+            autoGenerated: true,
+          });
+          if (!measure) return;
+          proposals[measureId] = measure;
+          packageMeasureIds[profile.id].push(measureId);
+          profiles[profile.id] = isExchangeComponent(component)
+            ? (selected.shortLabel ?? selected.label ?? profile.label)
+            : `${formatNumber(selected.thicknessCm)} cm`;
+        });
+        components.push({
+          componentId: component.id,
+          label: component.label,
+          prepared: result.readiness.technicalReady,
+          economicsReady: result.readiness.economicsReady,
+          missing: result.readiness.missing,
+          profiles,
+        });
+      });
+
+      const currentMeasures = project.measures ?? {};
+      const nextMeasures = Object.fromEntries(Object.entries(currentMeasures).filter(([id, measure]) => {
+        const belongsToAutoEnvelope = id.startsWith('auto-envelope-') || String(measure?.generatedBy ?? '').startsWith('Bauteil & Sanierung V0.');
+        return !belongsToAutoEnvelope;
+      }));
+      Object.assign(nextMeasures, proposals);
+
+      const currentScenarioItems = project.scenarios?.items ?? {};
+      const nextScenarioItems = Object.fromEntries(Object.entries(currentScenarioItems).filter(([id, scenario]) => {
+        const belongsToAutoEnvelope = id.startsWith('envelope-package-') || (scenario?.autoGenerated && scenario?.category === 'envelope-package');
+        return !belongsToAutoEnvelope;
+      }));
+      AUTO_PACKAGE_PROFILES.forEach((profile) => {
+        if (!packageMeasureIds[profile.id].length) return;
+        nextScenarioItems[profile.scenarioId] = {
+          id: profile.scenarioId,
+          title: `Gebäudehülle · ${profile.label}`,
+          category: 'envelope-package',
+          status: 'automatic-proposal',
+          reviewStatus: 'not-reviewed',
+          autoGenerated: true,
+          measureIds: packageMeasureIds[profile.id],
+          generatedAt,
+        };
+      });
+
+      const packageCounts = Object.fromEntries(AUTO_PACKAGE_PROFILES.map((profile) => [profile.id, packageMeasureIds[profile.id].length]));
+      const summary = {
+        schema: 'energy-tools-envelope-auto-packages',
+        version: '1.0.0',
+        fingerprint: automaticProposalFingerprint(project),
+        generatedAt,
+        preparedComponents: components.filter((item) => item.prepared).length,
+        totalComponents: components.length,
+        proposalCount: Object.keys(proposals).length,
+        packageCount: AUTO_PACKAGE_PROFILES.filter((profile) => packageMeasureIds[profile.id].length).length,
+        packageCounts,
+        components,
+      };
+
+      suppressProjectRender = true;
+      store.batch(() => {
+        store.setPath('measures', nextMeasures);
+        store.setPath('scenarios.items', nextScenarioItems);
+        store.setPath('modules.bauteilSanierung.autoPackages', summary);
+      });
+      suppressProjectRender = false;
+      $('saveMeasureStatus').textContent = `${summary.proposalCount} automatische Vorschläge in ${summary.packageCount} Paketen gespeichert.`;
+      global.setTimeout(() => { $('saveMeasureStatus').textContent = ''; }, 5000);
+    } finally {
+      automaticPackageGenerationRunning = false;
+      renderAutomaticPackageSummary(store.get());
+    }
   }
 
   function updateRequiredInputState() {
@@ -718,6 +1210,7 @@
     updateAddressAnalysisState(project);
     const addressInput = $('renAddressInput');
     if (addressInput && document.activeElement !== addressInput) addressInput.value = project.project?.addressLabel || '';
+    renderAutomaticPackageSummary(project);
     calculateAndRender();
   }
 
@@ -810,7 +1303,7 @@
 
   function variantEconomics(variant, reference, inputs) {
     const costInputsReady = isExchangeComponent(inputs.component)
-      ? Number.isFinite(Number(variant.fullCostEurM2))
+      ? hasPositive(variant.fullCostEurM2)
       : inputs.baseCostEurM2 !== null && inputs.variableCostEurM2Cm !== null;
     const costReady = costInputsReady
       && hasPositive(inputs.lifetimeYears)
@@ -1328,14 +1821,14 @@
     const constructionYearInput = $('constructionYear');
     if (constructionYearInput?.dataset.userEdited === 'true') {
       if (inputs.constructionYear === null) store.clearFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL);
-      else store.setFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL, Math.round(inputs.constructionYear), { unit: 'Jahr', source: 'Nutzereingabe Bauteil & Sanierung V0.7' });
+      else store.setFieldCandidate('building.profile.constructionYear', model.ORIGIN.MANUAL, Math.round(inputs.constructionYear), { unit: 'Jahr', source: 'Nutzereingabe Bauteil & Sanierung V0.8' });
       constructionYearInput.dataset.userEdited = 'false';
     }
 
     const usableFloorAreaInput = $('usableFloorArea');
     if (usableFloorAreaInput?.dataset.userEdited === 'true') {
       if (inputs.usableFloorAreaM2 > 0) {
-        store.setFieldCandidate('building.geometry.usableFloorArea', model.ORIGIN.MANUAL, inputs.usableFloorAreaM2, { unit: 'm²', source: 'Nutzereingabe Bauteil & Sanierung V0.7' });
+        store.setFieldCandidate('building.geometry.usableFloorArea', model.ORIGIN.MANUAL, inputs.usableFloorAreaM2, { unit: 'm²', source: 'Nutzereingabe Bauteil & Sanierung V0.8' });
       } else {
         store.clearFieldCandidate('building.geometry.usableFloorArea', model.ORIGIN.MANUAL);
       }
@@ -1346,7 +1839,7 @@
     const doorAreaEdited = isDoorComponent(component)
       && ($('exchangeCount')?.dataset.userEdited === 'true' || $('doorAreaPerUnit')?.dataset.userEdited === 'true');
     if (component.areaPath && (areaInput?.dataset.userEdited === 'true' || doorAreaEdited)) {
-      if (inputs.areaM2 > 0) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.7', method: isDoorComponent(component) ? 'Anzahl × typische Fläche je Haustür' : null });
+      if (inputs.areaM2 > 0) store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, inputs.areaM2, { unit: 'm²', source: 'Bauteil & Sanierung V0.8', method: isDoorComponent(component) ? 'Anzahl × typische Fläche je Haustür' : null });
       else store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL);
       if (areaInput) areaInput.dataset.userEdited = 'false';
       if ($('exchangeCount')) $('exchangeCount').dataset.userEdited = 'false';
@@ -1355,13 +1848,13 @@
 
     const uInput = $('existingUValue');
     if (component.uPath && uInput?.dataset.userEdited === 'true') {
-      if (inputs.existingUValue > 0) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.7' });
+      if (inputs.existingUValue > 0) store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, inputs.existingUValue, { unit: 'W/m²K', source: 'Bauteil & Sanierung V0.8' });
       else store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL);
       uInput.dataset.userEdited = 'false';
     }
 
-    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.7' });
-    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.7' });
+    store.setFieldCandidate('systems.heating.usefulHeatFactor', model.ORIGIN.MANUAL, inputs.annualEfficiency, { source: 'Bauteil & Sanierung V0.8' });
+    store.setFieldCandidate('building.thermal.indoorTemperature', model.ORIGIN.MANUAL, inputs.indoorTemperatureC, { unit: '°C', source: 'Bauteil & Sanierung V0.8' });
     writeDraft({
       lambdaWmk: inputs.lambdaWmk,
       frameMaterial: inputs.frameMaterial,
@@ -1407,67 +1900,14 @@
     if (!selected) return;
     persistVisibleInputs();
     const measureId = `envelope-${inputs.component.id}`;
-    const target = targetForComponent(inputs.component);
-    const oldSurface = measureCore.surfaceTemperatureC({ indoorTemperatureC: inputs.indoorTemperatureC, boundaryTemperatureC: boundaryTemperature(inputs), uValue: inputs.existingUValue, internalSurfaceResistanceM2KW: inputs.component.rsi });
-    const newSurface = measureCore.surfaceTemperatureC({ indoorTemperatureC: inputs.indoorTemperatureC, boundaryTemperatureC: boundaryTemperature(inputs), uValue: selected.newUValue, internalSurfaceResistanceM2KW: inputs.component.rsi });
-    const measure = {
+    const measure = buildMeasureRecord(inputs, selected, {
       id: measureId,
-      category: 'envelope',
-      type: isExchangeComponent(inputs.component) ? 'exchange' : 'insulation',
-      componentId: inputs.component.id,
       title: `${inputs.component.label} sanieren`,
       status: 'draft-selected',
-      existingState: { areaM2: inputs.areaM2, uValue: inputs.existingUValue },
-      selectedVariant: isExchangeComponent(inputs.component)
-        ? { id: selected.exchangeId, label: selected.label, uValue: selected.newUValue, frameMaterial: inputs.frameMaterial, count: inputs.exchangeCount, areaPerUnitM2: inputs.doorAreaPerUnitM2, totalAreaM2: inputs.areaM2 }
-        : { thicknessCm: selected.thicknessCm, uValue: selected.newUValue, lambdaWmk: inputs.lambdaWmk },
-      targetProfile: {
-        recommendedUValue: target?.recommended ?? null,
-        ambitiousUValue: target?.ambitious ?? null,
-        sourceVersion: targetsConfig?.version ?? null,
-      },
-      energyEffect: clone(selected.energy),
-      costModel: {
-        renewalContext: inputs.renewalContext,
-        baseCostEurM2: inputs.baseCostEurM2,
-        variableCostEurM2Cm: inputs.variableCostEurM2Cm,
-        exchangeCosts: isExchangeComponent(inputs.component) ? {
-          unit: costUnitFor(inputs.component),
-          quantity: isDoorComponent(inputs.component) ? inputs.exchangeCount : inputs.areaM2,
-          basic: inputs.windowBasicCostEurM2,
-          recommended: inputs.windowRecommendedCostEurM2,
-          ambitious: inputs.windowAmbitiousCostEurM2,
-        } : null,
-        frameMaterial: inputs.frameMaterial,
-        maintenancePercent: inputs.maintenancePercent,
-        lifetimeYears: inputs.lifetimeYears,
-        fullInvestmentEur: selected.investment.fullInvestmentEur,
-      },
-      sunkCosts: { rate: inputs.sunkCostEurM2, unit: costUnitFor(inputs.component), rateEurM2: inputs.sunkCostEurM2, totalEur: selected.investment.sunkCostEur },
-      funding: { entries: clone(selected.fundingItems ?? []), amountEur: selected.subsidyEur, confirmed: (selected.fundingItems ?? []).some((item) => item.confirmed) },
-      financialAssumptions: {
-        periodYears: inputs.periodYears,
-        interestRatePercent: inputs.interestRatePercent,
-        energyEscalationPercent: inputs.energyEscalationPercent,
-        investmentEscalationPercent: inputs.investmentEscalationPercent,
-      },
-      economicsResult: selected.economics.available ? {
-        totalPresentValueEur: selected.economics.result.totalPresentValue,
-        annuityEurA: selected.economics.result.annuity,
-        amortisationYears: selected.economics.paybackYears,
-      } : null,
-      co2Effect: { annualKg: selected.co2SavingsKgA, factorKgKwh: inputs.emissionFactorKgKwh },
-      comfortEffect: { existingSurfaceTemperatureC: oldSurface, renovatedSurfaceTemperatureC: newSurface },
-      comments: '',
-      sourceVersions: {
-        measureCore: measureCore.MODEL_VERSION,
-        economicsCore: economicsCore.MODEL_VERSION,
-        targets: targetsConfig?.version ?? null,
-        costs: costConfig?.version ?? null,
-      },
-      displayRounding: clone(financeConfig?.rounding ?? {}),
-      updatedAt: new Date().toISOString(),
-    };
+      reviewStatus: 'reviewed-in-tool',
+      autoGenerated: false,
+    });
+    if (!measure) return;
     store.setPath(`measures.${measureId}`, measure);
     $('saveMeasureStatus').textContent = 'Maßnahme wurde im gemeinsamen Projekt gespeichert.';
     global.setTimeout(() => { $('saveMeasureStatus').textContent = ''; }, 4000);
@@ -1892,6 +2332,7 @@
     }));
     $('calculateClimate').addEventListener('click', calculateClimate);
     $('saveMeasure').addEventListener('click', saveMeasure);
+    $('generateAutoPackages').addEventListener('click', createAutomaticPackages);
     $('energyCarrierSelect').addEventListener('change', () => {
       const defaults = carrierDefaults($('energyCarrierSelect').value);
       if (defaults.price !== null) setInput('energyPriceEurKwh', defaults.price, 3);

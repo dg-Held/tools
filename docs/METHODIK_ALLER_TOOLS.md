@@ -108,6 +108,8 @@ Der gemessene Verbrauch bleibt die Grundlage der sichtbaren Energiebilanz. U-Wer
 
 Der rechnerische Heizenergieverbrauch steht direkt beim Hüllvergleich. Der Klimastatus zeigt, ob der Vergleich noch berechnet oder mit dem vorhandenen Klimazeitraum aktualisiert wurde. Rechenweg, Annahmen, Datenherkunft und Grenzen stehen vollständig unter „Methode und Datenbasis“.
 
+Als Stand-alone-Tool trennt Energiefluss bewusst zwei Schritte: „Standort analysieren“ ermittelt die Gebäudegeometrie, „Klimawerte berechnen“ ergänzt die standortbezogene Grundlage für den unabhängigen U-Wert-/Hüllvergleich. Die verbrauchsbasierte Bilanz selbst aktualisiert sich direkt und benötigt keinen dritten allgemeinen Berechnen-Knopf.
+
 Der Fensterflächenanteil ist im Energiefluss als gemeinsamer Regler von 10 bis 50 % sichtbar. Er bezieht sich auf die Brutto-Außenwand und führt – solange keine bewusst bestätigte Fensterfläche Vorrang hat – Fensterfläche, opake Außenwand und solare Gewinne gemeinsam nach. Beim bewussten Ändern des Reglers werden ältere manuelle Fenster-/opake Wandflächen verworfen, damit die neue Verhältnisannahme wirksam wird. Eine anschließend direkt eingegebene Fensterfläche wird wieder als genauerer Projektwert gespeichert.
 
 ## Bauteil & Sanierung
@@ -124,6 +126,8 @@ Der normale Beratungsweg benötigt nur wenige sichtbare Prüfschritte:
 Aus der gemeinsamen Gebäudegeometrie werden die Bauteilflächen übernommen. Aus einem bekannten Baujahr werden für alle unterstützten Bauteile Bauperioden-U-Werte als Vorschläge hinterlegt. Damit sind Außenwand, oberste Geschoßdecke, Dach, Kellerdecke/Boden, Fenster und Außentür grundsätzlich vorbereitet, ohne jedes Bauteil zuerst einzeln öffnen zu müssen. Tatsächliche Bauteilaufbauten, frühere Sanierungen und bekannte Flächen haben immer Vorrang.
 
 NFL und Baujahr allein ersetzen keine Geometrie: Für Außenwand, Fenster, Dach und Geschossflächen werden zusätzlich TIRIS-Geometrie oder bekannte manuelle Gebäudegrößen benötigt. Ist der Standort bereits im Projekt analysiert, genügt in der Regel die Prüfung von Baujahr und NFL.
+
+Auch Bauteil & Sanierung ist stand-alone nutzbar: „Standort analysieren“ lädt die Geometrie. Ein eigener Klimaschritt wird nur benötigt, wenn weder kalibrierte Energieflussverluste noch geeignete Klimakennwerte im Projekt vorliegen. Technische Bauteilvarianten reagieren anschließend unmittelbar; nur die automatische Paketbildung ist als bewusster eigener Speicherschritt ausgeführt.
 
 ### Opake Bauteile
 
@@ -171,6 +175,53 @@ Getrennt dargestellt werden:
 - dynamische Amortisation.
 
 Kostenoptimum und kürzeste Amortisation verfolgen unterschiedliche Ziele und können bei verschiedenen Varianten liegen.
+
+Vollständige im Tool verwendete dynamische Rechenlogik (kein Ersatz für den vollständigen Normtext):
+
+```text
+p = 1 + Preisänderung / 100
+q = 1 + Zinssatz / 100
+B_a = K_a × (p / q)^a
+
+r = p / q
+B_jährlich = K × r × (1 − r^T) / (1 − r)
+bei r = 1: B_jährlich = K × T
+
+B_Ersatz = Σ K_E × (p_K / q)^(n × L)       für n × L < T
+f = (T mod L) / L
+B_Entsorgung = Σ K_D × (p_D / q)^(n × L)     für n × L ≤ T
+                + K_D × f × (p_D / q)^T       bei angebrochenem letzten Lebenszyklus
+B_Restwert = K_letzte × (1 − f) × (p_K / q)^T
+bei exaktem Lebensdauerende: B_Restwert = 0
+
+B_Kapital = K_0 + B_Ersatz + B_Entsorgung − B_Restwert
+B_Gesamt = B_Kapital + B_Verbrauch + B_Betrieb
+A = B_Gesamt × (q − 1) / (1 − q^(−T))
+bei q = 1: A = B_Gesamt / T
+```
+
+Ersatzinvestitionen werden an den Vielfachen der Nutzungsdauer innerhalb des Betrachtungszeitraums angesetzt. Entsorgung wird an den Lebensdauerenden und bei einem angebrochenen letzten Lebenszyklus anteilig am Periodenende berücksichtigt. Der Restwert ist der abgezinste, noch nicht verbrauchte Anteil der letzten Investition. Die dynamische Amortisation ist die erste Nullstelle der abgezinsten Kostendifferenz zwischen Variante und Referenz; zwischen zwei Jahreswerten wird linear interpoliert. Förderung wird separat in der Eigeninvestitionsbrücke ausgewiesen und verändert das technische Kostenoptimum nicht.
+
+Ergänzende analytische Orientierung für geeignete opake Außenbauteile:
+
+```text
+d_opt = λ × [√(HGT22/14 × 24 × c_N × F / (λ × 1.000 × c_V)) − R_0]
+d_opt = max(d_opt, 0)
+```
+
+Die Formel ersetzt nicht den vollständigen Variantenvergleich und gilt nicht für erdberührte Bauteile.
+
+### Automatische Maßnahmenpakete
+
+Über einen eigenen, sichtbaren Schritt werden alle ausreichend vorbereiteten Bauteile gemeinsam ausgewertet. Je Bauteil entstehen – soweit die Datengrundlage reicht – Entwürfe für:
+
+- empfohlenen Mindeststandard,
+- wirtschaftliche Variante,
+- ambitionierte Variante.
+
+Die Vorschläge werden unter `measures.auto-envelope-*` gespeichert. Drei Szenarien unter `scenarios.items.envelope-package-*` bündeln die jeweiligen Maßnahmentypen für das spätere Wirtschaftlichkeitstool. Automatisch erzeugte Einträge tragen `status = automatic-proposal` und `reviewStatus = not-reviewed`; vorhandene manuell gespeicherte Maßnahmen werden nicht überschrieben. Ändern sich Flächen, U-Werte, Klima-, Kosten- oder Finanzgrundlagen, markiert ein Fingerprint die Pakete als veraltet.
+
+Technische Mindest- und ambitionierte Vorschläge können ohne Kostenrechnung entstehen. Für eine wirtschaftliche Variante werden zusätzlich Energiegrundlage, Kostenmodell, Nutzungsdauer, Energiepreis und Finanzannahmen benötigt.
 
 ### Komfort
 

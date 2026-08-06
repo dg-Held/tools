@@ -200,15 +200,16 @@ Status: funktional abgeschlossen; Vereinfachungs- und Konsistenzschleife umgeset
 - ruhiger Ergebnisbereich mit HWB aus Verbrauch, korrigiertem HWB, HWB aus U-Werten und Abweichung,
 - rechnerischer Heizenergieverbrauch steht direkt beim unabhängigen Hüllvergleich,
 - sichtbarer Klimastatus unterscheidet fehlende, berechnete und aktualisierbare Klimagrundlage,
+- Stand-alone-Ablauf: „Standort analysieren“ lädt die Geometrie; „Klimawerte berechnen“ ergänzt nur den unabhängigen Hüllvergleich. Verbrauchsbilanz und sichtbare Ergebnisse reagieren ohne zusätzlichen allgemeinen Berechnen-Knopf auf Eingabeänderungen,
 - Bestands-U-Werte und Hüllflächen bleiben prüf- und überschreibbar; das Baujahr dient nur bei tatsächlicher Angabe als Fallback,
 - direkte Übergänge zu Standortpass, Klima, Heizlast sowie Bauteil & Sanierung neben Drucken/PDF,
 - vollständige Rechenwege, Datenbasis, Annahmen und Grenzen im gemeinsamen Methodenbereich,
 - sichtbare Flächenrundung: Fenster 5 m², übrige Hüllflächen 10 m²,
 - direkte Übergabe an Bauteil & Sanierung.
 
-### Bauteil & Sanierung V0.7
+### Bauteil & Sanierung V0.8
 
-Status: Vereinfachungsschleife umgesetzt; praktische V1.0-Prüfung noch offen.
+Status: Vereinfachungsschleife und automatische Maßnahmenpakete umgesetzt; praktische V1.0-Prüfung noch offen.
 
 Dämmmaßnahmen:
 
@@ -226,6 +227,7 @@ Austauschmaßnahmen:
 Funktionen:
 
 - an Klima, Heizlast und Energiefluss angeglichener Adress- und Geometrieeinstieg mit bewusstem Analysebutton,
+- Stand-alone-Ablauf: Der Analysebutton lädt die Geometrie. Klima wird nur nachgeladen, wenn weder ein kalibrierter Energiefluss noch ausreichende Klimakennwerte vorhanden sind; die Bauteilrechnung reagiert anschließend direkt auf Eingaben,
 - kompakte Projektbasis aus Baujahr/Baubewilligung und Nutzfläche (NFL),
 - Baujahr legt U-Wert-Vorschläge für alle unterstützten Bauteile vor, nicht nur für das gerade geöffnete Bauteil,
 - gemeinsame Geometrie liefert die Bauteilflächen; abweichende Werte bleiben überschreibbar,
@@ -238,7 +240,11 @@ Funktionen:
 - vereinheitlichte Kostenkarten mit i-Hinweisen, eingeklappte Kosten-/Finanzannahmen und drei offen sichtbare Förderpositionen,
 - Infografik „Sanierung auf einen Blick“,
 - eigene SVGs mit Fallback,
-- gemeinsame Projektmaßnahme.
+- gemeinsame Projektmaßnahme,
+- automatische Auswertung aller ausreichend vorbereiteten Bauteile,
+- drei gespeicherte Hüllpakete für Mindeststandard, wirtschaftliche Variante und ambitionierte Variante,
+- automatische Vorschläge bleiben mit `automatic-proposal / not-reviewed` klar von bestätigten Maßnahmen getrennt,
+- Fingerprint markiert Pakete nach Änderungen an Geometrie, U-Werten, Klima, Kosten oder Finanzannahmen als veraltet.
 
 Haustür:
 
@@ -324,7 +330,7 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 
 ## 9. Nächste Schritte
 
-1. V0.7 praktisch mit typischen Beratungsfällen testen und anschließend Bauteil & Sanierung als V1.0 freigeben.
+1. V0.8 einschließlich automatischer Maßnahmenpakete mit typischen Beratungsfällen testen und anschließend Bauteil & Sanierung als V1.0 freigeben.
 2. Master-Excel vervollständigen und Excel→JSON-Export umsetzen.
 3. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen.
 4. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren.

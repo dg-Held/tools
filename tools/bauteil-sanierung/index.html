@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Bauteil &amp; Sanierung | Tools für Energieberatung</title>
+<title>Bauteil &amp; Sanierung V0.8 | Tools für Energieberatung</title>
 <meta content="Dämmstandard, Wirtschaftlichkeit, CO₂ und Wohnkomfort für einzelne Bauteile überschlägig vergleichen." name="description"/>
 <link href="../../styles.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/components.css?v=3" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="bauteil-sanierung.css?v=7" rel="stylesheet"/>
+<link href="bauteil-sanierung.css?v=8" rel="stylesheet"/>
 </head>
 <body data-tool-mode="envelope-renovation">
 <header class="site-header no-print">
@@ -210,6 +210,32 @@
 </div>
 </article>
 
+<article class="ren-card ren-card--packages">
+<div class="section-heading">
+<div><p class="eyebrow">4 · Maßnahmenpakete</p><h2>Automatische Vorschläge für die Gebäudehülle</h2></div>
+<span class="status-chip" id="autoPackageStatus">Noch nicht erstellt</span>
+</div>
+<p class="section-note">Alle ausreichend vorbereiteten Bauteile werden gemeinsam ausgewertet. Die Vorschläge bleiben als „noch nicht geprüft“ gekennzeichnet und können später im Wirtschaftlichkeitstool als Pakete verglichen werden.</p>
+<div class="auto-package-summary">
+<div><span>Vorbereitete Bauteile</span><strong id="autoPreparedValue">0 von 7</strong><small id="autoPreparedNote">Baujahr, Geometrie und U-Werte werden geprüft.</small></div>
+<div><span>Automatische Vorschläge</span><strong id="autoProposalValue">0</strong><small>Mindeststandard, wirtschaftlich und ambitioniert</small></div>
+<div><span>Paketstatus</span><strong id="autoPackageValue">–</strong><small id="autoPackageNote">Noch keine Pakete im Projekt gespeichert.</small></div>
+</div>
+<div class="auto-package-actions">
+<button class="primary-button" id="generateAutoPackages" type="button">Vorschläge erstellen</button>
+<p id="autoPackageActionNote">Technische Vorschläge sind auch ohne Kostenrechnung möglich; für das wirtschaftliche Paket werden Energie- und Kostengrundlagen benötigt.</p>
+</div>
+<div class="auto-package-pills" aria-label="Automatische Maßnahmenpakete">
+<span><strong id="autoRecommendedCount">0</strong> Mindeststandard</span>
+<span><strong id="autoEconomicCount">0</strong> wirtschaftlich</span>
+<span><strong id="autoAmbitiousCount">0</strong> ambitioniert</span>
+</div>
+<details class="auto-package-details">
+<summary>Vorschläge je Bauteil ansehen</summary>
+<div class="auto-package-table-wrap"><table><thead><tr><th>Bauteil</th><th>Grundlage</th><th>Mindeststandard</th><th>Wirtschaftlich</th><th>Ambitioniert</th></tr></thead><tbody id="autoPackageDetailsBody"></tbody></table></div>
+</details>
+</article>
+
 <article class="ren-card ren-card--table">
 <details id="variantsComparisonDetails">
 <summary>Alle Varianten vergleichen</summary>
@@ -234,10 +260,17 @@
 <div><h3>Energieeinsparung</h3><p>Vorrangig wird der im Energiefluss kalibrierte Bauteilverlust proportional zum Verhältnis der U-Werte reduziert. Ohne Energiefluss wird überschlägig mit <code>A × ΔU × Heizgradstunden</code> gerechnet.</p></div>
 <div><h3>Rundung und Darstellung</h3><p>Intern wird mit voller Rechengenauigkeit gearbeitet. Angezeigt werden bewusst gerundete Dämmdicken, U-Werte, Richtpreise und Summen, damit keine Scheingenauigkeit entsteht.</p></div>
 <div><h3>Empfohlener Mindeststandard</h3><p>Der empfohlene Mindeststandard ist die untere Grenze der fachlichen Beratungsempfehlung – kein gesetzlicher Mindestwert. Ambitionierte oder wirtschaftlich günstigere Varianten können darüber hinausgehen.</p></div>
-<div><h3>Wirtschaftlichkeit</h3><p>Varianten werden mit Barwerten, Annuitäten und dynamischer Amortisation verglichen. Automatisch geladene Richtwerte und Finanzannahmen bleiben aufklappbar und projektspezifisch überschreibbar.</p></div>
-<div><h3>Sowiesokosten</h3><p>Bei ohnehin anstehender Erneuerung wird eine passende Referenzvariante angesetzt. Bei Fenstern ist das der Basis-Austausch; höhere Qualitätsstufen werden wirtschaftlich gegenüber dieser ohnehin erforderlichen Variante verglichen.</p></div>
-<div><h3>Kostenoptimum</h3><p>Das technische Kostenoptimum ist die Variante mit den geringsten Gesamtkosten über den Betrachtungszeitraum – ohne Förderung. Der wirtschaftliche Bereich umfasst Varianten nahe diesem Minimum.</p></div>
-<div><h3>Analytisches Optimum</h3><p>Die vereinfachte optimale Dämmdicke nach Anhang B der ÖNORM B 8110-4 ist nur ergänzende Orientierung für opake Bauteile gegen Außenluft und ersetzt nicht den vollständigen Variantenvergleich.</p></div>
+<div><h3>Wirtschaftlichkeit und Normbezug</h3><p>Aufgeführt sind alle Formeln, die dieses Tool für den dynamischen Variantenvergleich verwendet. Der Rechenkern orientiert sich an der ÖNORM B 8110-4:2024-04-15 und wurde mit den zugehörigen Validierungsfällen geprüft. Der vollständige Normtext wird dadurch nicht ersetzt. Richtwerte und Finanzannahmen bleiben projektspezifisch überschreibbar; Förderung wird separat ausgewiesen und verändert das technische Kostenoptimum nicht.</p></div>
+<div><h3>Preis- und Zinsfaktoren</h3><p><code>p = 1 + s/100</code> und <code>q = 1 + i/100</code>. Dabei ist <code>s</code> die jährliche Preisänderung und <code>i</code> der kalkulatorische Zinssatz. Für eine Zahlung <code>K<sub>a</sub></code> im Jahr <code>a</code> gilt <code>B<sub>a</sub> = K<sub>a</sub> × (p/q)<sup>a</sup></code>.</p></div>
+<div><h3>Jährlich wiederkehrende Kosten</h3><p>Mit <code>r = p/q</code> und dem Betrachtungszeitraum <code>T</code> gilt <code>B<sub>jährlich</sub> = K × r × (1 − r<sup>T</sup>) / (1 − r)</code>. Für <code>r = 1</code> wird <code>B<sub>jährlich</sub> = K × T</code> verwendet. Laufende Kosten werden jeweils am Jahresende angesetzt.</p></div>
+<div><h3>Investition und Ersatz</h3><p><code>B<sub>Ersatz</sub> = Σ K<sub>E</sub> × (p<sub>K</sub>/q)<sup>nL</sup></code> für <code>nL &lt; T</code>. Dabei sind <code>L</code> die Nutzungsdauer, <code>T</code> der Betrachtungszeitraum und <code>p<sub>K</sub></code> der Preisfaktor der Investition. Zusammen gilt <code>B<sub>Kapital</sub> = K<sub>0</sub> + B<sub>Ersatz</sub> + B<sub>Entsorgung</sub> − B<sub>Restwert</sub></code>.</p></div>
+<div><h3>Entsorgung und Restwert</h3><p>Vollständige Entsorgungen werden mit <code>Σ K<sub>D</sub> × (p<sub>D</sub>/q)<sup>nL</sup></code> für <code>nL ≤ T</code> angesetzt. Für einen angebrochenen letzten Lebenszyklus kommt am Periodenende <code>K<sub>D</sub> × f × (p<sub>D</sub>/q)<sup>T</sup></code> mit <code>f = (T mod L)/L</code> hinzu. Der Restwert lautet <code>B<sub>Restwert</sub> = K<sub>letzte</sub> × (1 − f) × (p<sub>K</sub>/q)<sup>T</sup></code>; bei einem exakten Lebensdauerende ist er 0.</p></div>
+<div><h3>Gesamtkosten und Annuität</h3><p><code>B<sub>gesamt</sub> = B<sub>Kapital</sub> + B<sub>Verbrauch</sub> + B<sub>Betrieb</sub></code>. Die jährliche Annuität lautet bei <code>q ≠ 1</code>: <code>A = B<sub>gesamt</sub> × (q − 1) / (1 − q<sup>−T</sup>)</code>; bei <code>q = 1</code>: <code>A = B<sub>gesamt</sub> / T</code>.</p></div>
+<div><h3>Amortisation</h3><p>Die dynamische Amortisationsdauer ist der erste Zeitpunkt, an dem die abgezinste Kostendifferenz <code>B<sub>Variante</sub>(t) − B<sub>Referenz</sub>(t)</code> von positiv auf null oder negativ wechselt. Zwischen zwei Jahreswerten wird linear interpoliert. Eine spätere erneute Überschreitung wird als Deamortisation dokumentiert.</p></div>
+<div><h3>Sowiesokosten</h3><p>Bei ohnehin anstehender Erneuerung wird eine vergleichbare Referenzvariante angesetzt. Bei Fenstern ist das der Basis-Austausch; höhere Qualitätsstufen werden gegenüber dieser ohnehin erforderlichen Variante verglichen. Die Kostenbrücke zeigt Vollkosten, Sowiesokosten, energetische Mehrkosten, bestätigte Förderung und verbleibende Eigeninvestition getrennt.</p></div>
+<div><h3>Kostenoptimum</h3><p>Das technische Kostenoptimum ist die Variante mit den geringsten Gesamtkosten über den Betrachtungszeitraum – ohne Förderung. Der wirtschaftliche Bereich umfasst Varianten mit höchstens 5 % Mehrkosten gegenüber diesem Minimum.</p></div>
+<div><h3>Analytisches Optimum</h3><p>Für geeignete opake Bauteile gegen Außenluft wird ergänzend <code>d<sub>opt</sub> = λ × [√(HGT<sub>22/14</sub> × 24 × c<sub>N</sub> × F / (λ × 1.000 × c<sub>V</sub>)) − R<sub>0</sub>]</code> berechnet; negative Ergebnisse werden auf 0 gesetzt. <code>F</code> ist der Barwertfaktor der Energiepreise. Die Formel berücksichtigt unter anderem keine Förderung, Instandhaltung, Entsorgung oder Geometrieänderung und bestimmt daher nicht allein die Empfehlung.</p></div>
+<div><h3>Automatische Maßnahmenpakete</h3><p>Für jedes ausreichend vorbereitete Bauteil werden Entwürfe für Mindeststandard, wirtschaftliche Variante und ambitionierte Variante erzeugt. Alle automatisch erzeugten Maßnahmen und Pakete erhalten den Status „noch nicht geprüft“. Fehlende Flächen, U-Werte, Energie- oder Kostengrundlagen werden bauteilweise ausgewiesen; vorhandene manuell gespeicherte Maßnahmen werden nicht überschrieben.</p></div>
 <div><h3>Behaglichkeit</h3><p>Die innere Oberflächentemperatur wird überschlägig aus U-Wert, Innen-/Grenztemperatur und innerem Wärmeübergangswiderstand ermittelt. Wärmebrücken und Anschlussdetails sind separat zu prüfen.</p></div>
 <div><h3>Aussagegrenzen</h3><p>Beratungshilfe, kein Energieausweis, keine Ausführungsplanung und keine Rechts- oder Förderauskunft. Kosten-, Förder- und Emissionsdaten müssen mit Datenstand und Quelle gepflegt beziehungsweise projektbezogen bestätigt werden.</p></div>
 </div>
@@ -252,7 +285,7 @@
 <button class="secondary-button" id="printRenovationBottomButton" type="button">Drucken / PDF</button>
 </section>
 </main>
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.7 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Bauteil &amp; Sanierung V0.8 · gemeinsame Projekt- und Maßnahmenbasis</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
 <script src="../../shared/js/data-model.js?v=2"></script>
@@ -273,6 +306,6 @@
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=1"></script>
 <script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=5"></script>
-<script src="bauteil-sanierung.js?v=8"></script>
+<script src="bauteil-sanierung.js?v=9"></script>
 </body>
 </html>
