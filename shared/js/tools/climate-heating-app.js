@@ -90,6 +90,8 @@ const state = {
   busy: false,
   heatingLimitSuggestionC: 15,
   heatingLimitManual: false,
+  buildingConditionSuggestion: 'teilsanierter_bestand',
+  buildingConditionManual: false,
 };
 
 const projectStore = window.EnergyToolsProjectStore ?? null;
@@ -197,6 +199,13 @@ function syncSharedManualLocation(location) {
 }
 
 const HEATING_LIMIT_PATH = 'systems.heating.heatingLimitTemperature';
+const BUILDING_CONDITION_PATH = 'building.thermal.condition';
+const BUILDING_CONDITION_LABELS = Object.freeze({
+  unsanierter_altbau: 'Unsanierter Altbau',
+  teilsanierter_bestand: 'Teilsanierter Bestand',
+  sanierter_bestand: 'Sanierter Bestand',
+  neuerer_standard: 'Neuerer Standard / Neubau',
+});
 
 function heatingLimitInfo(project = projectStore?.get()) {
   const field = project?.systems?.heating?.heatingLimitTemperature;
@@ -206,6 +215,105 @@ function heatingLimitInfo(project = projectStore?.get()) {
     automaticValue: null,
     isManual: false,
   };
+}
+
+function buildingConditionInfo(project = projectStore?.get()) {
+  const field = project?.building?.thermal?.condition;
+  return projectValueResolver?.describe(field) ?? {
+    value: null,
+    manualValue: null,
+    automaticValue: null,
+    isManual: false,
+  };
+}
+
+function conditionFromHwb(value) {
+  const hwb = Number(value);
+  if (!Number.isFinite(hwb) || hwb < 0) return 'teilsanierter_bestand';
+  if (hwb > 150) return 'unsanierter_altbau';
+  if (hwb >= 90) return 'teilsanierter_bestand';
+  if (hwb >= 45) return 'sanierter_bestand';
+  return 'neuerer_standard';
+}
+
+function consumptionHwbForCondition(inputs) {
+  const roomHeatKwh = Math.max(
+    Number(inputs?.annualConsumptionKwh || 0) * Number(inputs?.usefulHeatFactor || 0)
+      - (inputs?.hotWaterIncluded ? Number(inputs?.persons || 0) * 1000 : 0),
+    0
+  );
+  const project = projectStore?.get();
+  const savedBgf = Number(sharedValue(project?.building?.geometry?.grossFloorArea));
+  const inputBgf = Number(inputs?.bgfM2);
+  const heatedArea = Math.max(Number(inputs?.heatedAreaM2) || 0, 0);
+  const bgfM2 = inputBgf > 0
+    ? inputBgf
+    : savedBgf > 0
+      ? savedBgf
+      : heatedArea > 0
+        ? heatedArea / 0.8
+        : 0;
+  if (!(roomHeatKwh >= 0) || !(bgfM2 > 0)) return null;
+
+  const indoorTemperatureC = Number(
+    sharedValue(project?.building?.thermal?.indoorTemperature) ?? 20
+  );
+  const heatedSharePercent = Number(
+    sharedValue(project?.building?.thermal?.heatedSharePercent) ?? 100
+  );
+  const roomCorrection = 1 + ((indoorTemperatureC - 20) * 0.06);
+  const heatedAreaCorrection = 1 + ((heatedSharePercent - 100) * 0.005);
+  if (!(roomCorrection > 0) || !(heatedAreaCorrection > 0)) return null;
+
+  return {
+    hwbKwhM2a: roomHeatKwh / bgfM2 / roomCorrection / heatedAreaCorrection,
+    bgfM2,
+    bgfSource: inputBgf > 0 || savedBgf > 0
+      ? 'vorhandene Bruttogeschoßfläche'
+      : 'BGF-Fallback aus beheizter Nutzfläche ÷ 0,8',
+    indoorTemperatureC,
+    heatedSharePercent,
+  };
+}
+
+function buildingConditionSuggestionFromInputs(inputs) {
+  const estimate = consumptionHwbForCondition(inputs);
+  const hwb = estimate?.hwbKwhM2a;
+  const id = conditionFromHwb(hwb);
+  return {
+    id,
+    label: BUILDING_CONDITION_LABELS[id],
+    hwbKwhM2a: Number.isFinite(hwb) ? hwb : null,
+    basis: estimate?.bgfSource ?? 'Fallback ohne verwertbare Verbrauchs- und Flächenangaben',
+  };
+}
+
+function syncBuildingConditionCandidates(suggestion) {
+  if (!projectStore || projectHydrating || IS_CLIMATE_TOOL || !suggestion) return;
+  projectStore.setFieldCandidates([
+    {
+      path: BUILDING_CONDITION_PATH,
+      origin: projectModel.ORIGIN.FALLBACK,
+      value: 'teilsanierter_bestand',
+      options: {
+        source: 'Heizlast Standardannahme',
+        method: 'Fallback ohne verwertbaren Verbrauchs-HWB',
+      },
+    },
+    {
+      path: BUILDING_CONDITION_PATH,
+      origin: projectModel.ORIGIN.DERIVED,
+      value: suggestion.id,
+      options: {
+        source: 'Heizlast',
+        method: 'Vorschlag aus verbrauchsbasiertem HWB mit Standardkorrekturen',
+        quality: 'Beratungsvorschlag',
+        note: suggestion.hwbKwhM2a !== null
+          ? `${suggestion.hwbKwhM2a.toFixed(1)} kWh/m²a · ${suggestion.basis}`
+          : suggestion.basis,
+      },
+    },
+  ]);
 }
 
 function specificRoomHeatFromInputs(inputs) {
@@ -296,7 +404,6 @@ function syncSharedInputs() {
     { path: 'systems.heating.hotWaterIncluded', origin: manual, value: inputs.hotWaterIncluded, options: { source: 'Heizlast' } },
     { path: 'usage.household.persons', origin: manual, value: inputs.persons, options: { unit: 'Personen', source: 'Heizlast' } },
     { path: 'building.geometry.heatedFloorArea', origin: manual, value: inputs.heatedAreaM2, options: { unit: 'm²', source: 'Heizlast' } },
-    { path: 'building.thermal.condition', origin: manual, value: inputs.buildingCondition, options: { source: 'Heizlast' } },
     { path: 'systems.heating.installedMaximum', origin: manual, value: inputs.installedMaximumKw, options: { unit: 'kW', source: 'Heizlast' } },
     { path: 'systems.heating.installedMinimum', origin: manual, value: inputs.installedMinimumKw, options: { unit: 'kW', source: 'Heizlast' } },
     { path: 'building.thermal.independentHwb', origin: manual, value: inputs.hwbKwhM2a, options: { unit: 'kWh/m²a', source: 'Heizlast' } },
@@ -371,7 +478,8 @@ function restoreSharedInputs(project) {
   const annualConsumption = sharedValue(project?.consumption?.heating?.annualEnergy);
   const usefulHeatFactor = sharedValue(project?.systems?.heating?.usefulHeatFactor);
   const hotWaterIncluded = sharedValue(project?.systems?.heating?.hotWaterIncluded);
-  const buildingCondition = sharedValue(project?.building?.thermal?.condition);
+  const conditionInfo = buildingConditionInfo(project);
+  const buildingCondition = conditionInfo.value;
   const installedMaximum = sharedValue(project?.systems?.heating?.installedMaximum);
   const installedMinimum = sharedValue(project?.systems?.heating?.installedMinimum);
   const hwb = sharedValue(project?.building?.thermal?.independentHwb);
@@ -399,6 +507,7 @@ function restoreSharedInputs(project) {
       elements.heatingLimitTemperature.value = '15';
       state.heatingLimitManual = false;
     }
+    state.buildingConditionManual = false;
     return;
   }
 
@@ -422,6 +531,7 @@ function restoreSharedInputs(project) {
   const condition = buildingCondition ?? legacyInputs.buildingCondition;
   if (condition) elements.buildingCondition.value = condition;
   state.heatingLimitManual = Boolean(limitInfo.isManual);
+  state.buildingConditionManual = Boolean(conditionInfo.isManual);
 }
 function hydrateSharedProject(project = projectStore?.get()) {
   if (!projectStore || !project) return;
@@ -487,6 +597,7 @@ const elements = {
   resultTitle: document.getElementById('resultTitle'),
   resultSubtitle: document.getElementById('resultSubtitle'),
   dataQualitySummary: document.getElementById('dataQualitySummary'),
+  climateAdvisory: document.getElementById('climateAdvisory'),
   locationCheckCard: document.getElementById('locationCheckCard'),
   locationFacts: document.getElementById('locationFacts'),
   heightAssessment: document.getElementById('heightAssessment'),
@@ -504,6 +615,8 @@ const elements = {
   persons: document.getElementById('persons'),
   heatedArea: document.getElementById('heatedArea'),
   buildingCondition: document.getElementById('buildingCondition'),
+  buildingConditionSuggestion: document.getElementById('buildingConditionSuggestion'),
+  useBuildingConditionSuggestion: document.getElementById('useBuildingConditionSuggestion'),
   installedMaximum: document.getElementById('installedMaximum'),
   installedMinimum: document.getElementById('installedMinimum'),
   heatingLimitTemperature: document.getElementById('heatingLimitTemperature'),
@@ -2037,6 +2150,40 @@ function renderMetrics(result) {
 }
 
 
+function renderClimateAdvisory(result) {
+  if (!elements.climateAdvisory) return;
+  const metrics = result?.metrics ?? {};
+  const fullLoadHours = Number(metrics.average_full_load_hours);
+  const hotDays = Number(metrics.average_hot_days);
+  const tropicalNights = Number(metrics.average_tropical_nights);
+  const coldHours = Number(metrics.average_hours_below_minus_10);
+
+  let climateLabel = 'mittlere klimatische Heizbeanspruchung';
+  let climateText = 'Die Klimagrundlage liegt im mittleren Bereich der vereinfachten Tiroler Standortorientierung.';
+  if (Number.isFinite(fullLoadHours) && fullLoadHours < 1800) {
+    climateLabel = 'vergleichsweise milder Standort';
+    climateText = 'Die klimatischen Vollbenutzungsstunden fallen vergleichsweise niedrig aus; die tatsächliche Anlagenleistung hängt dennoch wesentlich von Gebäudehülle und Nutzung ab.';
+  } else if (Number.isFinite(fullLoadHours) && fullLoadHours > 2400) {
+    climateLabel = 'erhöhte klimatische Heizbeanspruchung';
+    climateText = 'Die hohen klimatischen Vollbenutzungsstunden sprechen für eine sorgfältige Abstimmung von Gebäudehülle, Wärmeabgabe und Wärmeerzeuger.';
+  }
+
+  const additions = [];
+  if (Number.isFinite(coldHours) && coldHours >= 100) {
+    additions.push('Längere sehr kalte Phasen sollten bei Leistungsreserve und Wärmeabgabe mitgedacht werden.');
+  }
+  if ((Number.isFinite(hotDays) && hotDays >= 10) || (Number.isFinite(tropicalNights) && tropicalNights >= 2)) {
+    additions.push('Der sommerliche Wärmeschutz ist wegen der ausgewiesenen Hitze- beziehungsweise Tropennachtbelastung ebenfalls beratungsrelevant.');
+  }
+
+  elements.climateAdvisory.innerHTML = `
+    <div>
+      <span class="climate-advisory__label">Beratungsimpuls</span>
+      <strong>${climateLabel}</strong>
+    </div>
+    <p>${climateText}${additions.length ? ` ${additions.join(' ')}` : ''}</p>`;
+}
+
 function signedMeters(value) {
   if (!Number.isFinite(value)) return '–';
   const sign = value > 0 ? '+' : '';
@@ -2051,9 +2198,8 @@ function elevationLabel(value) {
 function locationFact(label, value, note = '') {
   return `
     <div>
-      <dt>${label}</dt>
+      <dt><span>${label}</span>${infoTip(note)}</dt>
       <dd>${value}</dd>
-      ${note ? `<small>${note}</small>` : ''}
     </div>`;
 }
 
@@ -2068,7 +2214,7 @@ function renderLocationCheck(result) {
     check.height_assessment ??
     LocationCore.classifyDifference(null);
 
-  elements.locationFacts.innerHTML = [
+  const facts = [
     locationFact(
       'Gebäudestandort',
       `${formatNumber(location.latitude, 5)}° N / ` +
@@ -2078,66 +2224,43 @@ function renderLocationCheck(result) {
     locationFact(
       'INCA-Rasterpunkt',
       `${formatNumber(location.grid_latitude, 5)}° N / ` +
-      `${formatNumber(location.grid_longitude, 5)}° E`
+      `${formatNumber(location.grid_longitude, 5)}° E · ${elevationLabel(gridElevation)}`,
+      'Nächstgelegener verwendeter INCA-Rasterpunkt mit Geländehöhe.'
     ),
     locationFact(
       'OIB-NAT-Referenz',
       `${formatNumber(location.nat_c, 1)} °C ` +
-      `bei ${formatNumber(
-        location.nat_reference_height_m
-      )} m`,
+      `bei ${formatNumber(location.nat_reference_height_m)} m`,
       location.kg_name
         ? `KG ${location.kg_name} · ${location.kg_number} · Region ${location.climate_region}`
         : 'manuell eingetragener Wert'
     ),
-    locationFact(
+    ...(!IS_HEATING_TOOL ? [locationFact(
       'TNAT,13',
       Number.isFinite(location.tnat13_c)
         ? `${formatNumber(location.tnat13_c, 1)} °C`
         : 'nicht eindeutig zugeordnet',
       Number.isFinite(location.tnat13_c)
         ? 'OIB April 2026 · Wert am ELEVmin'
-        : 'Bei mehreren KGNR erfolgt bewusst keine automatische Auswahl.'
-    ),
+        : 'Bei mehreren Katastralgemeinden erfolgt bewusst keine automatische Auswahl.'
+    )] : []),
     locationFact(
       'Gebäudehöhe',
       elevationLabel(buildingElevation),
       'TIRIS-DGM am Gebäudestandort'
     ),
     locationFact(
-      'INCA-Rasterhöhe',
-      elevationLabel(gridElevation),
-      'TIRIS-DGM am verwendeten Klimarasterpunkt'
-    ),
-    locationFact(
       'Höhendifferenz Gebäude / Raster',
-      signedMeters(
-        check.difference_building_grid_m
-      ),
-      'positiv = Gebäude liegt höher'
+      signedMeters(check.difference_building_grid_m),
+      'Positiv bedeutet: Das Gebäude liegt höher als der Klimarasterpunkt.'
     ),
     locationFact(
       'Gebäude / OIB-Referenzhöhe',
-      signedMeters(
-        check.difference_building_nat_reference_m
-      ),
-      'noch ohne automatische NAT-Höhenkorrektur'
+      signedMeters(check.difference_building_nat_reference_m),
+      'Die Differenz wird dokumentiert; es erfolgt noch keine automatische NAT-Höhenkorrektur.'
     ),
-    locationFact(
-      'KGNR aus BEV',
-      location.address?.cadastral_municipality_number
-        ? location.address.cadastral_municipality_number
-        : Array.isArray(
-            location.address?.cadastral_municipality_numbers
-          ) &&
-          location.address.cadastral_municipality_numbers.length > 1
-          ? location.address.cadastral_municipality_numbers.join(' / ')
-          : 'nicht verfügbar',
-      location.address?.cadastral_municipality_numbers?.length > 1
-        ? 'Adresse berührt mehrere Katastralgemeinden; verwendete KG wird nach Auswahl übernommen.'
-        : 'Direkte Zuordnung über ADRESSE_GST.csv'
-    ),
-  ].join('');
+  ];
+  elements.locationFacts.innerHTML = facts.join('');
 
   elements.heightAssessment.className =
     `height-assessment is-${assessment.level}`;
@@ -2796,6 +2919,40 @@ function renderHeatingChart(calculation) {
   elements.heatingChartWrap.replaceChildren(svg);
 }
 
+function updateBuildingConditionUi(inputs) {
+  if (IS_CLIMATE_TOOL || !elements.buildingCondition) return inputs;
+  const suggestion = buildingConditionSuggestionFromInputs({
+    annualConsumptionKwh: inputs.annual_consumption_kwh,
+    usefulHeatFactor: inputs.useful_heat_factor,
+    hotWaterIncluded: inputs.hot_water_included,
+    persons: inputs.persons,
+    heatedAreaM2: inputs.heated_area_m2,
+    bgfM2: inputs.bgf_m2,
+  });
+  state.buildingConditionSuggestion = suggestion.id;
+  syncBuildingConditionCandidates(suggestion);
+
+  const info = buildingConditionInfo();
+  state.buildingConditionManual = Boolean(info.isManual);
+  if (!state.buildingConditionManual) {
+    elements.buildingCondition.value = suggestion.id;
+    inputs.building_condition = suggestion.id;
+  }
+
+  if (elements.buildingConditionSuggestion) {
+    const basis = suggestion.hwbKwhM2a !== null
+      ? `${formatNumber(suggestion.hwbKwhM2a, 0)} kWh/m²a · ${suggestion.basis}`
+      : suggestion.basis;
+    elements.buildingConditionSuggestion.textContent = state.buildingConditionManual
+      ? `Manuell gewählt · automatischer Vorschlag: ${suggestion.label} (${basis}).`
+      : `Automatischer Vorschlag: ${suggestion.label} (${basis}).`;
+  }
+  if (elements.useBuildingConditionSuggestion) {
+    elements.useBuildingConditionSuggestion.hidden = !state.buildingConditionManual;
+  }
+  return inputs;
+}
+
 function updateHeatingLimitUi(inputs) {
   if (IS_CLIMATE_TOOL || !elements.heatingLimitTemperature) return inputs;
   const suggestionC = suggestedHeatingLimit({
@@ -2851,7 +3008,9 @@ function renderHeatingCalculation() {
     elements.hotWaterIncluded.value !== 'yes';
 
   try {
-    const heatingInputs = updateHeatingLimitUi(getHeatingInputs());
+    const heatingInputs = updateHeatingLimitUi(
+      updateBuildingConditionUi(getHeatingInputs())
+    );
     const calculation = HeatingCore.calculateHeatingLoad(
       state.currentResult,
       heatingInputs
@@ -3080,6 +3239,7 @@ function renderResult(result) {
   renderMetrics(result);
   renderDataQuality(result);
   renderChart(result);
+  renderClimateAdvisory(result);
   renderAnnualTable(result);
   renderComparison();
 
@@ -3090,7 +3250,7 @@ function renderResult(result) {
       <div><span>Klimazeitraum</span><strong>${START_YEAR}–${END_YEAR}</strong></div>
       <div><span>Geländehöhe</span><strong>${elevationLabel(result.location?.location_check?.building?.elevation_m)}</strong></div>
       <div><span>Datenbasis</span><strong>${validYears || '–'} vollständige Jahre</strong></div>
-      ${IS_HEATING_TOOL ? `<div><span>Heizgrenze</span><strong>${formatNumber(Number(elements.heatingLimitTemperature?.value ?? 15), 1)} °C</strong></div>` : ''}`;
+      `;
   }
 
   elements.heatingLoadCard.hidden = IS_CLIMATE_TOOL;
@@ -3102,8 +3262,18 @@ function renderResult(result) {
 function downloadJson() {
   if (!state.currentResult) return;
 
+  const payload = IS_HEATING_TOOL
+    ? {
+        schema: 'energy-tools-heating-export',
+        exportedAt: new Date().toISOString(),
+        climate: state.currentResult,
+        heating: state.heatingCalculation,
+        sharedProject: projectStore?.get() ?? null,
+      }
+    : state.currentResult;
+
   const blob = new Blob(
-    [JSON.stringify(state.currentResult, null, 2)],
+    [JSON.stringify(payload, null, 2)],
     { type: 'application/json' }
   );
 
@@ -3173,7 +3343,6 @@ async function runLocations(locations) {
   elements.hotWaterIncluded,
   elements.persons,
   elements.heatedArea,
-  elements.buildingCondition,
   elements.installedMaximum,
   elements.installedMinimum,
   elements.hwbValue,
@@ -3187,6 +3356,24 @@ async function runLocations(locations) {
     renderHeatingCalculation();
     syncSharedInputs();
   });
+});
+
+elements.buildingCondition?.addEventListener('change', () => {
+  state.buildingConditionManual = true;
+  projectStore?.setFieldCandidate(
+    BUILDING_CONDITION_PATH,
+    projectModel.ORIGIN.MANUAL,
+    elements.buildingCondition.value,
+    { source: 'Nutzereingabe Heizlast' }
+  );
+  renderHeatingCalculation();
+});
+
+elements.useBuildingConditionSuggestion?.addEventListener('click', () => {
+  projectStore?.clearFieldCandidate(BUILDING_CONDITION_PATH, projectModel.ORIGIN.MANUAL);
+  state.buildingConditionManual = false;
+  elements.buildingCondition.value = state.buildingConditionSuggestion ?? 'teilsanierter_bestand';
+  renderHeatingCalculation();
 });
 
 if (elements.heatingLimitTemperature) {
@@ -3384,7 +3571,7 @@ elements.clearCacheButton.addEventListener('click', async () => {
   }
 });
 
-elements.downloadButton.addEventListener('click', downloadJson);
+elements.downloadButton?.addEventListener('click', downloadJson);
 
 
 window.addEventListener('energy-tools:project-imported', (event) => {
@@ -3399,6 +3586,8 @@ window.addEventListener('energy-tools:project-reset', () => {
     state.results = {};
     state.currentResult = null;
     state.heatingCalculation = null;
+    state.buildingConditionManual = false;
+    state.buildingConditionSuggestion = 'teilsanierter_bestand';
     elements.resultsSection.hidden = true;
     elements.heatingLoadCard.hidden = true;
   } finally {

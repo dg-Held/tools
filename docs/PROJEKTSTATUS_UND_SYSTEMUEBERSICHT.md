@@ -161,7 +161,8 @@ Status: eigenständiges Tool.
 - vorberechnete INCA-Jahrespakete ab 2012,
 - Jahreslinien, Median, Kennwerte und Datenstand,
 - GeoSphere-Liveabruf als Fallback.
-- Oberfläche V1.0: verkürzte Einleitung, kompakte gemeinsame Adressauswahl, Quellenkarten im Methodenbereich und direkte Übergänge zu Heizlast und Energiefluss.
+- Oberfläche V1.0: verkürzte Einleitung, kompakte gemeinsame Adressauswahl, Quellenkarten und JSON-Export im Methodenbereich sowie direkte Übergänge zu Heizlast und Energiefluss.
+- automatischer Beratungsimpuls direkt unter dem Diagramm; Einordnung über klimatische Vollbenutzungsstunden sowie ergänzende Hinweise zu ausgeprägten Kälte- und Sommerbelastungen.
 - geplante Erweiterungen: Temperatur-Heatmap nach Ergänzung zeitlicher Aggregate; Windrose erst nach Aufnahme von Windgeschwindigkeit und Windrichtung.
 
 ### Heizlast abschätzen V1.0
@@ -170,9 +171,13 @@ Status: eigenständiges, mit Klima verschränktes Tool.
 
 - verbrauchsbasierte Abschätzung,
 - flächenbezogene Orientierung,
-- gemeinsame Klimagrundlage,
-- editierbare Heizgrenztemperatur,
+- gemeinsame Klimagrundlage ohne redundante Klimafelder,
+- editierbare Heizgrenztemperatur mit transparentem Vorschlag,
+- automatischer Gebäudezustandsvorschlag aus korrigiertem Verbrauchs-HWB beziehungsweise Ersatzkennwert; manuelle Auswahl hat Vorrang,
 - vorhandene Heizung und Dauerlinie,
+- technische Standortdaten auf beratungsrelevante Werte reduziert,
+- Quellen, Annahmen und JSON-Export unter „Methode und Datenbasis“,
+- direkte Übergänge zu Klima und Energiefluss,
 - kompakter Ein-Seiten-Ausdruck.
 
 ### Energiefluss im Gebäude V4.4
@@ -180,7 +185,8 @@ Status: eigenständiges, mit Klima verschränktes Tool.
 Status: funktional abgeschlossen. V3 ist extern archiviert und online nicht mehr erforderlich.
 
 - bekannte Projekt- und Verbrauchswerte kompakt prüfen,
-- verbrauchsbasierte Bilanz,
+- verbrauchsbasierte Bilanz mit gemeinsamem Heizenergieverbrauch und gemeinsamem Nutzwärmefaktor (JNG/JAZ),
+- bei Wärmepumpenfaktoren über 1,0 wird die zusätzlich genutzte Umweltwärme als eigener Energiezufluss bilanziert,
 - Gebäudehülle und Einzelbauteilverluste,
 - Plausibilitätsvergleich aus U-Werten, Flächen und Klima,
 - Baujahr als Fallback für nicht bestätigte Bestands-U-Werte,

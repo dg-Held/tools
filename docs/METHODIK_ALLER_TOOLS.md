@@ -1,6 +1,6 @@
 # Methodik aller Tools
 
-**Stand:** 05.08.2026
+**Stand:** 06.08.2026
 
 ## Standortpass
 
@@ -29,13 +29,19 @@ Alle Werte sind Orientierungswerte, manuell korrigierbar und mit Herkunft zu ken
 - vollständige Jahre werden automatisch aus Manifest und Jahresindex erkannt.
 - OIB NAT/TNAT,13 werden über die amtliche Zuordnung geladen.
 - Klima ist eigenständig; Heizlast und Energiefluss verwenden denselben Klimakern.
+- Der Beratungsimpuls ordnet die klimatische Heizbeanspruchung anhand der Vollbenutzungsstunden ein: unter 1.800 h vergleichsweise mild, über 2.400 h erhöht, dazwischen mittlere Orientierung. Ab 100 Stunden unter −10 °C wird eine Kältephasen-Notiz ergänzt; ab 10 Hitzetagen oder 2 Tropennächten ein Hinweis zum sommerlichen Wärmeschutz.
+- Diese Schwellen sind bewusst einfache Beratungsregeln und keine normativen Klimaklassen. Der JSON-Export liegt gemeinsam mit Rechenweg und Quellen im Abschnitt „Methode und Datenbasis“.
 
 ## Heizlast
 
-- verbrauchsbasierte Abschätzung aus klimabereinigtem Verbrauch,
+- verbrauchsbasierte Abschätzung aus Heizenergieverbrauch, Nutzwärmefaktor und klimatischen Vollbenutzungsstunden,
 - flächenbezogene Orientierung als Plausibilitätskorridor,
-- Klimagrundlage aus gemeinsamem Dienst,
+- Klimagrundlage aus gemeinsamem Dienst; NAT wird für die Heizlast verwendet, TNAT,13 bleibt dem Klima-/Sommerkontext vorbehalten,
 - Heizgrenztemperatur manuell oder als transparenter Vorschlag,
+- Gebäudezustand automatisch aus dem korrigierten Verbrauchs-HWB vorgeschlagen; fehlt eine belastbare BGF, wird BGF = beheizte Nutzfläche / 0,80 als klar gekennzeichneter Ersatz angesetzt,
+- Einordnung des Vorschlags: über 150 kWh/(m²a) unsanierter Altbau, 90–150 teilsanierter Bestand, 45–unter 90 sanierter Bestand, darunter neuerer Standard/Neubau,
+- eine manuelle Gebäudezustandsauswahl hat immer Vorrang,
+- technische Standortkarten zeigen nur für die Beratung relevante Zuordnungs-, Klima- und Höhenbezüge; interne KG-Nummern werden nicht als eigene Kennzahl ausgegeben,
 - keine Gleichsetzung mit einer vollständigen normativen Heizlastberechnung.
 
 ## Energiefluss V4
@@ -45,7 +51,8 @@ Der gemessene Verbrauch bleibt die Energiebilanz. U-Werte und Flächen verteilen
 Wichtige Zusammenhänge:
 
 ```text
-Nutzwärme = Endenergie × Jahresnutzungsgrad
+Nutzwärme = Heizenergieverbrauch × Nutzwärmefaktor (JNG / JAZ)
+Umweltwärme = max(Nutzwärme − Heizenergieverbrauch, 0)
 Raumwärme = Nutzwärme − Warmwasseranteil
 HWB_Verbrauch = Raumwärme / Bezugsfläche
 UA_i = U_i × A_i
@@ -111,7 +118,8 @@ Intern exakt rechnen. Sichtbar runden gemäß Projektübersicht. Hinweise zu Rec
 ### Verbrauch und Nutzwärme
 
 ```text
-Q_Nutz = HEB × η
+Q_Nutz = HEB × f_Nutz
+Q_Umwelt = max(Q_Nutz − HEB, 0)
 Q_WW = Personen × 1.000 kWh/(Person·a), wenn Warmwasser enthalten
 Q_Raum = max(Q_Nutz − Q_WW, 0)
 Q_Anlage = max(HEB − Q_Nutz, 0)
@@ -154,7 +162,7 @@ HGT = Vollbenutzungsstunden × (15 °C − NAT)
 Q_Transmission = ΣUA × HGT / 1.000
 Q_WB,rech = Q_Transmission × 0,075
 Q_Raum,rech = max(Q_Transmission + Q_WB,rech + Q_Lüftung − Q_intern − Q_solar, 0)
-HEB_rechnerisch = (Q_Raum,rech + Q_WW) / η
+HEB_rechnerisch = (Q_Raum,rech + Q_WW) / f_Nutz
 Abweichung = (HEB_rechnerisch − HEB_gemessen) / HEB_gemessen × 100
 ```
 

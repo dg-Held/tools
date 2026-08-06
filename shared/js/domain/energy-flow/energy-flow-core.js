@@ -1,7 +1,7 @@
 'use strict';
 
 (function initEnergyFlowCore(global) {
-  const MODEL_VERSION = '4.3.0';
+  const MODEL_VERSION = '4.4.0';
 
   function finite(value, fallback = 0) {
     const number = Number(value);
@@ -25,7 +25,7 @@
   function calculate(inputs) {
     const assumptions = inputs.assumptions ?? {};
     const annualEnergyKwh = positive(inputs.annualEnergyKwh);
-    const usefulHeatFactor = clamp(finite(inputs.usefulHeatFactor, 0.85), 0.01, 1);
+    const usefulHeatFactor = clamp(finite(inputs.usefulHeatFactor, 0.85), 0.01, 10);
     const persons = positive(inputs.persons);
     const hotWaterIncluded = Boolean(inputs.hotWaterIncluded);
     const heatedFloorAreaM2 = positive(inputs.heatedFloorAreaM2);
@@ -70,11 +70,12 @@
     const roomHeatRawKwh = usefulHeatTotalKwh - hotWaterKwh;
     const roomHeatKwh = Math.max(roomHeatRawKwh, 0);
     const systemLossKwh = Math.max(annualEnergyKwh - usefulHeatTotalKwh, 0);
+    const environmentalHeatKwh = Math.max(usefulHeatTotalKwh - annualEnergyKwh, 0);
 
     const internalGainsKwh = internalGainsWM2 * heatedFloorAreaM2 * 8.76;
     const solarGainsKwh = solarRadiationFactor * windowAreaM2 * glazingShare * solarUtilizationFactor;
     const ventilationLossKwh = ventilationLossKwhM3a * conditionedVolumeM3;
-    const totalInputsKwh = annualEnergyKwh + internalGainsKwh + solarGainsKwh;
+    const totalInputsKwh = annualEnergyKwh + environmentalHeatKwh + internalGainsKwh + solarGainsKwh;
 
     const residualEnvelopeWithBridgesKwh =
       totalInputsKwh - systemLossKwh - hotWaterKwh - ventilationLossKwh;
@@ -174,10 +175,10 @@
 
     const warnings = [];
     if (roomHeatRawKwh < 0) {
-      warnings.push('Der Warmwasserabzug ist größer als die berechnete Nutzwärme. Verbrauch, Nutzungsgrad oder Personenzahl prüfen.');
+      warnings.push('Der Warmwasserabzug ist größer als die berechnete Nutzwärme. Verbrauch, Nutzwärmefaktor oder Personenzahl prüfen.');
     }
     if (residualEnvelopeWithBridgesKwh < 0) {
-      warnings.push('Die gewählten Eingaben ergeben negative Verluste der Gebäudehülle. Verbrauch, Volumen, Lüftungsannahme oder Nutzungsgrad prüfen.');
+      warnings.push('Die gewählten Eingaben ergeben negative Verluste der Gebäudehülle. Verbrauch, Volumen, Lüftungsannahme oder Nutzwärmefaktor prüfen.');
     }
     if (!activeComponents.length) {
       warnings.push('Es ist kein Bauteil mit positiver Fläche und positivem U-Wert aktiviert.');
@@ -215,6 +216,7 @@
         internalKwh: internalGainsKwh,
         solarKwh: solarGainsKwh,
         deliveredKwh: annualEnergyKwh,
+        environmentalHeatKwh,
         totalKwh: totalInputsKwh,
       },
       losses: {

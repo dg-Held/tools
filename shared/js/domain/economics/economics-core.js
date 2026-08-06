@@ -260,7 +260,7 @@
 
   function usefulEnergyPrice(endEnergyPrice, annualEfficiency) {
     const eta = finite(annualEfficiency, 0);
-    if (!(eta > 0)) throw new RangeError('Der Jahresnutzungsgrad muss größer als 0 sein.');
+    if (!(eta > 0)) throw new RangeError('Der Nutzwärmefaktor muss größer als 0 sein.');
     return finite(endEnergyPrice, 0) / eta;
   }
 

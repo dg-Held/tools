@@ -602,6 +602,9 @@
       ['Interne Gewinne', result.gains.internalKwh],
       ['Solare Gewinne', result.gains.solarKwh],
       ['Heizenergieverbrauch', result.gains.deliveredKwh],
+      ...(result.gains.environmentalHeatKwh > 0
+        ? [['Umweltwärme', result.gains.environmentalHeatKwh]]
+        : []),
     ];
     $('gainFlow').innerHTML = gainItems
       .map(([label, value]) => flowEntry(label, value, result.gains.totalKwh))
@@ -652,6 +655,7 @@
         ventilationLossKwh: result.losses.ventilationKwh,
         systemLossKwh: result.losses.systemKwh,
         hotWaterKwh: result.losses.hotWaterKwh,
+        environmentalHeatKwh: result.gains.environmentalHeatKwh,
         totalUaWK: result.envelope.totalUaWK,
         calibrationKwhPerWK: result.envelope.calibrationKwhPerWK,
         components: result.envelope.components.map((item) => ({ id: item.id, areaM2: item.areaM2, uValue: item.uValue, enabled: item.enabled, uaWK: item.uaWK, lossKwh: item.lossKwh })),
@@ -916,6 +920,9 @@
       printFlowEntry('Interne Gewinne', result.gains.internalKwh, result.gains.totalKwh),
       printFlowEntry('Solare Gewinne', result.gains.solarKwh, result.gains.totalKwh),
       printFlowEntry('Heizenergieverbrauch', result.gains.deliveredKwh, result.gains.totalKwh),
+      result.gains.environmentalHeatKwh > 0
+        ? printFlowEntry('Umweltwärme', result.gains.environmentalHeatKwh, result.gains.totalKwh)
+        : '',
     ].join('');
     const componentDetails = result.envelope.components
       .filter((item) => item.enabled && item.lossKwh > 0)
@@ -940,8 +947,8 @@
       ['BGF', `${formatNumber(result.inputs.grossFloorAreaM2)} m²`, printOrigin(describeAt(project, 'building.geometry.grossFloorArea'))],
       ['Volumen', `${formatNumber(result.inputs.grossVolumeM3)} m³`, printOrigin(describeAt(project, 'building.geometry.grossVolume'))],
       ['Personen', formatNumber(result.inputs.persons), printOrigin(describeAt(project, 'usage.household.persons'))],
-      ['Verbrauch', `${formatNumber(result.inputs.annualEnergyKwh)} kWh/a`, printOrigin(describeAt(project, 'consumption.heating.annualEnergy'))],
-      ['JNG', formatNumber(result.inputs.usefulHeatFactor, 2), printOrigin(describeAt(project, 'systems.heating.usefulHeatFactor'))],
+      ['Heizenergieverbrauch', `${formatNumber(result.inputs.annualEnergyKwh)} kWh/a`, printOrigin(describeAt(project, 'consumption.heating.annualEnergy'))],
+      ['Nutzwärmefaktor', formatNumber(result.inputs.usefulHeatFactor, 2), printOrigin(describeAt(project, 'systems.heating.usefulHeatFactor'))],
       ['Raumtemperatur', `${formatNumber(result.inputs.indoorTemperatureC, 1)} °C`, printOrigin(describeAt(project, 'building.thermal.indoorTemperature'))],
       ['Beheizter Anteil', `${formatNumber(result.inputs.heatedSharePercent)} %`, printOrigin(describeAt(project, 'building.thermal.heatedSharePercent'))],
     ];

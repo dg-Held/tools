@@ -1,6 +1,6 @@
 # Architektur und Datenmodell
 
-**Stand:** 05.08.2026
+**Stand:** 06.08.2026
 
 ## 1. Schichten
 
@@ -33,6 +33,7 @@ shared/
 │   ├── services/
 │   └── domain/
 tools/
+├── data-build/
 ├── standortpass/
 ├── klima/
 ├── heizlast/
@@ -87,7 +88,24 @@ building.thermal.heatedVolume
 
 `building.geometry.reference.*` speichert die reine automatische Referenz ohne manuelle Korrekturen. Die Hauptfelder speichern die verwendete Kette mit manuellen Prioritäten.
 
-## 5. Geometrieabhängigkeiten
+## 5. Gemeinsame Begriffe und Energiepfade
+
+Gleiche fachliche Werte werden in allen Tools gleich bezeichnet und nur einmal im Projektmodell gespeichert:
+
+```text
+Heizenergieverbrauch (kWh/a)       → consumption.heating.annualEnergy
+Nutzwärmefaktor (JNG / JAZ)        → systems.heating.usefulHeatFactor
+Warmwasser enthalten               → systems.heating.hotWaterIncluded
+Personen                            → usage.household.persons
+Beheizte Nutzfläche                 → building.geometry.heatedFloorArea
+Gebäudezustand                      → building.thermal.condition
+```
+
+Der Begriff **Nutzwärmefaktor** ist der gemeinsame Oberbegriff: Bei Kesseln entspricht er dem Jahresnutzungsgrad, bei Wärmepumpen der Jahresarbeitszahl. Werte über 1,0 sind daher zulässig. Energiefluss stellt in diesem Fall die Differenz zwischen Nutzwärme und bezogener Heizenergie als Umweltwärme dar, damit die Bilanz geschlossen und fachlich verständlich bleibt.
+
+Oberflächen dürfen Synonyme nicht als neue Speicherfelder anlegen. Ein manueller Wert hat gemäß Resolver-Priorität Vorrang; automatische Vorschläge bleiben als Herkunftskandidat erhalten.
+
+## 6. Geometrieabhängigkeiten
 
 ### Referenz
 
@@ -121,7 +139,7 @@ heatedVolume = grossVolume × heatedSharePercent
 
 Das Bruttovolumen reagiert daher nicht auf eine Änderung der Geschoßzahl oder BGF. Diese Größen beschreiben die innere Flächenorganisation, nicht die äußere Gebäudehülle.
 
-## 6. Maßnahmenmodell
+## 7. Maßnahmenmodell
 
 Eine Maßnahme enthält mindestens:
 
@@ -138,6 +156,28 @@ Eine Maßnahme enthält mindestens:
 
 Energiefluss, Wirtschaftlichkeit und Sanierungsfahrplan verwenden dieselbe Maßnahme.
 
-## 7. Ergebnisse und Cache
+## 8. Ergebnisse und Cache
 
 Eingaben und bestätigte Entscheidungen werden gespeichert. Rechenergebnisse werden bei Bedarf neu hergeleitet. Ein Cache darf nur verwendet werden, wenn Eingabefingerprint, Modellversion und Datenstand passen.
+
+## 9. Datenpipeline und Quellen der Wahrheit
+
+```text
+private Arbeitsdatei (XLSX)
+        ↓ lokaler Export
+versionierte JSON-Dateien im Website-Repository
+        ↓ fetch()
+Tool-Oberflächen und Fachkerne
+```
+
+Die Exceldatei ist die menschlich wartbare Quelle für veränderliche Beratungsdaten, aber kein Laufzeitbestandteil der Website. Zur Laufzeit werden ausschließlich JSON-Dateien gelesen.
+
+Getrennte Quellen der Wahrheit:
+
+- OIB-Prüfdaten: `shared/data/standards/oib/`,
+- Nutzungsdauern: `shared/data/standards/economics/component-lifetimes.json`,
+- Austauschvarianten: `shared/data/measures/exchange-variants.json`,
+- pflegbare Beratungsdaten: externe Excel → erzeugte JSON-Dateien,
+- Förderungen: Projektangaben im gemeinsamen Projektspeicher.
+
+Der Export erfolgt atomar. Optionale leere Datensätze dürfen vorhandene freigegebene JSON-Dateien im sicheren Standardmodus nicht ersetzen.

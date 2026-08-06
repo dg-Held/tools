@@ -76,8 +76,8 @@
 <div class="v4-value-field" data-digits="0" data-kind="number" data-label="Beheizte Nutzfläche" data-project-path="building.geometry.heatedFloorArea" data-unit="m²"></div>
 <div class="v4-value-field" data-digits="0" data-kind="number" data-label="Personen" data-project-path="usage.household.persons" data-unit="Personen"></div>
 <div class="v4-value-field" data-digits="0" data-kind="number" data-label="Heizenergieverbrauch" data-project-path="consumption.heating.annualEnergy" data-unit="kWh/a"></div>
-<div class="v4-value-field" data-digits="2" data-kind="number" data-label="Jahresnutzungsgrad" data-max="1" data-min="0.01" data-project-path="systems.heating.usefulHeatFactor" data-step="0.01" data-unit=""></div>
-<div class="v4-value-field" data-kind="boolean-select" data-label="Warmwasser im Verbrauch" data-project-path="systems.heating.hotWaterIncluded"></div>
+<div class="v4-value-field" data-digits="2" data-kind="number" data-label="Nutzwärmefaktor (JNG / JAZ)" data-max="10" data-min="0.01" data-project-path="systems.heating.usefulHeatFactor" data-step="0.01" data-unit=""></div>
+<div class="v4-value-field" data-kind="boolean-select" data-label="Warmwasser enthalten" data-project-path="systems.heating.hotWaterIncluded"></div>
 </div>
 </div>
 <details class="basis-details">
@@ -116,7 +116,7 @@
 <div class="result-kpis">
 <article><div class="kpi-heading"><span>HWB aus Verbrauch</span><button aria-label="Information zum HWB aus Verbrauch" class="info-tip" data-tooltip="Nutzwärme für Raumheizung geteilt durch die Bruttogeschoßfläche. Verbrauchsbasierter Orientierungswert, kein Energieausweis-HWB." title="Nutzwärme für Raumheizung geteilt durch die Bruttogeschoßfläche." type="button">i</button></div><strong id="hwbConsumption">–</strong></article>
 <article><div class="kpi-heading"><span>HWB korrigiert</span><button aria-label="Information zum korrigierten HWB" class="info-tip" data-tooltip="Verbrauchs-HWB, überschlägig auf 20 °C Raumtemperatur und 100 % beheizten Flächenanteil korrigiert." title="Verbrauchs-HWB mit Temperatur- und Flächenkorrektur." type="button">i</button></div><strong id="hwbCorrected">–</strong></article>
-<article><div class="kpi-heading"><span>Rechnerischer Verbrauch</span><button aria-label="Information zum rechnerischen Verbrauch" class="info-tip" data-tooltip="Unabhängige Abschätzung aus Summe U × A, INCA-Heizgradstunden, Lüftung, Wärmebrücken, Gewinnen, Warmwasser und Jahresnutzungsgrad." title="U × A + Klima + Lüftung − Gewinne." type="button">i</button></div><strong id="calculatedDelivered">–</strong></article>
+<article><div class="kpi-heading"><span>Rechnerischer Verbrauch</span><button aria-label="Information zum rechnerischen Verbrauch" class="info-tip" data-tooltip="Unabhängige Abschätzung aus Summe U × A, INCA-Heizgradstunden, Lüftung, Wärmebrücken, Gewinnen, Warmwasser und Nutzwärmefaktor." title="U × A + Klima + Lüftung − Gewinne." type="button">i</button></div><strong id="calculatedDelivered">–</strong></article>
 <article><div class="kpi-heading"><span>Abweichung</span><button aria-label="Information zur Abweichung" class="info-tip" data-tooltip="Prozentuale Differenz zwischen rechnerischem und eingegebenem Heizenergieverbrauch. Dient als Plausibilitätscheck der Eingaben." title="Plausibilitätsvergleich zwischen Modell und Verbrauch." type="button">i</button></div><strong id="modelDeviation">–</strong><span class="kpi-status" id="modelDeviationNote">Plausibilitätsvergleich</span></article>
 </div>
 <div class="comparison-panel" id="comparisonPanel">
@@ -164,12 +164,12 @@
 <details class="v4-methodology">
 <summary>Methodik, Formeln, Annahmen und Grenzen</summary>
 <div class="methodology-grid">
-<div><h3>1 · Nutzwärme und Raumwärme</h3><p><code>Q<sub>Nutz</sub> = HEB × η</code><br/><code>Q<sub>WW</sub> = Personen × 1.000 kWh/a</code>, sofern Warmwasser enthalten ist.<br/><code>Q<sub>Raum</sub> = Q<sub>Nutz</sub> − Q<sub>WW</sub></code>.</p></div>
+<div><h3>1 · Nutzwärme, Umweltwärme und Raumwärme</h3><p><code>Q<sub>Nutz</sub> = HEB × f<sub>Nutz</sub></code><br/>Bei Wärmepumpen: <code>Q<sub>Umwelt</sub> = max(Q<sub>Nutz</sub> − HEB, 0)</code>.<br/><code>Q<sub>WW</sub> = Personen × 1.000 kWh/a</code>, sofern Warmwasser enthalten ist.<br/><code>Q<sub>Raum</sub> = Q<sub>Nutz</sub> − Q<sub>WW</sub></code>.</p></div>
 <div><h3>2 · Verbrauchsbezogener HWB</h3><p><code>HWB<sub>Verbrauch</sub> = Q<sub>Raum</sub> / BGF</code>.<br/>Korrektur: <code>K<sub>T</sub> = 1 + (T<sub>Raum</sub> − 20) × 0,06</code> und <code>K<sub>beheizt</sub> = 1 + (Anteil − 100) × 0,005</code>.</p></div>
 <div><h3>3 · Gewinne und Lüftung</h3><p><code>Q<sub>intern</sub> = 2,7 W/m² × NFL × 8,76</code>.<br/><code>Q<sub>solar</sub> = 175 kWh/m²a × A<sub>Fenster</sub> × 0,70</code>.<br/><code>Q<sub>Lüftung</sub> = 10 kWh/m³a × V<sub>konditioniert</sub></code>.</p></div>
 <div><h3>4 · Gebäudehülle in der Verbrauchsbilanz</h3><p>Nach Anlage, Warmwasser und Lüftung verbleibt die Gebäudehülle inklusive Wärmebrücken. Wärmebrücken werden mit 7,5 % der Bauteilverluste angesetzt. Die Aufteilung erfolgt proportional zu <code>U × A</code>.</p></div>
 <div><h3>5 · Unabhängiger Hüllvergleich</h3><p><code>HGT = Vollbenutzungsstunden × (15 °C − NAT)</code>.<br/><code>Q<sub>Transmission</sub> = Σ(U × A) × HGT / 1.000</code>.<br/>Danach werden Wärmebrücken und Lüftung addiert sowie interne und solare Gewinne abgezogen.</p></div>
-<div><h3>6 · Rechnerischer Heizenergieverbrauch</h3><p><code>HEB<sub>rechnerisch</sub> = (Q<sub>Raum,rech</sub> + Q<sub>WW</sub>) / η</code>.<br/><code>Abweichung = (HEB<sub>rechnerisch</sub> − HEB<sub>gemessen</sub>) / HEB<sub>gemessen</sub></code>.</p></div>
+<div><h3>6 · Rechnerischer Heizenergieverbrauch</h3><p><code>HEB<sub>rechnerisch</sub> = (Q<sub>Raum,rech</sub> + Q<sub>WW</sub>) / f<sub>Nutz</sub></code>.<br/><code>Abweichung = (HEB<sub>rechnerisch</sub> − HEB<sub>gemessen</sub>) / HEB<sub>gemessen</sub></code>.</p></div>
 <div><h3>7 · Datenpriorität und Rundung</h3><p>Manuell bestätigt → amtlich → abgeleitet → Fallback. Bauperiodenwerte werden nur als sichtbare Ausgangsvorschläge verwendet. Automatische Hüllflächen werden für Anzeige und Rechnung bewusst gerundet: Fenster auf 5 m², übrige Flächen auf 10 m².</p></div>
 <div><h3>8 · Grenzen</h3><p>Überschlägige Beratungshilfe, kein Energieausweis und keine normgemäße Bauteilberechnung. Baujahr- und Zustandswerte sind Fallbacks; Sanierungen und tatsächliche Aufbauten müssen über bestätigte U-Werte abgebildet werden. Vollständige Methodik: <code>tools/energiefluss-v4/docs/</code>.</p></div>
 </div>
@@ -203,7 +203,7 @@
 <script src="../../shared/js/domain/climate/oib-nat-core.js?v=1"></script>
 <script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script>
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
-<script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=5"></script>
-<script src="energiefluss-v4.js?v=6"></script>
+<script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=6"></script>
+<script src="energiefluss-v4.js?v=7"></script>
 </body>
 </html>
