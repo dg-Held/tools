@@ -14,6 +14,15 @@
   --turquoise-dark: #24756d;
   --berry-dark: #6f2a43;
 
+  /* RGB-Kanäle für transparente Varianten */
+  --color-primary-rgb: 52 171 159;
+  --color-primary-light-rgb: 216 243 240;
+  --color-primary-soft-rgb: 235 249 248;
+  --color-secondary-rgb: 179 68 108;
+  --color-secondary-light-rgb: 241 218 226;
+  --color-secondary-soft-rgb: 248 237 241;
+  --color-secondary-dark-rgb: 111 42 67;
+
   /* Semantische Farben */
   --color-primary: var(--turquoise);
   --color-primary-light: var(--turquoise-light);
@@ -31,16 +40,20 @@
   --color-warning-soft: #fff5df;
   --color-danger: #7a1f2d;
   --color-danger-soft: #fde8ec;
+  --color-danger-line: #e7a5b2;
   --color-info: #324542;
   --color-info-soft: #eef8f6;
 
   /* Text und Flächen */
   --text-dark: #0c2724;
+  --text-dark-rgb: 12 39 36;
   --text-light: #ebf9f8;
   --text-muted: #526562;
   --text-subtle: #60716f;
   --white: #ffffff;
+  --white-rgb: 255 255 255;
   --page-background: #f9fbfa;
+  --page-background-rgb: 249 251 250;
   --surface-card: #ffffff;
   --surface-muted: #f8fbfa;
   --surface-subtle: #f3f7f6;
@@ -67,10 +80,20 @@
   /* Schatten */
   --shadow-soft: 0 12px 35px rgba(12, 39, 36, 0.08);
   --shadow-hover: 0 16px 42px rgba(12, 39, 36, 0.13);
-  --shadow-card: 0 12px 32px rgba(28, 75, 71, 0.08);
+  --shadow-rgb: 28 75 71;
+  --shadow-card: 0 12px 32px rgb(var(--shadow-rgb) / 0.08);
 
   /* Layout */
   --content-width: 820px;
   --project-header-main-ratio: 2fr;
   --project-header-side-ratio: 1fr;
+
+  /* Kompatibilitäts-Aliase für bestehende Tool-Styles */
+  --color-border: var(--line-strong);
+  --color-surface-muted: var(--surface-muted);
+  --color-text-muted: var(--text-muted);
+  --radius-md: var(--radius-medium);
+  --space-sm: var(--space-1);
+  --space-md: var(--space-2);
+  --space-lg: var(--space-4);
 }

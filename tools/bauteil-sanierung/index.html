@@ -5,11 +5,11 @@
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Bauteil &amp; Sanierung | Tools für Energieberatung</title>
 <meta content="Dämmstandard, Wirtschaftlichkeit, CO₂ und Wohnkomfort für einzelne Bauteile überschlägig vergleichen." name="description"/>
-<link href="../../styles.css" rel="stylesheet"/>
-<link href="../../shared/css/tokens.css" rel="stylesheet"/>
-<link href="../../shared/css/components.css" rel="stylesheet"/>
+<link href="../../styles.css?v=2" rel="stylesheet"/>
+<link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
+<link href="../../shared/css/components.css?v=3" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="bauteil-sanierung.css?v=5" rel="stylesheet"/>
+<link href="bauteil-sanierung.css?v=6" rel="stylesheet"/>
 </head>
 <body data-tool-mode="envelope-renovation">
 <header class="site-header no-print">
@@ -31,17 +31,21 @@
 </section>
 <div data-project-header></div>
 
-<section class="container address-card no-print" data-address-section>
+<section class="container address-card shared-address-card no-print" data-address-section>
   <div class="section-heading section-heading--compact">
-    <div><p class="eyebrow">Standort</p><h2>Adresse und Gebäudegeometrie</h2></div>
+    <div><p class="eyebrow">Standort</p><h2>Standort auswählen</h2></div>
     <span class="status-chip" id="geometryStatus">Projektwerte werden geprüft</span>
   </div>
-  <p class="section-note">Das Werkzeug kann direkt gestartet werden. Eine Adresse genügt, um dieselbe gemeinsame TIRIS-Gebäudegeometrie wie im Standortpass und Energiefluss zu übernehmen.</p>
+  
+  <div class="address-field-meta">
+    <span id="renAddressLabel">PLZ, Gemeinde, Straße und Hausnummer</span>
+    <span class="address-provider-label">BEV-Vorschläge 2026-04-01 · TIRIS live</span>
+  </div>
   <div class="address-search-row">
-    <label><span>Adresse suchen</span><input autocomplete="off" id="renAddressInput" placeholder="z. B. 6123 Dorfstraße 1" type="search"/></label>
+    <label><span class="visually-hidden">PLZ, Gemeinde, Straße und Hausnummer</span><input aria-labelledby="renAddressLabel" autocomplete="off" id="renAddressInput" placeholder="z. B. 6123 Dorfstraße 1" type="search"/></label>
     <button class="quiet-button" id="renUseProjectAddress" type="button">Projektadresse übernehmen</button>
   </div>
-  <small id="renAddressStatus">Die Eingabe bleibt während des Tippens unverändert; gesucht wird nach einer kurzen Pause.</small>
+  <small id="renAddressStatus"></small>
   <div class="address-results" hidden id="renAddressResults"></div>
   <div class="building-candidates" hidden id="renBuildingCandidates"></div>
 </section>
@@ -247,7 +251,7 @@
 <script src="../../shared/js/value-resolver.js?v=1"></script>
 <script src="../../shared/js/project-store.js?v=4"></script>
 <script src="../../shared/js/project-header.js?v=2"></script>
-<script src="../../shared/js/project-address-manager.js?v=1"></script>
+<script src="../../shared/js/project-address-manager.js?v=2"></script>
 <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
 <script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script>
 <script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
@@ -260,6 +264,6 @@
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=1"></script>
 <script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=5"></script>
-<script src="bauteil-sanierung.js?v=6"></script>
+<script src="bauteil-sanierung.js?v=7"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 05.08.2026  
+**Stand:** 06.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -31,6 +31,9 @@ Leitgedanke: Der Berater spricht mit dem Kunden; das Tool stellt bekannte Daten 
 - gemeinsamer Projektkopf: Projekttitel/Adresse etwa 2/3, Projekt-ID/Datum etwa 1/3.
 - Drucken/PDF oben und am Berichtsende.
 - erweiterte technische und finanzielle Angaben standardmäßig einklappen.
+- gemeinsame Adresskarten zeigen vorrangig nur Suchfeld, Datenanbieter, Status und die jeweilige Hauptaktion; technische Korrekturen bleiben eingeklappt.
+- vollständige Rechenwege und Datenquellen stehen am Seitenende unter „Methode und Datenbasis“.
+- Marken-, Status-, Text- und Flächenfarben werden zentral über `shared/css/tokens.css` verwaltet.
 - projektbezogene Förderungen sichtbar und manuell bestätigbar halten.
 
 Zentrale Gestaltung:
@@ -149,7 +152,7 @@ Status: V1, fachlich weitgehend fertig; Geometriekette V1.2.
 - Hochwasser, Naturgefahren, WLV, Radon, Denkmal- und Kulturkontext,
 - zwei verdichtete A4-Seiten.
 
-### Klima am Standort
+### Klima am Standort V1.0
 
 Status: eigenständiges Tool.
 
@@ -158,8 +161,10 @@ Status: eigenständiges Tool.
 - vorberechnete INCA-Jahrespakete ab 2012,
 - Jahreslinien, Median, Kennwerte und Datenstand,
 - GeoSphere-Liveabruf als Fallback.
+- Oberfläche V1.0: verkürzte Einleitung, kompakte gemeinsame Adressauswahl, Quellenkarten im Methodenbereich und direkte Übergänge zu Heizlast und Energiefluss.
+- geplante Erweiterungen: Temperatur-Heatmap nach Ergänzung zeitlicher Aggregate; Windrose erst nach Aufnahme von Windgeschwindigkeit und Windrichtung.
 
-### Heizlast abschätzen
+### Heizlast abschätzen V1.0
 
 Status: eigenständiges, mit Klima verschränktes Tool.
 
@@ -247,10 +252,42 @@ shared/data/
 └── standards/
 ```
 
-- Richtkosten, Energiepreise, Emissionsfaktoren und Empfehlungen werden in der Master-Excel gepflegt und kontrolliert nach JSON exportiert.
+- Richtkosten, Energiepreise, Emissionsfaktoren und Empfehlungen werden in einer extern gelagerten Master-Excel gepflegt und mit `tools/data-build/` kontrolliert nach JSON exportiert.
+- Die Master-Excel liegt bewusst nicht im veröffentlichten GitHub-Pages-Ordner; GitHub Pages stellt Dateien des Veröffentlichungsbranches öffentlich bereit.
+- Das Exportskript benötigt keine zusätzlichen Python-Pakete, prüft Pflichtdaten, sichert bestehende JSON-Dateien neben der Excelquelle und schreibt atomar.
 - OIB-Prüfwerte und normative Nutzungsdauern liegen als getrennte versionierte Standarddaten vor.
 - Förderungen werden nicht automatisch gepflegt, sondern projektbezogen eingetragen.
 - Lizenzierte Normtexte werden nicht veröffentlicht.
+
+## 7a. Excel→JSON-Datenpipeline V1
+
+Status: umgesetzt.
+
+```text
+BAUTEIL_DATEN_MASTER.xlsx (privat/extern)
+        ↓ prüfen / freigeben
+tools/data-build/bauteil_data_export.py
+        ↓
+shared/data/.../*.json
+        ↓
+Bauteil & Sanierung / spätere Werkzeuge
+```
+
+Hilfsdateien:
+
+```text
+tools/data-build/BAUTEIL_DATEN_PRUEFEN.bat
+tools/data-build/BAUTEIL_DATEN_AUFBEREITEN.bat
+tools/data-build/bauteil_data_export.py
+tools/data-build/README.md
+```
+
+Sicherheitsregeln:
+
+- nur `Aktiv = ja` wird exportiert,
+- leere optionale Bereiche überschreiben bestehende Website-Daten nicht,
+- OIB-Prüfwerte, Nutzungsdauern, Austauschvarianten und Förderungen werden nicht aus der Excel erzeugt,
+- ein Manifest dokumentiert Quelldatei, Prüfsumme, Version, Datensatzanzahl und Warnungen.
 
 ## 8. Rundung
 
@@ -270,6 +307,13 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 3. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen.
 4. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren.
 5. später Heizung & Verteilung, Sommerkomfort sowie Speicher/Eigenverbrauch.
+
+## 9a. Technischer Bereinigungsstand 06.08.2026
+
+- fehlendes `shared/js/project-address-manager.js` ergänzt, einschließlich sicherer Behandlung von Adresswechseln,
+- veralteten Startseitenlink auf Energiefluss V4.4 korrigiert,
+- Dokumentationsindex auf die tatsächlich vorhandenen zentralen Dokumente reduziert,
+- Versionsangaben der Toolübersicht vervollständigt und Bild `in_arbeit.jpg` eingebunden.
 
 ## 10. Übergaberegeln
 

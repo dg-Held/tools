@@ -478,6 +478,7 @@ const elements = {
   clearCacheButton: document.getElementById('clearCacheButton'),
   printButton: document.getElementById('printButton'),
   printButtonBottom: document.getElementById('printButtonBottom'),
+  printClimateBottomButton: document.getElementById('printClimateBottomButton'),
   downloadButton: document.getElementById('downloadButton'),
   connectionStatus: document.getElementById('connectionStatus'),
   progressFill: document.getElementById('progressFill'),
@@ -538,11 +539,8 @@ function sleep(milliseconds) {
 
 
 function hasResolvedAutomaticLocation() {
-  const visibleAddressMatches = !state.selectedAddress ||
-    elements.addressSearchInput.value.trim() === state.selectedAddress.label;
   return Boolean(
     state.selectedAddress &&
-    visibleAddressMatches &&
     state.selectedNatReference &&
     state.selectedTnat13Reference
   );
@@ -709,7 +707,7 @@ async function cacheClear() {
 
 
 
-function debounce(callback, delay = 250) {
+function debounce(callback, delay = 220) {
   let timeoutId = null;
 
   return (...args) => {
@@ -869,15 +867,7 @@ function renderMultiKgChoice(address) {
       const refs = applyOibReferenceForKg(kgNumber);
 
       elements.addressSearchStatus.textContent =
-        `KG ${refs.natReference.kg_number} ` +
-        `${refs.natReference.kg_name} gewählt · ` +
-        `NAT ${formatNumber(
-          refs.natReference.nat_at_elevation_min_c,
-          1
-        )} °C · TNAT,13 ${formatNumber(
-          refs.tnatReference.tnat13_at_elevation_min_c,
-          1
-        )} °C.`;
+        'Katastralgemeinde übernommen.';
 
       elements.selectedAddressMeta.textContent =
         addressMetaText(address) +
@@ -1021,37 +1011,11 @@ function applyAddressResult(address) {
     addressMetaText(address);
   elements.selectedAddressCard.hidden = false;
 
-  elements.addressSearchStatus.textContent =
-    address.is_demo
-      ? natResult.text
-      : `${address.source || 'Standortadresse'} übernommen. ${natResult.text}`;
+  elements.addressSearchStatus.textContent = 'Adresse übernommen.';
 
   closeAddressSuggestions();
   updateAnalyzeAvailability();
   syncSharedLocation(address);
-}
-
-function invalidateResultsForAddressChange() {
-  state.results = {};
-  state.currentResult = null;
-  state.heatingCalculation = null;
-  if (elements.resultsSection) elements.resultsSection.hidden = true;
-  if (elements.heatingLoadCard) elements.heatingLoadCard.hidden = true;
-}
-
-async function approveAddressSelection(address) {
-  const decision = await window.EnergyToolsAddressManager?.requestSelection(address)
-    ?? { allowed: true, action: 'initial' };
-  if (!decision.allowed) {
-    const current = window.EnergyToolsAddressManager?.currentAddress();
-    if (current?.label) elements.addressSearchInput.value = current.label;
-    closeAddressSuggestions();
-    elements.addressSearchStatus.textContent =
-      'Adresswechsel abgebrochen. Das bisherige Projekt bleibt unverändert.';
-    return decision;
-  }
-  if (decision.action !== 'same') invalidateResultsForAddressChange();
-  return decision;
 }
 
 async function resolveAndApplyAddressResult(address) {
@@ -1059,31 +1023,25 @@ async function resolveAndApplyAddressResult(address) {
     'BEV-Vorschlag gewählt · TIRIS wird live abgeglichen …';
 
   const provider = addressProviders.active();
-  let resolved = {
-    address,
-    usedFallback: false,
-    warning: null,
-  };
 
-  if (typeof provider.resolve === 'function') {
-    try {
-      resolved = await provider.resolve(address);
-    } catch (error) {
-      console.warn('TIRIS-Live-Abgleich fehlgeschlagen.', error);
-      resolved = {
-        address,
-        usedFallback: true,
-        warning: 'TIRIS-Live-Abgleich war nicht verfügbar; BEV-Stichtagsadresse wird verwendet.',
-      };
-    }
+  if (typeof provider.resolve !== 'function') {
+    applyAddressResult(address);
+    return;
   }
 
-  const decision = await approveAddressSelection(resolved.address);
-  if (!decision.allowed) return;
+  try {
+    const resolved = await provider.resolve(address);
+    applyAddressResult(resolved.address);
 
-  applyAddressResult(resolved.address);
-  if (resolved.usedFallback && resolved.warning) {
-    elements.addressSearchStatus.textContent += ` ${resolved.warning}`;
+    if (resolved.usedFallback && resolved.warning) {
+      elements.addressSearchStatus.textContent +=
+        ` ${resolved.warning}`;
+    }
+  } catch (error) {
+    console.warn('TIRIS-Live-Abgleich fehlgeschlagen.', error);
+    applyAddressResult(address);
+    elements.addressSearchStatus.textContent +=
+      ' TIRIS-Live-Abgleich war nicht verfügbar; BEV-Stichtagsadresse wird verwendet.';
   }
 }
 
@@ -1198,11 +1156,9 @@ async function initializeAddressProvider() {
 
     elements.addressSearchStatus.textContent =
       info.warning ||
-      (
-        info.dataset_mode === 'demo'
-          ? 'Im aktuellen Paket sind zunächst nur die technischen BEV-Testpunkte enthalten; ausgewählte Treffer werden live mit TIRIS geprüft.'
-          : `${formatNumber(info.address_count)} BEV-Adressen für schnelle Vorschläge · Datenstand ${info.dataset_date ?? '–'} · ausgewählte Adressen werden live mit TIRIS verifiziert.`
-      );
+      (info.dataset_mode === 'demo'
+        ? 'Im aktuellen Paket stehen nur technische BEV-Testpunkte zur Verfügung.'
+        : '');
   } catch (error) {
     console.error(error);
     elements.addressProviderLabel.textContent =
@@ -3105,7 +3061,7 @@ function renderHeatingCalculation() {
 function renderResult(result) {
   state.currentResult = result;
   elements.resultsSection.hidden = false;
-  elements.resultTitle.textContent = result.location.name;
+  elements.resultTitle.textContent = IS_CLIMATE_TOOL ? 'Klimaauswertung' : result.location.name;
   elements.resultSubtitle.textContent =
     `Gebäudestandort ${formatNumber(
       result.location.latitude,
@@ -3277,6 +3233,7 @@ window.addEventListener('beforeprint', () => {
 
 elements.printButton?.addEventListener('click', printReport);
 elements.printButtonBottom?.addEventListener('click', printReport);
+elements.printClimateBottomButton?.addEventListener('click', printReport);
 window.addEventListener('energy-tools:prepare-print', () => {
   if (!state.currentResult) return;
   if (!IS_CLIMATE_TOOL) renderHeatingCalculation();
@@ -3288,17 +3245,21 @@ const debouncedAddressSearch = debounce(runAddressSearch);
 elements.addressSearchInput.addEventListener(
   'input',
   () => {
-    // Die bisherige Projektadresse bleibt aktiv, bis tatsächlich ein anderer Treffer
-    // ausgewählt und im gemeinsamen Dialog bestätigt wurde. So kann jederzeit gesucht
-    // werden, ohne das laufende Projekt bereits während des Tippens zu verändern.
     if (
       state.selectedAddress &&
-      elements.addressSearchInput.value !== state.selectedAddress.label
+      elements.addressSearchInput.value !==
+        state.selectedAddress.label
     ) {
-      elements.addressSearchStatus.textContent =
-        'Andere Adresse suchen – das aktuelle Projekt bleibt bis zur Auswahl unverändert.';
+      state.selectedAddress = null;
+      state.selectedNatReference = null;
+      state.selectedTnat13Reference = null;
+      clearMultiKgChoice();
+      elements.selectedAddressCard.hidden = true;
+      elements.natInput.value = '';
+      elements.natReferenceHeightInput.value = '';
+      updateAnalyzeAvailability();
     }
-    updateAnalyzeAvailability();
+
     debouncedAddressSearch();
   }
 );

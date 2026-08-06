@@ -5,8 +5,8 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Klima am Standort – Energieberatung Tirol</title>
 <meta content="Standortbezogene Klimaauswertung mit INCA-Jahresdaten und OIB-Normklima für Gebäude in Tirol." name="description"/>
-<link href="../../styles.css" rel="stylesheet"/>
-<link href="../../shared/css/climate-heating.css?v=2" rel="stylesheet"/><link href="../../shared/css/components.css?v=2" rel="stylesheet"/><link href="../../shared/css/print.css?v=2" rel="stylesheet"/>
+<link href="../../styles.css?v=2" rel="stylesheet"/>
+<link href="../../shared/css/climate-heating.css?v=3" rel="stylesheet"/><link href="../../shared/css/components.css?v=3" rel="stylesheet"/><link href="../../shared/css/print.css?v=3" rel="stylesheet"/>
 </head>
 <body data-tool-mode="climate">
 <header class="site-header">
@@ -28,129 +28,68 @@
 <section class="container tool-intro">
 <p class="eyebrow">Standort · Klima</p>
 <h1>Klima am Standort</h1>
-<p class="tool-lead">Standortbezogene Klimadaten für Tirol mit Jahresvergleichen, Normklima und nachvollziehbarer Datenbasis.</p>
-<p class="tool-disclaimer">Adressbezogene Klimadaten für die Energieberatung – mit jahresweisen INCA-Datenpaketen, OIB-Normklima und nachvollziehbarer Datenbasis.</p>
-<div aria-label="Datengrundlagen" class="data-source-strip">
-<span><strong>Adresse</strong> Projekt / BEV · 01.04.2026</span>
-<span><strong>Klima</strong> INCA · <span data-climate-period="">2012–2025</span></span>
-<span><strong>Normklima</strong> OIB NAT / TNAT,13</span>
-<span><strong>Höhe</strong> TIRIS DGM</span>
-</div>
+<p class="tool-lead">Adressbezogene Klimadaten für Tirol – mit INCA-Jahresvergleichen, OIB-Normklima und transparenter Datenbasis.</p>
 </section>
 <div data-project-header=""></div>
-<section aria-labelledby="location-panel-title" class="container location-panel" data-address-section="">
-<div class="panel-heading production-panel-heading">
+<section aria-labelledby="location-panel-title" class="container location-panel shared-address-card" data-address-section="">
+<div class="panel-heading production-panel-heading shared-address-heading">
 <div>
 <p class="eyebrow">Gebäudestandort</p>
 <h2 id="location-panel-title">Standort auswählen</h2>
-<p class="panel-intro">
-          Adresse eingeben, Vorschlag auswählen und anschließend den
-          Standort analysieren.
-        </p>
 </div>
 <span class="status-chip" id="connectionStatus">Bereit</span>
 </div>
-<section aria-labelledby="address-search-title" class="address-search-panel production-address-search">
-<div class="address-search-heading">
-<div>
-<h3 id="address-search-title">Adresse</h3>
-<p>
-            Schnelle Vorschläge kommen aus dem lokalen BEV-Stichtagsbestand.
-            Beim Auswählen wird die Adresse automatisch live mit TIRIS abgeglichen.
-            Ohne bestehendes Projekt kann der Standort hier vollständig eigenständig gewählt werden.
-          </p>
-</div>
-<span class="address-provider-label" id="addressProviderLabel">
-          Adressmodul wird geladen …
-        </span>
+<section aria-labelledby="address-search-title" class="address-search-panel production-address-search shared-address-search">
+<div class="address-field-meta">
+<span id="address-search-title">PLZ, Gemeinde, Straße und Hausnummer</span>
+<span class="address-provider-label" id="addressProviderLabel">Adressmodul wird geladen …</span>
 </div>
 <div class="address-search-control">
 <label class="address-search-field">
-<span>PLZ, Gemeinde, Straße und Hausnummer</span>
-<input aria-autocomplete="list" aria-controls="addressSuggestions" aria-expanded="false" autocomplete="off" id="addressSearchInput" placeholder="z. B. 6020 Adele-Obermayr-Straße 2" type="search"/>
+<span class="visually-hidden">PLZ, Gemeinde, Straße und Hausnummer</span>
+<input aria-autocomplete="list" aria-controls="addressSuggestions" aria-expanded="false" aria-labelledby="address-search-title" autocomplete="off" id="addressSearchInput" placeholder="z. B. 6020 Adele-Obermayr-Straße 2" type="search"/>
 </label>
 <div class="address-suggestions" hidden="" id="addressSuggestions" role="listbox"></div>
 </div>
-<p class="address-search-status" id="addressSearchStatus">
-        BEV-Vorschläge und TIRIS-Live-Abgleich werden geladen …
-      </p>
-<article class="selected-address-card" hidden="" id="selectedAddressCard">
-<div>
-<span>Ausgewählter Standort</span>
-<strong id="selectedAddressLabel">–</strong>
-<small id="selectedAddressMeta">–</small>
-</div>
-<button class="quiet-button" id="clearAddressButton" type="button">
-          Auswahl löschen
-        </button>
+<p aria-live="polite" class="address-search-status compact-address-status" id="addressSearchStatus"></p>
+<article class="selected-address-card production-support-hidden" hidden="" id="selectedAddressCard">
+<div><span>Ausgewählter Standort</span><strong id="selectedAddressLabel">–</strong><small id="selectedAddressMeta">–</small></div>
+<button class="quiet-button" id="clearAddressButton" type="button">Auswahl löschen</button>
 </article>
 <section aria-labelledby="multiKgTitle" class="multi-kg-panel" hidden="" id="multiKgPanel">
 <div>
 <p class="eyebrow">Sonderfall Grundstücksgrenze</p>
 <h4 id="multiKgTitle">Mehrere Katastralgemeinden gefunden</h4>
-<p>
-            Die Adresse ist laut BEV mehreren Katastralgemeinden zugeordnet.
-            Bitte die passende KG auswählen. Erst danach werden NAT und
-            TNAT,13 eindeutig übernommen.
-          </p>
+<p>Die Adresse ist laut BEV mehreren Katastralgemeinden zugeordnet. Bitte die passende KG auswählen. Erst danach werden NAT und TNAT,13 eindeutig übernommen.</p>
 </div>
 <div class="multi-kg-options" id="multiKgOptions"></div>
 </section>
 </section>
-<details class="coordinate-test-panel expert-location-panel">
-<summary>Standortdaten manuell prüfen oder korrigieren</summary>
-<p>
-        Diese Rückfallebene ist nur nötig, wenn eine Adresse nicht gefunden
-        wird oder Standortdaten fachlich korrigiert werden sollen.
-      </p>
-<label class="manual-mode-switch">
-<input id="manualLocationMode" type="checkbox"/>
-<span>Manuelle Standortdaten für die Analyse verwenden</span>
-</label>
-<div class="coordinate-input-grid">
-<label class="setting-field setting-field--wide">
-<span>Standortbezeichnung</span>
-<input id="siteLabelInput" placeholder="z. B. Gebäude Musterstraße" type="text"/>
-</label>
-<label class="setting-field">
-<span>Breitengrad</span>
-<input id="latitudeInput" placeholder="47.xxxxxx" step="0.000001" type="number"/>
-</label>
-<label class="setting-field">
-<span>Längengrad</span>
-<input id="longitudeInput" placeholder="11.xxxxxx" step="0.000001" type="number"/>
-</label>
-<label class="setting-field">
-<span>NAT-Referenz (°C)</span>
-<input id="natInput" placeholder="-12,6" step="0.1" type="number"/>
-</label>
-<label class="setting-field">
-<span>OIB-ELEVmin (m)</span>
-<input id="natReferenceHeightInput" placeholder="z. B. 541" step="1" type="number"/>
-</label>
-</div>
-</details>
 <div aria-hidden="true" class="production-support-hidden">
-<select id="locationSelect" tabindex="-1">
-<option selected="" value="terfens">Terfens</option>
-<option value="innsbruck">Innsbruck</option>
-<option value="seefeld">Seefeld in Tirol</option>
-</select>
+<select id="locationSelect" tabindex="-1"><option selected="" value="terfens">Terfens</option><option value="innsbruck">Innsbruck</option><option value="seefeld">Seefeld in Tirol</option></select>
 <button id="loadAllButton" tabindex="-1" type="button">Alle Testorte</button>
 <button id="clearCacheButton" tabindex="-1" type="button">Cache löschen</button>
 </div>
 <div class="analysis-action-row">
-<button class="primary-button analysis-button" disabled="" id="loadSelectedButton" type="button">
-        Standort analysieren
-      </button>
-<p class="analysis-hint" id="analysisHint">
-        Zuerst eine Adresse auswählen.
-      </p>
+<button class="primary-button analysis-button" disabled="" id="loadSelectedButton" type="button">Standort analysieren</button>
+<p class="analysis-hint" id="analysisHint">Zuerst eine Adresse auswählen.</p>
 </div>
 <div aria-live="polite" class="progress-area production-progress">
 <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
 <p id="progressText">Bereit.</p>
 </div>
+<details class="coordinate-test-panel expert-location-panel compact-expert-panel">
+<summary>Manuelle Standortdaten</summary>
+<p>Nur verwenden, wenn eine Adresse nicht gefunden wird oder Standortdaten fachlich korrigiert werden müssen.</p>
+<label class="manual-mode-switch"><input id="manualLocationMode" type="checkbox"/><span>Manuelle Standortdaten für die Analyse verwenden</span></label>
+<div class="coordinate-input-grid">
+<label class="setting-field setting-field--wide"><span>Standortbezeichnung</span><input id="siteLabelInput" placeholder="z. B. Gebäude Musterstraße" type="text"/></label>
+<label class="setting-field"><span>Breitengrad</span><input id="latitudeInput" placeholder="47.xxxxxx" step="0.000001" type="number"/></label>
+<label class="setting-field"><span>Längengrad</span><input id="longitudeInput" placeholder="11.xxxxxx" step="0.000001" type="number"/></label>
+<label class="setting-field"><span>NAT-Referenz (°C)</span><input id="natInput" placeholder="-12,6" step="0.1" type="number"/></label>
+<label class="setting-field"><span>OIB-ELEVmin (m)</span><input id="natReferenceHeightInput" placeholder="z. B. 541" step="1" type="number"/></label>
+</div>
+</details>
 </section>
 <section class="container results-section" hidden="" id="resultsSection">
 <header class="print-report-header print-only climate-view">
@@ -474,9 +413,25 @@
         Hitzetage und Tropennächte werden aus stündlichen INCA-Rasterwerten
         abgeleitet und sind keine offiziellen Stationsstatistiken.
       </p>
-<div class="climate-view">
-<p><a class="tool-connection-link" href="../heizlast/index.html">Mit diesen Klimadaten zur Heizlast →</a></p>
-<div data-report-actions="" data-report-actions-label="Drucken / PDF"></div>
+<details class="method-documentation climate-view">
+<summary>Methode und Datenbasis</summary>
+<div class="method-documentation__content">
+<div aria-label="Datengrundlagen" class="data-source-strip data-source-strip--method">
+<span><strong>Adresse</strong> Projekt / BEV · 01.04.2026</span>
+<span><strong>Klima</strong> INCA · <span data-climate-period="">2012–2025</span></span>
+<span><strong>Normklima</strong> OIB NAT / TNAT,13</span>
+<span><strong>Höhe</strong> TIRIS DGM</span>
+</div>
+<section><h3>Jahresauswertung</h3><p>Für jedes verfügbare INCA-Jahr werden die stündlichen Temperaturwerte des nächstgelegenen 1-km-Rasterpunkts ausgewertet. Die Kennzahlen in den Kärtchen zeigen Mittelwerte der Jahresergebnisse; die kräftige Diagrammlinie zeigt den Median der einzelnen Jahreskurven.</p></section>
+<section><h3>Kennwerte</h3><p>Temperaturstunden, Heizgradstunden, Hitzetage und Tropennächte werden aus den vorberechneten stündlichen Rasterwerten abgeleitet. Fehlende Stunden werden gezählt und in der Datenqualität ausgewiesen.</p></section>
+<section><h3>Normklima und Höhe</h3><p>NAT und TNAT,13 stammen aus der OIB-Referenz der zugeordneten Katastralgemeinde. Gebäudestandort, INCA-Rasterpunkt, TIRIS-Geländehöhe und OIB-ELEVmin werden getrennt dokumentiert; es erfolgt keine automatische Höhenkorrektur.</p></section>
+<section><h3>Grenzen</h3><p>INCA-Rasterdaten bilden das lokale Mikroklima nur näherungsweise ab. Die Ergebnisse unterstützen die Energieberatung, ersetzen aber weder Stationsstatistiken noch eine objektspezifische bauphysikalische Detailberechnung.</p></section>
+</div>
+</details>
+<div class="climate-next-actions climate-view">
+<a class="primary-button button-link" href="../heizlast/index.html">Heizlast</a>
+<a class="primary-button button-link" href="../energiefluss-v4/index.html">Energiefluss</a>
+<button class="secondary-button" id="printClimateBottomButton" type="button">Drucken / PDF</button>
 </div></section>
 </main>
 <footer class="site-footer">
@@ -546,7 +501,7 @@
       }
     }, 4000);
   </script>
-<script src="../../script.js"></script><script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=4"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-address-manager.js?v=1"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/data/standards/oib/nat-tirol.js?v=1"></script><script src="../../shared/data/standards/oib/tnat13-tirol.js?v=1"></script><script src="../../shared/js/domain/climate/oib-nat-core.js?v=1"></script><script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script><script src="../../shared/js/domain/climate/climate-core.js?v=1"></script><script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=1"></script><script src="../../shared/js/domain/heating/heating-core.js?v=2"></script><script src="../../shared/js/tools/climate-heating-app.js?v=3"></script>
+<script src="../../script.js"></script><script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=4"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-address-manager.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/data/standards/oib/nat-tirol.js?v=1"></script><script src="../../shared/data/standards/oib/tnat13-tirol.js?v=1"></script><script src="../../shared/js/domain/climate/oib-nat-core.js?v=1"></script><script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script><script src="../../shared/js/domain/climate/climate-core.js?v=1"></script><script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=1"></script><script src="../../shared/js/domain/heating/heating-core.js?v=2"></script><script src="../../shared/js/tools/climate-heating-app.js?v=4"></script>
 <!-- Gemeinsame Projekt- und Standortbasis -->
 <!-- Klima-&-Heizlast-spezifische Daten und Berechnungen -->
 </body>

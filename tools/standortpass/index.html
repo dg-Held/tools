@@ -5,8 +5,8 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Standortpass Energie &amp; Gebäude | Tools für Energieberatung</title>
 <meta content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten." name="description"/>
-<link href="../../styles.css" rel="stylesheet"/>
-<link href="standortpass.css?v=8" rel="stylesheet"/><link href="../../shared/css/components.css?v=2" rel="stylesheet"/><link href="../../shared/css/print.css?v=1" rel="stylesheet"/>
+<link href="../../styles.css?v=2" rel="stylesheet"/>
+<link href="standortpass.css?v=9" rel="stylesheet"/><link href="../../shared/css/components.css?v=3" rel="stylesheet"/><link href="../../shared/css/print.css?v=3" rel="stylesheet"/>
 </head>
 <body>
 <header class="site-header">
@@ -40,24 +40,26 @@
 <div class="panel-heading"><div><p class="eyebrow">Projektübersicht</p><h2 id="overview-title">Prüfstatus</h2><p>Die Übersicht aktualisiert sich während der Standortprüfung automatisch.</p></div></div>
 <div class="project-overview-grid" id="projectOverviewGrid"></div>
 </section>
-<section aria-labelledby="live-address-title" class="container test-panel" data-address-section="">
+<section aria-labelledby="live-address-title" class="container test-panel shared-address-card" data-address-section="">
 <div class="panel-heading">
 <div>
 <p class="eyebrow">1 · Projektstandort</p>
 <h2 id="live-address-title">Standort auswählen</h2>
-<p>
-            Adresse suchen und als gemeinsame Projektadresse übernehmen.
-          </p>
+
 </div>
 <span class="status-chip status-chip--muted" id="tirisLiveAddressStatus">nicht geprüft</span>
 </div>
+<div class="address-field-meta">
+<span id="tirisLiveAddressLabel">PLZ, Gemeinde, Straße und Hausnummer</span>
+<span class="address-provider-label">BEV-Vorschläge 2026-04-01 · TIRIS live</span>
+</div>
 <label class="search-field">
-<span>Adresse – schnelle BEV-Vorschläge, anschließend TIRIS-Live-Abgleich</span>
-<input aria-controls="tirisLiveAddressResults" aria-expanded="false" autocomplete="off" id="tirisLiveAddressInput" placeholder="z. B. 6112 w oder 6020 Bürgerstraße 1" type="search"/>
+<span class="visually-hidden">PLZ, Gemeinde, Straße und Hausnummer</span>
+<input aria-labelledby="tirisLiveAddressLabel" aria-controls="tirisLiveAddressResults" aria-expanded="false" autocomplete="off" id="tirisLiveAddressInput" placeholder="z. B. 6112 w oder 6020 Bürgerstraße 1" type="search"/>
 </label>
 <div class="action-row address-action-row">
 <button class="primary-button" id="searchTirisLiveAddressButton" type="button">Adresse suchen</button>
-<span class="action-note" id="tirisParsedAddress">Mindestens drei Zeichen eingeben. Die gewählte Adresse wird live mit TIRIS abgeglichen.</span>
+<span class="action-note" id="tirisParsedAddress">Mindestens drei Zeichen eingeben.</span>
 </div>
 <div class="suggestions" hidden="" id="tirisLiveAddressResults" role="listbox"></div>
 <details class="location-data-details no-print">
@@ -557,7 +559,7 @@
 
 
 
-<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=4"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-address-manager.js?v=1"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/js/services/building-geometry-service.js?v=1"></script><script src="standortpass.js?v=10"></script>
+<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=4"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-address-manager.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/js/services/building-geometry-service.js?v=1"></script><script src="standortpass.js?v=11"></script>
 <script src="standortpass-v1.js?v=12"></script>
 </body>
 </html>

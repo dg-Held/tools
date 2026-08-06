@@ -23,7 +23,7 @@
 .v4-methodology {
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-large);
-  background: rgba(255, 255, 255, 0.97);
+  background: rgb(var(--white-rgb) / 0.97);
   box-shadow: var(--shadow-card);
 }
 
@@ -252,7 +252,7 @@
 @page { size: A4 portrait; margin: 8mm; }
 
 @media print {
-  .energy-v4-page { padding: 0 !important; background: #fff !important; }
+  .energy-v4-page { padding: 0 !important; background: var(--white) !important; }
   .v4-workspace,
   .address-card,
   .tool-intro { display: none !important; }
@@ -263,7 +263,7 @@
   .print-title h1 { margin: 0; font-size: 14pt; }
   .print-title p { margin: 0; max-width: 75mm; font-size: 7pt; text-align: right; color: var(--text-muted); }
   .print-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; margin-bottom: 3mm; }
-  .print-kpis article { padding: 2.2mm; border-radius: 2mm; text-align: center; color: #fff; background: var(--color-primary); }
+  .print-kpis article { padding: 2.2mm; border-radius: 2mm; text-align: center; color: var(--white); background: var(--color-primary); }
   .print-kpis article:nth-child(even) { background: var(--color-secondary); }
   .print-kpis span { display: block; font-size: 6pt; }
   .print-kpis strong { display: block; margin: 0.5mm 0; font-size: 10pt; }
@@ -272,7 +272,7 @@
   .print-flow h2 { margin: 0 0 2mm; font-size: 10pt; }
   .print-flow-entry { margin-bottom: 1.5mm; }
   .print-flow-entry div:first-child { display: flex; justify-content: space-between; gap: 2mm; font-size: 7pt; }
-  .print-flow-bar { height: 1.8mm; margin-top: 0.5mm; border-radius: 99mm; background: #edf3f2; overflow: hidden; }
+  .print-flow-bar { height: 1.8mm; margin-top: 0.5mm; border-radius: 99mm; background: var(--surface-subtle); overflow: hidden; }
   .print-flow-bar i { display: block; height: 100%; background: var(--color-primary); }
   .print-flow > div:last-child .print-flow-bar i { background: var(--color-secondary); }
   .print-house { display: grid; place-items: center; min-height: 70mm; }
@@ -428,21 +428,21 @@
   width: 18px;
   height: 18px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid rgb(var(--white-rgb) / 0.65);
   border-radius: 50%;
   font: inherit;
   font-size: 0.66rem;
   font-weight: 700;
   line-height: 1;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.10);
+  color: var(--white);
+  background: rgb(var(--white-rgb) / 0.10);
   cursor: help;
 }
 .info-tip:hover,
 .info-tip:focus-visible {
   color: var(--text-dark);
-  background: #fff;
-  border-color: #fff;
+  background: var(--white);
+  border-color: var(--white);
   outline: none;
 }
 .info-tip::after {

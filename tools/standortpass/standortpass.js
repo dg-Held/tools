@@ -1523,7 +1523,7 @@ async function drawBuildingGeometry(features) {
       text.setAttribute('x', '260');
       text.setAttribute('y', '180');
       text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('fill', '#526562');
+      text.setAttribute('fill', 'var(--text-muted)');
       text.textContent = 'Keine Geometrie verfügbar';
       svg.appendChild(text);
     }

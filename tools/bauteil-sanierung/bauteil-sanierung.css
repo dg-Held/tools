@@ -269,12 +269,12 @@
 }
 
 .result-cards > article:nth-child(1) {
-  border-color: rgba(52, 171, 159, 0.55);
+  border-color: rgb(var(--color-primary-rgb) / 0.55);
   background: var(--color-primary-soft);
 }
 
 .result-cards > article:nth-child(2) {
-  border-color: rgba(179, 68, 108, 0.42);
+  border-color: rgb(var(--color-secondary-rgb) / 0.42);
   background: var(--color-secondary-soft);
 }
 
@@ -531,7 +531,7 @@
   .print-summary-grid > div,
   .print-kpi-grid > div {
     padding: 3mm;
-    border: 0.25mm solid #d7e3e1;
+    border: 0.25mm solid var(--line-strong);
     border-radius: 3mm;
   }
 
@@ -545,7 +545,7 @@
   .print-summary-grid span,
   .print-kpi-grid span {
     font-size: 8pt;
-    color: #526562;
+    color: var(--text-muted);
   }
 
   .print-cost-bridge {
@@ -556,7 +556,7 @@
     display: flex;
     justify-content: space-between;
     padding: 1.6mm 0;
-    border-bottom: 0.2mm solid #d7e3e1;
+    border-bottom: 0.2mm solid var(--line-strong);
   }
 
   .print-variants {
@@ -568,7 +568,7 @@
   .print-variants th,
   .print-variants td {
     padding: 1.4mm;
-    border-bottom: 0.2mm solid #d7e3e1;
+    border-bottom: 0.2mm solid var(--line-strong);
     text-align: right;
   }
 
@@ -579,7 +579,7 @@
 }
 
 .chart-grid line {
-  stroke: rgba(12, 39, 36, 0.10);
+  stroke: rgb(var(--text-dark-rgb) / 0.10);
   stroke-width: 1;
 }
 
@@ -591,7 +591,7 @@
 }
 
 .chart-axis {
-  stroke: rgba(12, 39, 36, 0.45);
+  stroke: rgb(var(--text-dark-rgb) / 0.45);
   stroke-width: 1.2;
 }
 
@@ -652,9 +652,9 @@
 
 .assumption-summary > div {
   padding: .85rem 1rem;
-  border: 1px solid var(--color-border, #d7e4e2);
+  border: 1px solid var(--color-border, var(--line-strong));
   border-radius: var(--radius-md, 14px);
-  background: var(--color-surface-muted, #f6faf9);
+  background: var(--color-surface-muted, var(--surface-muted));
 }
 
 .assumption-summary span,
@@ -663,7 +663,7 @@
 }
 
 .assumption-summary span {
-  color: var(--color-text-muted, #5f6f6d);
+  color: var(--color-text-muted, var(--text-muted));
   font-size: .82rem;
 }
 
@@ -684,9 +684,9 @@
   align-items: center;
   gap: .75rem;
   padding: .65rem .75rem;
-  border: 1px solid var(--color-border, #d7e4e2);
+  border: 1px solid var(--color-border, var(--line-strong));
   border-radius: var(--radius-md, 14px);
-  background: #fff;
+  background: var(--white);
 }
 
 #renovationPrintReport {
@@ -868,7 +868,7 @@
 .impact-house--before { color: var(--color-secondary-dark); background: var(--color-secondary-soft); }
 .impact-house--after { color: var(--color-primary-dark); background: var(--color-primary-soft); }
 .impact-wave { stroke-dasharray: 7 7; }
-.impact-shield { fill: rgba(52, 171, 159, .15); }
+.impact-shield { fill: rgb(var(--color-primary-rgb) / .15); }
 
 .impact-benefits {
   display: grid;
@@ -905,20 +905,20 @@
   }
 
   .renovation-print-report {
-    color: #16312e;
+    color: var(--text-dark);
   }
 
   .print-hero {
     margin-bottom: 4mm;
     padding: 4mm 5mm;
     border-radius: 4mm;
-    color: #153d38;
-    background: #e4f5f2;
+    color: var(--text-dark);
+    background: var(--color-primary-light);
   }
 
   .print-summary-grid > div,
   .print-kpi-grid > div {
-    background: #f4faf9;
+    background: var(--surface-muted);
   }
 
   .print-selected,
@@ -932,13 +932,13 @@
   }
 
   .print-kpi-grid > div:nth-child(2n) {
-    background: #f8eaf0;
+    background: var(--color-secondary-soft);
   }
 
   .print-kpi-grid small {
     display: block;
     margin-top: .8mm;
-    color: #3a7069;
+    color: var(--color-primary-dark);
     font-size: 7.5pt;
   }
 
@@ -960,24 +960,24 @@
   .print-impact-house span,
   .print-impact-house strong,
   .print-impact-house small { display: block; }
-  .print-impact-house--before { color: #7d294a; background: #f6e2ea; }
-  .print-impact-house--after { color: #176f66; background: #e2f4f1; }
+  .print-impact-house--before { color: var(--color-secondary-dark); background: var(--color-secondary-light); }
+  .print-impact-house--after { color: var(--color-primary-dark); background: var(--color-primary-light); }
   .print-impact-benefits {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 2mm;
-    background: #f2f7f6;
+    background: var(--surface-subtle);
   }
   .print-impact-benefits > div {
     padding: 2.5mm;
-    border: .2mm solid #d7e3e1;
+    border: .2mm solid var(--line-strong);
     border-radius: 2mm;
     text-align: center;
-    background: #fff;
+    background: var(--white);
   }
   .print-impact-benefits span,
   .print-impact-benefits strong { display: block; }
-  .print-impact-benefits span { color: #526562; font-size: 7.5pt; }
+  .print-impact-benefits span { color: var(--text-muted); font-size: 7.5pt; }
   .print-impact-benefits strong { margin-top: .7mm; font-size: 8.5pt; }
 
   .print-cost-bridge .is-total { font-weight: 800; }
@@ -986,8 +986,8 @@
     padding: 2mm 2.5mm;
     border: 0;
     border-radius: 2.5mm;
-    color: #762b4a;
-    background: #f3d9e4;
+    color: var(--color-secondary-dark);
+    background: var(--color-secondary-light);
   }
 
   .print-charts-grid {
@@ -997,26 +997,26 @@
   }
   .print-charts-grid > div {
     padding: 3mm;
-    border: .2mm solid #d7e3e1;
+    border: .2mm solid var(--line-strong);
     border-radius: 3mm;
-    background: #fff;
+    background: var(--white);
   }
   .print-charts-grid svg { width: 100%; height: auto; }
-  .print-charts-grid p { margin: 1mm 0 0; color: #526562; font-size: 7.5pt; }
+  .print-charts-grid p { margin: 1mm 0 0; color: var(--text-muted); font-size: 7.5pt; }
 
   .print-all-variants {
     break-before: auto;
   }
   .print-all-variants .print-variants tr.is-selected {
-    background: #e2f4f1;
+    background: var(--color-primary-light);
     font-weight: 800;
   }
 
-  .chart-grid line { stroke: rgba(12,39,36,.14); }
-  .chart-line { stroke: #176f66; }
-  .chart-marker--recommendation { fill: #34ab9f; }
-  .chart-marker--economic { fill: #b3446c; }
-  .chart-marker--ambitious { fill: #d69d2f; }
+  .chart-grid line { stroke: rgb(var(--text-dark-rgb) / .14); }
+  .chart-line { stroke: var(--color-primary-dark); }
+  .chart-marker--recommendation { fill: var(--color-primary); }
+  .chart-marker--economic { fill: var(--color-secondary); }
+  .chart-marker--ambitious { fill: var(--color-warning); }
 }
 
 /* V0.5 – Finalisierung Fenster, Haustür, Pflichtfelder und eigene SVGs */
@@ -1029,7 +1029,7 @@
 }
 
 .funding-inputs {
-  border-top-color: rgba(179, 68, 108, .35);
+  border-top-color: rgb(var(--color-secondary-rgb) / .35);
 }
 .funding-inputs > summary {
   color: var(--color-secondary-dark);
@@ -1057,7 +1057,7 @@
 
 .print-variant-label {
   margin: -1mm 0 3mm;
-  color: #526562;
+  color: var(--text-muted);
   font-size: 8.5pt;
   font-weight: 700;
 }
@@ -1084,13 +1084,13 @@
 .input-grid--basis { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
 #uValueField.is-required-missing {
   padding: .65rem;
-  border: 1px solid rgba(179, 68, 108, .55);
+  border: 1px solid rgb(var(--color-secondary-rgb) / .55);
   border-radius: var(--radius-md);
   background: var(--color-secondary-soft);
 }
 #uValueField.is-required-missing input {
   border-color: var(--color-secondary);
-  box-shadow: 0 0 0 2px rgba(179, 68, 108, .12);
+  box-shadow: 0 0 0 2px rgb(var(--color-secondary-rgb) / .12);
 }
 #uValueField.is-required-missing .required-message {
   display: block !important;

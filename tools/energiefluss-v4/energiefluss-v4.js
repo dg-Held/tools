@@ -852,7 +852,7 @@
     hybridAddressProvider = new global.HybridAddressProvider({ suggestionProvider: localProvider, liveProvider });
     try {
       await hybridAddressProvider.init();
-      $('v4AddressStatus').textContent = 'BEV-Vorschläge und TIRIS-Live-Abgleich sind bereit.';
+      $('v4AddressStatus').textContent = '';
     } catch (error) {
       $('v4AddressStatus').textContent = `Adressindex konnte nicht geladen werden: ${error.message}`;
     }
