@@ -139,19 +139,21 @@ Ein manuelles Bruttovolumen behält Vorrang. Referenz- und verwendeter Wert blei
 
 ### Standortpass Energie & Gebäude
 
-Status: V1.1, fachlich weitgehend fertig; Geometriekette V1.3.
+Status: V1.1.1, fachlich weitgehend fertig; Geometriekette V1.4.
 
 - Adresse und TIRIS-Gebäudezuordnung,
 - gespeicherter Gebäude-/Polygon-Snapshot,
 - Orthofoto, Geländehöhe und Gebäudehöhen,
 - Dachprojektion, Umfang, Dachneigung und Dachfläche,
 - Geschoße und NFL als priorisierte Prüfeingaben; BGF wird bei bekannter NFL mit dem transparenten Beratungsfaktor 0,75 nachgeführt,
+- kompakte Geometriezusammenfassung oberhalb der eingeklappten Detailtabelle: Geschoße, NFL, beheizter Anteil und Plausibilitätsstatus,
 - beheizter Anteil als 0–100-%-Regler sowie Fensteranteil als 10–50-%-Regler,
-- Hüllflächen und Bruttovolumen folgen der verwendeten Grundfläche; automatische TIRIS-Referenzen bleiben parallel erhalten,
+- Geschoßflächen, Fassade und Bruttovolumen folgen der verwendeten Grundfläche; die Dachfläche bleibt am TIRIS-Dachpolygon und reagiert nur auf die Dachneigung,
+- automatische TIRIS-Referenzen bleiben parallel erhalten,
 - Wärmeversorgung und Umweltwärmehinweise,
 - Solar-/Verschattungsinformationen,
 - Hochwasser, Naturgefahren, WLV, Radon, Denkmal- und Kulturkontext,
-- zwei verdichtete A4-Seiten.
+- zwei verdichtete A4-Seiten mit eigenem Berichtstitel und abgestimmtem Abstand zur gemeinsamen Projektkopfzeile.
 
 ### Klima am Standort V1.0
 

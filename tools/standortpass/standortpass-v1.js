@@ -317,7 +317,9 @@
     const effectiveTopFloor = manuals.topFloorArea ?? derivedTopFloor;
     const effectiveBasement = manuals.basementArea ?? derivedBasement;
     const effectiveRoofPitch = manuals.roofPitch ?? 0;
-    const roofProjectionForSlope = effectiveTopFloor ?? effectiveFootprint;
+    // Die Dachfläche bleibt an das amtliche TIRIS-Dachpolygon gebunden.
+    // Änderungen an NFL, BGF oder Geschoßzahl führen nur die Geschoßflächen nach.
+    const roofProjectionForSlope = roofArea;
     const derivedRoofSlopeArea = roofProjectionForSlope !== null && effectiveRoofPitch >= 0 && effectiveRoofPitch < 89
       ? roundToStep(roofProjectionForSlope / Math.cos((effectiveRoofPitch * Math.PI) / 180), 10)
       : null;
@@ -361,8 +363,11 @@
       let source = manual !== null ? 'manual' : 'automatic';
       if (config.key === 'grossFloorArea' && manual === null && manuals.usableFloorArea !== null) source = 'derived-manual-basis';
       if (config.key === 'heatedFloorArea') source = heatedShare === DEFAULT_HEATED_SHARE_PERCENT ? 'automatic' : 'derived-manual-basis';
-      if (['exteriorWall', 'windowArea', 'topFloorArea', 'basementArea', 'roofSlopeArea', 'volume'].includes(config.key)
+      if (['exteriorWall', 'windowArea', 'topFloorArea', 'basementArea', 'volume'].includes(config.key)
           && manual === null && (manuals.usableFloorArea !== null || manuals.grossFloorArea !== null || manuals.storeys !== null)) {
+        source = 'derived-manual-basis';
+      }
+      if (config.key === 'roofSlopeArea' && manual === null && manuals.roofPitch !== null) {
         source = 'derived-manual-basis';
       }
       result.fields[config.key] = {
@@ -403,6 +408,26 @@
         ? 'BGF und NFL wurden beide manuell eingetragen und weichen deutlich vom 0,75-Faktor ab. Das ist zulässig; bitte prüfen, ob beide Flächen nach derselben Definition ermittelt wurden.'
         : '';
     }
+
+    const quickSummary = $('geometryQuickSummary');
+    if (quickSummary) {
+      const storeys = data.fields.storeys?.effective;
+      const usable = data.fields.usableFloorArea?.effective;
+      const complete = storeys !== null && usable !== null;
+      const plausible = complete && !data.ratioConflict;
+      quickSummary.classList.toggle('is-complete', plausible);
+      quickSummary.classList.toggle('is-warning', complete && !plausible);
+      if (!complete) {
+        quickSummary.textContent = 'Gebäudegeometrie noch nicht verfügbar.';
+      } else {
+        const roundedStoreys = Math.round(storeys);
+        const storeyText = `${number0.format(roundedStoreys)} ${roundedStoreys === 1 ? 'Geschoß' : 'Geschoße'}`;
+        const usableText = `${number0.format(usable)} m² NFL`;
+        const heatedText = `${number0.format(data.heatedSharePercent)} % beheizt`;
+        const statusText = plausible ? 'Geometrie plausibel' : 'BGF/NFL prüfen';
+        quickSummary.textContent = `${storeyText} · ${usableText} · ${heatedText} · ${statusText}`;
+      }
+    }
   }
 
   function geometryEstimatesShared() {
@@ -417,7 +442,7 @@
       topFloorArea: ['topFloorArea', 'm²', 'verwendete BGF / Geschoße'],
       basementArea: ['basementCeilingArea', 'm²', 'verwendete BGF / Geschoße'],
       roofPitch: ['roofPitch', '°', 'Standard 0° oder manuelle Eingabe'],
-      roofSlopeArea: ['roofSlopeArea', 'm²', 'verwendete Grundfläche / cos(Dachneigung)'],
+      roofSlopeArea: ['roofSlopeArea', 'm²', 'TIRIS-Dachprojektion / cos(Dachneigung)'],
       volume: ['grossVolume', 'm³', 'verwendete Grundfläche × Medianhöhe; äußeres geometrisches Bruttovolumen'],
     };
 
@@ -618,7 +643,7 @@
       radonStatus: statusText('radonStatus'),
       reportStatus: statusText('reportRunStatus'),
       solar: compactSolarShared(),
-      version: '1.1.0',
+      version: '1.1.1',
       sharedArchitecture: '1.0',
       updatedAt: new Date().toISOString(),
     };
@@ -669,9 +694,12 @@
   }
 
   function resultCard(label, status, detail, tone = 'neutral') {
+    const safeLabel = escapeHtml(label);
+    const safeStatus = escapeHtml(status);
+    const safeDetail = escapeHtml(detail);
     return `<article class="overview-result overview-result--${tone}">
-      <div class="compact-card-heading"><span>${label}</span><details class="metric-info"><summary aria-label="Info zu ${label}" class="info-tip">i</summary><div class="metric-info-popover">${detail}</div></details></div>
-      <strong>${status}</strong>
+      <div class="compact-card-heading"><span>${safeLabel}</span><button aria-label="Info zu ${safeLabel}" class="info-tip overview-info-tip" data-tooltip="${safeDetail}" type="button">i</button></div>
+      <strong>${safeStatus}</strong>
     </article>`;
   }
 
@@ -701,9 +729,9 @@
       ['Umweltwärme', text('environmentalHeatStatus') || 'offen', 'Erdsonden, Grundwasser und wasserrechtliche Hinweise'],
       ['Naturgefahren', text('hazardStatus') || 'offen', 'HQ30/HQ100/HQ300 und TIRIS-Gefahrenhinweise'],
       ['Schutz & Radon', `${text('heritageStatus') || 'offen'} · ${text('radonStatus') || 'offen'}`, 'Denkmalschutz, Kulturkontext und Radonstatus'],
-      ['Wärmenetz', 'TIRIS-Check', 'Automatische Schnittstelle noch in Klärung; Link folgt der Projektadresse.'],
+      ['Wärmenetz', 'TIRIS-Check', 'Die Prüfung wird direkt für die Projektadresse in TIRIS geöffnet.', 'berry'],
     ] : [reportItem];
-    overview.innerHTML = items.map(([label, status, detail]) => resultCard(label, status, detail, toneFromStatus(status.toLowerCase()))).join('');
+    overview.innerHTML = items.map(([label, status, detail, tone]) => resultCard(label, status, detail, tone || toneFromStatus(status.toLowerCase()))).join('');
   }
 
   function setMainToolAreasVisible(visible) {

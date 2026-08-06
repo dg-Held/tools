@@ -58,6 +58,7 @@ store.setFieldCandidate('building.geometry.grossFloorArea', model.ORIGIN.MANUAL,
 assert.equal(value('building.geometry.grossFloorArea'), 260);
 assert.equal(value('building.geometry.usableFloorArea'), 195);
 assert.equal(value('building.geometry.topFloorArea'), 130);
+assert.equal(value('building.geometry.roofSlopeArea'), 100);
 assert.equal(value('building.geometry.grossVolume'), 1250);
 assert.equal(value('building.geometry.exteriorWallGrossArea'), 440);
 
@@ -67,8 +68,13 @@ store.setFieldCandidate('building.geometry.usableFloorArea', model.ORIGIN.MANUAL
 assert.equal(value('building.geometry.grossFloorArea'), 240);
 assert.equal(value('building.geometry.usableFloorArea'), 180);
 assert.equal(value('building.geometry.topFloorArea'), 120);
+assert.equal(value('building.geometry.roofSlopeArea'), 100);
 assert.equal(value('building.geometry.grossVolume'), 1150);
 assert.equal(value('building.geometry.exteriorWallGrossArea'), 420);
+
+// Die Dachfläche bleibt am amtlichen Dachpolygon und folgt nur der Dachneigung.
+store.setFieldCandidate('building.geometry.roofPitch', model.ORIGIN.MANUAL, 30, { unit: '°' });
+assert.equal(value('building.geometry.roofSlopeArea'), 120);
 
 // Beheizter Anteil und beheizte Nutzfläche werden bidirektional synchronisiert.
 store.setFieldCandidate('building.thermal.heatedSharePercent', model.ORIGIN.MANUAL, 75, { unit: '%' });
@@ -97,6 +103,7 @@ console.log(JSON.stringify({
   effectiveBgf: value('building.geometry.grossFloorArea'),
   effectiveNfl: value('building.geometry.usableFloorArea'),
   heatedNfl: value('building.geometry.heatedFloorArea'),
+  roofSlopeArea: value('building.geometry.roofSlopeArea'),
   grossVolume: value('building.geometry.grossVolume'),
   heatedVolume: value('building.thermal.heatedVolume'),
 }, null, 2));

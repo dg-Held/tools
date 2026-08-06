@@ -79,3 +79,15 @@
     line-height: 1.1 !important;
   }
 }
+
+/* V1.1 · Abstand zwischen gemeinsamer Projektkarte und Berichtstitel */
+@media print {
+  .project-header-card {
+    margin-bottom: 3.5mm !important;
+  }
+
+  .print-report-header {
+    margin-top: 0 !important;
+    margin-bottom: 2.8mm !important;
+  }
+}

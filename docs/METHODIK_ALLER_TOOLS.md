@@ -24,17 +24,19 @@ Priorität der verwendeten Flächen:
 2. bekannte manuelle NFL mit `BGF = NFL / 0,75`,
 3. automatische BGF aus Dachprojektion und Geschoßzahl.
 
-Geschoßzahl und NFL sind die wichtigsten Prüfeingaben. Aus `Grundfläche_verwendet = BGF / Geschoße` werden OGD, unterster Abschluss und Gebäudevolumen nachgeführt. Die Außenwand wird bei geänderter Grundfläche über die Quadratwurzel des Flächenverhältnisses skaliert; dadurch folgt der Umfang bei ähnlicher Gebäudeform plausibler als bei linearer Skalierung.
+Geschoßzahl und NFL sind die wichtigsten Prüfeingaben. Sie bleiben bei eingeklappter Detailtabelle in einer kompakten Zusammenfassung sichtbar. Aus `Grundfläche_verwendet = BGF / Geschoße` werden OGD, unterster Abschluss und Gebäudevolumen nachgeführt. Die Außenwand wird bei geänderter Grundfläche über die Quadratwurzel des Flächenverhältnisses skaliert; dadurch folgt der Umfang bei ähnlicher Gebäudeform plausibler als bei linearer Skalierung. Die Dachprojektion bleibt dagegen das amtliche TIRIS-Dachpolygon und wird nicht aus NFL oder BGF neu abgeleitet.
 
 ```text
 Außenwand = TIRIS-Umfang × √(Grundfläche_verwendet / Dachprojektion) × Medianhöhe
 Fenster = Außenwand × Fensteranteil
 OGD = Kellerdecke = Grundfläche_verwendet
-Dachschräge = Grundfläche_verwendet / cos(Dachneigung)
+Dachschräge = TIRIS-Dachprojektion / cos(Dachneigung)
 Gebäudevolumen = Grundfläche_verwendet × Medianhöhe
 ```
 
 Der Fensteranteil ist als Beratungsregler von 10 bis 50 % voreingestellt auf 25 %. Die OIB-Richtlinie 3 fordert für Aufenthaltsräume eine Lichteintrittsfläche bezogen auf die Bodenfläche des jeweiligen Raums; daraus folgt kein allgemeiner gesetzlicher Mindestanteil an der gesamten Fassadenfläche.
+
+Die kompakte Geometriezeile zeigt Geschoßzahl, NFL, beheizten Anteil und einen einfachen Plausibilitätsstatus. „Geometrie plausibel“ bedeutet nur, dass die Kernwerte vollständig sind und eine gleichzeitig manuell eingetragene BGF/NFL nicht deutlich vom 0,75-Verhältnis abweicht; es ist keine geometrische oder baurechtliche Prüfung.
 
 Alle automatischen Werte bleiben Orientierungswerte. Manuelle Werte werden getrennt gespeichert, haben Vorrang und behalten ihre Herkunft.
 

@@ -2854,3 +2854,29 @@ button.info-tip {
     transform: translate(-50%, 0);
   }
 }
+
+/* V1.1.1 · saubere Drucktitel für Klima und Heizlast */
+@media print {
+  body[data-tool-mode="climate"] .print-report-header,
+  body[data-tool-mode="heating"] .print-page-two-header {
+    margin-top: 0 !important;
+    margin-bottom: 3mm !important;
+  }
+
+  body[data-tool-mode="heating"] .print-page-two-header h1 {
+    margin: 0 !important;
+    font-size: 13pt !important;
+    line-height: 1.15 !important;
+  }
+}
+
+/* V1.1.2 · Der Berichtstitel steht außerhalb der abgerundeten Bildschirmkarte. */
+@media print {
+  body[data-tool-mode="climate"] .results-section,
+  body[data-tool-mode="heating"] .results-section {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: var(--white) !important;
+  }
+}

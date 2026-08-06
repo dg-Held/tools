@@ -6,7 +6,7 @@
 <title>Standortpass Energie &amp; Gebäude | Tools für Energieberatung</title>
 <meta content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten." name="description"/>
 <link href="../../styles.css?v=2" rel="stylesheet"/>
-<link href="standortpass.css?v=12" rel="stylesheet"/><link href="../../shared/css/components.css?v=3" rel="stylesheet"/><link href="../../shared/css/print.css?v=3" rel="stylesheet"/>
+<link href="standortpass.css?v=13" rel="stylesheet"/><link href="../../shared/css/components.css?v=3" rel="stylesheet"/><link href="../../shared/css/print.css?v=4" rel="stylesheet"/>
 </head>
 <body>
 <header class="site-header">
@@ -213,15 +213,10 @@
 <div class="validation-heading">
 <div><span class="mini-label">Beratungsentwurf</span><h3>Gebäudegrößen prüfen</h3></div>
 </div>
-<p class="geometry-note">Besonders wichtig sind <strong>Geschoßzahl</strong> und <strong>Nutzfläche</strong>. Alle übrigen Größen werden daraus und aus dem TIRIS-Gebäude nachvollziehbar abgeleitet.</p>
 <input id="storeyHeightModule" type="hidden" value="3.2"/>
 <input id="usableFloorAreaFactor" type="hidden" value="75"/>
 <input id="manualHeatedFloorAreaValue" type="hidden"/>
-<div class="fixed-assumption-strip">
-<span><strong>3,2 m</strong> Höhenmodul</span>
-<span><strong>75 %</strong> NFL/BGF-Faktor</span>
-<span>feste Erstannahmen · bekannte Werte haben Vorrang</span>
-</div>
+<div aria-live="polite" class="geometry-quick-summary" id="geometryQuickSummary">Gebäudegeometrie noch nicht verfügbar.</div>
 <details class="estimate-details">
 <summary><span>Abgeleitete Gebäudegrößen</span><small>Automatik, Eingabe und verwendeter Wert</small></summary>
 <div class="estimate-table-wrap">
@@ -229,9 +224,9 @@
 <thead><tr><th>Bauteil / Größe</th><th>Automatik</th><th>Manuell</th><th>Verwendet</th></tr></thead>
 <tbody>
 <tr class="estimate-key-row"><th>Oberirdische Geschoße</th><td id="autoStoreysValue">–</td><td><div class="manual-value-control"><input id="manualStoreysValue" min="1" placeholder="prüfen" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualStoreysValue" type="button">↺ Auto</button></div></td><td id="effectiveStoreysValue">–</td></tr>
-<tr><th>Bruttogeschoßfläche (BGF)</th><td id="autoGrossFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualGrossFloorAreaValue" min="0" placeholder="nur wenn bekannt" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualGrossFloorAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveGrossFloorAreaValue">–</td></tr>
 <tr class="estimate-key-row"><th>Nutzfläche (NFL)</th><td id="autoUsableFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualUsableFloorAreaValue" min="0" placeholder="prüfen" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualUsableFloorAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveUsableFloorAreaValue">–</td></tr>
 <tr class="estimate-slider-row"><th>Davon beheizt</th><td colspan="3"><div class="estimate-range-control"><span>0 %</span><input aria-label="Anteil der beheizten Nutzfläche" id="heatedSharePercent" max="100" min="0" step="1" type="range" value="100"/><strong id="heatedShareOutput">100 %</strong></div></td></tr>
+<tr><th>Bruttogeschoßfläche (BGF)</th><td id="autoGrossFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualGrossFloorAreaValue" min="0" placeholder="nur wenn bekannt" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualGrossFloorAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveGrossFloorAreaValue">–</td></tr>
 <tr><th>Beheizte Nutzfläche</th><td id="autoHeatedFloorAreaValue">–</td><td><span class="derived-input-note">NFL × beheizter Anteil</span></td><td id="effectiveHeatedFloorAreaValue">–</td></tr>
 <tr><th>Außenwandfläche</th><td id="autoExteriorWallValue">–</td><td><div class="manual-value-control"><input id="manualExteriorWallValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualExteriorWallValue" type="button">↺ Auto</button></div></td><td id="effectiveExteriorWallValue">–</td></tr>
 <tr class="estimate-slider-row"><th>Fensterflächenanteil</th><td colspan="3"><div class="estimate-range-control"><span>gering · 10 %</span><input aria-label="Fensterflächenanteil an der Brutto-Außenwand" id="windowSharePercent" max="50" min="10" step="1" type="range" value="25"/><strong id="windowShareOutput">25 %</strong><span>sehr hoch · 50 %</span></div></td></tr>
@@ -247,7 +242,6 @@
 </details>
 <div class="notice notice--soft" id="heatedFloorAreaConstraintNote" hidden></div>
 <div class="notice notice--soft" id="geometryConsistencyNote" hidden></div>
-<p class="geometry-note estimate-method-note">Kurzmethodik: Geschoße aus TIRIS-Höhe · BGF zunächst Dachprojektion × Geschoße, bei eingegebener NFL daraus mit NFL ÷ 0,75 · beheizte Fläche über Anteil · Hüllflächen aus der verwendeten Grundfläche. Details unter „Methode und Datenbasis“.</p>
 </div>
 <div class="validation-block dev-only">
 <div class="validation-heading"><div><span class="mini-label">Nur Entwicklung</span><h3>Mit bekannten Gebäudeabmessungen vergleichen</h3></div><button class="quiet-button" id="clearValidationButton" type="button">Werte leeren</button></div>
@@ -467,10 +461,10 @@
 <li><strong>BGF:</strong> zunächst Dachprojektion × verwendete Geschoßzahl. Wird eine Nutzfläche eingetragen und keine bekannte BGF vorgegeben, folgt BGF = NFL ÷ 0,75. Eine bekannte BGF aus Plan oder Energieausweis hat Vorrang.</li>
 <li><strong>Nutzfläche:</strong> zunächst BGF × 0,75. Der Faktor ist eine bewusst einfache, eher großzügige Beratungsannahme und kein allgemeiner Normwert. Eine TU-Wien-Auswertung von 337 Ein- und Zweifamilienhäusern ergab einen Mittelwert von 67,56 %, einen Median von 67,41 % und für die mittleren 50 % der Objekte 63,39–71,60 %. Deshalb bleibt die NFL eine besonders wichtige Prüfeingabe und bekannte Plan- oder Energieausweiswerte haben Vorrang.</li>
 <li><strong>Beheizte Nutzfläche:</strong> verwendete NFL × eingestellter beheizter Anteil; Standard 100 %.</li>
-<li><strong>Grundfläche:</strong> verwendete BGF ÷ verwendete Geschoße. Oberste und unterste Geschoßfläche sowie Dachprojektion der Ableitung folgen dieser Grundfläche.</li>
+<li><strong>Grundfläche:</strong> verwendete BGF ÷ verwendete Geschoße. Oberste und unterste Geschoßfläche folgen dieser Grundfläche; die Dachprojektion bleibt dagegen das amtliche TIRIS-Dachpolygon.</li>
 <li><strong>Außenwand:</strong> TIRIS-Umfang × Medianhöhe. Ändert sich die abgeleitete Grundfläche, wird der Umfang bei ähnlicher Gebäudeform mit der Quadratwurzel des Flächenverhältnisses skaliert.</li>
 <li><strong>Fenster:</strong> verwendete Brutto-Außenwand × Fensterflächenanteil; Standard 25 %, Regler 10–50 %. Die OIB-Belichtungsanforderung bezieht sich auf die Lichteintrittsfläche einzelner Aufenthaltsräume im Verhältnis zu deren Bodenfläche und ist kein fixer Mindestanteil an der gesamten Fassade.</li>
-<li><strong>Dachschräge:</strong> verwendete Grundfläche ÷ cos(Dachneigung); Standard 0°.</li>
+<li><strong>Dachschräge:</strong> TIRIS-Dachprojektion ÷ cos(Dachneigung); Standard 0°. Änderungen an NFL, BGF oder Geschoßzahl verändern die Dachfläche daher nicht.</li>
 <li><strong>Gebäudevolumen:</strong> verwendete Grundfläche × TIRIS-Medianhöhe. BGF × Gebäudehöhe wäre dimensionsmäßig zwar ebenfalls ein Volumen, würde bei mehrgeschoßigen Gebäuden das äußere Gebäudevolumen aber ungefähr um die Geschoßzahl überhöhen.</li>
 </ul>
 <p class="method-source-links"><strong>Herkunft:</strong> <a href="https://www.oib.or.at/sites/default/files/erlaeuternde_bemerkungen_richtlinie_6_26.03.15_0.pdf" rel="noopener noreferrer" target="_blank">OIB-Erläuterungen: Bezugs-Geschoßhöhe</a> · <a href="https://repositum.tuwien.at/handle/20.500.12708/15291" rel="noopener noreferrer" target="_blank">TU Wien: Verhältnis NUF/BGF</a> · <a href="https://www.oib.or.at/sites/default/files/oib-rl_3_ausgabe_mai_2023.pdf" rel="noopener noreferrer" target="_blank">OIB-Richtlinie 3, Belichtung</a>.</p>
@@ -517,6 +511,9 @@
 </details>
 </section>
 <section aria-label="Kompakter Standortbericht" class="container print-report-only" id="printReportSummary">
+<header class="print-report-header standortpass-print-title">
+<h1>Standortpass Energie &amp; Gebäude</h1>
+</header>
 <div class="print-report-grid" id="printReportGrid"></div>
 </section>
 <section class="container bottom-report-actions no-print tool-next-actions">
@@ -548,7 +545,7 @@
 
 
 
-<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=5"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-address-manager.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/js/services/building-geometry-service.js?v=2"></script><script src="standortpass.js?v=14"></script>
-<script src="standortpass-v1.js?v=15"></script>
+<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=6"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-address-manager.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/js/services/building-geometry-service.js?v=2"></script><script src="standortpass.js?v=14"></script>
+<script src="standortpass-v1.js?v=16"></script>
 </body>
 </html>
