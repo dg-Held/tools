@@ -507,3 +507,217 @@
 .envelope-field small[data-evaluation="lightgreen"] { color: var(--color-primary-dark); font-weight: 700; }
 .envelope-field small[data-evaluation="orange"] { color: var(--color-warning-dark); font-weight: 700; }
 .envelope-field small[data-evaluation="red"] { color: var(--color-danger); font-weight: 700; }
+
+/* V4.4 · Vereinfachungsschleife und gemeinsame Bedienlogik */
+.address-search-control,
+.address-search-field {
+  display: block;
+  position: relative;
+}
+
+.address-search-control .address-results {
+  margin-top: 0.55rem;
+}
+
+.analysis-action-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+
+.analysis-button {
+  flex: 0 0 auto;
+}
+
+.analysis-hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.v4-value-field input[type="range"] {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  accent-color: var(--color-primary);
+}
+
+.v4-value-field input[type="range"]:focus {
+  border-color: transparent;
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 3px;
+}
+
+.v4-range-output {
+  flex: 0 0 auto;
+  min-width: 3.8rem;
+  font-size: 0.82rem;
+  text-align: right;
+  color: var(--color-primary-dark);
+}
+
+/* Ergebniskennzahlen bewusst ruhiger als die Energieflussgrafik. */
+.result-kpis article,
+.result-kpis article:nth-child(even) {
+  color: var(--text-dark);
+  background: var(--surface-card);
+  border: 1px solid var(--line-strong);
+  border-top: 4px solid var(--color-primary);
+  box-shadow: 0 6px 18px rgb(var(--shadow-rgb) / 0.06);
+}
+
+.result-kpis article:nth-child(even) {
+  border-top-color: var(--color-secondary);
+}
+
+.result-kpis article strong {
+  color: var(--text-dark);
+}
+
+.result-kpis article .kpi-status {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.result-kpis .info-tip {
+  color: var(--color-primary-dark);
+  border-color: var(--line-strong);
+  background: var(--color-primary-soft);
+}
+
+.result-kpis article:nth-child(even) .info-tip {
+  color: var(--color-secondary-dark);
+  background: var(--color-secondary-light);
+}
+
+.result-kpis .info-tip:hover,
+.result-kpis .info-tip:focus-visible {
+  color: var(--text-light);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
+.comparison-copy {
+  min-width: 0;
+}
+
+.comparison-actions {
+  min-width: min(100%, 320px);
+  align-items: stretch;
+}
+
+.calculated-consumption,
+.climate-calculation-action {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.calculated-consumption {
+  padding-right: 0.9rem;
+  border-right: 1px solid var(--line-strong);
+}
+
+.calculated-consumption span,
+.climate-calculation-action small {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.calculated-consumption strong {
+  font-size: 1rem;
+  color: var(--text-dark);
+}
+
+.climate-calculation-action {
+  justify-items: end;
+}
+
+.method-data-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.method-data-strip span {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+}
+
+.method-data-strip strong {
+  color: var(--text-dark);
+}
+
+.energy-next-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 760px) {
+  .analysis-action-row,
+  .comparison-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .analysis-button {
+    width: 100%;
+  }
+
+  .calculated-consumption {
+    padding-right: 0;
+    padding-bottom: 0.55rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .climate-calculation-action {
+    justify-items: start;
+  }
+
+  .method-data-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .energy-next-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 500px) {
+  .method-data-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .energy-next-actions > * {
+    width: 100%;
+  }
+}
+
+@media print {
+  .print-kpis article,
+  .print-kpis article:nth-child(even) {
+    color: var(--text-dark);
+    background: var(--white);
+    border: 0.25mm solid var(--line-strong);
+    border-top: 1mm solid var(--color-primary);
+  }
+
+  .print-kpis article:nth-child(even) {
+    border-top-color: var(--color-secondary);
+  }
+}

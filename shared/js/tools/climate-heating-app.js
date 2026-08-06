@@ -281,6 +281,7 @@ function updateHwbBgfUi(options = {}) {
 }
 
 function conditionFromHwb(value) {
+  if (value === null || value === undefined || value === '') return 'teilsanierter_bestand';
   const hwb = Number(value);
   if (!Number.isFinite(hwb) || hwb < 0) return 'teilsanierter_bestand';
   if (hwb > 150) return 'unsanierter_altbau';
@@ -356,7 +357,7 @@ function syncBuildingConditionCandidates(suggestion) {
     {
       path: BUILDING_CONDITION_PATH,
       origin: projectModel.ORIGIN.DERIVED,
-      value: suggestion.id,
+      value: suggestion.hwbKwhM2a !== null ? suggestion.id : null,
       options: {
         source: 'Heizlast',
         method: 'Vorschlag aus verbrauchsbasiertem HWB mit Standardkorrekturen',

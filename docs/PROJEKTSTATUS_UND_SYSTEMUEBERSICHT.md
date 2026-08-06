@@ -186,14 +186,22 @@ Status: eigenständiges, mit Klima verschränktes Tool.
 
 ### Energiefluss im Gebäude V4.4
 
-Status: funktional abgeschlossen. V3 ist extern archiviert und online nicht mehr erforderlich.
+Status: funktional abgeschlossen; Vereinfachungs- und Konsistenzschleife umgesetzt. V3 ist extern archiviert und online nicht mehr erforderlich.
 
-- bekannte Projekt- und Verbrauchswerte kompakt prüfen,
-- verbrauchsbasierte Bilanz mit gemeinsamem Heizenergieverbrauch und gemeinsamem Nutzwärmefaktor (JNG/JAZ),
-- bei Wärmepumpenfaktoren über 1,0 wird die zusätzlich genutzte Umweltwärme als eigener Energiezufluss bilanziert,
-- Gebäudehülle und Einzelbauteilverluste,
-- Plausibilitätsvergleich aus U-Werten, Flächen und Klima,
-- Baujahr als Fallback für nicht bestätigte Bestands-U-Werte,
+- verkürzte, an Klima und Heizlast angeglichene Einleitung sowie gemeinsame Projektkopf- und Adresslogik,
+- Grunddaten mit gemeinsamen Projektbezeichnungen: Nutzfläche (NFL), davon beheizt, Personen, Heizenergieverbrauch, Nutzwärmefaktor (JNG/JAZ) und Warmwasser enthalten,
+- Baujahr/Baubewilligung bleibt eine wichtige optionale Prüfeingabe; 1970 wird nur als Beispiel gezeigt und nicht automatisch gespeichert,
+- oberirdische Geschoße, BGF, Gebäudevolumen, Raumtemperatur und Gebäudezustand liegen kompakt im erweiterten Prüfbereich,
+- NFL-, BGF-, Geschoß-, Volumen- und Hüllflächenwerte verwenden dieselbe Geometriekette wie der Standortpass; die Dachfläche bleibt am TIRIS-Dachpolygon,
+- Gebäudezustand wird mit derselben verbrauchsbasierten HWB-Logik wie im Heizlasttool vorgeschlagen; manuelle Angaben haben Vorrang,
+- verbrauchsbasierte Bilanz mit gemeinsamem Heizenergieverbrauch und gemeinsamem Nutzwärmefaktor,
+- bei Wärmepumpenfaktoren über 1,0 wird Umweltwärme als eigener Energiezufluss bilanziert,
+- ruhiger Ergebnisbereich mit HWB aus Verbrauch, korrigiertem HWB, HWB aus U-Werten und Abweichung,
+- rechnerischer Heizenergieverbrauch steht direkt beim unabhängigen Hüllvergleich,
+- sichtbarer Klimastatus unterscheidet fehlende, berechnete und aktualisierbare Klimagrundlage,
+- Bestands-U-Werte und Hüllflächen bleiben prüf- und überschreibbar; das Baujahr dient nur bei tatsächlicher Angabe als Fallback,
+- direkte Übergänge zu Standortpass, Klima, Heizlast sowie Bauteil & Sanierung neben Drucken/PDF,
+- vollständige Rechenwege, Datenbasis, Annahmen und Grenzen im gemeinsamen Methodenbereich,
 - sichtbare Flächenrundung: Fenster 5 m², übrige Hüllflächen 10 m²,
 - direkte Übergabe an Bauteil & Sanierung.
 

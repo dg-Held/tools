@@ -76,19 +76,37 @@ Quellennachweise:
 
 ## Energiefluss V4
 
-Der gemessene Verbrauch bleibt die Energiebilanz. U-Werte und Flächen verteilen den Hüllverlust auf Bauteile und bilden eine unabhängige Plausibilitätsprüfung.
+Das Tool verbindet den eingegebenen Heizenergieverbrauch mit der gemeinsamen Gebäudegeometrie und einem unabhängigen Hüllvergleich. Dieselben Projektwerte heißen und funktionieren in Standortpass, Heizlast und Energiefluss gleich:
 
-Wichtige Zusammenhänge:
+- Nutzfläche (NFL),
+- davon beheizt,
+- Bruttogeschoßfläche (BGF),
+- oberirdische Geschoße und Gebäudevolumen,
+- Personen,
+- Heizenergieverbrauch,
+- Nutzwärmefaktor (JNG / JAZ),
+- Warmwasser enthalten,
+- Gebäudezustand.
 
-```text
-Nutzwärme = Heizenergieverbrauch × Nutzwärmefaktor (JNG / JAZ)
-Umweltwärme = max(Nutzwärme − Heizenergieverbrauch, 0)
-Raumwärme = Nutzwärme − Warmwasseranteil
-HWB_Verbrauch = Raumwärme / Bezugsfläche
-UA_i = U_i × A_i
-```
+Änderungen an NFL, beheiztem Anteil, BGF oder Geschoßzahl laufen über die gemeinsame Geometriekette. Aus einer bekannten NFL wird bei fehlender BGF zunächst `BGF = NFL / 0,75` abgeleitet. Geschossflächen, Fassade und Gebäudevolumen folgen der verwendeten Grundfläche; die Dachfläche bleibt am TIRIS-Dachpolygon und ändert sich nur mit der Dachneigung. Die Geschoßzahl liegt als wichtige, aber seltener benötigte Prüfeingabe im eingeklappten Bereich.
 
-Der rechnerische Hüllvergleich nutzt U×A, Klima, Lüftung, Wärmebrücken und Gewinne. Er ist eine Beratungsplausibilisierung, kein Energieausweis.
+Für Baujahr beziehungsweise Baubewilligung gibt es bewusst keinen stillen Standardwert. Die sichtbare Beispielangabe 1970 ist nur eine Eingabehilfe: Ein automatisch gespeichertes Baujahr würde unmittelbar Bestands-U-Werte vorschlagen und könnte eine unbekannte Ausgangslage fälschlich als bestätigt erscheinen lassen.
+
+Der Gebäudezustand wird wie im Heizlasttool aus dem korrigierten verbrauchsbasierten HWB vorgeschlagen. Bekannte manuelle Angaben haben Vorrang. Die Einordnung lautet:
+
+- über 150 kWh/(m²a): unsanierter Altbau,
+- 90 bis 150 kWh/(m²a): teilsanierter Bestand,
+- 45 bis unter 90 kWh/(m²a): sanierter Bestand,
+- unter 45 kWh/(m²a): neuerer Standard / Neubau.
+
+Der gemessene Verbrauch bleibt die Grundlage der sichtbaren Energiebilanz. U-Werte und Hüllflächen verteilen die kalibrierten Bauteilverluste und bilden zusätzlich einen unabhängigen Plausibilitätsvergleich. Die Ergebniskennzahlen werden bewusst getrennt bezeichnet:
+
+- **HWB aus Verbrauch**,
+- **HWB korrigiert**,
+- **HWB aus U-Werten**,
+- **Abweichung** zwischen rechnerischem und eingegebenem Heizenergieverbrauch.
+
+Der rechnerische Heizenergieverbrauch steht direkt beim Hüllvergleich. Der Klimastatus zeigt, ob der Vergleich noch berechnet oder mit dem vorhandenen Klimazeitraum aktualisiert wurde. Rechenweg, Annahmen, Datenherkunft und Grenzen stehen vollständig unter „Methode und Datenbasis“.
 
 ## Bauteil & Sanierung
 
@@ -145,7 +163,23 @@ Intern exakt rechnen. Sichtbar runden gemäß Projektübersicht. Hinweise zu Rec
 
 ## Vertiefung Energiefluss V4
 
-### Verbrauch und Nutzwärme
+### Gemeinsame Eingaben und Geometrie
+
+Die Eingaben werden nicht werkzeugspezifisch dupliziert, sondern über die gemeinsame Projektbasis gelesen und gespeichert. Für die Berechnung gelten die verwendeten Werte aus der zentralen Geometriekette:
+
+```text
+BGF = bekannter Projektwert
+      oder NFL / 0,75
+      oder TIRIS-Dachprojektion × oberirdische Geschoße
+
+beheizte Nutzfläche = NFL × beheizter Anteil / 100
+Grundfläche_verwendet = BGF / oberirdische Geschoße
+Gebäudevolumen = Grundfläche_verwendet × Medianhöhe
+```
+
+Die Hüllflächen werden aus dem Standortpass übernommen oder dort beziehungsweise im Energiefluss manuell korrigiert. Änderungen an NFL oder BGF führen Außenwand, Geschossflächen und Volumen über die gemeinsame Ableitung nach. Die Dachprojektion bleibt unabhängig davon der amtliche TIRIS-Ausgangswert.
+
+### Verbrauch, Nutzwärme und Umweltwärme
 
 ```text
 Q_Nutz = HEB × f_Nutz
@@ -156,7 +190,9 @@ Q_Anlage = max(HEB − Q_Nutz, 0)
 HWB_Verbrauch = Q_Raum / BGF
 ```
 
-Einfache Korrektur:
+`f_Nutz` ist der gemeinsame Nutzwärmefaktor: bei Kesseln der Jahresnutzungsgrad, bei Wärmepumpen die Jahresarbeitszahl und bei Direktheizung beziehungsweise Fernwärme meist ungefähr 1,0. Liegt der Faktor über 1, wird die zusätzlich genutzte Umweltwärme als eigener Energiezufluss dargestellt; dadurch bleibt die Bilanz auch bei Wärmepumpen geschlossen.
+
+Einfache Verbrauchskorrektur:
 
 ```text
 K_T = 1 + (T_Raum − 20 °C) × 0,06
@@ -164,14 +200,18 @@ K_beheizt = 1 + (beheizter Anteil − 100 %) × 0,005
 HWB_korrigiert = HWB_Verbrauch / K_T / K_beheizt
 ```
 
+Der daraus vorgeschlagene Gebäudezustand ist eine Beratungsorientierung und kein Energieausweis-Ergebnis.
+
 ### Gewinne und Lüftung
 
 ```text
 Q_intern = 2,7 W/m² × beheizte Nutzfläche × 8,76
 Q_solar = 175 kWh/(m²a) × Fensterfläche × 0,70 × Nutzungsfaktor
-V_konditioniert = Bruttovolumen × beheizter Anteil / 100
+V_konditioniert = Gebäudevolumen × beheizter Anteil / 100
 Q_Lüftung = 10 kWh/(m³a) × V_konditioniert
 ```
+
+Die Ansätze sind transparente Standardannahmen. Sie können die reale Nutzung, Verschattung, Luftdichtheit und Lüftungsanlage nur überschlägig abbilden.
 
 ### Verbrauchskalibrierte Gebäudehülle
 
@@ -183,9 +223,11 @@ UA_i = U_i × A_i
 Q_Bauteil,i = UA_i × Q_Bauteile / ΣUA
 ```
 
-U-Wert-Änderungen verändern die Verteilung, nicht den gemessenen Gesamtverbrauch.
+Die sichtbare Energiebilanz folgt damit dem eingegebenen Verbrauch. Eingerückte Bauteile sind lediglich die Aufteilung der Gebäudehülle und werden im Rechenkern nicht ein zweites Mal summiert; dieser technische Hinweis wird in der Oberfläche nicht mehr benötigt.
 
 ### Unabhängiger Hüllvergleich
+
+Der Vergleich wird erst mit vorhandener Klimagrundlage berechnet. Die Schaltfläche zeigt, ob Klimawerte fehlen oder aktualisiert werden können.
 
 ```text
 HGT = Vollbenutzungsstunden × (15 °C − NAT)
@@ -193,10 +235,19 @@ Q_Transmission = ΣUA × HGT / 1.000
 Q_WB,rech = Q_Transmission × 0,075
 Q_Raum,rech = max(Q_Transmission + Q_WB,rech + Q_Lüftung − Q_intern − Q_solar, 0)
 HEB_rechnerisch = (Q_Raum,rech + Q_WW) / f_Nutz
-Abweichung = (HEB_rechnerisch − HEB_gemessen) / HEB_gemessen × 100
+HWB_U-Werte = Q_Raum,rech / BGF
+Abweichung = (HEB_rechnerisch − HEB_eingegeben) / HEB_eingegeben × 100
 ```
 
-Der Vergleich ist eine Plausibilisierung, kein exakter Sollverbrauch.
+Der **HWB aus U-Werten** und der **rechnerische Heizenergieverbrauch** sind voneinander zu unterscheiden: Der HWB bezieht sich auf die rechnerische Raumwärme je BGF, der Heizenergieverbrauch zusätzlich auf Warmwasser und den Nutzwärmefaktor. Der Vergleich dient der Plausibilisierung von Verbrauch, Hüllflächen und U-Werten. Er ersetzt weder Energieausweis noch normative Bedarfsberechnung.
+
+### Bestands-U-Werte
+
+Bestätigte manuelle U-Werte haben Vorrang. Fehlt ein bestätigter Wert, darf das bekannte Baujahr eine transparente Baualtersklassen-Empfehlung liefern. Ohne bekanntes Baujahr bleibt der Wert als unsicher beziehungsweise zu prüfen gekennzeichnet; die Eingabehilfe „z. B. 1970“ wird nicht im Projekt gespeichert.
+
+### Grenzen
+
+Besonders große Abweichungen können durch unvollständige Verbrauchszeiträume, ungewöhnliche Nutzung, Leerstand, Zusatzheizungen, falsche Flächen, nicht passende U-Werte, Lüftungsanlagen, solare Gewinne oder Klimabezüge entstehen. Das Tool zeigt diese Differenz bewusst als Gesprächs- und Prüfhinweis, nicht als automatische Fehlerkorrektur.
 
 ## Vertiefung Bauteil & Sanierung
 
