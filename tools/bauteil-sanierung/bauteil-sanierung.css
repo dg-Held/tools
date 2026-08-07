@@ -84,10 +84,26 @@
   font-size: 0.76rem;
 }
 
+.component-choice.is-envelope-relevant {
+  background: repeating-linear-gradient(135deg, var(--surface-card) 0 11px, rgb(var(--color-primary-rgb) / .08) 11px 19px);
+  border-color: rgb(var(--color-primary-rgb) / .28);
+}
+
+.component-choice.is-envelope-excluded {
+  background: repeating-linear-gradient(135deg, var(--surface-card) 0 11px, rgb(var(--color-secondary-rgb) / .08) 11px 19px);
+  border-color: rgb(var(--color-secondary-rgb) / .28);
+}
+
+.component-choice.is-envelope-relevant span { color: var(--color-primary-dark); }
+.component-choice.is-envelope-excluded span { color: var(--color-secondary-dark); }
+
 .component-choice.is-active {
   border-color: var(--color-primary);
-  background: var(--color-primary-soft);
-  box-shadow: inset 0 0 0 1px var(--color-primary);
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+.component-choice.is-active.is-envelope-excluded {
+  border-color: var(--color-secondary);
+  box-shadow: inset 0 0 0 2px var(--color-secondary);
 }
 
 .component-choice.is-planned {
@@ -908,12 +924,24 @@
     color: var(--text-dark);
   }
 
-  .print-hero {
-    margin-bottom: 4mm;
-    padding: 4mm 5mm;
-    border-radius: 4mm;
-    color: var(--text-dark);
-    background: var(--color-primary-light);
+  .renovation-print-report > .print-report-header {
+    margin: 0 0 2.8mm !important;
+  }
+
+  .print-component-heading {
+    margin: 0 0 4mm;
+    padding: 0 0 2.8mm;
+    border-bottom: .25mm solid var(--line-strong);
+  }
+  .print-component-heading h2 {
+    margin: 0;
+    font-size: 18pt;
+    line-height: 1.08;
+  }
+  .print-component-heading p {
+    margin: 1.2mm 0 0;
+    color: var(--text-muted);
+    font-size: 8.5pt;
   }
 
   .print-summary-grid > div,
@@ -1219,6 +1247,36 @@
   color: var(--text-muted);
 }
 
+.component-relevance {
+  display: grid;
+  justify-items: end;
+  gap: .18rem;
+}
+.component-relevance label {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .42rem .62rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-card);
+  cursor: pointer;
+}
+.component-relevance input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+.component-relevance label span {
+  color: var(--text-dark);
+  font-size: .78rem;
+}
+.component-relevance small {
+  max-width: 360px;
+  text-align: right;
+  font-size: .72rem;
+}
+
 .component-input-grid {
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
@@ -1316,6 +1374,9 @@
     align-items: stretch;
     flex-direction: column;
   }
+
+  .component-relevance { justify-items: start; }
+  .component-relevance small { text-align: left; }
 
   .analysis-action-row .analysis-button {
     width: 100%;

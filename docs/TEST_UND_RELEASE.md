@@ -48,13 +48,16 @@ Erwartung:
 - eigene SVGs ersetzen Fallback vollständig,
 - Förderung und Sowiesokosten,
 - Speichern der manuell gewählten Maßnahme,
-- automatische Maßnahmenpakete erzeugen: Mindeststandard, wirtschaftlich, ambitioniert,
-- automatisch erzeugte Einträge tragen `automatic-proposal / not-reviewed`,
+- thermische Hülle im Energiefluss ändern und prüfen, dass derselbe Status im Bauteiltool erscheint,
+- Hüllstatus im Bauteiltool ändern und prüfen, dass Energiefluss denselben `enabled`-Wert übernimmt,
+- relevante Bauteile erscheinen türkis schraffiert, nicht betrachtete beerenfarben,
+- automatische Maßnahmenpakete erzeugen: Mindeststandard, wirtschaftlich, ambitioniert; nicht relevante Bauteile dürfen in keinem automatischen Paket enthalten sein,
+- automatisch erzeugte Einträge tragen `automatic-proposal / not-reviewed` und speichern den Hüllstatus,
 - manuell gespeicherte Maßnahmen bleiben beim Aktualisieren der Pakete erhalten,
 - Änderung an Fläche, U-Wert oder Finanzannahme markiert vorhandene Pakete als veraltet,
 - Bauteile ohne Kostenmodell erhalten technische, aber keine vorgetäuschte wirtschaftliche Variante,
 - Bestand, der einen Ziel-U-Wert bereits erfüllt, erzeugt keine Null-Maßnahme im Paket,
-- Ausdruck mit Farben und Infografik.
+- Ausdruck: gemeinsame Projektkopfzeile nur einmal, Berichtstitel ohne große Farbfläche, Adresse nicht doppelt, Hüllstatus beim Bauteil sichtbar, Farben und Infografik korrekt.
 
 ### Excel→JSON-Datenpipeline
 

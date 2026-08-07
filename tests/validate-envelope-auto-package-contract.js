@@ -21,6 +21,7 @@ for (const id of [
   'autoEconomicCount',
   'autoAmbitiousCount',
   'autoPackageDetailsBody',
+  'thermalEnvelopeRelevant',
 ]) {
   assert(html.includes(`id="${id}"`), `HTML-Vertrag fehlt: ${id}`);
 }
@@ -33,6 +34,9 @@ for (const token of [
   'envelope-package-recommended',
   'envelope-package-economic',
   'envelope-package-ambitious',
+  'thermalEnvelopeRelevant',
+  'thermalEnvelope:',
+  'result.readiness.considered === false',
 ]) {
   assert(app.includes(token), `JS-Vertrag fehlt: ${token}`);
 }

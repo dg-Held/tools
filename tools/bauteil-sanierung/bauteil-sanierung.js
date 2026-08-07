@@ -29,42 +29,49 @@
     {
       id: 'exteriorWall', dataId: 'wall_external', label: 'Außenwand', short: 'Außenwand', supported: true,
       areaPath: 'building.geometry.opaqueExteriorWallArea', uPath: 'building.thermal.envelope.exteriorWall.uValue',
+      enabledPath: 'building.thermal.envelope.exteriorWall.enabled', defaultEnabled: true,
       energyFlowId: 'exteriorWall', targetId: 'wall_external', costModelId: 'wall_wdvs',
       boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: true, measureType: 'insulation',
     },
     {
       id: 'topFloorCeiling', dataId: 'roof_top_ceiling', label: 'Oberste Geschoßdecke', short: 'OGD', supported: true,
       areaPath: 'building.geometry.topFloorArea', uPath: 'building.thermal.envelope.topFloorCeiling.uValue',
+      enabledPath: 'building.thermal.envelope.topFloorCeiling.enabled', defaultEnabled: true,
       energyFlowId: 'topFloorCeiling', targetId: 'roof_top_ceiling', costModelId: 'top_ceiling',
       boundaryFactor: 0.8, rsi: 0.10, boundaryKind: 'unheated', analyticAllowed: false, measureType: 'insulation',
     },
     {
       id: 'roof', dataId: 'roof_top_ceiling', label: 'Dach / Dachschräge', short: 'Dach', supported: true,
       areaPath: 'building.geometry.roofSlopeArea', uPath: 'building.thermal.envelope.roof.uValue',
+      enabledPath: 'building.thermal.envelope.roof.enabled', defaultEnabled: false,
       energyFlowId: 'roof', targetId: 'roof_top_ceiling', costModelId: 'roof',
       boundaryFactor: 1.0, rsi: 0.10, boundaryKind: 'outside', analyticAllowed: true, measureType: 'insulation',
     },
     {
       id: 'basementCeiling', dataId: 'ceiling_unheated', label: 'Kellerdecke / UG-Decke', short: 'Kellerdecke', supported: true,
       areaPath: 'building.geometry.basementCeilingArea', uPath: 'building.thermal.envelope.basementCeiling.uValue',
+      enabledPath: 'building.thermal.envelope.basementCeiling.enabled', defaultEnabled: true,
       energyFlowId: 'basementCeiling', targetId: 'ceiling_unheated', costModelId: 'basement_ceiling',
       boundaryFactor: 0.5, rsi: 0.17, boundaryKind: 'unheated', analyticAllowed: false, measureType: 'insulation',
     },
     {
       id: 'groundFloor', dataId: 'floor_ground', label: 'Boden gegen Erdreich', short: 'Boden', supported: true,
       areaPath: 'building.geometry.groundFloorArea', uPath: 'building.thermal.envelope.groundFloor.uValue',
+      enabledPath: 'building.thermal.envelope.groundFloor.enabled', defaultEnabled: false,
       energyFlowId: 'groundFloor', targetId: 'floor_ground', costModelId: 'ground_floor',
       boundaryFactor: 0.5, rsi: 0.17, boundaryKind: 'ground', analyticAllowed: false, measureType: 'insulation',
     },
     {
       id: 'windows', dataId: 'window_external', label: 'Fenster', short: 'Fenster', supported: true,
       areaPath: 'building.geometry.windowArea', uPath: 'building.thermal.envelope.windows.uValue',
+      enabledPath: 'building.thermal.envelope.windows.enabled', defaultEnabled: true,
       energyFlowId: 'windows', targetId: 'window_external', costModelId: 'window_replace',
       boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: false, measureType: 'exchange', costQuantityMode: 'area',
     },
     {
       id: 'doors', dataId: 'door_external', label: 'Haustür / Außentür', short: 'Haustür', supported: true,
       areaPath: 'building.geometry.doorArea', uPath: 'building.thermal.envelope.doors.uValue',
+      enabledPath: 'building.thermal.envelope.doors.enabled', defaultEnabled: true,
       energyFlowId: 'doors', targetId: 'door_external', costModelId: 'door_replace',
       boundaryFactor: 1.0, rsi: 0.13, boundaryKind: 'outside', analyticAllowed: false, measureType: 'exchange', costQuantityMode: 'count',
     },
@@ -341,6 +348,11 @@
     return { areaInfo, uInfo, draft };
   }
 
+  function componentEnvelopeRelevant(project, component) {
+    if (!component?.enabledPath) return true;
+    return Boolean(valueAt(project, component.enabledPath, component.defaultEnabled !== false));
+  }
+
   function hashText(text) {
     let hash = 2166136261;
     for (let index = 0; index < text.length; index += 1) {
@@ -388,6 +400,7 @@
       component,
       areaInfo,
       uInfo,
+      thermalEnvelopeRelevant: componentEnvelopeRelevant(project, component),
       areaM2,
       doorAreaPerUnitM2,
       constructionYear: finite(valueAt(project, 'building.profile.constructionYear'), null),
@@ -428,6 +441,9 @@
   }
 
   function automaticComponentReadiness(inputs) {
+    if (inputs.thermalEnvelopeRelevant === false) {
+      return { considered: false, technicalReady: false, energyReady: false, costReady: false, economicsReady: false, missing: [] };
+    }
     const technicalReady = hasPositive(inputs.areaM2)
       && hasPositive(inputs.existingUValue)
       && (isExchangeComponent(inputs.component) || hasPositive(inputs.lambdaWmk));
@@ -442,7 +458,7 @@
     if (!isExchangeComponent(inputs.component) && !hasPositive(inputs.lambdaWmk)) missing.push('λ-Wert');
     if (technicalReady && !energyReady) missing.push('Energiegrundlage');
     if (technicalReady && !costReady) missing.push('Kostenmodell');
-    return { technicalReady, energyReady, costReady, economicsReady, missing };
+    return { considered: true, technicalReady, energyReady, costReady, economicsReady, missing };
   }
 
   function automaticProposalFingerprint(project) {
@@ -460,6 +476,7 @@
         const inputs = automaticInputsForComponent(project, component);
         return {
           id: component.id,
+          thermalEnvelopeRelevant: inputs.thermalEnvelopeRelevant,
           areaM2: inputs.areaM2,
           existingUValue: inputs.existingUValue,
           lambdaWmk: inputs.lambdaWmk,
@@ -614,6 +631,11 @@
       proposalProfile: options.profile ?? null,
       autoGenerated: Boolean(options.autoGenerated),
       generatedBy: options.autoGenerated ? 'Bauteil & Sanierung V0.8' : null,
+      thermalEnvelope: {
+        relevant: inputs.thermalEnvelopeRelevant !== false,
+        projectPath: inputs.component.enabledPath ?? null,
+        label: inputs.thermalEnvelopeRelevant === false ? 'nicht betrachtet' : 'für thermische Hülle relevant',
+      },
       existingState: {
         areaM2: inputs.areaM2,
         uValue: inputs.existingUValue,
@@ -679,16 +701,20 @@
       inputs: automaticInputsForComponent(project, component),
     }));
     const readinessRows = inputsByComponent.map(({ component, inputs }) => ({ component, inputs, readiness: automaticComponentReadiness(inputs) }));
-    const preparedCount = readinessRows.filter((row) => row.readiness.technicalReady).length;
+    const relevantRows = readinessRows.filter((row) => row.readiness.considered !== false);
+    const preparedCount = relevantRows.filter((row) => row.readiness.technicalReady).length;
+    const relevantCount = relevantRows.length;
     const summary = project.modules?.bauteilSanierung?.autoPackages ?? null;
     const currentFingerprint = automaticProposalFingerprint(project);
     const stale = Boolean(summary?.fingerprint && summary.fingerprint !== currentFingerprint);
     const packageCounts = summary?.packageCounts ?? { recommended: 0, economic: 0, ambitious: 0 };
 
-    $('autoPreparedValue').textContent = `${preparedCount} von ${readinessRows.length}`;
-    $('autoPreparedNote').textContent = preparedCount === readinessRows.length
-      ? 'Alle unterstützten Bauteile besitzen Fläche und Bestands-U-Wert.'
-      : `${readinessRows.length - preparedCount} Bauteil${readinessRows.length - preparedCount === 1 ? '' : 'e'} benötigen noch Fläche oder U-Wert.`;
+    $('autoPreparedValue').textContent = `${preparedCount} von ${relevantCount} relevant`;
+    $('autoPreparedNote').textContent = relevantCount === 0
+      ? 'Derzeit ist kein Bauteil für die thermische Hülle aktiviert.'
+      : preparedCount === relevantCount
+        ? 'Alle relevanten Bauteile besitzen Fläche und Bestands-U-Wert.'
+        : `${relevantCount - preparedCount} relevantes Bauteil${relevantCount - preparedCount === 1 ? '' : 'e'} benötigt noch Fläche oder U-Wert.`;
     $('autoProposalValue').textContent = summary ? String(summary.proposalCount ?? 0) : '0';
     $('autoRecommendedCount').textContent = String(packageCounts.recommended ?? 0);
     $('autoEconomicCount').textContent = String(packageCounts.economic ?? 0);
@@ -703,18 +729,22 @@
     $('generateAutoPackages').textContent = automaticPackageGenerationRunning
       ? 'Vorschläge werden erstellt …'
       : summary ? 'Vorschläge aktualisieren' : 'Vorschläge erstellen';
-    $('autoPackageActionNote').textContent = preparedCount === 0
-      ? 'Zuerst Standort beziehungsweise Bauteilflächen und mindestens einen Bestands-U-Wert bereitstellen.'
-      : readinessRows.some((row) => row.readiness.technicalReady && !row.readiness.economicsReady)
-        ? 'Technische Pakete sind möglich; wirtschaftliche Vorschläge fehlen bei Bauteilen ohne Energie- oder Kostenbasis.'
-        : 'Alle vorbereiteten Bauteile können technisch und wirtschaftlich ausgewertet werden.';
+    $('autoPackageActionNote').textContent = relevantCount === 0
+      ? 'Zuerst mindestens ein Bauteil als für die thermische Hülle relevant markieren.'
+      : preparedCount === 0
+        ? 'Für die relevanten Bauteile zuerst Fläche und mindestens einen Bestands-U-Wert bereitstellen.'
+        : relevantRows.some((row) => row.readiness.technicalReady && !row.readiness.economicsReady)
+          ? 'Technische Pakete sind möglich; wirtschaftliche Vorschläge fehlen bei relevanten Bauteilen ohne Energie- oder Kostenbasis.'
+          : 'Alle vorbereiteten relevanten Bauteile können technisch und wirtschaftlich ausgewertet werden.';
 
     const storedRows = summary?.components ?? [];
     $('autoPackageDetailsBody').innerHTML = readinessRows.map((row) => {
       const stored = storedRows.find((item) => item.componentId === row.component.id);
-      const basis = row.readiness.technicalReady
-        ? `${formatNumber(row.inputs.areaM2)} m² · U ${formatNumber(row.inputs.existingUValue, 2)}`
-        : `fehlt: ${row.readiness.missing.join(', ') || 'Grundlage'}`;
+      const basis = row.readiness.considered === false
+        ? 'nicht betrachtet'
+        : row.readiness.technicalReady
+          ? `${formatNumber(row.inputs.areaM2)} m² · U ${formatNumber(row.inputs.existingUValue, 2)}`
+          : `fehlt: ${row.readiness.missing.join(', ') || 'Grundlage'}`;
       const cell = (profile) => stored?.profiles?.[profile]
         ? `<span class="auto-package-cell-ready">${escapeHtml(stored.profiles[profile])}</span>`
         : '<span class="auto-package-cell-missing">–</span>';
@@ -738,6 +768,18 @@
         const inputs = automaticInputsForComponent(project, component);
         const result = computeAutomaticComponentProposals(inputs);
         const profiles = {};
+        if (result.readiness.considered === false) {
+          components.push({
+            componentId: component.id,
+            label: component.label,
+            considered: false,
+            prepared: false,
+            economicsReady: false,
+            missing: [],
+            profiles,
+          });
+          return;
+        }
         AUTO_PACKAGE_PROFILES.forEach((profile) => {
           const selected = result[profile.resultKey ?? profile.id];
           if (!selected) return;
@@ -764,6 +806,7 @@
         components.push({
           componentId: component.id,
           label: component.label,
+          considered: true,
           prepared: result.readiness.technicalReady,
           economicsReady: result.readiness.economicsReady,
           missing: result.readiness.missing,
@@ -804,6 +847,7 @@
         fingerprint: automaticProposalFingerprint(project),
         generatedAt,
         preparedComponents: components.filter((item) => item.prepared).length,
+        relevantComponents: components.filter((item) => item.considered !== false).length,
         totalComponents: components.length,
         proposalCount: Object.keys(proposals).length,
         packageCount: AUTO_PACKAGE_PROFILES.filter((profile) => packageMeasureIds[profile.id].length).length,
@@ -856,13 +900,18 @@
     };
   }
 
-  function renderComponentSelector() {
+  function renderComponentSelector(project = store.get()) {
     const host = $('componentSelector');
-    host.innerHTML = COMPONENTS.map((component) => `
-      <button class="component-choice ${component.id === activeComponentId ? 'is-active' : ''} ${component.supported ? '' : 'is-planned'}" data-component-choice="${component.id}" type="button" ${component.supported ? '' : 'disabled'}>
+    host.innerHTML = COMPONENTS.map((component) => {
+      const relevant = componentEnvelopeRelevant(project, component);
+      const relevanceClass = relevant ? 'is-envelope-relevant' : 'is-envelope-excluded';
+      const statusText = relevant ? 'thermische Hülle' : 'nicht betrachtet';
+      return `
+      <button class="component-choice ${component.id === activeComponentId ? 'is-active' : ''} ${relevanceClass} ${component.supported ? '' : 'is-planned'}" data-component-choice="${component.id}" type="button" ${component.supported ? '' : 'disabled'}>
         <strong>${escapeHtml(component.short)}</strong>
-        <span>${component.supported ? (component.measureType === 'exchange' ? 'Austauschmaßnahme' : 'Dämmmaßnahme') : 'Austausch vorbereitet'}</span>
-      </button>`).join('');
+        <span>${component.supported ? statusText : 'Austausch vorbereitet'}</span>
+      </button>`;
+    }).join('');
     host.querySelectorAll('[data-component-choice]').forEach((button) => {
       button.addEventListener('click', () => selectComponent(button.dataset.componentChoice));
     });
@@ -1061,7 +1110,17 @@
       ? (draft.frameMaterial ?? exchangeConfigFor(component)?.default_frame_material ?? 'wood')
       : null;
     const costDefaults = defaultCostValues(component, frameMaterial);
+    renderComponentSelector(project);
     renderComponentMode(component);
+    if ($('thermalEnvelopeRelevant')) {
+      $('thermalEnvelopeRelevant').checked = componentEnvelopeRelevant(project, component);
+      $('thermalEnvelopeRelevant').dataset.projectPath = component.enabledPath ?? '';
+    }
+    if ($('thermalEnvelopeStatus')) {
+      $('thermalEnvelopeStatus').textContent = componentEnvelopeRelevant(project, component)
+        ? 'Wird in der thermischen Hülle und in automatischen Maßnahmenpaketen berücksichtigt.'
+        : 'Wird bei der Hüllbilanz und bei automatischen Maßnahmenpaketen nicht berücksichtigt.';
+    }
 
     const constructionYearInfo = describeAt(project, 'building.profile.constructionYear');
     setInput('constructionYear', constructionYearInfo.value, 0);
@@ -1236,6 +1295,7 @@
       : inputNumber('areaM2', 0);
     return {
       component,
+      thermalEnvelopeRelevant: componentEnvelopeRelevant(project, component),
       areaM2: componentAreaM2,
       doorAreaPerUnitM2,
       constructionYear: inputNumber('constructionYear', null),
@@ -2233,11 +2293,14 @@
          <div><span>U-Wert Bestand</span><strong>${formatNumber(inputs.existingUValue, 2)} W/m²K</strong></div>
          <div><span>${thirdBasisLabel}</span><strong>${thirdBasisValue}</strong></div>`;
 
+    const envelopeStatusText = inputs.thermalEnvelopeRelevant === false ? 'nicht Teil der betrachteten thermischen Hülle' : 'für thermische Hülle relevant';
     $('renovationPrintReport').innerHTML = `
-      <section class="print-hero">
-        <p class="eyebrow">Bauteil &amp; Sanierung</p>
-        <h1>${escapeHtml(inputs.component.label)}</h1>
-        <p>${escapeHtml(project.project?.addressLabel || 'ohne Standort')} · ${escapeHtml(variantLongText(selected))}</p>
+      <header class="print-report-header">
+        <h1>Bauteil &amp; Sanierung</h1>
+      </header>
+      <section class="print-component-heading">
+        <h2>${escapeHtml(inputs.component.label)}</h2>
+        <p>${escapeHtml(variantLongText(selected))} · ${escapeHtml(envelopeStatusText)}</p>
       </section>
 
       <section class="print-summary-grid">${printBasisMarkup}</section>
@@ -2293,6 +2356,15 @@
 
   function bindEvents() {
     $('componentSelect').addEventListener('change', () => selectComponent($('componentSelect').value));
+    $('thermalEnvelopeRelevant')?.addEventListener('change', () => {
+      const component = activeComponent();
+      if (!component.enabledPath) return;
+      store.setFieldCandidate(component.enabledPath, model.ORIGIN.MANUAL, $('thermalEnvelopeRelevant').checked, {
+        source: 'Bauteil & Sanierung V0.8',
+        note: 'gleicher Status wie „Aktiv“ im Energiefluss',
+      });
+      renderComponentSelector(store.get());
+    });
     $('lambdaSelect').addEventListener('change', () => {
       const custom = $('lambdaSelect').value === 'custom';
       $('lambdaCustomWrap').hidden = !custom;

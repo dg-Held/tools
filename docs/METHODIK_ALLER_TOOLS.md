@@ -213,13 +213,15 @@ Die Formel ersetzt nicht den vollständigen Variantenvergleich und gilt nicht f�
 
 ### Automatische Maßnahmenpakete
 
-Über einen eigenen, sichtbaren Schritt werden alle ausreichend vorbereiteten Bauteile gemeinsam ausgewertet. Je Bauteil entstehen – soweit die Datengrundlage reicht – Entwürfe für:
+Über einen eigenen, sichtbaren Schritt werden alle **für die thermische Hülle relevanten** und ausreichend vorbereiteten Bauteile gemeinsam ausgewertet. Der Relevanzstatus ist derselbe gemeinsame Projektwert, der im Energiefluss als „Aktiv“ geführt wird (`building.thermal.envelope.<bauteil>.enabled`). Im Bauteiltool kann er direkt beim geöffneten Bauteil geändert werden. Nicht relevante Bauteile bleiben im Projekt erhalten, werden aber weder für die automatische Hüllbilanz noch für automatische Maßnahmenpakete berücksichtigt.
+
+Je relevantem Bauteil entstehen – soweit die Datengrundlage reicht – Entwürfe für:
 
 - empfohlenen Mindeststandard,
 - wirtschaftliche Variante,
 - ambitionierte Variante.
 
-Die Vorschläge werden unter `measures.auto-envelope-*` gespeichert. Drei Szenarien unter `scenarios.items.envelope-package-*` bündeln die jeweiligen Maßnahmentypen für das spätere Wirtschaftlichkeitstool. Automatisch erzeugte Einträge tragen `status = automatic-proposal` und `reviewStatus = not-reviewed`; vorhandene manuell gespeicherte Maßnahmen werden nicht überschrieben. Ändern sich Flächen, U-Werte, Klima-, Kosten- oder Finanzgrundlagen, markiert ein Fingerprint die Pakete als veraltet.
+Die Vorschläge werden unter `measures.auto-envelope-*` gespeichert. Jede Maßnahmenkarte speichert zusätzlich den Hüllstatus (`thermalEnvelope.relevant`) und den zugehörigen gemeinsamen Projektpfad. Drei Szenarien unter `scenarios.items.envelope-package-*` bündeln ausschließlich relevante Bauteile für das spätere Wirtschaftlichkeitstool. Automatisch erzeugte Einträge tragen `status = automatic-proposal` und `reviewStatus = not-reviewed`; vorhandene manuell gespeicherte Maßnahmen werden nicht überschrieben. Ändern sich Hüllstatus, Flächen, U-Werte, Klima-, Kosten- oder Finanzgrundlagen, markiert ein Fingerprint die Pakete als veraltet.
 
 Technische Mindest- und ambitionierte Vorschläge können ohne Kostenrechnung entstehen. Für eine wirtschaftliche Variante werden zusätzlich Energiegrundlage, Kostenmodell, Nutzungsdauer, Energiepreis und Finanzannahmen benötigt.
 

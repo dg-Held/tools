@@ -231,6 +231,8 @@ Funktionen:
 - kompakte Projektbasis aus Baujahr/Baubewilligung und Nutzfläche (NFL),
 - Baujahr legt U-Wert-Vorschläge für alle unterstützten Bauteile vor, nicht nur für das gerade geöffnete Bauteil,
 - gemeinsame Geometrie liefert die Bauteilflächen; abweichende Werte bleiben überschreibbar,
+- gemeinsamer Hüllstatus mit Energiefluss: relevante Bauteile türkis schraffiert, nicht betrachtete Bauteile beerenfarben; der Status kann im geöffneten Bauteil geändert werden,
+- automatische Maßnahmenpakete berücksichtigen ausschließlich als thermische Hülle relevante Bauteile; der Status wird in der Maßnahmenkarte mitgespeichert,
 - Berry-Pflichtkennzeichnung bei fehlendem Bestands-U-Wert,
 - separaten Variantenblock entfernt; Mindeststandard, wirtschaftlicher Bereich und ambitionierte Variante stehen direkt im Ergebnis,
 - Dämmdicken in 2-cm-Schritten bei exakter interner Rechnung,
@@ -241,7 +243,7 @@ Funktionen:
 - Infografik „Sanierung auf einen Blick“,
 - eigene SVGs mit Fallback,
 - gemeinsame Projektmaßnahme,
-- automatische Auswertung aller ausreichend vorbereiteten Bauteile,
+- automatische Auswertung aller ausreichend vorbereiteten und für die thermische Hülle relevanten Bauteile,
 - drei gespeicherte Hüllpakete für Mindeststandard, wirtschaftliche Variante und ambitionierte Variante,
 - automatische Vorschläge bleiben mit `automatic-proposal / not-reviewed` klar von bestätigten Maßnahmen getrennt,
 - Fingerprint markiert Pakete nach Änderungen an Geometrie, U-Werten, Klima, Kosten oder Finanzannahmen als veraltet.
