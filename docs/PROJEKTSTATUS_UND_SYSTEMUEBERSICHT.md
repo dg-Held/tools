@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 06.08.2026  
+**Stand:** 07.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -39,11 +39,14 @@ Leitgedanke: Der Berater spricht mit dem Kunden; das Tool stellt bekannte Daten 
 Zentrale Gestaltung:
 
 ```text
+styles.css
 shared/css/tokens.css
-shared/css/base.css
 shared/css/components.css
 shared/css/print.css
+shared/css/climate-heating.css
 ```
+
+`styles.css` enthält die allgemeine Seitenbasis und importiert die zentralen Farb-/Designvariablen aus `shared/css/tokens.css`. Eine separate `shared/css/base.css` existiert bewusst nicht.
 
 ## 3. Gemeinsames Projektmodell
 
@@ -207,9 +210,9 @@ Status: funktional abgeschlossen; Vereinfachungs- und Konsistenzschleife umgeset
 - sichtbare Flächenrundung: Fenster 5 m², übrige Hüllflächen 10 m²,
 - direkte Übergabe an Bauteil & Sanierung.
 
-### Bauteil & Sanierung V0.8
+### Bauteil & Sanierung V1.0
 
-Status: Vereinfachungsschleife und automatische Maßnahmenpakete umgesetzt; praktische V1.0-Prüfung noch offen.
+Status: V1.0 technisch freigegeben; Vereinfachungsschleife, thermische Hülle, automatische Maßnahmenpakete und Abschlussprüfung umgesetzt. Die Praxisvalidierung mit realen Beratungsfällen folgt als fachliche Validierungsrunde.
 
 Dämmmaßnahmen:
 
@@ -227,7 +230,7 @@ Austauschmaßnahmen:
 Funktionen:
 
 - an Klima, Heizlast und Energiefluss angeglichener Adress- und Geometrieeinstieg mit bewusstem Analysebutton,
-- Stand-alone-Ablauf: Der Analysebutton lädt die Geometrie. Klima wird nur nachgeladen, wenn weder ein kalibrierter Energiefluss noch ausreichende Klimakennwerte vorhanden sind; die Bauteilrechnung reagiert anschließend direkt auf Eingaben,
+- Stand-alone-Ablauf: Der Analysebutton lädt die Geometrie. Energiegrundlage in der Reihenfolge kalibrierter Energiefluss → vorhandenes INCA-Klima → transparenter HGT-Fallback; INCA kann direkt im Tool nachgeladen werden. Die Bauteilrechnung reagiert anschließend direkt auf Eingaben,
 - kompakte Projektbasis aus Baujahr/Baubewilligung und Nutzfläche (NFL),
 - Baujahr legt U-Wert-Vorschläge für alle unterstützten Bauteile vor, nicht nur für das gerade geöffnete Bauteil,
 - gemeinsame Geometrie liefert die Bauteilflächen; abweichende Werte bleiben überschreibbar,
@@ -332,18 +335,26 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 
 ## 9. Nächste Schritte
 
-1. V0.8 einschließlich automatischer Maßnahmenpakete mit typischen Beratungsfällen testen und anschließend Bauteil & Sanierung als V1.0 freigeben.
-2. Master-Excel vervollständigen und Excel→JSON-Export umsetzen.
-3. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen.
-4. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren.
-5. später Heizung & Verteilung, Sommerkomfort sowie Speicher/Eigenverbrauch.
+1. Drei reale Beratungsfälle vollständig durchspielen und dabei insbesondere TIRIS-Geometrie, NFL/BGF-Nachführung, Hüllstatus, Klimabezug und Druckausgaben fachlich validieren.
+2. Auffälligkeiten aus den Praxisfällen als gezielte V1.x-Korrekturen einarbeiten.
+3. Master-Excel fachlich vervollständigen und die vorhandene Excel→JSON-Datenpipeline mit den freigegebenen Datenbeständen prüfen.
+4. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen und automatische Hüllpakete.
+5. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren; später Heizung & Verteilung, Sommerkomfort sowie Speicher/Eigenverbrauch.
 
-## 9a. Technischer Bereinigungsstand 06.08.2026
+## 9a. Technischer Bereinigungsstand 07.08.2026
 
 - fehlendes `shared/js/project-address-manager.js` ergänzt, einschließlich sicherer Behandlung von Adresswechseln,
 - veralteten Startseitenlink auf Energiefluss V4.4 korrigiert,
 - Dokumentationsindex auf die tatsächlich vorhandenen zentralen Dokumente reduziert,
 - Versionsangaben der Toolübersicht vervollständigt und Bild `in_arbeit.jpg` eingebunden.
+
+- Favicon zentral unter `assets/svg/favicon.svg` eingebunden; alle Seiten verwenden denselben Pfad,
+- Bauteil & Sanierung auf V1.0 gesetzt,
+- Methodenbereiche von Klima, Heizlast, Energiefluss und Bauteil um die tatsächlich verwendeten Formeln ergänzt,
+- HGT-Fallback im Bauteiltool auch rechnerisch als Stand-alone-Energiegrundlage aktiviert,
+- abschließender statischer Release-Check für lokale Ressourcen, gemeinsame UI-Bausteine und Produktionsdatenbestand ergänzt,
+- ungenutzte Altdateien `assets/svg/48x48.svg` und `tools/manifest.json` aus dem Zielstand entfernt; das neue Favicon liegt ausschließlich unter `assets/svg/favicon.svg`,
+- die kompakte Struktur-ZIP enthält absichtlich nicht alle großen BEV-/INCA-Dateien; für den Produktionsordner ist die Vollständigkeit gegen die jeweiligen Manifeste als eigener Releasepunkt dokumentiert.
 
 ## 10. Übergaberegeln
 
@@ -353,3 +364,18 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 - vor dem Löschen alter Dateien abhängige Tools testen,
 - bei jedem Paket Syntax-, JSON-, Rechen-, Import/Export- und Druckprüfung durchführen,
 - diese Datei bei jedem Paket aktualisieren.
+
+## 11. Finaler V1.0-Vorcheck 07.08.2026
+
+Der statische und automatisierte Gesamtcheck ist abgeschlossen. Alle fünf Werkzeuge können aus einem leeren Projekt heraus gestartet werden; notwendige Standort-, Geometrie-, Klima- oder HGT-Schritte werden im jeweiligen Werkzeug selbst angeboten. Gemeinsame Werte verwenden die kanonischen Projektpfade aus `ARCHITEKTUR_UND_DATENMODELL.md`.
+
+Die sichtbaren Methodenbereiche dokumentieren die tatsächlich implementierten Rechenwege. Für den Wirtschaftlichkeitskern sind Barwert, wiederkehrende Kosten, Ersatzinvestitionen, Entsorgung, Restwert, Gesamtkostenbarwert, Annuität, dynamische Amortisation und analytische Dämmdicke beschrieben. Die Normdokumentation reproduziert keinen lizenzierten Normtext; der Rechenkern wird separat gegen hinterlegte Validierungsfälle geprüft.
+
+Offene Punkte für die Praxisabnahme:
+
+- vollständigen Produktionsordner auf alle BEV-/INCA-Dateien gegen die Manifeste prüfen,
+- visuelle Druckabnahme mit realen Projektdaten,
+- Geometrieableitung an drei realen Beratungsobjekten mit Plan-/Energieausweisdaten vergleichen,
+- bekannte Grenze: Haustüren besitzen im Energiefluss noch keinen eigenen kalibrierten Verlustanteil und nutzen im Bauteiltool daher Klima/HGT für die Energieeinsparung.
+
+Nicht für die V1.0-Abnahme erforderlich, aber später sinnvoll: lokale Nunito-Schriftdateien auf eine Variable-Font-Lösung reduzieren und die gemeinsame Klima-/Heizlast-Seitenstruktur technisch weiter entflechten, falls die Wartbarkeit wichtiger wird als die derzeitige gemeinsame Implementierung.

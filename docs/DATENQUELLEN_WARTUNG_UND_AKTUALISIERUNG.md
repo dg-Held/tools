@@ -1,6 +1,6 @@
 # Datenquellen, Wartung und Aktualisierung
 
-**Stand:** 05.08.2026
+**Stand:** 07.08.2026
 
 ## 1. Quellenklassen
 
@@ -21,26 +21,70 @@
 - Emissionsfaktoren,
 - qualitative Komfort-/Ökologiehinweise.
 
-## 2. Master-Excel
+## 2. Master-Excel und Datenexport
 
-Die Master-Excel ist die menschlich wartbare Quelle für veränderliche Beratungsdaten. Normative OIB-Prüfwerte und Nutzungsdauern bleiben getrennte Standarddateien.
+Die Master-Excel ist die menschlich wartbare Quelle für veränderliche Beratungsdaten. Sie wird **außerhalb des veröffentlichten Website-Ordners** abgelegt. Normative OIB-Prüfwerte und Nutzungsdauern bleiben getrennte Standarddateien; Förderungen bleiben projektbezogene Eingaben.
 
-Pflegeablauf:
+Empfohlene lokale Struktur:
+
+```text
+Energieberatung-Arbeitsordner/
+├── BAUTEIL_DATEN_MASTER.xlsx
+└── Website/
+    ├── shared/
+    ├── tools/
+    └── pages/
+```
+
+GitHub Pages veröffentlicht Dateien des verwendeten Repository-Branches. Eine Exceldatei mit internen Quellen, Kommentaren oder noch nicht freigegebenen Kennwerten gehört deshalb nicht in diesen Ordner.
+
+### Pflegeablauf
 
 1. Quelle und Datenstand dokumentieren.
 2. Rohwert ungerundet eintragen.
-3. Status prüfen/freigeben.
-4. automatische Plausibilitäts- und Rundungstests durchführen.
-5. JSON kontrolliert erzeugen.
-6. Website und Ausdruck testen.
+3. Datensatz fachlich prüfen und erst dann `Aktiv = ja` setzen.
+4. `tools/data-build/BAUTEIL_DATEN_PRUEFEN.bat` ausführen.
+5. Warnungen und Datensatzanzahl prüfen.
+6. `BAUTEIL_DATEN_AUFBEREITEN.bat` ausführen.
+7. Website lokal testen.
+8. Nur die geänderten JSON-Dateien und das Manifest zu GitHub hochladen.
 
-Geplanter Export:
+### Technischer Ablauf
 
 ```text
 BAUTEIL_DATEN_MASTER.xlsx
-    ↓ Aufbereitungsskript
+    ↓ bauteil_data_export.py
 shared/data/.../*.json
+shared/data/bauteil-data-manifest.json
 ```
+
+Der Exporter verwendet ausschließlich die Python-Standardbibliothek und verändert die Exceldatei nicht. Vor dem Schreiben sichert er vorhandene JSON-Dateien neben der Exceldatei unter `BAUTEIL_DATEN_BACKUPS/`.
+
+### Exportierte Bereiche
+
+- Empfehlungen und ambitionierte Ziel-U-Werte,
+- Bestands-U-Werte nach Bauperiode,
+- λ-Werte,
+- Kosten und Sowiesokosten,
+- Energiepreise,
+- Emissionsfaktoren,
+- Finanzannahmen und Rundung,
+- Komfort-/Ökologiehinweise.
+
+Nicht aus der Exceldatei exportiert werden:
+
+- OIB-Prüfwerte,
+- Nutzungsdauern,
+- Fenster-/Tür-Austauschvarianten,
+- Förderprogramme oder automatische Fördersätze.
+
+### Sicherer Standardmodus
+
+- Pflichtbereiche müssen mindestens einen aktiven Datensatz enthalten.
+- Leere Kosten-, Energiepreis- oder Emissionsbereiche behalten vorhandene Website-Dateien bei.
+- Fehlende Finanzstandardwerte behalten die vorhandene Website-Datei bei.
+- Befüllte, aber nicht aktivierte Zeilen erzeugen eine Warnung.
+- Das Manifest enthält Excel-Dateiname, SHA-256-Prüfsumme, Modellversion, Exportzeit und Warnungen.
 
 ## 3. INCA-Jahrespakete
 
@@ -56,6 +100,10 @@ shared/data/climate/inca/
 ```
 
 Ein neues vollständiges Jahr wird einmal mit dem vorhandenen Python-/BAT-Ablauf erzeugt und ergänzt. Große Datenordner werden nicht in kleinen Codepaketen mitgeliefert.
+
+### Strukturpaket versus Produktionsordner
+
+Die für Entwicklung/Abgleich verwendete kompakte Struktur-ZIP kann große Adress- und INCA-Pakete absichtlich durch `etc.txt` markieren statt vollständig mitzuliefern. Das ist **nur für die Strukturprüfung** zulässig. Im veröffentlichten GitHub-Pages-/Produktionsordner müssen sämtliche Dateien vorhanden sein, die in `shared/data/addresses/manifest.json` beziehungsweise `shared/data/climate/inca/manifest.json` angekündigt werden. `tests/validate-release-integrity.js` unterscheidet diesen Strukturfall von einer echten Produktionslücke und gibt entsprechende Warnungen beziehungsweise Fehler aus.
 
 ## 4. Standards und Normen
 

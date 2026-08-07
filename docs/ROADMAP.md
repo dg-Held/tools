@@ -1,13 +1,13 @@
 # Roadmap
 
-**Stand:** 05.08.2026
+**Stand:** 07.08.2026
 
 ## Unmittelbar
 
-1. Master-Excel fachlich vervollständigen und freizugebende Zeilen aktivieren.
-2. Umgesetzte Excel→JSON-Datenpipeline gegen die lokale Masterdatei testen.
-3. Vier reale Referenzfälle (Außenwand, Dach/OGD, Kellerdecke, Fenster/Haustür) gegenrechnen.
-4. Automatische Maßnahmenpakete praktisch validieren und Bauteil & Sanierung anschließend als V1.0 einfrieren.
+1. Drei reale Beratungsfälle vollständig von Standortpass bis Bauteil & Sanierung durchspielen.
+2. Dabei insbesondere automatische TIRIS-Geometrie, NFL/BGF-Korrekturen, thermische Hülle, Klima-/HGT-Grundlage und Ausdruck fachlich gegen bekannte Projektwerte halten.
+3. Auffälligkeiten als gezielte V1.x-Korrekturen dokumentieren und nur fachlich bestätigte Änderungen übernehmen.
+4. Danach Master-Excel fachlich vervollständigen und die Excel→JSON-Datenpipeline gegen den vollständigen lokalen Datenbestand testen.
 
 ## Danach
 
@@ -57,10 +57,12 @@ Leitfrage bei jedem neuen Werkzeug:
 
 > Bringt es in einer realen Energieberatung einen eigenen klaren Mehrwert, oder gehört es als Funktion in ein bestehendes Tool?
 
-## Abgeschlossen am 06.08.2026
+## Abgeschlossen bis 07.08.2026
 
-- Heizlast-Ergebnisse auf zwei bis drei beratungsrelevante Aussagen priorisiert.
+- Klima V1.0, Heizlast V1.0, Standortpass V1.1 und Energiefluss V4.4 vereinheitlicht und dokumentiert.
+- Bauteil & Sanierung V1.0 mit thermischem Hüllstatus und automatischen Maßnahmenpaketen abgeschlossen.
 - Tooltips auf das Info-Symbol begrenzt.
-- Standortpass-Oberfläche vereinheitlicht und Ergebnisbereiche bis zur Analyse ausgeblendet.
-- Geometriekette V1.3 mit festen Erstannahmen 3,2 m / 0,75, beheiztem Anteil, Fensterregler und nachgeführten Hüllflächen umgesetzt.
+- Geometriekette V1.4 mit festen Erstannahmen 3,2 m / 0,75, beheiztem Anteil, Fensterregler und nachgeführten Hüllflächen umgesetzt; Dachfläche bleibt TIRIS-basiert.
+- Methodenbereiche um die tatsächlich verwendeten Formeln ergänzt.
+- Favicon zentral eingebunden und technischer Release-Check ergänzt.
 - Temperatur-Heatmap und Windrose bleiben bewusst für eine spätere Erweiterungsrunde zurückgestellt.

@@ -1,6 +1,6 @@
 # Methodik aller Tools
 
-**Stand:** 06.08.2026
+**Stand:** 07.08.2026
 
 ## Standortpass
 
@@ -53,26 +53,138 @@ Quellennachweise:
 
 ## Klima
 
-- INCA-Jahrespakete werden adressbezogen über Koordinaten/Rasterzelle geladen.
-- vollständige Jahre werden automatisch aus Manifest und Jahresindex erkannt.
-- OIB NAT/TNAT,13 werden über die amtliche Zuordnung geladen.
-- Klima ist eigenständig; Heizlast und Energiefluss verwenden denselben Klimakern.
-- Der Beratungsimpuls ordnet die klimatische Heizbeanspruchung anhand der Vollbenutzungsstunden ein: unter 1.800 h vergleichsweise mild, über 2.400 h erhöht, dazwischen mittlere Orientierung. Ab 100 Stunden unter −10 °C wird eine Kältephasen-Notiz ergänzt; ab 10 Hitzetagen oder 2 Tropennächten ein Hinweis zum sommerlichen Wärmeschutz.
-- Diese Schwellen sind bewusst einfache Beratungsregeln und keine normativen Klimaklassen. Der JSON-Export liegt gemeinsam mit Rechenweg und Quellen im Abschnitt „Methode und Datenbasis“.
+Das Klima-Tool arbeitet mit den vorberechneten stündlichen GeoSphere-INCA-Rasterwerten des zur Adresse nächstgelegenen Rasterpunkts. Vollständige Jahre werden aus Manifest und Jahresindex erkannt; OIB-NAT/TNAT,13 sowie TIRIS-Höhenbezug bleiben als getrennte amtliche Grundlagen nachvollziehbar.
+
+### Jahresauswertung und Heizkennwerte
+
+Für jedes verfügbare Jahr werden die gültigen Stundenwerte `T_a,h` ausgewertet:
+
+```text
+Heizstunde, wenn T_a,h < 15 °C
+HGT_15 = Σ max(15 − T_a,h, 0)
+VLS_15 = HGT_15 / (15 − NAT)
+       = Σ max(0, (15 − T_a,h) / (15 − NAT))
+```
+
+Die Kennzahlen der Ergebniskarten sind arithmetische Mittel der vorhandenen Jahreswerte. Für die Temperaturdauerlinie werden die gültigen Temperaturen jedes Jahres sortiert und auf 8.760 Rangstunden interpoliert; für jede Rangstunde werden P10, Median und P90 über alle Jahre gebildet. Die Stundenhäufigkeit wird in 1-K-Klassen gezählt und auf 8.760 Stunden normiert.
+
+### Kälte- und Sommerkennwerte
+
+```text
+Kältestunden = direkte Anzahl der Stunden unter 0 / −5 / −10 °C
+NAT-Stunden = Anzahl T_a,h ≤ NAT
+```
+
+Ein Hitzetag wird nur aus einem Tag mit mindestens 20 gültigen Stundenwerten gebildet; Tagesmaximum ≥ 30 °C zählt als Hitzetag, ≥ 35 °C zusätzlich als extremer Hitzetag. Eine Tropennacht erfordert alle 13 Stundenwerte von 18–06 UTC; das Minimum muss ≥ 20 °C sein. Das minimale 24-h-Mittel ist das kleinste Mittel eines vollständigen gleitenden 24-Stunden-Fensters.
+
+### Beratungsimpuls
+
+Der Beratungsimpuls ist bewusst nicht normativ:
+
+- VLS < 1.800 h → vergleichsweise milder Standort,
+- VLS > 2.400 h → erhöhte klimatische Heizbeanspruchung,
+- dazwischen → mittlere Orientierung,
+- ab 100 h unter −10 °C → zusätzlicher Kältephasen-Hinweis,
+- ab 10 Hitzetagen oder 2 Tropennächten im Jahresmittel → Hinweis zum sommerlichen Wärmeschutz.
+
+Die Schwellen sind reine Beratungsregeln, keine normativen Klimaklassen. Gebäudestandort, INCA-Rasterpunkt, TIRIS-Geländehöhe und OIB-ELEVmin werden getrennt ausgewiesen; es erfolgt keine automatische Höhenkorrektur. Der technische JSON-Export befindet sich im eingeklappten Abschnitt „Methode und Datenbasis“.
 
 ## Heizlast
 
-- verbrauchsbasierte Abschätzung aus Heizenergieverbrauch, Nutzwärmefaktor und klimatischen Vollbenutzungsstunden,
-- flächenbezogene Orientierung als Plausibilitätskorridor,
-- Klimagrundlage aus gemeinsamem Dienst; NAT wird für die Heizlast verwendet, TNAT,13 bleibt dem Klima-/Sommerkontext vorbehalten,
-- Heizgrenztemperatur manuell oder als transparenter Vorschlag,
-- Gebäudezustand automatisch aus dem korrigierten Verbrauchs-HWB vorgeschlagen; fehlt eine belastbare BGF, wird BGF = beheizte Nutzfläche / 0,75 als klar gekennzeichneter Ersatz angesetzt,
-- Einordnung des Vorschlags: über 150 kWh/(m²a) unsanierter Altbau, 90–150 teilsanierter Bestand, 45–unter 90 sanierter Bestand, darunter neuerer Standard/Neubau,
-- eine manuelle Gebäudezustandsauswahl hat immer Vorrang,
-- technische Standortkarten zeigen nur für die Beratung relevante Zuordnungs-, Klima- und Höhenbezüge; interne KG-Nummern werden nicht als eigene Kennzahl ausgegeben,
-- sichtbar priorisiert werden die erforderliche Leistung für 90 % der Heizstunden, die zusätzliche Spitzenleistung und – bei eingetragenen Anlagenleistungen – ein gemeinsamer Anlagenabgleich mit Reserve- und Teillastprüfung,
-- Heizgradtage, Vollbenutzungsstunden, Temperaturkorrekturen und weitere Rechenzwischenwerte stehen nur unter „Methode und Datenbasis“,
-- keine Gleichsetzung mit einer vollständigen normativen Heizlastberechnung.
+Die Heizlast ist eine vereinfachte, verbrauchs- und flächenbasierte Orientierung; sie ist keine vollständige Norm-Heizlastberechnung. Klima, NAT, Adresse und Geometrie stammen aus derselben gemeinsamen Projektbasis wie Klima und Energiefluss.
+
+### Klimatische Lastfunktion und Vollbenutzungsstunden
+
+Für jede Rangstunde gilt bei der verwendeten Heizgrenze `T_HG`:
+
+```text
+L_h = max(0, (T_HG − T_a,h) / (T_HG − NAT))
+```
+
+Bei 15 °C Heizgrenze werden die Vollbenutzungsstunden direkt aus dem Klimapaket verwendet. Bei geänderter Heizgrenze:
+
+```text
+VLS_neu = VLS_15 × ΣL_neu / ΣL_15
+```
+
+### Verbrauchsmethode
+
+```text
+Q_Nutz = HEB × f_Nutz
+Q_WW = Personen × 1.000 kWh/a, wenn Warmwasser enthalten
+Q_Raum = max(Q_Nutz − Q_WW, 0)
+P_Verbrauch = Q_Raum / VLS
+```
+
+`HEB` ist der gemeinsame Heizenergieverbrauch; `f_Nutz` der gemeinsame Nutzwärmefaktor (JNG/JAZ).
+
+### Heizgrenzen-Vorschlag
+
+Zunächst:
+
+```text
+q_Raum = Q_Raum / beheizte Nutzfläche
+```
+
+Vorschlag:
+
+```text
+q_Raum > 150 kWh/m²a       → 16 °C
+100 bis 150                → 15 °C
+50 bis < 100               → 14 °C
+25 bis < 50                → 13 °C
+< 25                       → 12 °C
+keine verwertbare Grundlage → 15 °C
+```
+
+Manuell eingegebene Heizgrenzen werden auf 8–18 °C begrenzt und haben Vorrang.
+
+### Flächenmethode, eingegebener HWB und Gebäudezustand
+
+```text
+P_Fläche,min/max = beheizte NFL × Kennwert_min/max / 1.000
+Q_HWB = HWB × BGF
+P_HWB = Q_HWB / VLS
+```
+
+Die W/m²-Bandbreiten nach Gebäudezustand sind Beratungsfaustformeln, keine Normwerte.
+
+Der automatische Gebäudezustand verwendet dieselbe Verbrauchs-HWB-Logik wie Energiefluss. Fehlt eine bekannte BGF, gilt vorläufig:
+
+```text
+BGF = beheizte Nutzfläche / 0,75
+HWB_V = Q_Raum / BGF
+K_T = 1 + (T_Raum − 20) × 0,06
+K_beheizt = 1 + (beheizter Anteil − 100) × 0,005
+HWB_korr = HWB_V / K_T / K_beheizt
+```
+
+Einordnung: > 150 kWh/(m²a) unsanierter Altbau, 90–150 teilsanierter Bestand, 45–< 90 sanierter Bestand, < 45 neuerer Standard/Neubau. Eine manuelle Auswahl hat immer Vorrang.
+
+### Heizleistungs-Dauerlinie und Anlagenabgleich
+
+Referenz ist vorrangig `P_Verbrauch`, sonst die Mitte der flächenbezogenen Bandbreite:
+
+```text
+P_h = P_ref × L_h
+P_90 = 90-%-Quantil aller positiven P_h
+zusätzliche Spitzenleistung = max(P_ref − P_90, 0)
+```
+
+Bei eingetragenen Anlagenleistungen:
+
+```text
+f_dim = P_max / P_ref
+Reserve = (f_dim − 1) × 100 %
+Auslastung bei NAT = P_ref / P_max × 100 %
+T_Volllast = T_HG − f_dim × (T_HG − NAT)
+```
+
+Stunden unter Mindestleistung sind positive Heizstunden mit `P_h < P_min`; dies ist nur eine Takt-/Teillast-Plausibilisierung.
+
+### Grenzen
+
+Warmwasser-Spitzen, Aufheizreserven, Speicher, Regelung, hydraulische Einflüsse, solare Gewinne und tatsächliche Zusatz-/Ofennutzung werden nicht stundengenau abgebildet. Die 90-%-Leistung ist eine Beratungsgröße für Leistungsanteile und keine monovalente Auslegungsempfehlung. Technische Zwischenergebnisse und der JSON-Export liegen ausschließlich unter „Methode und Datenbasis“.
 
 ## Energiefluss V4
 
@@ -135,9 +247,10 @@ Auch Bauteil & Sanierung ist stand-alone nutzbar: „Standort analysieren“ lä
 R_bestand = 1 / U_bestand
 R_neu = R_bestand + d / λ
 U_neu = 1 / R_neu
+d_erf = max(λ × (1/U_Ziel − 1/U_bestand) × 100, 0)   [cm]
 ```
 
-Varianten werden intern genauer und sichtbar in 2-cm-Schritten gerechnet. Der frühere eigene Variantenblock entfällt; Mindeststandard, wirtschaftlicher Bereich und ambitionierte Variante werden direkt im Ergebnis gegenübergestellt.
+Die rechnerisch erforderliche Dämmdicke wird für die sichtbare Empfehlung auf den vorgesehenen Dämmdicken-Schritt aufgerundet. Varianten werden intern genauer und sichtbar in 2-cm-Schritten gerechnet. Der frühere eigene Variantenblock entfällt; Mindeststandard, wirtschaftlicher Bereich und ambitionierte Variante werden direkt im Ergebnis gegenübergestellt.
 
 ### Fenster und Türen
 
@@ -158,7 +271,24 @@ Investitionskosten nach Anzahl × Stückpreis
 
 ### Energiegrundlage
 
-Vorrangig wird der im Energiefluss kalibrierte Verlust des gewählten Bauteils verwendet. Fehlt er, wird mit Standortklima beziehungsweise dem transparenten HGT-Fallback gerechnet. Technische Korrekturen bleiben eingeklappt.
+Vorrangig wird der im Energiefluss kalibrierte Verlust des gewählten Bauteils verwendet. Fehlt er, wird mit Standortklima beziehungsweise dem transparenten HGT-Fallback gerechnet. Damit bleibt das Tool auch ohne zuvor geöffneten Energiefluss rechenfähig. Für Türen gibt es im Energiefluss derzeit keinen eigenen kalibrierten Hüllverlust; dort wird deshalb Standortklima beziehungsweise HGT verwendet.
+
+```text
+mit Energiefluss:
+Q_neu = Q_Bestand × U_neu / U_bestand
+
+ohne Energiefluss:
+HGT_h = vorhandene Heizgradstunden aus Klima/NAT
+        oder HGT_Kd × 24
+Q = A × U × HGT_h × f_Rand / 1.000
+
+ΔQ_Nutz = max(Q_Bestand − Q_neu, 0)
+ΔQ_End = ΔQ_Nutz / Nutzwärmefaktor
+ΔK_Energie,a = ΔQ_End × Energiepreis
+ΔCO₂_a = ΔQ_End × Emissionsfaktor
+```
+
+Technische Korrekturen bleiben eingeklappt.
 
 ### Kosten und Wirtschaftlichkeit
 
@@ -174,7 +304,7 @@ Getrennt dargestellt werden:
 - Gesamtkosten im Betrachtungszeitraum,
 - dynamische Amortisation.
 
-Kostenoptimum und kürzeste Amortisation verfolgen unterschiedliche Ziele und können bei verschiedenen Varianten liegen.
+Kostenoptimum und kürzeste Amortisation verfolgen unterschiedliche Ziele und können bei verschiedenen Varianten liegen. Der wirtschaftliche Bereich umfasst alle Varianten mit `B_Gesamt ≤ 1,05 × B_Gesamt,min`.
 
 Vollständige im Tool verwendete dynamische Rechenlogik (kein Ersatz für den vollständigen Normtext):
 
@@ -205,11 +335,16 @@ Ersatzinvestitionen werden an den Vielfachen der Nutzungsdauer innerhalb des Bet
 Ergänzende analytische Orientierung für geeignete opake Außenbauteile:
 
 ```text
-d_opt = λ × [√(HGT22/14 × 24 × c_N × F / (λ × 1.000 × c_V)) − R_0]
+c_N = Endenergiepreis / Nutzwärmefaktor
+R_0 = 1 / U_bestand
+c_V = 100 × Mehrkosten je cm      [€/m³]
+F = Σ (p_E / q)^a                 für a = 1 ... T
+
+d_opt = λ × [√(HGT × 24 × c_N × F / (λ × 1.000 × c_V)) − R_0]
 d_opt = max(d_opt, 0)
 ```
 
-Die Formel ersetzt nicht den vollständigen Variantenvergleich und gilt nicht für erdberührte Bauteile.
+Verwendet wird der aktuelle HGT-Wert des Bauteiltools (Standortwert oder transparenter HGT-Fallback). Die Formel ersetzt nicht den vollständigen Variantenvergleich und gilt nicht für erdberührte Bauteile.
 
 ### Automatische Maßnahmenpakete
 
@@ -227,7 +362,13 @@ Technische Mindest- und ambitionierte Vorschläge können ohne Kostenrechnung en
 
 ### Komfort
 
-Die innere Oberflächentemperatur wird überschlägig aus U-Wert, Innen- und Außentemperatur abgeleitet. Wärmebrücken und lokale Anschlüsse sind separat zu prüfen.
+Die innere Oberflächentemperatur wird überschlägig berechnet:
+
+```text
+T_si = T_i − U × (T_i − T_Rand) × R_si
+```
+
+Wärmebrücken, Feuchte und lokale Anschlüsse sind separat zu prüfen.
 
 ## Rundung und Grenzen
 
@@ -333,7 +474,17 @@ Vorrangig wird ein kalibrierter Bauteilverlust aus Energiefluss verwendet:
 Q_neu = Q_Bestand × U_neu / U_Bestand
 ```
 
-Ohne Energiefluss wird überschlägig aus Fläche, U-Wert, Heizgradstunden und Temperaturkorrektur gerechnet. Der sichtbare Tirol-Fallback HGT 22/14 beträgt 3.500 Kd/a und ist überschreibbar.
+Ohne Energiefluss wird überschlägig aus Fläche, U-Wert, Heizgradstunden und Randtemperaturfaktor gerechnet. Der sichtbare Tirol-Fallback HGT 22/14 beträgt 3.500 Kd/a und ist überschreibbar.
+
+```text
+HGT_h = HGT_Kd × 24
+Q_bestand = A × U_bestand × HGT_h × f_Rand / 1.000
+Q_neu = A × U_neu × HGT_h × f_Rand / 1.000
+ΔQ_Nutz = max(Q_bestand − Q_neu, 0)
+ΔQ_End = ΔQ_Nutz / Nutzwärmefaktor
+ΔK_Energie,a = ΔQ_End × Energiepreis
+ΔCO₂_a = ΔQ_End × Emissionsfaktor
+```
 
 ### Kosten
 
@@ -341,6 +492,8 @@ Dämmung:
 
 ```text
 Vollkosten = Fläche × (Sockelkosten + Mehrkosten je cm × Dämmdicke)
+Sowiesokosten = min(Vollkosten, Fläche × Sowiesokosten je m²), wenn Erneuerung ohnehin fällig
+Energetische Mehrkosten = max(Vollkosten − Sowiesokosten, 0)
 ```
 
 Fenster:
@@ -356,14 +509,15 @@ Gesamtfläche = Anzahl × typische Fläche je Tür
 Vollkosten = Anzahl × Richtpreis je Tür
 ```
 
-Kostenbrücke:
+Förderung und Kostenbrücke:
 
 ```text
-Gesamtkosten
-− Sowiesokosten
-= energetische Mehrkosten
-− bestätigte Förderung
-= relevante Eigeninvestition
+Förderung_%voll = Vollkosten × Fördersatz / 100
+Förderung_%energetisch = energetische Mehrkosten × Fördersatz / 100
+Förderung_Fix = Fixbetrag
+Förderung_gesamt = begrenzt auf vorhandene Obergrenzen und höchstens Vollkosten
+Relevante Eigeninvestition = max(energetische Mehrkosten − Förderung_gesamt, 0)
+Instandhaltung_a = Vollkosten × Instandhaltungssatz / 100
 ```
 
 ### Dynamische Wirtschaftlichkeit

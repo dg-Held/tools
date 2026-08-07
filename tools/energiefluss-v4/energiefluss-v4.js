@@ -1171,7 +1171,7 @@
 
     $('v4PrintReport').innerHTML = `
       <div class="v4-print-page">
-        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.4</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
+        <div class="print-title"><div><h1>Energiefluss im Gebäude</h1></div><p>V4.4 · Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
         <div class="print-flow">
           <div><h2>Einträge</h2>${gainsHtml}</div>
           <div class="print-house"><img src="../../shared/assets/energy-flow-house.svg" alt=""><strong>${formatEnergy(result.gains.totalKwh)}</strong></div>

@@ -1,6 +1,6 @@
 # Architektur und Datenmodell
 
-**Stand:** 06.08.2026
+**Stand:** 07.08.2026
 
 ## 1. Schichten
 
@@ -96,12 +96,19 @@ building.thermal.heatedVolume
 Gleiche fachliche Werte werden in allen Tools gleich bezeichnet und nur einmal im Projektmodell gespeichert:
 
 ```text
-Heizenergieverbrauch (kWh/a)       → consumption.heating.annualEnergy
-Nutzwärmefaktor (JNG / JAZ)        → systems.heating.usefulHeatFactor
-Warmwasser enthalten               → systems.heating.hotWaterIncluded
-Personen                            → usage.household.persons
+Baujahr / Baubewilligung           → building.profile.constructionYear
+Nutzfläche (NFL)                    → building.geometry.usableFloorArea
+Davon beheizt                       → building.thermal.heatedSharePercent
 Beheizte Nutzfläche                 → building.geometry.heatedFloorArea
-Gebäudezustand                      → building.thermal.condition
+Bruttogeschoßfläche (BGF)           → building.geometry.grossFloorArea
+Oberirdische Geschoße               → building.geometry.storeysAboveGround
+Fensterflächenanteil                → building.geometry.windowSharePercent
+Heizenergieverbrauch (kWh/a)        → consumption.heating.annualEnergy
+Nutzwärmefaktor (JNG / JAZ)         → systems.heating.usefulHeatFactor
+Warmwasser enthalten                → systems.heating.hotWaterIncluded
+Personen                             → usage.household.persons
+Gebäudezustand                       → building.thermal.condition
+Thermische Hülle / relevant          → building.thermal.envelope.<bauteil>.enabled
 ```
 
 Der Begriff **Nutzwärmefaktor** ist der gemeinsame Oberbegriff: Bei Kesseln entspricht er dem Jahresnutzungsgrad, bei Wärmepumpen der Jahresarbeitszahl. Werte über 1,0 sind daher zulässig. Energiefluss stellt in diesem Fall die Differenz zwischen Nutzwärme und bezogener Heizenergie als Umweltwärme dar, damit die Bilanz geschlossen und fachlich verständlich bleibt.

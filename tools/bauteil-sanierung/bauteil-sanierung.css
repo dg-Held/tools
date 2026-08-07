@@ -1129,7 +1129,7 @@
 .impact-house.has-custom-artwork .impact-fallback-icon { display: none !important; }
 .impact-house.has-custom-artwork .impact-custom-image { display: block !important; }
 
-/* V0.8 – kompakte Projektbasis, einheitlicher Standort und automatische Maßnahmenpakete */
+/* V1.0 – kompakte Projektbasis, einheitlicher Standort und automatische Maßnahmenpakete */
 .tool-intro .tool-lead {
   max-width: 760px;
 }
@@ -1418,7 +1418,7 @@
 }
 
 
-/* V0.8 – automatische Maßnahmenpakete */
+/* V1.0 – automatische Maßnahmenpakete */
 .ren-card--packages {
   border-top: 4px solid var(--color-secondary);
 }

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="../../assets/svg/favicon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
 <title>Heizlast abschätzen – Energieberatung Tirol</title>
 <meta content="Verbrauchs- und flächenbasierte Heizlastorientierung mit automatisch geladener Klimagrundlage für Tirol." name="description"/>
 <link href="../../styles.css?v=2" rel="stylesheet"/>
@@ -352,43 +353,30 @@
 <span><strong>Höhe</strong> TIRIS DGM</span>
 </div>
 <section>
-<h4>Klimadaten</h4>
-<p>
-                GeoSphere Austria INCA-v1, stündliche Rasterwerte <span data-climate-period="">2012–2025</span>.
-                <span id="heatingLimitMethodText">Heizgrenze 15 °C</span>; NAT gemäß OIB-Referenz der
-                zugeordneten Katastralgemeinde.
-              </p>
+<h4>Klimadaten und Vollbenutzungsstunden</h4>
+<p>GeoSphere Austria INCA-v1, stündliche Rasterwerte <span data-climate-period="">2012–2025</span>; NAT gemäß OIB-Referenz der zugeordneten Katastralgemeinde. Für jede Rangstunde gilt <code>L<sub>h</sub> = max(0, (T<sub>HG</sub> − T<sub>a,h</sub>) / (T<sub>HG</sub> − NAT))</code>. Bei 15 °C Heizgrenze stammen die Vollbenutzungsstunden direkt aus dem Klimapaket. Wird die Heizgrenze geändert, gilt <code>VLS<sub>neu</sub> = VLS<sub>15</sub> × ΣL<sub>neu</sub> / ΣL<sub>15</sub></code>.</p>
 </section>
 <section>
 <h4>Verbrauchsmethode</h4>
-<p>
-                Nutzwärme Raumheizung = Heizenergieverbrauch × Nutzwärmefaktor −
-                1.000 kWh je Person, sofern Warmwasser enthalten ist.
-              </p>
-<p>
-                Heizlast = Nutzwärme Raumheizung ÷ klimatische
-                Vollbenutzungsstunden.
-              </p>
+<p><code>Q<sub>Nutz</sub> = HEB × f<sub>Nutz</sub></code>. Falls Warmwasser enthalten ist: <code>Q<sub>WW</sub> = Personen × 1.000 kWh/a</code>. <code>Q<sub>Raum</sub> = max(Q<sub>Nutz</sub> − Q<sub>WW</sub>, 0)</code> und <code>P<sub>Verbrauch</sub> = Q<sub>Raum</sub> / VLS</code>.</p>
 </section>
 <section>
-<h4>Flächenmethode, BGF und Gebäudezustand</h4>
-<p>Beheizte Nutzfläche × hinterlegte W/m²-Bandbreite ÷ 1.000. Die Bandbreiten sind Beratungsfaustformeln, keine Normwerte.</p>
-<p>Fehlt für den unabhängigen HWB-Vergleich eine Projekt-BGF, wird sie vorläufig mit <strong>BGF = beheizte Nutzfläche ÷ 0,75</strong> ergänzt. Der Faktor 0,75 ist eine bewusst einfache, eher großzügige Beratungsannahme und kein allgemeiner Normwert. Eine <a href="https://repositum.tuwien.at/handle/20.500.12708/15291" rel="noopener noreferrer" target="_blank">TU-Wien-Auswertung von 337 Ein- und Zweifamilienhäusern</a> ergab einen Median von 67,41 % und für die mittleren 50 % der Objekte 63,39–71,60 % NUF/BGF. Bekannte BGF-Werte aus Energieausweis, Plan oder Standortpass haben daher immer Vorrang.</p>
-<p>Der Gebäudezustand wird vorrangig aus dem korrigierten Verbrauchs-HWB des Energieflusses vorgeschlagen. Fehlt dieser, dient der verbrauchsbezogene Raumwärmewert je beheizter Nutzfläche als grober Ersatz. Eine manuelle Auswahl hat immer Vorrang.</p>
+<h4>Heizgrenze</h4>
+<p>Der automatische Vorschlag verwendet die verbrauchsbezogene Raumwärme <code>q<sub>Raum</sub> = Q<sub>Raum</sub> / beheizte NFL</code>: über 150 kWh/m²a → 16 °C, 100–150 → 15 °C, 50–unter 100 → 14 °C, 25–unter 50 → 13 °C, darunter → 12 °C. Ohne verwertbare Grundlage gilt 15 °C. Manuelle Werte werden auf 8–18 °C begrenzt und haben Vorrang.</p>
 </section>
 <section>
-<h4>Heizungsvergleich</h4>
-<p>Direkt sichtbar bleiben zwei bis drei beratungsrelevante Aussagen: Leistung für 90 % der Heizstunden, die zusätzlich benötigte Spitzenleistung und – sobald Anlagenleistungen eingetragen sind – ein gemeinsamer Anlagenabgleich mit Reserve- und Teillastprüfung.</p>
-<p>Technische Vergleichswerte wie Leistungsverhältnis, Auslastung bei NAT und theoretische Volllasttemperatur stehen ausschließlich unten bei den aktuellen Zwischenergebnissen.</p>
+<h4>Flächenmethode, HWB und Gebäudezustand</h4>
+<p><code>P<sub>Fläche,min/max</sub> = beheizte NFL × Kennwert<sub>min/max</sub> / 1.000</code>. Die Kennwertbandbreiten nach Gebäudezustand sind Beratungsfaustformeln, keine Normwerte. Ein separat eingegebener HWB wird mit <code>Q<sub>HWB</sub> = HWB × BGF</code> und <code>P<sub>HWB</sub> = Q<sub>HWB</sub> / VLS</code> in eine Vergleichsleistung umgerechnet.</p>
+<p>Für den automatischen Gebäudezustand wird dieselbe Verbrauchs-HWB-Logik wie im Energiefluss verwendet. Fehlt eine bekannte BGF, gilt vorläufig <code>BGF = beheizte Nutzfläche / 0,75</code>. Danach: <code>HWB<sub>V</sub> = Q<sub>Raum</sub> / BGF</code>, <code>K<sub>T</sub> = 1 + (T<sub>Raum</sub> − 20) × 0,06</code>, <code>K<sub>beheizt</sub> = 1 + (Anteil − 100) × 0,005</code> und <code>HWB<sub>korr</sub> = HWB<sub>V</sub> / K<sub>T</sub> / K<sub>beheizt</sub></code>. Einordnung: &gt;150 unsanierter Altbau, 90–150 teilsaniert, 45–unter 90 saniert, &lt;45 neuerer Standard. Manuelle Auswahl hat Vorrang.</p>
+</section>
+<section>
+<h4>Heizleistungs-Dauerlinie und Anlagenabgleich</h4>
+<p>Die Referenzleistung ist vorrangig <code>P<sub>Verbrauch</sub></code>, sonst die Mitte der Flächenbandbreite. Je Rangstunde gilt <code>P<sub>h</sub> = P<sub>ref</sub> × L<sub>h</sub></code>. Die „Leistung für 90 % der Heizstunden“ ist das 90-%-Quantil aller positiven <code>P<sub>h</sub></code>; die zusätzliche Spitzenleistung ist <code>max(P<sub>ref</sub> − P<sub>90</sub>, 0)</code>.</p>
+<p>Bei eingetragener Anlage: <code>f<sub>dim</sub> = P<sub>max</sub> / P<sub>ref</sub></code>, <code>Reserve = (f<sub>dim</sub> − 1) × 100 %</code>, <code>Auslastung bei NAT = P<sub>ref</sub> / P<sub>max</sub> × 100 %</code> und <code>T<sub>Volllast</sub> = T<sub>HG</sub> − f<sub>dim</sub> × (T<sub>HG</sub> − NAT)</code>. Stunden unter Mindestleistung werden als positive Heizstunden mit <code>P<sub>h</sub> &lt; P<sub>min</sub></code> gezählt; das ist nur eine Takt-Plausibilisierung.</p>
 </section>
 <section>
 <h4>Grenzen der Abschätzung</h4>
-<p>
-                Keine Norm-Heizlastberechnung. Warmwasser-Spitzen,
-                Aufheizreserven, Speicher, Regelung, hydraulische Einflüsse,
-                solare Gewinne und tatsächliche Ofennutzung werden nicht
-                stundengenau abgebildet.
-              </p>
+<p>Keine Norm-Heizlastberechnung. Warmwasser-Spitzen, Aufheizreserven, Speicher, Regelung, hydraulische Einflüsse, solare Gewinne und tatsächliche Ofennutzung werden nicht stundengenau abgebildet. Die 90-%-Linie ist eine Beratungsgröße für Leistungsanteile und keine monovalente Auslegungsempfehlung.</p>
 </section>
 <section class="current-calculation">
 <h4>Aktuelle Zwischenergebnisse</h4>

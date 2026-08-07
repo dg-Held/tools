@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="../../assets/svg/favicon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
 <title>Klima am Standort – Energieberatung Tirol</title>
 <meta content="Standortbezogene Klimaauswertung mit INCA-Jahresdaten und OIB-Normklima für Gebäude in Tirol." name="description"/>
 <link href="../../styles.css?v=2" rel="stylesheet"/>
@@ -434,10 +435,11 @@
 <span><strong>Normklima</strong> OIB NAT / TNAT,13</span>
 <span><strong>Höhe</strong> TIRIS DGM</span>
 </div>
-<section><h3>Jahresauswertung</h3><p>Für jedes verfügbare INCA-Jahr werden die stündlichen Temperaturwerte des nächstgelegenen 1-km-Rasterpunkts ausgewertet. Die Kennzahlen in den Kärtchen zeigen Mittelwerte der Jahresergebnisse; die kräftige Diagrammlinie zeigt den Median der einzelnen Jahreskurven.</p></section>
-<section><h3>Kennwerte</h3><p>Temperaturstunden, Heizgradstunden, Hitzetage und Tropennächte werden aus den vorberechneten stündlichen Rasterwerten abgeleitet. Fehlende Stunden werden gezählt und in der Datenqualität ausgewiesen.</p></section>
-<section><h3>Normklima und Höhe</h3><p>NAT und TNAT,13 stammen aus der OIB-Referenz der zugeordneten Katastralgemeinde. Gebäudestandort, INCA-Rasterpunkt, TIRIS-Geländehöhe und OIB-ELEVmin werden getrennt dokumentiert; es erfolgt keine automatische Höhenkorrektur.</p></section>
-<section><h3>Grenzen</h3><p>INCA-Rasterdaten bilden das lokale Mikroklima nur näherungsweise ab. Die Ergebnisse unterstützen die Energieberatung, ersetzen aber weder Stationsstatistiken noch eine objektspezifische bauphysikalische Detailberechnung.</p></section>
+<section><h3>Jahresauswertung und Heizkennwerte</h3><p>Für jedes verfügbare INCA-Jahr werden die gültigen stündlichen Temperaturen <code>T<sub>a,h</sub></code> des nächstgelegenen 1-km-Rasterpunkts ausgewertet. Heizstunden sind Stunden mit <code>T<sub>a,h</sub> &lt; 15 °C</code>. Die Heizgradstunden lauten <code>HGT<sub>15</sub> = Σ max(15 − T<sub>a,h</sub>, 0)</code>. Mit der OIB-Normaußentemperatur gilt <code>VLS = HGT<sub>15</sub> / (15 − NAT) = Σ max(0, (15 − T<sub>a,h</sub>) / (15 − NAT))</code>.</p></section>
+<section><h3>Jahresmittel und Temperaturkurven</h3><p>Die Kennzahlen der Kärtchen sind arithmetische Mittel der verfügbaren Jahreswerte. Für die Dauerlinie werden die gültigen Temperaturen jedes Jahres sortiert und auf 8.760 Rangstunden interpoliert; je Rangstunde werden P10, Median und P90 über alle Jahre gebildet. Stundenhäufigkeiten werden in 1-K-Klassen gezählt und auf 8.760 Stunden normalisiert.</p></section>
+<section><h3>Kälte- und Sommerkennwerte</h3><p>Stunden unter 0, −5 und −10 °C sowie Stunden bei oder unter NAT werden direkt gezählt. Ein Hitzetag liegt vor, wenn ein Tag mit mindestens 20 gültigen Stundenwerten ein Stundenmaximum ≥ 30 °C erreicht; ab 35 °C wird er zusätzlich als extremer Hitzetag gezählt. Eine Tropennacht liegt vor, wenn alle 13 Stundenwerte von 18–06 UTC vollständig sind und deren Minimum ≥ 20 °C beträgt. Das minimale 24-h-Mittel wird als kleinstes Mittel eines vollständigen gleitenden 24-Stunden-Fensters bestimmt.</p></section>
+<section><h3>Normklima, Höhe und Beratungsimpuls</h3><p>NAT und TNAT,13 stammen aus der OIB-Referenz der zugeordneten Katastralgemeinde. Gebäudestandort, INCA-Rasterpunkt, TIRIS-Geländehöhe und OIB-ELEVmin werden getrennt dokumentiert; es erfolgt keine automatische Höhenkorrektur. Der Beratungsimpuls ist bewusst nicht normativ: unter 1.800 Vollbenutzungsstunden „vergleichsweise mild“, über 2.400 h „erhöhte Heizbeanspruchung“, dazwischen mittlere Orientierung; ergänzende Hinweise erscheinen ab 100 h unter −10 °C, 10 Hitzetagen oder 2 Tropennächten im Jahresmittel.</p></section>
+<section><h3>Datenqualität und Grenzen</h3><p>Fehlende Stunden werden je Jahr gezählt und in der Datenqualität ausgewiesen. INCA-Rasterdaten bilden das lokale Mikroklima nur näherungsweise ab. Die Ergebnisse unterstützen die Energieberatung, ersetzen aber weder Stationsstatistiken noch eine objektspezifische bauphysikalische Detailberechnung.</p></section>
 <section class="method-export"><h3>Technischer Export</h3><p>Der Export enthält Standort, Klimaraster, Jahreskennwerte, Dauer- und Häufigkeitskurven zur fachlichen Prüfung oder Weiterverarbeitung.</p><button class="secondary-button" id="downloadButton" type="button">Ergebnis als JSON</button></section>
 </div>
 </details>
