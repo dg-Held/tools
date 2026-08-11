@@ -3,7 +3,7 @@
 /*
  * Praxisdiagnose für den unabhängigen „HWB aus U-Werten“.
  * Die Fälle sind anonymisiert. Sie dokumentieren sowohl den früheren Ansatz
- * (HGT15 + vollständiger Gewinnabzug) als auch die V1.0-Kandidatenmethode
+ * (HGT15 + vollständiger Gewinnabzug) als auch den festgelegten V1.0-Methodenstand
  * (Raumtemperaturbezug + 55 % Gewinnnutzung). Die Referenzwerte sind
  * Beratungskontrollen und keine normativen Sollwerte.
  */
@@ -88,7 +88,7 @@ console.log(JSON.stringify({
   method: {
     indoorTemperatureC,
     gainUtilizationFactor,
-    note: 'V1.0-Beratungskandidat; keine Norm-HWB-Berechnung. Weitere reale Energieausweise bleiben Teil der Validierung.',
+    note: 'V1.0-Beratungsmodell; keine Norm-HWB-Berechnung. Weitere reale Energieausweise können den Regressionssatz in V1.x ergänzen.',
   },
   diagnostics,
 }, null, 2));

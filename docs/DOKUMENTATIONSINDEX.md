@@ -24,4 +24,4 @@ Die Projektdokumentation wird bewusst zentral gepflegt. Frühere toolbezogene Ä
 
 ## Dokumentationsregel
 
-Bei jeder Änderung wird mindestens `PROJEKTSTATUS_UND_SYSTEMUEBERSICHT.md` aktualisiert. Ändern sich Rechenweg, Datenquelle, Wartung oder Testablauf, wird zusätzlich das jeweils betroffene zentrale Dokument angepasst. Neue toolbezogene Einzel-Dokumentationen werden nicht angelegt.
+Bei jeder Änderung wird mindestens `PROJEKTSTATUS_UND_SYSTEMUEBERSICHT.md` aktualisiert. Ändern sich Rechenweg, Datenquelle, Wartung oder Testablauf, wird zusätzlich das jeweils betroffene zentrale Dokument angepasst. Neue toolbezogene Einzel-Dokumentationen werden nicht angelegt. Lokale README-Dateien in `assets/`, `shared/data/` oder `tools/` sind nicht erforderlich; notwendige technische Hinweise werden in die passenden zentralen Dokumente übernommen.

@@ -1,6 +1,6 @@
 # Datenquellen, Wartung und Aktualisierung
 
-**Stand:** 10.08.2026
+**Stand:** 11.08.2026
 
 ## 1. Quellenklassen
 
@@ -58,7 +58,14 @@ shared/data/.../*.json
 shared/data/bauteil-data-manifest.json
 ```
 
-Der Exporter verwendet ausschließlich die Python-Standardbibliothek und verändert die Exceldatei nicht. Vor dem Schreiben sichert er vorhandene JSON-Dateien neben der Exceldatei unter `BAUTEIL_DATEN_BACKUPS/`.
+Der Exporter verwendet ausschließlich die Python-Standardbibliothek und verändert die Exceldatei nicht. Vor dem Schreiben sichert er vorhandene JSON-Dateien neben der Exceldatei unter `BAUTEIL_DATEN_BACKUPS/`. Der ausführliche letzte Prüfbericht wird neben der Exceldatei als `BAUTEIL_DATEN_EXPORTBERICHT.json` gespeichert.
+
+Direkter Kommandozeilenaufruf, falls die BAT-Dateien nicht verwendet werden:
+
+```text
+python tools/data-build/bauteil_data_export.py --input "D:\Daten\BAUTEIL_DATEN_MASTER.xlsx" --site-root "D:\Website"
+python tools/data-build/bauteil_data_export.py --input "D:\Daten\BAUTEIL_DATEN_MASTER.xlsx" --site-root "D:\Website" --write
+```
 
 ### Exportierte Bereiche
 
@@ -86,20 +93,62 @@ Nicht aus der Exceldatei exportiert werden:
 - Befüllte, aber nicht aktivierte Zeilen erzeugen eine Warnung.
 - Das Manifest enthält Excel-Dateiname, SHA-256-Prüfsumme, Modellversion, Exportzeit und Warnungen.
 
+### Gemeinsame Gebäudedaten
+
+`shared/data/building/existing-u-values.json` enthält transparente Bestands-U-Wert-Vorschläge nach Bauperiode. Sie sind nur Ausgangsvorschläge, wenn keine konkreten Bauteildaten bekannt sind. Priorität bleibt:
+
+```text
+manuell bestätigt → übernommen/amtlich → Bauperiodenvorschlag → Zustandsfallback
+```
+
+`shared/data/building/envelope-evaluation.json` enthält Ampelgrenzen, fachliche Empfehlungen, ambitionierte Zielwerte sowie versionierte rechtliche beziehungsweise förderbezogene Referenzwerte. Rechtliche und förderbezogene Werte sind Prüfhinweise; vor Umsetzung ist der aktuelle projektspezifische Stand zu prüfen.
+
 ## 3. INCA-Jahrespakete
 
-Zielpfad:
+Die großen INCA-Daten unter `shared/data/climate/inca/` werden gemeinsam von Klima, Heizlast sowie den direkten Klimaberechnungen in Energiefluss und Bauteil & Sanierung verwendet. Sie sind wegen ihrer Größe nicht Bestandteil jedes kleinen Austauschpakets.
+
+Zielstruktur:
 
 ```text
 shared/data/climate/inca/
 ├── manifest.json
 └── yearly/
     ├── index.json
-    ├── 2012/
-    └── ...
+    ├── 2026.json
+    └── 2026/
+        ├── <tile>.json
+        └── ...
 ```
 
-Ein neues vollständiges Jahr wird einmal mit dem vorhandenen Python-/BAT-Ablauf erzeugt und ergänzt. Große Datenordner werden nicht in kleinen Codepaketen mitgeliefert.
+Die Kachelung ist Absicht: Der Browser lädt je Standort nur die benötigte Kachel des jeweiligen Jahres.
+
+### Neues Jahr aufbereiten
+
+Eingabe ist ein Ordner mit den NetCDF-Dateien des Zieljahres, typischerweise zwölf Monatsdateien. Maßgeblich sind die enthaltenen Zeitstempel und die Variable `T2M`, nicht die Dateinamen.
+
+Beispiel:
+
+```text
+INCA_JAHR_AUFBEREITEN.bat 2026 "C:\INCA\2026"
+```
+
+Beim ersten Start wird unter `tools/klima/tools/.venv_inca/` eine lokale Python-Umgebung angelegt. Dafür ist einmalig Internetzugang erforderlich, um die benötigten Pakete `numpy`, `xarray` und `netCDF4` zu installieren.
+
+### Basiszeitraum und Aktivierung
+
+Vor der ersten Aktivierung müssen die bisherigen Basisjahre vollständig als Jahrespakete vorliegen. Die chronologische Aufbereitung ist fachlich sinnvoll, weil jedes Paket die sechs Abendstunden des 31. Dezember für die Tropennacht-Auswertung des Folgejahres mitführt. Nur beim allerersten Basisjahr kann die Nacht zum 1. Jänner ohne Vorjahrespaket unvollständig bleiben.
+
+Das Skript unterscheidet:
+
+- `available_years`: bereits erzeugte Jahrespakete,
+- `years`: lückenlos aktiver Zeitraum,
+- `enabled`: Pakete vollständig genug für die Runtime.
+
+Ein Jahr mit einer zeitlichen Lücke bleibt erhalten, wird aber erst aktiv, wenn die fehlenden Zwischenjahre ergänzt sind. Nach Aktivierung liest die Website den Zeitraum aus `manifest.json`; Anzeigen, Diagramme und Exportzeitraum folgen automatisch.
+
+### Sicherheit
+
+Das Skript überschreibt nur das ausdrücklich gewählte Jahrespaket und aktualisiert die Manifeste. Bestehende Altjahre werden nicht gelöscht. Die bisherige Runtime bleibt aktiv, bis der Basiszeitraum vollständig migriert ist.
 
 ### Strukturpaket versus Produktionsordner
 
@@ -109,7 +158,7 @@ Die für Entwicklung/Abgleich verwendete kompakte Struktur-ZIP kann große Adres
 
 - Normtexte sind lizenzpflichtig und werden nicht veröffentlicht.
 - Rechenlogik, Quellenangaben und Abschnittsverweise dürfen dokumentiert werden.
-- OIB-Prüfwerte liegen versioniert unter `shared/data/standards/oib/`.
+- OIB-Prüfwerte liegen versioniert unter `shared/data/standards/oib/`. NAT- und TNAT,13-Daten werden von Klima und Heizlast gemeinsam genutzt; die `.js`-Dateien werden direkt im Browser geladen, die `.json`-Dateien bleiben als nachvollziehbare Datenrepräsentation und für Wartungszwecke erhalten.
 - Nutzungsdauern liegen versioniert unter `shared/data/standards/economics/component-lifetimes.json`.
 - Projektspezifische Abweichungen müssen überschreibbar und dokumentierbar bleiben.
 
@@ -168,8 +217,9 @@ Hilfsdateien:
 ```text
 tools/klima/tools/INCA_JAHR_AUFBEREITEN.bat
 tools/klima/tools/inca_year_precompute.py
-tools/klima/tools/README-INCA-JAHRESPAKETE.md
 ```
+
+Die vollständige Bedien- und Wartungsbeschreibung steht in diesem zentralen Dokument; eine zusätzliche lokale README ist nicht erforderlich.
 
 Ablauf:
 
@@ -183,3 +233,8 @@ Ablauf:
 ## DKM im Standortpass
 
 Für die visuelle Grundstücksprüfung wird die Digitale Katastralmappe als transparente Ebene über dem Orthofoto und unter dem ausgewählten TIRIS-Gebäudepolygon geladen. Die Ebene dient ausschließlich der visuellen Plausibilisierung von Grundstücksgrenzen, Grenzbebauung und Nachbarbezug. Orthofoto und Kataster können wegen Bildsturz erhöhter Objekte sichtbar gegeneinander versetzt sein; daraus dürfen keine zentimetergenauen Grenzabstände abgeleitet werden. Die DKM wird vom BEV bezogen und in TIRIS als Basisinformation bereitgestellt; Ausfall des DKM-Dienstes darf die übrige Standortanalyse nicht verhindern.
+
+
+## 9. Dokumentationsprinzip der Datenpflege
+
+Dieses Dokument ist die verbindliche Wartungsquelle für Excel→JSON, gemeinsame Gebäudedaten, INCA-Jahrespakete und versionierte Standarddaten. Zusätzliche README-Dateien innerhalb von `shared/data/` oder `tools/` werden nicht benötigt. Bei Änderungen wird dieser zentrale Ablauf aktualisiert, damit keine widersprüchlichen lokalen Anleitungen entstehen.

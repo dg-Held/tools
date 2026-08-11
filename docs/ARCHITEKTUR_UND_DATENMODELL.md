@@ -1,6 +1,6 @@
 # Architektur und Datenmodell
 
-**Stand:** 10.08.2026
+**Stand:** 11.08.2026
 
 ## 1. Schichten
 
@@ -108,8 +108,11 @@ Nutzwärmefaktor (JNG / JAZ)         → systems.heating.usefulHeatFactor
 Warmwasser enthalten                → systems.heating.hotWaterIncluded
 Personen                             → usage.household.persons
 Gebäudezustand                       → building.thermal.condition
+Externer Referenz-HWB                 → building.thermal.independentHwb
 Thermische Hülle / relevant          → building.thermal.envelope.<bauteil>.enabled
 ```
+
+`building.thermal.independentHwb` bezeichnet ausschließlich einen **extern eingegebenen unabhängigen Referenz-HWB**, zum Beispiel aus einem Energieausweis oder einer separaten Berechnung. Das Feld ist nicht der intern berechnete **„HWB aus U-Werten“** des Energieflusses. Dieser entsteht im Rechenkern aus Hülle, Klima, Lüftung und Gewinnen und wird als Rechenergebnis neu abgeleitet; er wird nicht als zweiter manueller Projekt-HWB unter `independentHwb` gespeichert.
 
 Der Begriff **Nutzwärmefaktor** ist der gemeinsame Oberbegriff: Bei Kesseln entspricht er dem Jahresnutzungsgrad, bei Wärmepumpen der Jahresarbeitszahl. Werte über 1,0 sind daher zulässig. Energiefluss stellt in diesem Fall die Differenz zwischen Nutzwärme und bezogener Heizenergie als Umweltwärme dar, damit die Bilanz geschlossen und fachlich verständlich bleibt.
 
@@ -247,6 +250,18 @@ Getrennte Quellen der Wahrheit:
 
 Der Export erfolgt atomar. Optionale leere Datensätze dürfen vorhandene freigegebene JSON-Dateien im sicheren Standardmodus nicht ersetzen.
 
+## 10. Optionale statische Bauteilgrafiken
+
+Eigene SVG-Grafiken für `Bauteil & Sanierung` liegen optional unter `assets/svg/tools/bauteil-sanierung/`. Fehlt eine Grafik, verwendet das Tool seine integrierte Fallback-Grafik; die Dateien sind daher kein Laufzeit-Pflichtbestand. Empfohlen sind quadratische oder leicht hochformatige SVGs ohne externe Schrift- oder Bildabhängigkeiten.
+
+Namensschema je Bauteil:
+
+```text
+bestand-<bauteil>.svg
+sanierung-<bauteil>.svg
+```
+
+Verwendete Bezeichnungen sind insbesondere `aussenwand`, `ogd`, `dach`, `kellerdecke`, `boden`, `fenster` und `aussentuer`.
 
 ## Semantikmigration Außenwand v1.5
 

@@ -1,6 +1,6 @@
 # Test und Release
 
-**Stand:** 10.08.2026
+**Stand:** 11.08.2026
 
 ## Installation kleiner Austauschpakete
 
@@ -77,7 +77,7 @@ Erwartung:
 - Adresse und Klima laden,
 - INCA-Zeitraum/Datenstand,
 - Heizlastdruck eine Seite,
-- Energieflussdruck zwei Seiten,
+- Energieflussdruck als kompakter Einseiter,
 - Bauteillinks öffnen richtiges Bauteil.
 
 ## Automatisierte Tests
@@ -140,31 +140,31 @@ Vor Freigabe zusätzlich prüfen:
 - Automatische Referenzwerte unter `building.geometry.reference.*` bleiben trotz manueller Korrekturen unverändert.
 - WMS-/Datenquellen-Details brechen auf schmalen Ansichten um und verursachen keinen horizontalen Seitenüberlauf.
 
-## Finaler V1.0-Vorcheck 11.08.2026
+## V1.0-Abschlusscheck 11.08.2026
 
 Automatisiert bestanden:
 
-- JavaScript-Syntax aller 36 vorhandenen JavaScript-Dateien,
+- JavaScript-Syntax aller vorhandenen JavaScript-Dateien,
 - Gebäude-/Datengrundlagen (`validate-building-data.js`),
 - gemeinsame Geometrieableitungen (`validate-project-derived-values.js`),
 - Bauteil-/Sanierungskern (`validate-envelope-renovation-core.js`),
 - Vertrag der automatischen Maßnahmenpakete (`validate-envelope-auto-package-contract.js`),
 - normative Regressionsfälle des Wirtschaftlichkeitskerns zur ÖNORM B 8110-4:2024-04-15 (`validate-oenorm-b8110-4.js`),
-- Release-Integrität für 9 Runtime-Seiten und 78 vorhandene JSON-Dateien (`validate-release-integrity.js`),
+- Release-Integrität der Runtime-Seiten und aller vorhandenen JSON-Dateien (`validate-release-integrity.js`),
 - eindeutige HTML-IDs,
 - lokale `href`-/`src`-Verknüpfungen,
 - zentrale CSS-Variablen und keine festen CSS-Farben außerhalb `shared/css/tokens.css`.
 
 Das kompakte Übergabepaket enthält absichtlich nur einen kleinen Ausschnitt der großen BEV-Adress- und INCA-Jahresdaten. Deshalb meldet der Release-Test in dieser Struktur Warnungen für fehlende Datenpakete. Im vollständigen Produktionsordner müssen diese Warnungen verschwinden.
 
-Der Quellcode der Druckansichten und die gemeinsame Druck-CSS wurden statisch abgeglichen. Die visuelle Endabnahme im Browser beziehungsweise im erzeugten PDF erfolgt mit den drei realen Beratungsfällen; dabei insbesondere Seitenumbrüche, Diagrammgrößen und lange Projekttitel/Adressen prüfen.
+Der Quellcode der Druckansichten und die gemeinsame Druck-CSS wurden statisch abgeglichen. Die visuelle Endabnahme wurde mit realen Beratungsfällen durchgeführt; Seitenumbrüche, Diagrammgrößen sowie lange Projekttitel/Adressen bleiben Bestandteil jedes späteren Releasechecks.
 
 
 ## Praxisfälle 08/2026 – HWB-U-Diagnose und Regression
 
-Fünf anonymisierte Praxis-/Referenzfälle dokumentieren den Methodenvergleich des unabhängigen HWB-U-Modells. `tests/diagnose-hwb-u-practice-cases.js` hält sowohl den früheren Ansatz `HGT15 + vollständiger Gewinnabzug` als auch die V1.0-Kandidatenmethode mit Raumtemperaturbezug und 55 % Gewinnnutzung reproduzierbar fest. Die Kandidatenwerte sind Regressionen für die implementierte Beratungslogik, **keine normativen Sollwerte**. Weitere reale Energieausweise sollen ergänzt werden; eine spätere V1.x-Methodenverbesserung darf die Regressionen bewusst aktualisieren, muss die fachliche Änderung aber dokumentieren. Die übrigen Rechen-, Geometrie-, Hüllstatus-, Wirtschafts- und Release-Tests müssen unverändert bestehen.
+Fünf anonymisierte Praxis-/Referenzfälle dokumentieren den Methodenvergleich des unabhängigen HWB-U-Modells. `tests/diagnose-hwb-u-practice-cases.js` hält sowohl den früheren Ansatz `HGT15 + vollständiger Gewinnabzug` als auch den festgelegten V1.0-Ansatz mit Raumtemperaturbezug und 55 % Gewinnnutzung reproduzierbar fest. Die V1.0-Werte sind Regressionen für die implementierte Beratungslogik, **keine normativen Sollwerte**. Zusätzliche reale Energieausweise können später ergänzt werden; eine bewusste V1.x-Methodenänderung darf die Regressionen nur gemeinsam mit einer dokumentierten fachlichen Begründung aktualisieren. Die übrigen Rechen-, Geometrie-, Hüllstatus-, Wirtschafts- und Release-Tests müssen unverändert bestehen.
 
-Zusätzliche Release-Prüfungen für die finale V1.0-Schleife:
+Zusätzliche Regressionen des abgeschlossenen V1.0-Stands:
 - ältere Außenwandeingabe wird korrekt nach „opak ohne Fenster“ migriert,
 - explizit 100 % beheizt bleibt 100 % und erzeugt eine beheizte NFL in Höhe der NFL,
 - Druckberichte verwenden denselben Projektkopf, größeren Tooltitel und eine kleine Toolversions-/Methodenzeile,

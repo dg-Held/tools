@@ -2,21 +2,15 @@
 
 **Stand:** 11.08.2026
 
-## Aktuelle finale V1.0-Schleife
+## V1.0-Basis abgeschlossen · 11.08.2026
 
-Die drei geplanten Praxisfälle plus ein zusätzlicher realer Vergleichsfall wurden durchgespielt. Die folgenden Punkte sind für die aktuelle Fassung bestätigt und werden abgeschlossen:
+Die erste große Entwicklungsrunde ist abgeschlossen. Praxisfälle, Geometriekette V1.5, opake Außenwand-/Fenstersemantik, beheizter Anteil, DKM, gemeinsame Druckgestaltung, zentrale Farben, unabhängiger HWB-U-Vergleich sowie zentrale Dokumentation sind Bestandteil des eingefrorenen Basisstands.
 
-1. Fensterflächenanteil als einfache Erstannahme auf **20 %** setzen; Regler 10–50 % und direkte Fensterfläche bleiben erhalten.
-2. Außenwand toolübergreifend eindeutig als **opake Außenwand ohne Fenster** definieren. Standortpass ist die gemeinsame Quelle; Energiefluss, Bauteil & Sanierung und spätere Wirtschaftlichkeit verwenden denselben Projektwert.
-3. Alte Standortpass-Projekte mit früherer Brutto-Außenwand-Semantik beim Laden einmalig migrieren.
-4. Beheizten Anteil synchronisieren; bewusst gewählte 100 % dürfen nicht durch einen älteren Flächenwert wieder auf 99 % zurückspringen.
-5. Standortpass in **„Standortpass Gebäude & Umgebung“** umbenennen und DKM als visuelle Ebene über dem Orthofoto ergänzen.
-6. Druckberichte aller bestehenden Tools auf einen gemeinsamen Stil bringen: Projektkopf, größerer Tooltitel, kompakter Beratungsinhalt, kleine Methoden-/Versionszeile.
-7. Vollständige zentrale Dokumentation, Datenmodell-, Wartungs- und Releasehinweise aktualisieren.
+Neue Arbeiten starten ab hier als **V1.x-Erweiterung oder neues Tool**. Bereits funktionierende V1.0-Logik wird nur geändert, wenn ein konkreter fachlicher oder technischer Grund vorliegt.
 
 ## HWB aus U-Werten – V1.0-Methodenstand
 
-Die Praxisprüfung ist in die aktuelle V1.0-Kandidatenfassung eingeflossen. Der verbrauchsbasierte HWB bleibt unverändert. Der unabhängige zweite Prüfweg verwendet nun:
+Die Praxisprüfung ist in den abgeschlossenen V1.0-Methodenstand eingeflossen. Der verbrauchsbasierte HWB bleibt unverändert. Der unabhängige zweite Prüfweg verwendet:
 
 - U-Werte und gemeinsame Hüllflächen,
 - INCA-Vollbenutzungsstunden und gewählte Raumtemperatur,
@@ -24,7 +18,7 @@ Die Praxisprüfung ist in die aktuelle V1.0-Kandidatenfassung eingeflossen. Der 
 - 7,5 % Wärmebrückenzuschlag,
 - interne und solare Gewinne mit einem transparenten pauschalen Gewinnnutzungsfaktor von 0,55.
 
-Der Wert bleibt ausdrücklich ein Beratungs-Plausibilitätsmodell und keine Energieausweis- oder Norm-HWB-Berechnung. Weitere reale Energieausweise sollen als Regressionen ergänzt werden; falls sich ein stabileres einfaches Modell ergibt, wird dieser Punkt in einer V1.x-Version erneut bewertet.
+Der Wert bleibt ausdrücklich ein Beratungs-Plausibilitätsmodell und keine Energieausweis- oder Norm-HWB-Berechnung. Zusätzliche reale Energieausweise können den Regressionssatz später erweitern. Eine methodische Änderung erfolgt erst in einer dokumentierten V1.x-Version und nur bei erkennbarem fachlichem Mehrwert.
 
 ## Für die nächste V1.x-Version vorgemerkt
 
@@ -49,7 +43,7 @@ Keine komplexe Randbedingungsmatrix. Später sauber festlegen:
 - Bevorzugt als separater Zuschlag in kWh/a oder % des Warmwasser-Nutzwärmebedarfs; kein versteckter Standardwert ohne belastbare Quelle.
 - Keine vollständige Rohrnetz-/Haustechnikberechnung.
 
-## Nach der V1.0-Abnahme
+## Nächste Entwicklungsstufe
 
 ### Bestehende Tools erweitern
 

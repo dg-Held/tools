@@ -84,7 +84,7 @@ shared/js/services/
 shared/js/domain/
 ```
 
-## 4. Gemeinsame Gebäudegeometrie – Stand V1.2
+## 4. Gemeinsame Gebäudegeometrie – Stand V1.5
 
 Getrennte Werte:
 
@@ -316,7 +316,6 @@ Hilfsdateien:
 tools/data-build/BAUTEIL_DATEN_PRUEFEN.bat
 tools/data-build/BAUTEIL_DATEN_AUFBEREITEN.bat
 tools/data-build/bauteil_data_export.py
-tools/data-build/README.md
 ```
 
 Sicherheitsregeln:
@@ -337,13 +336,17 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 - jährliche Euro-Wirkung: 50 €/a,
 - CO₂: 100 kg/a.
 
-## 9. Nächste Schritte
+## 9. V1.0-Basis abgeschlossen
 
-1. Drei reale Beratungsfälle vollständig durchspielen und dabei insbesondere TIRIS-Geometrie, NFL/BGF-Nachführung, Hüllstatus, Klimabezug und Druckausgaben fachlich validieren.
-2. Auffälligkeiten aus den Praxisfällen als gezielte V1.x-Korrekturen einarbeiten.
-3. Master-Excel fachlich vervollständigen und die vorhandene Excel→JSON-Datenpipeline mit den freigegebenen Datenbeständen prüfen.
-4. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen und automatische Hüllpakete.
-5. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren; später Heizung & Verteilung, Sommerkomfort sowie Speicher/Eigenverbrauch.
+Die erste große Entwicklungsrunde ist abgeschlossen und mit mehreren realen beziehungsweise Referenzfällen abgeglichen. Für den eingefrorenen Basisstand gelten als erledigt:
+
+1. gemeinsame Adress-, Geometrie-, Klima-, Verbrauchs- und Hüllwerte toolübergreifend vereinheitlicht,
+2. Geometriekette V1.5 einschließlich opaker Außenwand-/Fenstersemantik und Migration geprüft,
+3. Standortpass, Klima, Heizlast, Energiefluss V4.4 und Bauteil & Sanierung als eigenständig nutzbare Werkzeuge getestet,
+4. verbrauchsbasierter HWB und unabhängiger HWB aus U-Werten fachlich getrennt; V1.0-Methode des unabhängigen Vergleichs festgelegt und regressionsgesichert,
+5. gemeinsame Druckgestaltung, zentrale Farb-Tokens und zentrale Dokumentation abgeschlossen.
+
+Das nächste Werkzeug beziehungsweise die nächste Erweiterung wird bewusst als neuer Entwicklungsschritt gestartet. Bereits vorgemerkte V1.x-Themen stehen ausschließlich in `ROADMAP.md` und werden nicht rückwirkend in den abgeschlossenen V1.0-Basisstand gezogen.
 
 ## 9a. Technischer Bereinigungsstand 07.08.2026
 
@@ -369,25 +372,22 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 - bei jedem Paket Syntax-, JSON-, Rechen-, Import/Export- und Druckprüfung durchführen,
 - diese Datei bei jedem Paket aktualisieren.
 
-## 11. Finaler V1.0-Vorcheck 07.08.2026
+## 11. Finaler V1.0-Abschluss 11.08.2026
 
 Der statische und automatisierte Gesamtcheck ist abgeschlossen. Alle fünf Werkzeuge können aus einem leeren Projekt heraus gestartet werden; notwendige Standort-, Geometrie-, Klima- oder HGT-Schritte werden im jeweiligen Werkzeug selbst angeboten. Gemeinsame Werte verwenden die kanonischen Projektpfade aus `ARCHITEKTUR_UND_DATENMODELL.md`.
 
 Die sichtbaren Methodenbereiche dokumentieren die tatsächlich implementierten Rechenwege. Für den Wirtschaftlichkeitskern sind Barwert, wiederkehrende Kosten, Ersatzinvestitionen, Entsorgung, Restwert, Gesamtkostenbarwert, Annuität, dynamische Amortisation und analytische Dämmdicke beschrieben. Die Normdokumentation reproduziert keinen lizenzierten Normtext; der Rechenkern wird separat gegen hinterlegte Validierungsfälle geprüft.
 
-Offene Punkte für die Praxisabnahme:
+Die Praxisabnahme der V1.0-Basis ist abgeschlossen. Die Geometrieableitung, gemeinsamen Projektwerte, Fachkerne und Druckausgaben wurden mit realen beziehungsweise Referenzfällen geprüft. Die Vollständigkeit der großen BEV-/INCA-Pakete bleibt kein Entwicklungsrest, sondern ein wiederkehrender Produktions-Releasecheck gegen die jeweiligen Manifeste.
 
-- vollständigen Produktionsordner auf alle BEV-/INCA-Dateien gegen die Manifeste prüfen,
-- visuelle Druckabnahme mit realen Projektdaten,
-- Geometrieableitung an drei realen Beratungsobjekten mit Plan-/Energieausweisdaten vergleichen,
-- bekannte Grenze: Haustüren besitzen im Energiefluss noch keinen eigenen kalibrierten Verlustanteil und nutzen im Bauteiltool daher Klima/HGT für die Energieeinsparung.
+Bekannte fachliche Grenze des Basisstands: Haustüren besitzen im Energiefluss noch keinen eigenen kalibrierten Verlustanteil und nutzen im Bauteiltool daher Klima/HGT für die Energieeinsparung.
 
-Nicht für die V1.0-Abnahme erforderlich, aber später sinnvoll: lokale Nunito-Schriftdateien auf eine Variable-Font-Lösung reduzieren und die gemeinsame Klima-/Heizlast-Seitenstruktur technisch weiter entflechten, falls die Wartbarkeit wichtiger wird als die derzeitige gemeinsame Implementierung.
+Nicht für V1.0 erforderlich, aber später technisch sinnvoll: lokale Nunito-Schriftdateien auf eine Variable-Font-Lösung reduzieren und die gemeinsame Klima-/Heizlast-Seitenstruktur weiter entflechten, falls die Wartbarkeit wichtiger wird als die derzeitige gemeinsame Implementierung.
 
 
 ## Praxisvalidierung August 2026
 
-Die V1.0-Basis wurde mit mehreren realen bzw. einem theoretischen Beratungsfall sowie einem zusätzlichen Bestands-Energieausweis durchgespielt. Bestätigt wurden insbesondere die Bedeutung einer korrigierten NFL, die Plausibilität der Heizlastorientierung und der Nutzen der gemeinsamen Projektwerte. Der verbrauchsbasierte HWB bleibt unverändert. Für den unabhängigen „HWB aus U-Werten“ wurde nach der Praxisprüfung der frühere Ansatz `15 °C Bilanztemperatur + vollständiger Gewinnabzug` ersetzt: Die aktuelle Kandidatenmethode skaliert die INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und berücksichtigt interne/solare Gewinne mit einem transparenten pauschalen Nutzungsfaktor von 0,55. Der Wert bleibt als Beratungs-Plausibilitätsmodell gekennzeichnet und wird in V1.x weiter gegen reale Energieausweise validiert.
+Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Beratungsfall sowie einem zusätzlichen Bestands-Energieausweis durchgespielt. Bestätigt wurden insbesondere die Bedeutung einer korrigierten NFL, die Plausibilität der Heizlastorientierung und der Nutzen der gemeinsamen Projektwerte. Der verbrauchsbasierte HWB bleibt unverändert. Für den unabhängigen „HWB aus U-Werten“ wurde nach der Praxisprüfung der frühere Ansatz `15 °C Bilanztemperatur + vollständiger Gewinnabzug` ersetzt: Der festgelegte V1.0-Ansatz skaliert die INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und berücksichtigt interne/solare Gewinne mit einem transparenten pauschalen Nutzungsfaktor von 0,55. Der Wert bleibt als Beratungs-Plausibilitätsmodell gekennzeichnet; spätere V1.x-Änderungen benötigen eine erneute dokumentierte Regression gegen Referenzfälle.
 
 ## Letzte Druck- und Vergleichsfeinabstimmung · 11.08.2026
 
@@ -396,3 +396,10 @@ Die V1.0-Basis wurde mit mehreren realen bzw. einem theoretischen Beratungsfall 
 - Energiefluss-Hülltabelle: rechte Spalte und Summenzeile zeigen die unabhängigen Transmissionsverluste aus U × A × Standortklima; die grafische Gebäudehülle bleibt bewusst die verbrauchsbasierte kalibrierte Restgröße.
 
 - Energiefluss-Kennzahl „Verbrauchsabweichung“ eindeutig benannt: sie vergleicht rechnerischen und eingegebenen Heizenergieverbrauch und ist nicht die Differenz der beiden HWB-Kennwerte.
+
+
+## Dokumentationsabschluss · 11.08.2026
+
+- Die Dateien unter `docs/` sind die einzige verbindliche fachliche und technische Projektdokumentation.
+- Frühere lokale README-Dateien in Daten-, Tool- und Assetordnern wurden in die zentralen Dokumente überführt und können entfallen.
+- Fachliche Werte, Rechenwege, Datenpflege und Releaseabläufe werden künftig ausschließlich in den passenden zentralen Dokumenten nachgezogen.

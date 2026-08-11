@@ -1,7 +1,7 @@
 # Dokumentation – Tools für Energieberatung
 
-**Stand:** 10.08.2026  
-**Gültiger Projektstand:** Standortpass V1.0, Klima V1.0, Heizlast V1.0, Energiefluss V4.4, Bauteil & Sanierung V1.0 und lokale Excel→JSON-Datenpipeline V1.
+**Stand:** 11.08.2026  
+**Gültiger Projektstand:** Standortpass Gebäude & Umgebung V1.0, Klima am Standort V1.0, Heizlast abschätzen V1.0, Energiefluss im Gebäude V4.4, Bauteil & Sanierung V1.0 und lokale Excel→JSON-Datenpipeline V1. V1.0-Basis abgeschlossen am 11.08.2026.
 
 Diese Hauptdokumentation ersetzt die bisherigen kleinen Änderungs-, Installations-, Test- und Versionsdateien. Für neue Chats zuerst `PROJEKTSTATUS_UND_SYSTEMUEBERSICHT.md` bereitstellen.
 
@@ -33,4 +33,4 @@ Lizenzierte Normtexte werden weder in diesen Dokumenten noch in öffentlichen We
 
 ## Lokale Datenaufbereitung
 
-Die wartbare Excelquelle bleibt außerhalb des veröffentlichten Website-Ordners. Der verbindliche Ablauf liegt unter `tools/data-build/README.md`.
+Die wartbare Excelquelle bleibt außerhalb des veröffentlichten Website-Ordners. Der verbindliche Ablauf für Excel→JSON, INCA-Jahrespakete, gemeinsame Gebäudedaten und Standarddaten liegt ausschließlich in `DATENQUELLEN_WARTUNG_UND_AKTUALISIERUNG.md`. Lokale README-Dateien in Tool-, Daten- oder Assetordnern sind nicht Bestandteil des verbindlichen Projektstands und werden nicht benötigt.

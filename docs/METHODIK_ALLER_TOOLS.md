@@ -1,6 +1,6 @@
 # Methodik aller Tools
 
-**Stand:** 10.08.2026
+**Stand:** 11.08.2026
 
 ## Standortpass
 
@@ -243,11 +243,11 @@ Q_Raum,U = max(Q_T + Q_WB + Q_Lüftung − Q_intern − Q_solar, 0)
 HWB_U = Q_Raum,U / BGF
 ```
 
-Die Praxisfälle und insbesondere der zusätzliche Bestands-Energieausweis zeigten, dass `ΣUA` und Lüftung teilweise gut getroffen wurden, der Jahres-Transmissionsverlust aber durch die Kombination aus abgesenkter 15-°C-Basis und anschließend vollständigem Gewinnabzug systematisch zu niedrig ausfallen kann. Für die V1.0-Praxiskandidaten wurde deshalb am 11.08.2026 auf den weiter unten vollständig dokumentierten Raumtemperatur-/Gewinnnutzungsansatz umgestellt. Der neue Ansatz bleibt eine transparente Beratungspauschale und wird weiter gegen reale Energieausweise validiert.
+Die Praxisfälle und insbesondere der zusätzliche Bestands-Energieausweis zeigten, dass `ΣUA` und Lüftung teilweise gut getroffen wurden, der Jahres-Transmissionsverlust aber durch die Kombination aus abgesenkter 15-°C-Basis und anschließend vollständigem Gewinnabzug systematisch zu niedrig ausfallen kann. Für den V1.0-Abschlussstand wurde deshalb am 11.08.2026 auf den weiter unten vollständig dokumentierten Raumtemperatur-/Gewinnnutzungsansatz umgestellt. Dieser Ansatz ist der festgelegte V1.0-Methodenstand. Er bleibt eine transparente Beratungspauschale; zusätzliche reale Energieausweise können in späteren V1.x-Versionen zur Weiterentwicklung herangezogen werden.
 
-Die Praxisfälle zeigen, dass ein einfaches Streichen der Gewinne **nicht robust** wäre. Gegen den korrigierten verbrauchsbasierten HWB ergaben sich mit den bei den Tests gespeicherten Werten:
+Die Praxisfälle zeigten, dass ein einfaches Streichen der Gewinne **nicht robust** wäre. Die folgende Tabelle dokumentiert deshalb bewusst die damalige Diagnose des **verworfenen HGT15-Ansatzes nach der Außenwand-v1.5-Korrektur**; sie ist nicht der heutige V1.0-HWB-U:
 
-| Praxisfall | HWB korrigiert | aktueller HWB-U **nach Außenwand-v1.5** | Abweichung | ohne expliziten Gewinnabzug | Abweichung |
+| Praxisfall | HWB korrigiert | früherer HWB-U (HGT15) | Abweichung | ohne expliziten Gewinnabzug | Abweichung |
 |---|---:|---:|---:|---:|---:|
 | A · großes Mehrparteienhaus, reale Beratung + Energieausweis | 51,2 | 16,3 | −68,1 % | 48,5 | −5,3 % |
 | B · kleines Einfamilienhaus, reale Beratung + Energieausweis | 181,5 | 138,0 | −24,0 % | 180,2 | −0,7 % |
@@ -256,7 +256,17 @@ Die Praxisfälle zeigen, dass ein einfaches Streichen der Gewinne **nicht robust
 
 Fall A hatte 1.400 m² bereits opake Außenwand als Nutzereingabe, wurde im alten Modell aber nochmals um 400 m² Fenster reduziert; Fall B hatte denselben Semantikfehler in kleinerem Umfang. Die v1.5-Migration übernimmt diese früheren Standortpass-Werte deshalb als opake Außenwand. Die Flächenkorrektur verbessert den U-Wert-Vergleich, erklärt die gesamte Differenz jedoch nicht.
 
-**Wichtig zur Validierung:** Nur Fall A besitzt in dieser Stichprobe einen ausdrücklich genannten unabhängigen Energieausweis-HWB (HWB REF,SK rund 48 kWh/(m²a)). Fall B besitzt zwar Energieausweisdaten für Geometrie/U-Werte, aber keinen im Projekt gespeicherten unabhängigen HWB-Sollwert; Fall C ist theoretisch; Fall D ist real, jedoch ohne Energieausweis. Der korrigierte verbrauchsbasierte HWB ist deshalb in B–D eine Plausibilitätsreferenz, kein normativer Sollwert.
+Der **festgelegte V1.0-Methodenstand** ist separat als Regression in `tests/diagnose-hwb-u-practice-cases.js` hinterlegt:
+
+| Fall | Referenzart | Referenz-HWB | V1.0-HWB aus U-Werten | Abweichung |
+|---|---|---:|---:|---:|
+| A | real + Energieausweis | 48,0 | 37,0 | −22,9 % |
+| B | real + Energieausweis / Verbrauchsreferenz | 181,5 | 194,7 | +7,3 % |
+| C | theoretischer Testfall | 177,8 | 244,6 | +37,6 % |
+| D | real, ohne Energieausweis | 159,1 | 222,0 | +39,6 % |
+| E | real + Bestands-Energieausweis | 79,3 | 72,2 | −8,9 % |
+
+Diese Werte sind **Regressionen der implementierten Beratungslogik und keine normativen Sollwerte**. Fall A und E besitzen einen ausdrücklich genannten Energieausweis-Referenzwert. Bei B und D dient primär die Verbrauchsreferenz der Plausibilisierung; Fall C ist ein theoretischer Kontrollfall. Die Spannweite der Abweichungen ist bewusst sichtbar und begründet, warum der Wert als unabhängiger Plausibilitätscheck und nicht als Energieausweis-HWB bezeichnet wird.
 
 
 Ein zusätzlicher Diagnosewert bestätigt, dass kein einzelner pauschaler Gewinnnutzungsgrad die vier Fälle repariert: Um den korrigierten verbrauchsbasierten HWB bei unverändertem `HGT15` exakt zu treffen, müsste der Anteil der abziehbaren Jahresgewinne in A und B sogar negativ sein (ca. −0,09 bzw. −0,03), in C dagegen ca. 1,02 und in D ca. 0,91. Das ist kein physikalisch sinnvoller gemeinsamer Parameter, sondern ein Hinweis darauf, dass **Bilanztemperatur, U-/Flächenannahmen, Lüftungsansatz und Gewinnansatz gemeinsam** betrachtet werden müssen. Das Diagnose-Skript `tests/diagnose-hwb-u-practice-cases.js` hält die anonymisierten Ausgangsfälle und zusätzlich den aktuellen V1.0-Vergleich reproduzierbar fest. Die Fälle sind Regressionen für die Beratungslogik, keine normativen Sollwerte.
@@ -268,12 +278,9 @@ Die große Differenz zwischen der im **verbrauchskalibrierten Energiefluss** aus
 
 Im großen Mehrparteienhaus lagen deshalb rund 201 MWh/a verbrauchskalibrierter Bauteilverlust einer U-basierten Transmission von nur rund 64 MWh/a gegenüber. Das zeigt eine **Modellinkonsistenz bzw. nicht zusammenpassende Annahmen**, nicht automatisch einen Rechenfehler in `U × A × HGT`.
 
-Für die nächste fachliche Entscheidung werden zwei methodisch konsistente Varianten gegenübergestellt:
+Für V1.0 wurde die Methodenentscheidung abgeschlossen. Verwendet wird ein **vereinfachtes explizites Wärmebilanzmodell**: Transmissions- und Lüftungsverluste werden unabhängig aus Hülle und Standortklima ermittelt; interne und solare Gewinne werden mit einem transparenten pauschalen Nutzungsfaktor berücksichtigt. Damit ist der zweite Prüfweg methodisch vom verbrauchsbasierten HWB getrennt.
 
-1. **Bilanztemperaturmodell:** Heizgradstunden zu einer echten/geeigneten Bilanztemperatur; Gewinne sind darin implizit enthalten und werden nicht nochmals vollständig abgezogen.
-2. **Explizites Wärmebilanzmodell:** Transmissions- und Lüftungsverluste auf Basis einer Innen-/Außentemperaturbilanz; interne und solare Gewinne werden nur während der Heizperiode und mit einem geeigneten Nutzungsgrad berücksichtigt.
-
-Die zweite Variante ist fachlich näher an einer vollständigen Gebäudeenergiebilanz, benötigt für eine belastbare vereinfachte Umsetzung aber zusätzliche Klima-/Nutzungsgrößen (mindestens Heizperioden-Gradstunden für die Bilanzinnentemperatur und eine nachvollziehbare Gewinnnutzung). Bis diese Variante gegen reale Energieausweise/Projektwerte validiert ist, bleibt der bestehende HWB-U-Vergleich als **Plausibilitätswert in Validierung** erhalten. Er ersetzt ausdrücklich keinen Energieausweis-HWB.
+Ein echtes Bilanztemperaturmodell mit geeigneter variabler Basistemperatur bleibt eine mögliche spätere V1.x-Weiterentwicklung, falls zusätzliche Klima-/Nutzungsgrößen und genügend unabhängige Referenzfälle einen klaren Vorteil zeigen. Der V1.0-HWB-U-Wert bleibt ausdrücklich ein **Beratungs-Plausibilitätswert** und ersetzt keinen Energieausweis-HWB.
 
 ### Für spätere Versionen vorgemerkt
 
@@ -534,7 +541,7 @@ HEB_rechnerisch = (Q_Raum,rech + Q_WW) / f_Nutz
 Verbrauchsabweichung = (HEB_rechnerisch − HEB_eingegeben) / HEB_eingegeben × 100
 ```
 
-Die Umrechnung der vorhandenen INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und der Gewinnnutzungsfaktor 0,55 sind bewusst vereinfachte Beratungsannahmen. Der **HWB aus U-Werten** bleibt ein unabhängiger Plausibilitätswert und ist vom **rechnerischen Heizenergieverbrauch** zu unterscheiden. Die vierte Kennzahl heißt deshalb bewusst **Verbrauchsabweichung**; sie vergleicht nicht die beiden HWB-Werte, sondern `HEB_rechnerisch` mit dem eingegebenen Heizenergieverbrauch. Der Vergleich ist weder Energieausweis-HWB noch Normberechnung; er soll zeigen, ob Verbrauch, eingegebene U-Werte und gemeinsame Gebäudegeometrie in einer plausiblen Größenordnung liegen. Die Praxisfälle bleiben als Regression/Diagnose dokumentiert und werden mit weiteren realen Beratungsfällen weiter validiert.
+Die Umrechnung der vorhandenen INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und der Gewinnnutzungsfaktor 0,55 sind bewusst vereinfachte Beratungsannahmen. Der **HWB aus U-Werten** bleibt ein unabhängiger Plausibilitätswert und ist vom **rechnerischen Heizenergieverbrauch** zu unterscheiden. Die vierte Kennzahl heißt deshalb bewusst **Verbrauchsabweichung**; sie vergleicht nicht die beiden HWB-Werte, sondern `HEB_rechnerisch` mit dem eingegebenen Heizenergieverbrauch. Der Vergleich ist weder Energieausweis-HWB noch Normberechnung; er soll zeigen, ob Verbrauch, eingegebene U-Werte und gemeinsame Gebäudegeometrie in einer plausiblen Größenordnung liegen. Die Praxisfälle bleiben als Regression/Diagnose des festgelegten V1.0-Methodenstands dokumentiert. Zusätzliche reale Beratungsfälle dürfen die Datengrundlage in V1.x erweitern, ohne dass dadurch der abgeschlossene V1.0-Stand nachträglich offen bleibt.
 
 ### Bestands-U-Werte
 
