@@ -10,24 +10,24 @@
   ========================================================= */
 
   --turquoise: #3ca9a7;
-  --turquoise-light: #89c2c1;
-  --turquoise-soft: #cde5e4;
+  --turquoise-light: #9acbca;
+  --turquoise-soft: #e1eae9;
   --turquoise-dark: #244242;
 
   --berry: #93538f;
-  --berry-light: #bb90b9;
-  --berry-soft: #e2d0e1;
+  --berry-light: #c5a0c3;
+  --berry-soft: #eae1ea;
   --berry-dark: #41253f;
 
   /* RGB-Kanäle für transparente Varianten */
 
   --color-primary-rgb: 60 169 167;
-  --color-primary-light-rgb: 137 194 193;
-  --color-primary-soft-rgb: 205 229 228;
+  --color-primary-light-rgb: 154 203 202;
+  --color-primary-soft-rgb: 225 234 233;
 
   --color-secondary-rgb: 147 83 143;
-  --color-secondary-light-rgb: 187 144 185;
-  --color-secondary-soft-rgb: 226 208 225;
+  --color-secondary-light-rgb: 197 160 195;
+  --color-secondary-soft-rgb: 234 225 234;
   --color-secondary-dark-rgb: 65 37 63;
 
   /* =========================================================
@@ -44,21 +44,23 @@
   --color-secondary-soft: var(--berry-soft);
   --color-secondary-dark: var(--berry-dark);
 
-  /* Status */
 
-  --color-success: #4c8378;
-  --color-success-soft: #e7f3ef;
 
-  --color-warning: #a3824b;
-  --color-warning-dark: #7a6035;
-  --color-warning-soft: #f7efe2;
+/* Status */
 
-  --color-danger: #b56b63;
-  --color-danger-soft: #f5ddd8;
-  --color-danger-line: #d8b1ab;
+--color-success: #73a199;
+--color-success-soft: #dae7e7;
 
-  --color-info: #8a927a;
-  --color-info-soft: #eef1e8;
+--color-warning: #a29173;
+--color-warning-dark: #766952;
+--color-warning-soft: #ded9d3;
+
+--color-danger: #a17773;
+--color-danger-soft: #e7dbda;
+--color-danger-line: #c8a39f;
+
+--color-info: #7289a1;
+--color-info-soft: #d4d9e3;
 
   /* =========================================================
      TEXT UND FLÄCHEN
@@ -68,8 +70,8 @@
   --text-dark-rgb: 43 43 43;
 
   --text-light: #f8faf9;
-  --text-muted: #585f63;
-  --text-subtle: #6c7276;
+  --text-muted: #555b5f;
+  --text-subtle: #72777b;
 
   --white: #ffffff;
   --white-rgb: 255 255 255;
@@ -78,11 +80,11 @@
   --page-background-rgb: 226 231 233;
 
   --surface-card: #ffffff;
-  --surface-muted: #f1f4f5;
-  --surface-subtle: #e9eeef;
+  --surface-muted: #eef2f3;
+  --surface-subtle: #e8edee;
 
-  --line: rgba(43, 43, 43, 0.12);
-  --line-strong: #cfd6d7;
+  --line: rgba(43, 43, 43, 0.15);
+  --line-strong: #ccd4d6;
 
 
   /* Schrift */
