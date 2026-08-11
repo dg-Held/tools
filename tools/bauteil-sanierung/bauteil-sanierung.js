@@ -2359,10 +2359,10 @@
         </tbody></table>
       </section>
 
-      <section class="print-method-note">
-        <h2>Grundlagen und Grenzen</h2>
-        <p>Empfohlener Mindeststandard U ≤ ${target?.recommended ? formatNumber(target.recommended, 2) : '–'} W/m²K; ambitioniert U ≤ ${target?.ambitious ? formatNumber(target.ambitious, 2) : '–'} W/m²K. Der empfohlene Mindeststandard ist die untere Grenze der fachlichen Beratungsempfehlung und kein gesetzlicher Mindestwert. Intern wird exakt gerechnet; die Darstellung wird bewusst gerundet. Beratungshilfe; aktuelle rechtliche, förderbezogene und bauphysikalische Anforderungen projektbezogen prüfen.</p>
-      </section>`;
+      <aside class="print-method-note">
+        <strong>Hinweis</strong>
+        <p>Empfohlener Mindeststandard U ≤ ${target?.recommended ? formatNumber(target.recommended, 2) : '–'} W/m²K; ambitioniert U ≤ ${target?.ambitious ? formatNumber(target.ambitious, 2) : '–'} W/m²K. Der empfohlene Mindeststandard ist die untere Grenze der fachlichen Beratungsempfehlung und kein gesetzlicher Mindestwert. Intern wird exakt gerechnet; die Darstellung wird bewusst gerundet. Beratungshilfe; aktuelle rechtliche, förderbezogene und bauphysikalische Anforderungen projektbezogen prüfen. · Toolversion V1.0.</p>
+      </aside>`;
   }
 
   function bindEvents() {

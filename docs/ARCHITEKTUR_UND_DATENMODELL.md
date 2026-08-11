@@ -1,6 +1,6 @@
 # Architektur und Datenmodell
 
-**Stand:** 07.08.2026
+**Stand:** 10.08.2026
 
 ## 1. Schichten
 
@@ -117,14 +117,14 @@ Oberflächen dürfen Synonyme nicht als neue Speicherfelder anlegen. Ein manuell
 
 ## 6. Geometrieabhängigkeiten
 
-Die gemeinsame Ableitung läuft unter `building-geometry-v1.4`. Sie hält eine unveränderte automatische Referenz und eine verwendete Kette mit manuellen Prioritäten parallel vor.
+Die gemeinsame Ableitung läuft unter `building-geometry-v1.5`. Sie hält eine unveränderte automatische Referenz und eine verwendete Kette mit manuellen Prioritäten parallel vor.
 
 ### Feste Erstannahmen
 
 ```text
 storeyHeightModule = 3,2 m
 usableFloorAreaFactor = 0,75
-defaultWindowShare = 25 %
+defaultWindowShare = 20 %
 ```
 
 Diese Werte sind Beratungsannahmen, keine allgemein gültigen Normwerte. Sie werden zentral hinterlegt und nicht als manuelle Projektwerte gespeichert.
@@ -170,9 +170,11 @@ Der zuletzt geänderte manuelle Wert führt den jeweils anderen nach. Die beheiz
 
 ```text
 footprintScale = √(effectiveFootprint / footprintArea)
-exteriorWallGrossArea = perimeter × footprintScale × heightMedian
+exteriorWallGrossArea = technische, abgeleitete Brutto-Fassade
 windowArea = exteriorWallGrossArea × windowSharePercent / 100
 opaqueExteriorWallArea = exteriorWallGrossArea − windowArea
+
+Nutzerseitige Definition: Außenwand = `opaqueExteriorWallArea` (ohne Fenster). `exteriorWallGrossArea` ist keine manuelle Beratereingabe mehr, sondern nur technische Ableitungs-/Referenzgröße. Fenster und opake Außenwand werden als getrennte gemeinsame Projektwerte an Energiefluss, Bauteil & Sanierung und später Wirtschaftlichkeit weitergegeben.
 topFloorArea = basementCeilingArea = groundFloorArea = effectiveFootprint
 roofSlopeArea = footprintArea / cos(roofPitch)
 grossVolume = effectiveFootprint × heightMedian
@@ -244,3 +246,8 @@ Getrennte Quellen der Wahrheit:
 - Förderungen: Projektangaben im gemeinsamen Projektspeicher.
 
 Der Export erfolgt atomar. Optionale leere Datensätze dürfen vorhandene freigegebene JSON-Dateien im sicheren Standardmodus nicht ersetzen.
+
+
+## Semantikmigration Außenwand v1.5
+
+Beim Laden älterer Projekte wird eine manuelle Standortpass-Eingabe unter `building.geometry.exteriorWallGrossArea` einmalig als opake Außenwand interpretiert und nach `building.geometry.opaqueExteriorWallArea` verschoben. Dadurch werden bereits fensterbereinigte Energieausweisflächen nicht erneut um die Fensterfläche reduziert. Die technische Brutto-Fassade bleibt als abgeleitete Referenz erhalten.

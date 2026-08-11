@@ -71,13 +71,20 @@ assert.equal(value('building.geometry.topFloorArea'), 120);
 assert.equal(value('building.geometry.roofSlopeArea'), 100);
 assert.equal(value('building.geometry.grossVolume'), 1150);
 assert.equal(value('building.geometry.exteriorWallGrossArea'), 420);
-assert.equal(value('building.geometry.windowArea'), 105);
-assert.equal(value('building.geometry.opaqueExteriorWallArea'), 315);
+assert.equal(value('building.geometry.windowArea'), 85);
+assert.equal(value('building.geometry.opaqueExteriorWallArea'), 335);
 
-// Der gemeinsame Fensterflächenanteil führt Fenster und opake Außenwand nach.
+// Der gemeinsame Fensterflächenanteil führt die automatische Fenster-/Opak-Aufteilung nach.
 store.setFieldCandidate('building.geometry.windowSharePercent', model.ORIGIN.MANUAL, 30, { unit: '%' });
 assert.equal(value('building.geometry.windowArea'), 125);
 assert.equal(value('building.geometry.opaqueExteriorWallArea'), 295);
+
+// Eine bestätigte opake Außenwandfläche ist die gemeinsame Nutzerdefinition und darf
+// beim Ändern des Fensteranteils nicht nochmals um Fenster reduziert werden.
+store.setFieldCandidate('building.geometry.opaqueExteriorWallArea', model.ORIGIN.MANUAL, 310, { unit: 'm²', source: 'Test' });
+store.setFieldCandidate('building.geometry.windowSharePercent', model.ORIGIN.MANUAL, 20, { unit: '%' });
+assert.equal(value('building.geometry.opaqueExteriorWallArea'), 310);
+assert.equal(value('building.geometry.windowArea'), 85);
 
 // Die Dachfläche bleibt am amtlichen Dachpolygon und folgt nur der Dachneigung.
 store.setFieldCandidate('building.geometry.roofPitch', model.ORIGIN.MANUAL, 30, { unit: '°' });
@@ -95,6 +102,32 @@ assert.equal(value('building.geometry.heatedFloorArea'), 180);
 assert.equal(value('building.thermal.heatedSharePercent'), 100);
 assert.equal(origin('building.geometry.heatedFloorArea'), model.ORIGIN.MANUAL);
 assert.match(String(resolver.describe(store.getPath('building.geometry.heatedFloorArea')).note), /begrenzt/i);
+
+
+// Ein bewusst gesetzter 100-%-Anteil bleibt auch dann 100 %, wenn Anteil und daraus
+// berechnete beheizte NFL gemeinsam im selben Speicherschritt geschrieben werden.
+store.setFieldCandidates([
+  { path: 'building.thermal.heatedSharePercent', origin: model.ORIGIN.MANUAL, value: 100, options: { unit: '%', source: 'Energiefluss V4.4' } },
+  { path: 'building.geometry.heatedFloorArea', origin: model.ORIGIN.MANUAL, value: 180, options: { unit: 'm²', source: 'Energiefluss V4.4', method: 'Nutzfläche × manueller beheizter Anteil' } },
+]);
+assert.equal(value('building.thermal.heatedSharePercent'), 100);
+assert.equal(value('building.geometry.heatedFloorArea'), 180);
+
+// Migration alter Standortpass-Projekte: eine frühere manuelle „Außenwand“ wird
+// ab v1.5 als bereits opake Außenwand ohne Fenster übernommen. Dadurch darf eine
+// Energieausweisfläche nicht nochmals um die Fensterfläche reduziert werden.
+const legacyProject = model.emptyProject();
+legacyProject.building.geometry.exteriorWallGrossArea = model.field(1400, {
+  unit: 'm²', origin: model.ORIGIN.MANUAL, source: 'Nutzereingabe Standortpass',
+});
+legacyProject.building.geometry.opaqueExteriorWallArea = model.field(1000, {
+  unit: 'm²', origin: model.ORIGIN.DERIVED, source: 'alte Ableitung',
+});
+const migratedProject = context.EnergyToolsProjectMigrations.migrate(legacyProject);
+assert.equal(resolver.value(migratedProject.building.geometry.opaqueExteriorWallArea), 1400);
+assert.equal(resolver.describe(migratedProject.building.geometry.opaqueExteriorWallArea).origin, model.ORIGIN.MANUAL);
+assert.notEqual(resolver.describe(migratedProject.building.geometry.exteriorWallGrossArea).origin, model.ORIGIN.MANUAL);
+assert.equal(migratedProject.metadata.exteriorWallSemantics, 'opaque-v1.5');
 
 // Manuelles Bruttovolumen behält Vorrang; konditioniertes Volumen folgt dem beheizten Anteil.
 store.setFieldCandidate('building.thermal.heatedSharePercent', model.ORIGIN.MANUAL, 75, { unit: '%' });

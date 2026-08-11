@@ -1,6 +1,6 @@
 # Methodik aller Tools
 
-**Stand:** 07.08.2026
+**Stand:** 10.08.2026
 
 ## Standortpass
 
@@ -27,14 +27,17 @@ Priorität der verwendeten Flächen:
 Geschoßzahl und NFL sind die wichtigsten Prüfeingaben. Sie bleiben bei eingeklappter Detailtabelle in einer kompakten Zusammenfassung sichtbar. Aus `Grundfläche_verwendet = BGF / Geschoße` werden OGD, unterster Abschluss und Gebäudevolumen nachgeführt. Die Außenwand wird bei geänderter Grundfläche über die Quadratwurzel des Flächenverhältnisses skaliert; dadurch folgt der Umfang bei ähnlicher Gebäudeform plausibler als bei linearer Skalierung. Die Dachprojektion bleibt dagegen das amtliche TIRIS-Dachpolygon und wird nicht aus NFL oder BGF neu abgeleitet.
 
 ```text
-Außenwand = TIRIS-Umfang × √(Grundfläche_verwendet / Dachprojektion) × Medianhöhe
-Fenster = Außenwand × Fensteranteil
+Fassade_brutto,technisch = TIRIS-Umfang × √(Grundfläche_verwendet / Dachprojektion) × Medianhöhe
+Fenster = Fassade_brutto,technisch × Fensteranteil
+Außenwand_opak = Fassade_brutto,technisch − Fenster
 OGD = Kellerdecke = Grundfläche_verwendet
 Dachschräge = TIRIS-Dachprojektion / cos(Dachneigung)
 Gebäudevolumen = Grundfläche_verwendet × Medianhöhe
 ```
 
-Der Fensteranteil ist als Beratungsregler von 10 bis 50 % voreingestellt auf 25 %. Die OIB-Richtlinie 3 fordert für Aufenthaltsräume eine Lichteintrittsfläche bezogen auf die Bodenfläche des jeweiligen Raums; daraus folgt kein allgemeiner gesetzlicher Mindestanteil an der gesamten Fassadenfläche.
+**Einheitliche Außenwanddefinition ab Geometriemodell v1.5:** Nutzerseitig bedeutet „Außenwand“ in Standortpass, Energiefluss, Bauteil & Sanierung und später Wirtschaftlichkeit immer die **opake Außenwandfläche ohne Fenster**. Fenster werden separat geführt. Die technische Brutto-Fassade ist nur noch eine interne Ableitungs-/Referenzgröße. Frühere Standortpass-Projekte, in denen eine manuelle „Außenwand“ noch als Brutto-Fassade gespeichert wurde, werden beim Laden einmalig als opake Nutzerfläche migriert; die Fenster werden danach nicht nochmals abgezogen.
+
+Der Fensteranteil ist als Beratungsregler von 10 bis 50 % voreingestellt auf 20 %. Die OIB-Richtlinie 3 fordert für Aufenthaltsräume eine Lichteintrittsfläche bezogen auf die Bodenfläche des jeweiligen Raums; daraus folgt kein allgemeiner gesetzlicher Mindestanteil an der gesamten Fassadenfläche.
 
 Die kompakte Geometriezeile zeigt Geschoßzahl, NFL, beheizten Anteil und einen einfachen Plausibilitätsstatus. „Geometrie plausibel“ bedeutet nur, dass die Kernwerte vollständig sind und eine gleichzeitig manuell eingetragene BGF/NFL nicht deutlich vom 0,75-Verhältnis abweicht; es ist keine geometrische oder baurechtliche Prüfung.
 
@@ -222,7 +225,58 @@ Der rechnerische Heizenergieverbrauch steht direkt beim Hüllvergleich. Der Klim
 
 Als Stand-alone-Tool trennt Energiefluss bewusst zwei Schritte: „Standort analysieren“ ermittelt die Gebäudegeometrie, „Klimawerte berechnen“ ergänzt die standortbezogene Grundlage für den unabhängigen U-Wert-/Hüllvergleich. Die verbrauchsbasierte Bilanz selbst aktualisiert sich direkt und benötigt keinen dritten allgemeinen Berechnen-Knopf.
 
-Der Fensterflächenanteil ist im Energiefluss als gemeinsamer Regler von 10 bis 50 % sichtbar. Er bezieht sich auf die Brutto-Außenwand und führt – solange keine bewusst bestätigte Fensterfläche Vorrang hat – Fensterfläche, opake Außenwand und solare Gewinne gemeinsam nach. Beim bewussten Ändern des Reglers werden ältere manuelle Fenster-/opake Wandflächen verworfen, damit die neue Verhältnisannahme wirksam wird. Eine anschließend direkt eingegebene Fensterfläche wird wieder als genauerer Projektwert gespeichert.
+Der Fensterflächenanteil ist im Energiefluss als gemeinsamer Regler von 10 bis 50 % sichtbar; Standard sind 20 %. Er bezieht sich auf die technische Gesamtfassade und führt die gemeinsame Fensterfläche sowie die solaren Gewinne nach. Eine bewusst bestätigte opake Außenwandfläche bleibt als eigener gemeinsamer Projektwert erhalten. Eine direkt eingegebene Fensterfläche hat wiederum Vorrang vor der automatischen Fensterableitung. Damit verwenden Standortpass, Energiefluss und Bauteil & Sanierung dieselben zwei Flächenwerte: **Außenwand opak** und **Fenster**.
+
+### Praxisvalidierung des „HWB aus U-Werten“ – fachlich noch offen
+
+**Normativer Bezug und Abgrenzung:** Der OIB-Leitfaden „Energietechnisches Verhalten von Gebäuden“, Ausgabe September 2025, verweist für Klimamodell/Nutzungsprofile auf ÖNORM B 8110-5, für Heizwärme- und Kühlbedarf auf ÖNORM B 8110-6-1 und für den Heizenergiebedarf auf ÖNORM H 5056-1. Der folgende U-Wert-Vergleich bildet diese Normberechnung bewusst **nicht** nach, sondern bleibt eine transparente Beratungsplausibilisierung. Bei Gradtag-/Gradstundenverfahren kann eine gegenüber der Raum-Solltemperatur abgesenkte Basistemperatur bereits interne und solare Gewinne implizit abbilden; ein zusätzlicher vollständiger Gewinnabzug muss deshalb methodisch mit der gewählten Basistemperatur konsistent sein. Dieser Zusammenhang ist u. a. in NREL-Arbeiten zu variable-base degree days beschrieben.
+
+Quellen für diese Abgrenzung: OIB-Richtlinie 6 – Leitfaden 2025, Punkt 2.1; Austrian Standards, ÖNORM B 8110-6-1; NREL, „Variable-Base Degree-Day Correction Factors for Energy Savings Calculations“.
+
+Der Rechenkern wird nach vier durchgespielten Beratungsfällen **bewusst noch nicht geändert**. Der aktuelle Vergleich rechnet:
+
+```text
+HGT15 = VLS15 × (15 − NAT)
+Q_T = Σ(U × A) × HGT15 / 1.000
+Q_WB = 0,075 × Q_T
+Q_Raum,U = max(Q_T + Q_WB + Q_Lüftung − Q_intern − Q_solar, 0)
+HWB_U = Q_Raum,U / BGF
+```
+
+Die Praxisfälle zeigen, dass ein einfaches Streichen der Gewinne **nicht robust** wäre. Gegen den korrigierten verbrauchsbasierten HWB ergaben sich mit den bei den Tests gespeicherten Werten:
+
+| Praxisfall | HWB korrigiert | aktueller HWB-U **nach Außenwand-v1.5** | Abweichung | ohne expliziten Gewinnabzug | Abweichung |
+|---|---:|---:|---:|---:|---:|
+| A · großes Mehrparteienhaus, reale Beratung + Energieausweis | 51,2 | 16,3 | −68,1 % | 48,5 | −5,3 % |
+| B · kleines Einfamilienhaus, reale Beratung + Energieausweis | 181,5 | 138,0 | −24,0 % | 180,2 | −0,7 % |
+| C · theoretischer Testfall | 177,8 | 178,7 | +0,5 % | 218,1 | +22,6 % |
+| D · Einfamilienhaus, reale Beratung ohne Energieausweis | 159,1 | 153,8 | −3,3 % | 210,5 | +32,3 % |
+
+Fall A hatte 1.400 m² bereits opake Außenwand als Nutzereingabe, wurde im alten Modell aber nochmals um 400 m² Fenster reduziert; Fall B hatte denselben Semantikfehler in kleinerem Umfang. Die v1.5-Migration übernimmt diese früheren Standortpass-Werte deshalb als opake Außenwand. Die Flächenkorrektur verbessert den U-Wert-Vergleich, erklärt die gesamte Differenz jedoch nicht.
+
+**Wichtig zur Validierung:** Nur Fall A besitzt in dieser Stichprobe einen ausdrücklich genannten unabhängigen Energieausweis-HWB (HWB REF,SK rund 48 kWh/(m²a)). Fall B besitzt zwar Energieausweisdaten für Geometrie/U-Werte, aber keinen im Projekt gespeicherten unabhängigen HWB-Sollwert; Fall C ist theoretisch; Fall D ist real, jedoch ohne Energieausweis. Der korrigierte verbrauchsbasierte HWB ist deshalb in B–D eine Plausibilitätsreferenz, kein normativer Sollwert.
+
+
+Ein zusätzlicher Diagnosewert bestätigt, dass kein einzelner pauschaler Gewinnnutzungsgrad die vier Fälle repariert: Um den korrigierten verbrauchsbasierten HWB bei unverändertem `HGT15` exakt zu treffen, müsste der Anteil der abziehbaren Jahresgewinne in A und B sogar negativ sein (ca. −0,09 bzw. −0,03), in C dagegen ca. 1,02 und in D ca. 0,91. Das ist kein physikalisch sinnvoller gemeinsamer Parameter, sondern ein Hinweis darauf, dass **Bilanztemperatur, U-/Flächenannahmen, Lüftungsansatz und Gewinnansatz gemeinsam** betrachtet werden müssen. Das Diagnose-Skript `tests/diagnose-hwb-u-practice-cases.js` hält diese vier anonymisierten Zahlenstände reproduzierbar fest, ohne bereits einen neuen produktiven Sollwert zu definieren.
+
+Die große Differenz zwischen der im **verbrauchskalibrierten Energiefluss** ausgewiesenen Gebäudehülle und der aus **U × A × Klima** berechneten Transmission ist kein direkter Vergleich zweier gleichartiger Größen:
+
+- Die grafische Gebäudehülle ist eine **Restgröße zur Schließung der Verbrauchsbilanz**. Sie enthält denjenigen Hüllverlust, der nach eingegebenem Verbrauch, Nutzwärmefaktor, Warmwasser, Lüftung sowie den pauschalen internen/solaren Einträgen übrig bleiben muss. Die U-Werte verteilen diese Restgröße nur auf die aktiven Bauteile.
+- Der unabhängige Hüllvergleich berechnet die Transmission tatsächlich aus `ΣUA × HGT`. Er ist nicht am Verbrauch kalibriert.
+
+Im großen Mehrparteienhaus lagen deshalb rund 201 MWh/a verbrauchskalibrierter Bauteilverlust einer U-basierten Transmission von nur rund 64 MWh/a gegenüber. Das zeigt eine **Modellinkonsistenz bzw. nicht zusammenpassende Annahmen**, nicht automatisch einen Rechenfehler in `U × A × HGT`.
+
+Für die nächste fachliche Entscheidung werden zwei methodisch konsistente Varianten gegenübergestellt:
+
+1. **Bilanztemperaturmodell:** Heizgradstunden zu einer echten/geeigneten Bilanztemperatur; Gewinne sind darin implizit enthalten und werden nicht nochmals vollständig abgezogen.
+2. **Explizites Wärmebilanzmodell:** Transmissions- und Lüftungsverluste auf Basis einer Innen-/Außentemperaturbilanz; interne und solare Gewinne werden nur während der Heizperiode und mit einem geeigneten Nutzungsgrad berücksichtigt.
+
+Die zweite Variante ist fachlich näher an einer vollständigen Gebäudeenergiebilanz, benötigt für eine belastbare vereinfachte Umsetzung aber zusätzliche Klima-/Nutzungsgrößen (mindestens Heizperioden-Gradstunden für die Bilanzinnentemperatur und eine nachvollziehbare Gewinnnutzung). Bis diese Variante gegen reale Energieausweise/Projektwerte validiert ist, bleibt der bestehende HWB-U-Vergleich als **Plausibilitätswert in Validierung** erhalten. Er ersetzt ausdrücklich keinen Energieausweis-HWB.
+
+### Für spätere Versionen vorgemerkt
+
+- **Angrenzende Gebäude:** einfache Zusatzangabe `davon an Nachbargebäude angrenzend: ___ m²`; keine komplexe Randbedingungsmatrix. Später muss eindeutig festgelegt werden, welche Fläche aus dem Außenluft-Transmissionsverlust und aus automatischen Fassadensanierungsmaßnahmen herausgenommen wird.
+- **Warmwasser/Zirkulation bei größeren zentralen Anlagen:** die Personenpauschale bleibt für kleine Gebäude die einfache Standardmethode. Für MFH soll später optional ein transparenter Verteil-/Zirkulationsverlust ergänzt werden. Bevorzugter MVP ist ein **separater, standardmäßig leerer Zuschlag in kWh/a oder % des Warmwasser-Nutzwärmebedarfs**, damit keine ungesicherte versteckte Pauschale entsteht. Eine vollständige Rohrnetz-/Haustechnikberechnung ist nicht Ziel dieses Tools.
 
 ## Bauteil & Sanierung
 

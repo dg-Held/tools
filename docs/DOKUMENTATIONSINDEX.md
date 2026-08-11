@@ -1,6 +1,6 @@
 # Dokumentationsindex – Tools für Energieberatung
 
-**Stand:** 07.08.2026  
+**Stand:** 10.08.2026  
 **Projektmodell:** Schema 2.0
 
 Die Projektdokumentation wird bewusst zentral gepflegt. Frühere toolbezogene Änderungs-, Installations- und Methodik-Einzeldateien sind nicht mehr Bestandteil des verbindlichen Websitepakets.
@@ -16,7 +16,7 @@ Die Projektdokumentation wird bewusst zentral gepflegt. Frühere toolbezogene Ä
 4. `docs/DATENQUELLEN_WARTUNG_UND_AKTUALISIERUNG.md`  
    Adress-, Klima-, Gebäude-, Kosten- und Standarddaten sowie deren Pflege.
 5. `docs/TEST_UND_RELEASE.md`  
-   Lokaler Start, Regressionstests, Linkprüfung, Druckprüfung und Freigabecheck.
+   Lokaler Start, Regressionstests, Linkprüfung, Druckprüfung und Freigabecheck; enthält auch die Regeln für den offenen, anonymisierten HWB-U-Diagnosesatz.
 6. `docs/ROADMAP.md`  
    Nächste fachliche und technische Entwicklungsschritte.
 7. `docs/NORMVALIDIERUNG-OENORM-B-8110-4-2024.md` und `.json`  

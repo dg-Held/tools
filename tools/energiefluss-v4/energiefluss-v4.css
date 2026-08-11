@@ -721,3 +721,93 @@
     border-top-color: var(--color-secondary);
   }
 }
+
+/* =========================================================
+   ENERGIEFLUSS V4.4 · EINHEITLICHER A4-DRUCK
+========================================================= */
+@media print {
+  .v4-print-page--single {
+    page-break-after: auto !important;
+    break-after: auto !important;
+    padding: 0 !important;
+  }
+  .v4-print-page--single .print-title {
+    display: block !important;
+    margin: 0 0 2mm !important;
+    padding: 0 !important;
+    border-bottom: .2mm solid var(--line-strong);
+  }
+  .v4-print-page--single .print-title h1 {
+    margin: 0 0 1.5mm !important;
+    font-size: 17pt !important;
+    line-height: 1.12 !important;
+  }
+  .v4-print-page--single .print-flow {
+    grid-template-columns: 1fr 37mm 1fr !important;
+    gap: 3mm !important;
+  }
+  .v4-print-page--single .print-house {
+    min-height: 48mm !important;
+  }
+  .v4-print-page--single .print-house img {
+    width: 34mm !important;
+    max-height: 42mm !important;
+  }
+  .v4-print-page--single .print-flow-entry { margin-bottom: 1mm !important; }
+  .v4-print-page--single .print-flow-entry--detail { margin-bottom: .55mm !important; }
+  .v4-print-page--single .print-kpis {
+    margin: 2mm 0 !important;
+    gap: 1.5mm !important;
+  }
+  .v4-print-page--single .print-kpis article {
+    padding: 1.6mm !important;
+  }
+  .v4-print-page--single .print-note {
+    margin: 1.8mm 0 0 !important;
+    padding: 1.4mm 1.7mm !important;
+    font-size: 6.3pt !important;
+    line-height: 1.28 !important;
+  }
+  .v4-print-page--single .print-section {
+    margin-top: 2mm !important;
+  }
+  .v4-print-page--single .print-section h2 {
+    margin-bottom: 1mm !important;
+    font-size: 9.5pt !important;
+  }
+  .v4-print-page--single .print-envelope th,
+  .v4-print-page--single .print-envelope td {
+    padding: .9mm 1.1mm !important;
+    font-size: 6.4pt !important;
+    line-height: 1.15 !important;
+  }
+  .v4-print-page--single .print-envelope small {
+    font-size: 5.2pt !important;
+  }
+  .print-base-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1mm 3mm;
+    padding: 1.5mm 1.8mm;
+    border: .2mm solid var(--line-strong);
+    border-radius: 1.8mm;
+    background: var(--surface-subtle);
+    font-size: 6.5pt;
+    line-height: 1.25;
+  }
+  .print-base-line span {
+    white-space: nowrap;
+  }
+  .print-base-line b {
+    margin-right: .6mm;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .v4-print-page--single .print-footer-note {
+    margin-top: 1.8mm !important;
+    padding-top: 1.2mm;
+    border-top: .2mm solid var(--line-strong);
+    font-size: 5.6pt !important;
+    line-height: 1.25 !important;
+  }
+}

@@ -140,12 +140,56 @@
     return project;
   }
 
+
+  function migrateOpaqueExteriorWallSemantics(project) {
+    const geometry = project.building?.geometry;
+    if (!geometry) return project;
+
+    const grossField = geometry.exteriorWallGrossArea;
+    const oldManual = grossField?.__type === model.FIELD_TYPE
+      ? grossField.candidates?.[model.ORIGIN.MANUAL]
+      : null;
+    if (!oldManual || !/standortpass/i.test(String(oldManual.source || ''))) return project;
+
+    // Bis building-geometry-v1.4 war die sichtbare Standortpass-Eingabe als
+    // Brutto-Fassade gespeichert, obwohl Beratungs-/Energieausweiswerte in der
+    // Praxis typischerweise bereits die opake Außenwand ohne Fenster meinten.
+    // Ab v1.5 ist die Nutzerdefinition eindeutig: Außenwand = opak, Fenster separat.
+    const opaqueBase = geometry.opaqueExteriorWallArea?.__type === model.FIELD_TYPE
+      ? clone(geometry.opaqueExteriorWallArea)
+      : model.field(null, { unit: 'm²' });
+    opaqueBase.candidates = { ...(opaqueBase.candidates || {}) };
+    opaqueBase.candidates[model.ORIGIN.MANUAL] = model.candidate(oldManual.value, {
+      ...oldManual,
+      unit: 'm²',
+      source: 'Migration Außenwanddefinition v1.5',
+      method: 'frühere Standortpass-Außenwandeingabe als opake Fläche übernommen',
+      note: 'Außenwand ist ab v1.5 immer ohne Fenster definiert.',
+    });
+    geometry.opaqueExteriorWallArea = model.finalizeField(opaqueBase);
+
+    const grossNext = clone(grossField);
+    grossNext.candidates = { ...(grossNext.candidates || {}) };
+    delete grossNext.candidates[model.ORIGIN.MANUAL];
+    // Kein veraltetes Top-Level-origin stehen lassen, falls das alte Feld nur
+    // einen manuellen Kandidaten hatte. finalizeField wählt sonst trotz leerem
+    // Kandidatensatz fälschlich weiterhin „manual“ als Herkunft aus.
+    grossNext.origin = null;
+    geometry.exteriorWallGrossArea = model.finalizeField(grossNext);
+    project.metadata = {
+      ...(project.metadata || {}),
+      exteriorWallSemantics: 'opaque-v1.5',
+    };
+    return project;
+  }
+
   function migrate(rawProject) {
     const source = rawProject && typeof rawProject === 'object' ? clone(rawProject) : {};
     const requiresMigration = Number(source.schemaVersion ?? 1) < 2;
     let project = merge(model.emptyProject(), source);
     project = migrateFieldsDeep(project);
     project = migrateLegacyPaths(project);
+    project = migrateOpaqueExteriorWallSemantics(project);
     project.schema = 'energy-tools-project';
     project.schemaVersion = 2;
     project.metadata = {

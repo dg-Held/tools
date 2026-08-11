@@ -3328,3 +3328,160 @@
     line-height: 1.15 !important;
   }
 }
+
+/* =========================================================
+   STANDORTPASS V1.0 · DKM-KARTENKONTROLLE & DRUCKFINALISIERUNG
+========================================================= */
+.geometry-stage {
+  position: relative;
+}
+.geometry-stage .orthophoto-image { z-index: 1; }
+.geometry-stage .dkm-overlay-image {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+.geometry-stage .dkm-overlay-image[hidden] { display: none; }
+.geometry-stage svg { z-index: 3; }
+
+@media print {
+  .standortpass-print-title h1 {
+    margin: 0 0 2.4mm !important;
+    font-size: 17pt !important;
+    line-height: 1.12 !important;
+  }
+
+  .print-map-stage .dkm-overlay-image {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 2 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: fill !important;
+  }
+  .print-map-stage .dkm-overlay-image[hidden] { display: none !important; }
+  .print-map-stage svg { z-index: 3 !important; }
+
+  .print-building-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0 4mm !important;
+  }
+  .print-building-grid > div {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: baseline !important;
+    gap: 1.8mm !important;
+    padding: 1mm 0 !important;
+    border-bottom: .18mm solid var(--line-strong) !important;
+  }
+  .print-building-grid span {
+    margin: 0 !important;
+    font-size: 6.7pt !important;
+    line-height: 1.15 !important;
+  }
+  .print-building-grid strong {
+    font-size: 7.5pt !important;
+    text-align: right !important;
+    white-space: nowrap;
+  }
+
+  .print-heat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5mm;
+  }
+  .print-heat-card {
+    min-width: 0;
+    padding: 1.5mm 1.7mm;
+    border: .2mm solid var(--line-strong);
+    border-radius: 1.8mm;
+    background: var(--white);
+  }
+  .print-heat-card span,
+  .print-heat-card strong { display: block; }
+  .print-heat-card span { font-size: 6pt; color: var(--text-muted); }
+  .print-heat-card strong { margin-top: .5mm; font-size: 7.4pt; line-height: 1.18; }
+  .print-heat-card--positive {
+    border-color: var(--color-primary-light);
+    background: var(--color-info-soft);
+  }
+  .print-heat-card--attention {
+    border-color: var(--color-secondary-light);
+    background: var(--color-secondary-soft);
+  }
+  .print-heat-card--open {
+    border-color: var(--color-warning-soft);
+    background: var(--color-warning-soft);
+  }
+
+  .print-section--solar .print-solar-meta {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 1.2mm !important;
+    margin-bottom: 1.6mm !important;
+  }
+  .print-section--solar .print-solar-meta > span {
+    display: flex !important;
+    gap: 1.5mm !important;
+    align-items: baseline !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  .print-section--solar .print-solar-meta > span b {
+    min-width: 19mm;
+    font-size: 6.3pt !important;
+  }
+  .print-sun-duration {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 2mm !important;
+  }
+  .print-sun-duration > strong {
+    flex: 0 0 auto;
+    font-size: 6.3pt !important;
+  }
+  .print-sun-duration > div {
+    display: flex !important;
+    flex: 1 1 auto;
+    justify-content: space-between;
+    gap: 2mm !important;
+  }
+  .print-sun-duration span {
+    display: inline-flex !important;
+    align-items: baseline;
+    gap: .8mm;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  .print-sun-duration b { font-size: 5.8pt !important; color: var(--text-muted); }
+  .print-sun-duration em { font-size: 7.4pt !important; font-style: normal; font-weight: 800; }
+
+  .print-solar-chart {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  .print-solar-chart svg {
+    display: block !important;
+    width: 100% !important;
+    height: 67mm !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .standortpass-print-footer {
+    margin-top: 2mm;
+    padding-top: 1.3mm;
+    border-top: .2mm solid var(--line-strong);
+    font-size: 5.8pt;
+    line-height: 1.25;
+    color: var(--text-muted);
+  }
+}

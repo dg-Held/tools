@@ -1,6 +1,6 @@
 # Datenquellen, Wartung und Aktualisierung
 
-**Stand:** 07.08.2026
+**Stand:** 10.08.2026
 
 ## 1. Quellenklassen
 
@@ -178,3 +178,8 @@ Ablauf:
 3. Testzelle/Adresse mit dem bisherigen Zeitraum vergleichen,
 4. Klima, Heizlast und direkte Klimaberechnung in Energiefluss/Bauteiltool prüfen,
 5. Datenstand im Ausdruck kontrollieren.
+
+
+## DKM im Standortpass
+
+Für die visuelle Grundstücksprüfung wird die Digitale Katastralmappe als transparente Ebene über dem Orthofoto und unter dem ausgewählten TIRIS-Gebäudepolygon geladen. Die Ebene dient ausschließlich der visuellen Plausibilisierung von Grundstücksgrenzen, Grenzbebauung und Nachbarbezug. Orthofoto und Kataster können wegen Bildsturz erhöhter Objekte sichtbar gegeneinander versetzt sein; daraus dürfen keine zentimetergenauen Grenzabstände abgeleitet werden. Die DKM wird vom BEV bezogen und in TIRIS als Basisinformation bereitgestellt; Ausfall des DKM-Dienstes darf die übrige Standortanalyse nicht verhindern.

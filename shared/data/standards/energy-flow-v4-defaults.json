@@ -13,7 +13,7 @@
     "heated_share_percent": 100,
     "storeys": 2,
     "usable_floor_area_factor_percent": 75,
-    "window_share_percent": 25,
+    "window_share_percent": 20,
     "storey_height_m": 3.2,
     "internal_gains_w_m2": 2.7,
     "solar_radiation_factor_kwh_m2a": 175,

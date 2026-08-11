@@ -1,14 +1,14 @@
 'use strict';
 
 /* =========================================================
-   STANDORTPASS – V1.6 · GEMEINSAME DATENBASIS
+   STANDORTPASS – V1.0 · GEMEINSAME DATENBASIS
 
    Testet bewusst:
    1) gemeinsame Hybrid-Adresssuche: BEV-Vorschläge + TIRIS-Live-Abgleich
    2) TIRIS Katastralgemeinde aus der Standortkoordinate
    3) BEV und TIRIS technisch vergleichen
    4) TIRIS Gebäude FeatureServer mit Punkt-in-Polygon-Zuordnung
-   5) TIRIS Orthofoto als visuelle Kontrolle
+   5) TIRIS Orthofoto + DKM/Kataster als visuelle Kontrolle
    6) bestehende TIRIS-DGM-Höhenfunktion
    7) GeoLand/voibos Sonnenstand + nutzerfreundliches SVG aus DTM/DSM und Sonnenbahnen
    8) öffentliche TIRIS-Dienste auf Wärmenetz-/Versorgungslayer prüfen
@@ -46,6 +46,9 @@ const TIRIS_KG_LAYER_ID = 39;
 const TIRIS_ORTHOPHOTO_WMS_URL =
   'https://gis.tirol.gv.at/arcgis/services/' +
   'Service_Public/orthofoto/MapServer/WMSServer';
+
+const TIRIS_DKM_EXPORT_URL = `${TIRIS_BASIS_URL}/export`;
+let dkmLayerIdsPromise = null;
 
 const GEOLAND_SUN_URL = 'https://voibos.rechenraum.com/voibos/voibos';
 
@@ -1249,7 +1252,7 @@ function showSelectedBuilding(feature) {
   if (length !== null && plausibleMedian) {
     const wallRaw = length * medianHeight;
     $('wallPreview').textContent =
-      `Brutto-Außenwand orientierend ca. ${number0.format(roundTo(wallRaw, 10))} m²`;
+      `Technische Brutto-Fassade orientierend ca. ${number0.format(roundTo(wallRaw, 10))} m²`;
   } else {
     $('wallPreview').textContent =
       'Keine Testableitung – Medianhöhe derzeit nicht plausibel/verfügbar.';
@@ -1272,6 +1275,10 @@ function resetBuildingOutput(clearRaw = true) {
   $('noBuildingNote').hidden = true;
   $('orthophotoImage').hidden = true;
   $('orthophotoImage').removeAttribute('src');
+  if ($('dkmOverlayImage')) {
+    $('dkmOverlayImage').hidden = true;
+    $('dkmOverlayImage').removeAttribute('src');
+  }
   $('orthophotoStatus').textContent = 'Orthofoto wird mit der Geometrie geladen.';
   $('rawOrthophoto').textContent = '–';
   $('buildingMatchInfo').textContent = 'Zuerst wird geprüft, ob der gewählte Adress-/Gebäudepunkt direkt in einem TIRIS-Dachpolygon liegt.';
@@ -1416,6 +1423,84 @@ function loadOrthophotoForBounds(minX, minY, maxX, maxY, viewInfo = {}, srs = 'E
     status.textContent = 'Orthofoto konnte nicht geladen werden – bitte WMS prüfen.';
   };
   image.src = url;
+}
+
+async function resolveDkmLayerIds() {
+  if (dkmLayerIdsPromise) return dkmLayerIdsPromise;
+  dkmLayerIdsPromise = (async () => {
+    const payload = await fetchJson(`${TIRIS_BASIS_URL}?f=json`);
+    const layers = Array.isArray(payload?.layers) ? payload.layers : [];
+    const groups = layers.filter((layer) => /kataster|dkm/i.test(String(layer.name || '')));
+    const groupIds = new Set(groups.map((layer) => Number(layer.id)));
+    let matches = layers.filter((layer) => groupIds.has(Number(layer.parentLayerId)));
+    if (!matches.length) {
+      matches = layers.filter((layer) => /kataster|dkm|grundst|parzell|grenz/i.test(String(layer.name || '')));
+    }
+    const ids = [...new Set(matches.map((layer) => Number(layer.id)).filter(Number.isFinite))];
+    // ArcGIS kann auch einen Gruppenlayer direkt rendern; das ist der robusteste Fallback.
+    if (!ids.length && groups.length) return [Number(groups[0].id)].filter(Number.isFinite);
+    return ids;
+  })().catch((error) => {
+    dkmLayerIdsPromise = null;
+    throw error;
+  });
+  return dkmLayerIdsPromise;
+}
+
+function buildDkmExportUrl(bounds, layerIds) {
+  const params = new URLSearchParams({
+    f: 'image',
+    bbox: `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}`,
+    bboxSR: '31254',
+    imageSR: '31254',
+    size: '1040,720',
+    format: 'png32',
+    transparent: 'true',
+    dpi: '96',
+  });
+  if (layerIds?.length) params.set('layers', `show:${layerIds.join(',')}`);
+  return `${TIRIS_DKM_EXPORT_URL}?${params.toString()}`;
+}
+
+async function loadDkmForBounds(bounds) {
+  const image = $('dkmOverlayImage');
+  if (!image) return;
+  image.hidden = true;
+  try {
+    const layerIds = await resolveDkmLayerIds();
+    if (!layerIds.length) throw new Error('kein Kataster-Layer im BASIS-Dienst gefunden');
+    const url = buildDkmExportUrl(bounds, layerIds);
+    image.onload = () => {
+      image.hidden = false;
+      const status = $('orthophotoStatus');
+      if (status && !/DKM eingeblendet/i.test(status.textContent)) status.textContent += ' · DKM eingeblendet.';
+    };
+    image.onerror = () => {
+      image.hidden = true;
+      const status = $('orthophotoStatus');
+      if (status && !/DKM nicht verfügbar/i.test(status.textContent)) status.textContent += ' · DKM nicht verfügbar.';
+    };
+    image.src = url;
+
+    const raw = $('rawOrthophoto');
+    if (raw) {
+      let current = {};
+      try { current = JSON.parse(raw.textContent || '{}'); } catch { current = {}; }
+      raw.textContent = pretty({
+        ...current,
+        dkm: {
+          service: 'TIRIS BASIS / Kataster',
+          layer_ids: layerIds,
+          source: 'Land Tirol / DKM des BEV',
+          request_url: url,
+        },
+      });
+    }
+  } catch (error) {
+    image.hidden = true;
+    const status = $('orthophotoStatus');
+    if (status && !/DKM nicht verfügbar/i.test(status.textContent)) status.textContent += ` · DKM nicht verfügbar (${error.message}).`;
+  }
 }
 
 function buildProjectedBuildingQueryUrl(features) {
@@ -1570,11 +1655,13 @@ async function drawBuildingGeometry(features) {
       projected_address_layer: projectedAddress.layer_id,
       projected_building_query: projectedBuildings.url,
     }, 'EPSG:31254');
+    void loadDkmForBounds(bounds);
     drawProjectedBuildingSvg(svg, projectedBuildings.features, bounds, projectedAddress);
   } catch (error) {
     if (token !== buildingMapDrawToken) return;
     $('orthophotoStatus').textContent = `Kartenkontrolle konnte nicht gemeinsam projiziert werden: ${error.message}`;
     $('orthophotoImage').hidden = true;
+    if ($('dkmOverlayImage')) $('dkmOverlayImage').hidden = true;
   }
 }
 

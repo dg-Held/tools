@@ -49,7 +49,7 @@
       heated_share_percent: 100,
       storeys: 2,
       usable_floor_area_factor_percent: 75,
-      window_share_percent: 25,
+      window_share_percent: 20,
       storey_height_m: 3.2,
       internal_gains_w_m2: 2.7,
       solar_radiation_factor_kwh_m2a: 175,
@@ -69,7 +69,7 @@
 
   const COMPONENTS = [
     {
-      id: 'exteriorWall', label: 'Außenwand opak', note: 'Außenwand brutto minus Fenster',
+      id: 'exteriorWall', label: 'Außenwand opak', note: 'Außenwandfläche ohne Fenster; gemeinsamer Projektwert',
       areaPath: 'building.geometry.opaqueExteriorWallArea',
       uPath: 'building.thermal.envelope.exteriorWall.uValue',
       enabledPath: 'building.thermal.envelope.exteriorWall.enabled',
@@ -415,7 +415,7 @@
     fallbackUpdate(updates, project, 'building.geometry.perimeter', geometry.perimeter, { unit: 'm', source: 'Energiefluss V4 Fallbackgeometrie', method: 'quadratischer Gebäudegrundriss' });
     fallbackUpdate(updates, project, 'building.geometry.heightMedian', geometry.heightMedian, { unit: 'm', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Geschoße × 3,2 m' });
     fallbackUpdate(updates, project, 'building.geometry.exteriorWallGrossArea', geometry.exteriorWallGrossArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Umfang × Höhe' });
-    fallbackUpdate(updates, project, 'building.geometry.windowArea', geometry.windowArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Außenwand brutto × 25 %' });
+    fallbackUpdate(updates, project, 'building.geometry.windowArea', geometry.windowArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'technische Brutto-Fassade × 20 %' });
     fallbackUpdate(updates, project, 'building.geometry.opaqueExteriorWallArea', geometry.opaqueWallArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Außenwand brutto − Fenster' });
     fallbackUpdate(updates, project, 'building.geometry.topFloorArea', geometry.footprintArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Gebäudegrundfläche' });
     fallbackUpdate(updates, project, 'building.geometry.roofSlopeArea', geometry.footprintArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Dachprojektion ohne bekannte Dachneigung' });
@@ -507,9 +507,8 @@
         ]);
       } else if (path === 'building.geometry.windowSharePercent') {
         store.setFieldCandidates([
-          { path, origin: model.ORIGIN.MANUAL, value, options: { unit: '%', source: 'Energiefluss V4.4', method: 'Fensteranteil an der Brutto-Außenwand' } },
+          { path, origin: model.ORIGIN.MANUAL, value, options: { unit: '%', source: 'Energiefluss V4.4', method: 'Fensteranteil an der technischen Brutto-Fassade' } },
           { path: 'building.geometry.windowArea', origin: model.ORIGIN.MANUAL, value: null },
-          { path: 'building.geometry.opaqueExteriorWallArea', origin: model.ORIGIN.MANUAL, value: null },
         ]);
       } else {
         store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.4' });
@@ -525,7 +524,6 @@
         store.setFieldCandidates([
           { path, origin: model.ORIGIN.MANUAL, value: null },
           { path: 'building.geometry.windowArea', origin: model.ORIGIN.MANUAL, value: null },
-          { path: 'building.geometry.opaqueExteriorWallArea', origin: model.ORIGIN.MANUAL, value: null },
         ]);
       } else {
         store.clearFieldCandidate(path, model.ORIGIN.MANUAL);
@@ -607,7 +605,7 @@
             : null;
           store.setFieldCandidates([
             { path: component.areaPath, origin: model.ORIGIN.MANUAL, value, options: { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` } },
-            { path: 'building.geometry.windowSharePercent', origin: model.ORIGIN.MANUAL, value: sharePercent, options: { unit: '%', source: 'Energiefluss V4.4', method: 'manuelle Fensterfläche / Brutto-Außenwand' } },
+            { path: 'building.geometry.windowSharePercent', origin: model.ORIGIN.MANUAL, value: sharePercent, options: { unit: '%', source: 'Energiefluss V4.4', method: 'manuelle Fensterfläche / technische Brutto-Fassade' } },
           ]);
         } else {
           store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` });
@@ -1121,7 +1119,6 @@
   }
 
   function buildPrintReport(project, result) {
-    const address = project.project?.addressLabel || 'Kein Standort gewählt';
     const gainsHtml = [
       printFlowEntry('Interne Gewinne', result.gains.internalKwh, result.gains.totalKwh),
       printFlowEntry('Solare Gewinne', result.gains.solarKwh, result.gains.totalKwh),
@@ -1145,33 +1142,28 @@
         : '',
     ].join('');
     const comparison = printComparison(result);
-
     const constructionYear = valueAt(project, 'building.profile.constructionYear', null);
+
     const baseData = [
-      ['Baujahr / Baubewilligung', constructionYear ? formatNumber(constructionYear, 0) : '–', printOrigin(describeAt(project, 'building.profile.constructionYear'))],
-      ['Nutzfläche (NFL)', `${formatNumber(valueAt(project, 'building.geometry.usableFloorArea', 0))} m²`, printOrigin(describeAt(project, 'building.geometry.usableFloorArea'))],
-      ['Davon beheizt', `${formatNumber(result.inputs.heatedSharePercent)} % · ${formatNumber(result.inputs.heatedFloorAreaM2)} m²`, printOrigin(describeAt(project, 'building.thermal.heatedSharePercent'))],
-      ['Oberirdische Geschoße', formatNumber(valueAt(project, 'building.geometry.storeysAboveGround', 0)), printOrigin(describeAt(project, 'building.geometry.storeysAboveGround'))],
-      ['Bruttogeschoßfläche (BGF)', `${formatNumber(result.inputs.grossFloorAreaM2)} m²`, printOrigin(describeAt(project, 'building.geometry.grossFloorArea'))],
-      ['Gebäudevolumen', `${formatNumber(result.inputs.grossVolumeM3)} m³`, printOrigin(describeAt(project, 'building.geometry.grossVolume'))],
-      ['Personen', formatNumber(result.inputs.persons), printOrigin(describeAt(project, 'usage.household.persons'))],
-      ['Heizenergieverbrauch', `${formatNumber(result.inputs.annualEnergyKwh)} kWh/a`, printOrigin(describeAt(project, 'consumption.heating.annualEnergy'))],
-      ['Nutzwärmefaktor (JNG / JAZ)', formatNumber(result.inputs.usefulHeatFactor, 2), printOrigin(describeAt(project, 'systems.heating.usefulHeatFactor'))],
-      ['Warmwasser enthalten', result.inputs.hotWaterIncluded ? 'ja' : 'nein', printOrigin(describeAt(project, 'systems.heating.hotWaterIncluded'))],
-      ['Raumtemperatur', `${formatNumber(result.inputs.indoorTemperatureC, 1)} °C`, printOrigin(describeAt(project, 'building.thermal.indoorTemperature'))],
-      ['Gebäudezustand', BUILDING_CONDITION_LABELS[valueAt(project, 'building.thermal.condition')] ?? '–', printOrigin(describeAt(project, 'building.thermal.condition'))],
+      ['Baujahr', constructionYear ? formatNumber(constructionYear, 0) : '–'],
+      ['NFL', `${formatNumber(valueAt(project, 'building.geometry.usableFloorArea', 0))} m²`],
+      ['beheizt', `${formatNumber(result.inputs.heatedSharePercent)} % · ${formatNumber(result.inputs.heatedFloorAreaM2)} m²`],
+      ['Personen', formatNumber(result.inputs.persons)],
+      ['Heizenergieverbrauch', `${formatNumber(result.inputs.annualEnergyKwh)} kWh/a`],
+      ['Nutzwärmefaktor', formatNumber(result.inputs.usefulHeatFactor, 2)],
+      ['Warmwasser enthalten', result.inputs.hotWaterIncluded ? 'ja' : 'nein'],
     ];
 
     const envelopeRows = result.envelope.components.map((item) => {
       const component = COMPONENTS.find((entry) => entry.id === item.id);
       const areaInfo = describeAt(project, component.areaPath);
       const uInfo = describeAt(project, component.uPath);
-      return `<tr><td>${item.enabled ? 'ja' : 'nein'}</td><td><strong>${item.label}</strong></td><td>${formatNumber(item.areaM2)} m²<br><small>${printOrigin(areaInfo)}</small></td><td>${formatNumber(item.uValue, 2)} W/m²K<br><small>${printOrigin(uInfo)}</small></td><td>${formatNumber(item.uaWK)} W/K</td><td>${formatEnergy(item.lossKwh)}</td></tr>`;
+      return `<tr><td>${item.enabled ? 'ja' : 'nein'}</td><td><strong>${item.label}</strong></td><td>${formatNumber(item.areaM2)} m²<br><small>${printOrigin(areaInfo)}</small></td><td>${formatNumber(item.uValue, 2)} W/m²K<br><small>${printOrigin(uInfo)}</small></td><td>${formatEnergy(item.lossKwh)}</td></tr>`;
     }).join('');
 
     $('v4PrintReport').innerHTML = `
-      <div class="v4-print-page">
-        <div class="print-title"><div><h1>Energiefluss im Gebäude</h1></div><p>V4.4 · Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
+      <div class="v4-print-page v4-print-page--single">
+        <div class="print-title"><h1>Energiefluss im Gebäude</h1></div>
         <div class="print-flow">
           <div><h2>Einträge</h2>${gainsHtml}</div>
           <div class="print-house"><img src="../../shared/assets/energy-flow-house.svg" alt=""><strong>${formatEnergy(result.gains.totalKwh)}</strong></div>
@@ -1184,13 +1176,9 @@
           <article><span>Abweichung</span><strong>${comparison.deviation}</strong><small>Plausibilitätsvergleich</small></article>
         </div>
         <p class="print-note">${comparison.note} Der gemessene Verbrauch bleibt die grafische Bilanzbasis; das Hüllmodell wird nicht daran kalibriert.</p>
-        <section class="print-section"><h2>Grunddaten für die Berechnung</h2><div class="print-data-grid">${baseData.map(([label, value, origin]) => `<div><span>${label}</span><strong>${value}</strong><small>${origin}</small></div>`).join('')}</div></section>
-      </div>
-      <div class="v4-print-page">
-        <div class="print-title"><div><h1>Gebäudehülle und Datenbasis</h1><small>${address}</small></div><p>Automatische, abgeleitete und manuelle Werte bleiben unterscheidbar.</p></div>
-        <section class="print-section"><h2>Bauteile</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>UA</th><th>Verlust</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
-        <section class="print-section"><h2>Zusammenfassung</h2><div class="print-data-grid"><div><span>Summe UA</span><strong>${formatNumber(result.envelope.totalUaWK)} W/K</strong></div><div><span>Kalibrierfaktor</span><strong>${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a</strong></div><div><span>Gebäudehülle</span><strong>${formatEnergy(result.losses.componentsKwh)}</strong></div><div><span>Wärmebrücken</span><strong>${formatEnergy(result.losses.thermalBridgesKwh)}</strong></div></div></section>
-        <p class="print-footer-note">Modell ${core.MODEL_VERSION} · Fallback-Datenstand ${config.data_date ?? '–'} · U-Wert-Vorschläge aus shared/data/building/existing-u-values.json; Zustandsfallbacks aus energy-flow-v4-defaults.json · Hüllvergleich mit INCA-Heizgradstunden zur Bilanztemperatur 15 °C; Klimawerte können direkt im Energiefluss berechnet werden.</p>
+        <section class="print-section print-section--envelope"><h2>Gebäudehülle und Datenbasis</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>Verlust</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
+        <section class="print-section print-section--base-compact"><h2>Grunddaten</h2><div class="print-base-line">${baseData.map(([label, value]) => `<span><b>${label}</b> ${value}</span>`).join('')}</div></section>
+        <p class="print-footer-note"><strong>Toolversion V4.4.</strong> Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Die grafische „Gebäudehülle“ ist die residuale Bilanzgröße des Verbrauchsmodells; der HWB aus U-Werten wird unabhängig über Klima und ΣUA geprüft. Kein Ersatz für Energieausweis oder Normberechnung. Fallback-Datenstand ${config.data_date ?? '–'}.</p>
       </div>`;
   }
 

@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 07.08.2026  
+**Stand:** 10.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -140,9 +140,9 @@ Ein manuelles Bruttovolumen behält Vorrang. Referenz- und verwendeter Wert blei
 
 ## 5. Aktuelle Werkzeuge
 
-### Standortpass Energie & Gebäude
+### Standortpass Gebäude & Umgebung
 
-Status: V1.1.1, fachlich weitgehend fertig; Geometriekette V1.4.
+Status: V1.0, praxisgeprüfte Basis; Geometriekette V1.5.
 
 - Adresse und TIRIS-Gebäudezuordnung,
 - gespeicherter Gebäude-/Polygon-Snapshot,
@@ -156,7 +156,7 @@ Status: V1.1.1, fachlich weitgehend fertig; Geometriekette V1.4.
 - Wärmeversorgung und Umweltwärmehinweise,
 - Solar-/Verschattungsinformationen,
 - Hochwasser, Naturgefahren, WLV, Radon, Denkmal- und Kulturkontext,
-- zwei verdichtete A4-Seiten mit eigenem Berichtstitel und abgestimmtem Abstand zur gemeinsamen Projektkopfzeile.
+- zwei verdichtete A4-Seiten mit DKM/Orthofoto-/Gebäudekontrolle, einheitlichem Berichtstitel und abgestimmtem Projektkopf.
 
 ### Klima am Standort V1.0
 
@@ -379,3 +379,8 @@ Offene Punkte für die Praxisabnahme:
 - bekannte Grenze: Haustüren besitzen im Energiefluss noch keinen eigenen kalibrierten Verlustanteil und nutzen im Bauteiltool daher Klima/HGT für die Energieeinsparung.
 
 Nicht für die V1.0-Abnahme erforderlich, aber später sinnvoll: lokale Nunito-Schriftdateien auf eine Variable-Font-Lösung reduzieren und die gemeinsame Klima-/Heizlast-Seitenstruktur technisch weiter entflechten, falls die Wartbarkeit wichtiger wird als die derzeitige gemeinsame Implementierung.
+
+
+## Praxisvalidierung August 2026
+
+Die V1.0-Basis wurde mit mehreren realen bzw. einem theoretischen Beratungsfall durchgespielt. Bestätigt wurden insbesondere die Bedeutung einer korrigierten NFL, die Plausibilität der Heizlastorientierung und der Nutzen der gemeinsamen Projektwerte. Als fachlich offener Punkt bleibt der unabhängige „HWB aus U-Werten“: die vorhandenen Fälle zeigen kein einheitliches Verhalten bei einem pauschalen Weglassen der Gewinne. Der Rechenkern bleibt deshalb bis zur methodischen Entscheidung unverändert; die Dokumentation kennzeichnet den Wert als Plausibilitätsmodell in Validierung.

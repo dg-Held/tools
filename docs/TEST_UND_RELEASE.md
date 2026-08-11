@@ -1,6 +1,6 @@
 # Test und Release
 
-**Stand:** 07.08.2026
+**Stand:** 10.08.2026
 
 ## Installation kleiner Austauschpakete
 
@@ -127,20 +127,20 @@ Eine Arbeitsversion wird erst als stabile Version bezeichnet, wenn:
 - Datenstände sichtbar,
 - bekannte Grenzen dokumentiert sind.
 
-## Ergänzende Regressionen V1.1 / Geometriekette V1.4
+## Ergänzende Regressionen V1.0 / Geometriekette V1.5
 
 Vor Freigabe zusätzlich prüfen:
 
 - Info-Popups öffnen ausschließlich über das `i`-Symbol; das Eingabefeld selbst darf keinen Hoverbereich auslösen oder verdecken.
 - Heizlast: BGF-Vorschlag erscheint sofort als `beheizte Nutzfläche / 0,75`, bleibt überschreibbar und kann auf Automatik zurückgesetzt werden.
 - Standortpass: Vor „Standort analysieren“ bleiben Ergebnisbereiche ausgeblendet.
-- Geschoßzahl und NFL aktualisieren BGF, wirksame Grundfläche, Hüllflächen und Volumen gemäß Geometriekette V1.4; die Dachfläche bleibt an der TIRIS-Dachprojektion und reagiert nur auf die Dachneigung.
+- Geschoßzahl und NFL aktualisieren BGF, wirksame Grundfläche, Hüllflächen und Volumen gemäß Geometriekette V1.5; die Dachfläche bleibt an der TIRIS-Dachprojektion und reagiert nur auf die Dachneigung.
 - Beheizter Anteil und beheizte Nutzfläche werden bidirektional synchronisiert und auf 0–100 % beziehungsweise höchstens NFL begrenzt.
-- Fensteranteil startet bei 25 %, läuft von 10 bis 50 % und aktualisiert Fenster- und opake Außenwandfläche.
+- Fensteranteil startet bei 20 % und läuft von 10 bis 50 %. Fenster und opake Außenwand sind getrennte gemeinsame Projektwerte; ein bestätigter opaker Außenwandwert darf beim Ändern des Fensteranteils nicht nochmals reduziert werden.
 - Automatische Referenzwerte unter `building.geometry.reference.*` bleiben trotz manueller Korrekturen unverändert.
 - WMS-/Datenquellen-Details brechen auf schmalen Ansichten um und verursachen keinen horizontalen Seitenüberlauf.
 
-## Finaler V1.0-Vorcheck 07.08.2026
+## Finaler V1.0-Vorcheck 10.08.2026
 
 Automatisiert bestanden:
 
@@ -158,3 +158,16 @@ Automatisiert bestanden:
 Das kompakte Übergabepaket enthält absichtlich nur einen kleinen Ausschnitt der großen BEV-Adress- und INCA-Jahresdaten. Deshalb meldet der Release-Test in dieser Struktur Warnungen für fehlende Datenpakete. Im vollständigen Produktionsordner müssen diese Warnungen verschwinden.
 
 Der Quellcode der Druckansichten und die gemeinsame Druck-CSS wurden statisch abgeglichen. Die visuelle Endabnahme im Browser beziehungsweise im erzeugten PDF erfolgt mit den drei realen Beratungsfällen; dabei insbesondere Seitenumbrüche, Diagrammgrößen und lange Projekttitel/Adressen prüfen.
+
+
+## Praxisfälle 08/2026 – offener HWB-U-Regressionssatz
+
+Vier Beratungsfälle wurden als Diagnosebasis ausgewertet. Solange die methodische Entscheidung zwischen Bilanztemperaturmodell und expliziter Wärmebilanz nicht abgeschlossen ist, werden **keine neuen produktiven Sollwerte des HWB-U-Modells festgeschrieben**; sonst würde eine möglicherweise falsche Methode durch Regressionstests konserviert. `tests/diagnose-hwb-u-practice-cases.js` hält die anonymisierten Zahlenstände und beide aktuell diskutierten Rechenvarianten reproduzierbar fest, ist aber ausdrücklich ein Diagnose- und kein Freigabetest. Nach der fachlichen Auswahl werden daraus feste Regressionstests für den gewählten Rechenkern. Bis dahin müssen bestehende Rechen-, Geometrie-, Hüllstatus-, Wirtschafts- und Release-Tests unverändert bestehen.
+
+Zusätzliche Release-Prüfungen für die finale V1.0-Schleife:
+- ältere Außenwandeingabe wird korrekt nach „opak ohne Fenster“ migriert,
+- explizit 100 % beheizt bleibt 100 % und erzeugt eine beheizte NFL in Höhe der NFL,
+- Druckberichte verwenden denselben Projektkopf, größeren Tooltitel und eine kleine Toolversions-/Methodenzeile,
+- fehlende installierte Heizleistung/Mindestleistung erscheint im Heizlast-PDF nicht als 0,0 kW,
+- Klima-PDF bleibt einseitig, Energiefluss-PDF wird als kompakter Einseiter aufgebaut,
+- DKM-Overlay darf bei Nichterreichbarkeit die übrige Standortanalyse nicht blockieren.

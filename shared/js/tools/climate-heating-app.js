@@ -3116,11 +3116,22 @@ function renderHeatingCalculation() {
       `${formatNumber(area.minimum_kw, 1)}–` +
       `${formatNumber(area.maximum_kw, 1)} kW`;
 
-    elements.installedMainResult.textContent =
-      comparison.installed_minimum_kw !== null
+    const hasInstalledMaximum = Number(comparison.installed_maximum_kw) > 0;
+    const hasInstalledMinimum = Number(comparison.installed_minimum_kw) > 0;
+
+    elements.installedMainResult.textContent = hasInstalledMaximum
+      ? (hasInstalledMinimum
         ? `${formatNumber(comparison.installed_minimum_kw, 1)}–` +
           `${formatNumber(comparison.installed_maximum_kw, 1)} kW`
-        : `${formatNumber(comparison.installed_maximum_kw, 1)} kW`;
+        : `${formatNumber(comparison.installed_maximum_kw, 1)} kW`)
+      : '–';
+
+    // Im Beratungs-PDF nur tatsächlich vorhandene Anlagendaten zeigen.
+    elements.installedMaximum?.closest('.heating-field')?.classList.toggle('print-omit', !hasInstalledMaximum);
+    elements.installedMinimum?.closest('.heating-field')?.classList.toggle('print-omit', !hasInstalledMinimum);
+    elements.installedMainResult?.closest('.column-main-result')?.classList.toggle('print-omit', !hasInstalledMaximum);
+    document.querySelector('.legend-item-installed')?.classList.toggle('print-omit', !hasInstalledMaximum);
+    document.querySelector('.legend-item-minimum')?.classList.toggle('print-omit', !hasInstalledMinimum);
 
     elements.hwbMainResult.textContent =
       hwb.heat_load_kw !== null

@@ -1539,3 +1539,23 @@
     width: 100%;
   }
 }
+
+/* V1.0 Praxisfeinschliff · methodische Grenze als dezenter Berichtshinweis */
+@media print {
+  .print-method-note {
+    margin-top: 4mm !important;
+    padding: 2mm 2.5mm !important;
+    border-left: .7mm solid var(--color-primary) !important;
+    border-radius: 1.5mm !important;
+    background: var(--surface-muted) !important;
+    font-size: 6.2pt !important;
+    line-height: 1.35 !important;
+  }
+  .print-method-note > strong {
+    display: block;
+    margin-bottom: .7mm;
+    font-size: 6.6pt !important;
+    color: var(--color-primary-dark);
+  }
+  .print-method-note p { margin: 0 !important; }
+}

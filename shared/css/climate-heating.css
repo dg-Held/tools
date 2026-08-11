@@ -2880,3 +2880,87 @@ button.info-tip {
     background: var(--white) !important;
   }
 }
+
+/* V1.0 Praxisfeinschliff · einheitliche, kompakte A4-Berichte */
+@media print {
+  .print-omit { display: none !important; }
+
+  body[data-tool-mode="climate"] .print-report-header h1,
+  body[data-tool-mode="heating"] .print-page-two-header h1 {
+    font-size: 17pt !important;
+    line-height: 1.08 !important;
+  }
+
+  /* Klima: Kennzahlen, Diagramm, Beratungsimpuls und Einordnung auf einer Seite. */
+  body[data-tool-mode="climate"] .print-report-header {
+    margin: 0 0 1.6mm !important;
+    padding-bottom: 1.8mm !important;
+  }
+  body[data-tool-mode="climate"] .print-context-line {
+    margin: 0 0 1.5mm !important;
+    padding: 1mm 1.5mm !important;
+    font-size: 5.5pt !important;
+    line-height: 1.25 !important;
+  }
+  body[data-tool-mode="climate"] .metric-grid {
+    gap: 1.2mm !important;
+  }
+  body[data-tool-mode="climate"] .metric-card {
+    min-height: 14.5mm !important;
+    padding: 1.6mm !important;
+  }
+  body[data-tool-mode="climate"] .metric-card strong {
+    margin-top: .8mm !important;
+    font-size: 9.4pt !important;
+  }
+  body[data-tool-mode="climate"] .chart-card {
+    margin-top: 1.5mm !important;
+    padding-top: 1.5mm !important;
+  }
+  body[data-tool-mode="climate"] .chart-wrap .duration-chart {
+    height: 108mm !important;
+  }
+  body[data-tool-mode="climate"] .climate-advisory {
+    margin: 1.5mm 0 0 !important;
+    padding: 2mm 2.5mm !important;
+    gap: 1mm !important;
+    border-radius: 2mm !important;
+  }
+  body[data-tool-mode="climate"] .climate-advisory strong { font-size: 8.6pt !important; }
+  body[data-tool-mode="climate"] .climate-advisory p { font-size: 6pt !important; line-height: 1.3 !important; }
+  body[data-tool-mode="climate"] .print-source-note {
+    margin-top: 1mm !important;
+    padding-top: 1mm !important;
+    font-size: 5.2pt !important;
+    line-height: 1.25 !important;
+  }
+
+  /* Heizlast: Legende in einer Zeile, Diagramm über die volle Breite. */
+  body[data-tool-mode="heating"] .print-page-two-header {
+    margin-bottom: 2mm !important;
+  }
+  body[data-tool-mode="heating"] .heating-chart-heading {
+    display: block !important;
+  }
+  body[data-tool-mode="heating"] .heating-chart-legend {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    max-width: none !important;
+    margin-top: 1mm !important;
+    gap: 2.8mm !important;
+    white-space: nowrap !important;
+    font-size: 5.6pt !important;
+  }
+  body[data-tool-mode="heating"] .heating-chart-wrap {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  body[data-tool-mode="heating"] .heating-chart-wrap .duration-chart {
+    display: block !important;
+    width: 100% !important;
+    height: 70mm !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+}

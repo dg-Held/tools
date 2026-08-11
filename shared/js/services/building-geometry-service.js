@@ -195,7 +195,7 @@
     const usableFloorArea = grossFloorArea !== null
       ? Math.round((grossFloorArea * 0.75) / 5) * 5
       : null;
-    const windowArea = wallRaw !== null ? Math.round((wallRaw * 0.25) / 5) * 5 : null;
+    const windowArea = wallRaw !== null ? Math.round((wallRaw * 0.20) / 5) * 5 : null;
     const opaqueWallArea = wallRaw !== null && windowArea !== null
       ? Math.max(0, wallRaw - windowArea)
       : null;
@@ -239,7 +239,7 @@
           unit: '%', origin: model.ORIGIN.FALLBACK, source: 'Gemeinsame Gebäudegeometrie',
           method: 'sichtbare Standardannahme',
         }),
-        windowSharePercent: model.field(25, {
+        windowSharePercent: model.field(20, {
           unit: '%', origin: model.ORIGIN.FALLBACK, source: 'Gemeinsame Gebäudegeometrie',
           method: 'sichtbare Standardannahme',
         }),
@@ -265,7 +265,7 @@
         }),
         windowArea: model.field(windowArea, {
           unit: 'm²', origin: model.ORIGIN.DERIVED, source: 'Gemeinsame Gebäudegeometrie',
-          method: 'Außenwand brutto × 25 %', quality: 'Orientierungswert',
+          method: 'Brutto-Fassade × 20 %', quality: 'Orientierungswert',
         }),
         opaqueExteriorWallArea: model.field(opaqueWallArea, {
           unit: 'm²', origin: model.ORIGIN.DERIVED, source: 'Gemeinsame Gebäudegeometrie',
