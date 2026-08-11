@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 10.08.2026  
+**Stand:** 11.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -24,8 +24,11 @@ Leitgedanke: Der Berater spricht mit dem Kunden; das Tool stellt bekannte Daten 
 ## 2. Gestaltung und Bedienung
 
 - Schrift: Nunito.
-- Primärfarbe: Türkis `#34AB9F`.
-- Sekundärfarbe: Berry `#B3446C`.
+- Primärfarbe: Türkis `#3CA9A7`, mit `#244242` als dunklem Kontrastton.
+- Sekundärfarbe: gedecktes Berry/Violett `#93538F`, mit `#41253F` als dunklem Kontrastton.
+- Seitenhintergrund: sehr helles kühles Grau `#EDF1F2`; Karten bleiben überwiegend weiß bzw. sehr hell abgestuft.
+- Statusfarben sind bewusst gedeckt; Warnung, Gefahr und Information sollen die Markenfarben nicht überstrahlen.
+- Schatten sind neutral auf Graphitbasis statt grünstichig.
 - ruhige helle Karten, Inhaltsbreite etwa 820 px.
 - neue Farben, Abstände und Komponenten nur über gemeinsame Styles ergänzen.
 - gemeinsamer Projektkopf: Projekttitel/Adresse etwa 2/3, Projekt-ID/Datum etwa 1/3.
@@ -34,6 +37,7 @@ Leitgedanke: Der Berater spricht mit dem Kunden; das Tool stellt bekannte Daten 
 - gemeinsame Adresskarten zeigen vorrangig nur Suchfeld, Datenanbieter, Status und die jeweilige Hauptaktion; technische Korrekturen bleiben eingeklappt.
 - vollständige Rechenwege und Datenquellen stehen am Seitenende unter „Methode und Datenbasis“.
 - Marken-, Status-, Text- und Flächenfarben werden zentral über `shared/css/tokens.css` verwaltet.
+- Im Standortpass-Druck werden tatsächliche Treffer in Wärmeversorgung sowie Standort/Risiken mit der hellsten Türkisfläche hervorgehoben; offene Prüfungen bleiben als Warnfarbe, reine Nicht-Treffer neutral.
 - projektbezogene Förderungen sichtbar und manuell bestätigbar halten.
 
 Zentrale Gestaltung:

@@ -287,7 +287,7 @@ tr:last-child td { border-bottom: 0; }
   padding: 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-medium);
-  background: var(--page-background);
+  background: var(--surface-muted);
 }
 
 .heating-input-group legend {

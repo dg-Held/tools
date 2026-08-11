@@ -140,7 +140,7 @@ Vor Freigabe zusätzlich prüfen:
 - Automatische Referenzwerte unter `building.geometry.reference.*` bleiben trotz manueller Korrekturen unverändert.
 - WMS-/Datenquellen-Details brechen auf schmalen Ansichten um und verursachen keinen horizontalen Seitenüberlauf.
 
-## Finaler V1.0-Vorcheck 10.08.2026
+## Finaler V1.0-Vorcheck 11.08.2026
 
 Automatisiert bestanden:
 
@@ -185,3 +185,10 @@ Zusätzlich prüfen:
 - Der verbrauchsbasierte HWB bleibt durch diese Darstellung unverändert.
 
 - Energiefluss: „Verbrauchsabweichung“ muss `HEB_rechnerisch` gegen den eingegebenen Heizenergieverbrauch darstellen; nicht als HWB-Differenz beschriften.
+
+### Farb-/Druckabschluss 11.08.2026
+
+- finale Markenfarben werden ausschließlich über `shared/css/tokens.css` gesteuert: Türkis `#3CA9A7`, Berry/Violett `#93538F`, neutrale Graphit-/Grautöne;
+- Seitenhintergrund und Eingabeflächen wurden leicht aufgehellt;
+- Schatten verwenden neutrale Graphitwerte und keine alten grünstichigen RGB-Werte;
+- Standortpass-Druck: positive Treffer in Wärmeversorgung und Standort/Risiken verwenden `--color-primary-soft`; Warn-/Prüfzustände und neutrale Nicht-Treffer bleiben semantisch getrennt.

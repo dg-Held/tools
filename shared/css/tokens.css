@@ -76,15 +76,15 @@
   --white: #ffffff;
   --white-rgb: 255 255 255;
 
-  --page-background: #e2e7e9;
-  --page-background-rgb: 226 231 233;
+  --page-background: #edf1f2;
+  --page-background-rgb: 237 241 242;
 
   --surface-card: #ffffff;
-  --surface-muted: #eef2f3;
-  --surface-subtle: #e8edee;
+  --surface-muted: #f5f7f7;
+  --surface-subtle: #f1f4f4;
 
   --line: rgba(43, 43, 43, 0.15);
-  --line-strong: #ccd4d6;
+  --line-strong: #d4dcde;
 
 
   /* Schrift */
@@ -105,10 +105,10 @@
   --radius-round: 50%;
 
   /* Schatten */
-  --shadow-soft: 0 12px 35px rgba(12, 39, 36, 0.08);
-  --shadow-hover: 0 16px 42px rgba(12, 39, 36, 0.13);
-  --shadow-rgb: 28 75 71;
-  --shadow-card: 0 12px 32px rgb(var(--shadow-rgb) / 0.08);
+  --shadow-soft: 0 12px 35px rgba(43, 43, 43, 0.07);
+  --shadow-hover: 0 16px 42px rgba(43, 43, 43, 0.11);
+  --shadow-rgb: 43 43 43;
+  --shadow-card: 0 12px 32px rgb(var(--shadow-rgb) / 0.07);
 
   /* Layout */
   --content-width: 820px;

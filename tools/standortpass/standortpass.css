@@ -2885,8 +2885,8 @@
   }
 
   .print-risk-card--hit {
-    border-color: var(--color-secondary-light);
-    background: var(--color-secondary-soft);
+    border-color: var(--color-primary-light);
+    background: var(--color-primary-soft);
   }
 
   .print-risk-card--warning {
@@ -3409,7 +3409,7 @@
   .print-heat-card strong { margin-top: .5mm; font-size: 7.4pt; line-height: 1.18; }
   .print-heat-card--positive {
     border-color: var(--color-primary-light);
-    background: var(--color-info-soft);
+    background: var(--color-primary-soft);
   }
   .print-heat-card--attention {
     border-color: var(--color-secondary-light);
