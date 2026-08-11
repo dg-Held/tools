@@ -5,30 +5,35 @@
 
 :root {
 
-  /* Marke */
-  --turquoise: #0E5064;
-  --berry: #7A5A8C;
+  /* =========================================================
+     MARKE
+  ========================================================= */
 
-  --turquoise-light: #BFD4DA;
-  --berry-light: #DCCEE4;
+  --turquoise: #3ca9a7;
+  --turquoise-light: #89c2c1;
+  --turquoise-soft: #cde5e4;
+  --turquoise-dark: #244242;
 
-  --turquoise-soft: #DDE9EC;
-  --berry-soft: #EEE7F2;
-
-  --turquoise-dark: #083847;
-  --berry-dark: #574062;
+  --berry: #93538f;
+  --berry-light: #bb90b9;
+  --berry-soft: #e2d0e1;
+  --berry-dark: #41253f;
 
   /* RGB-Kanäle für transparente Varianten */
-  --color-primary-rgb: 14 80 100;
-  --color-primary-light-rgb: 191 212 218;
-  --color-primary-soft-rgb: 221 233 236;
 
-  --color-secondary-rgb: 122 90 140;
-  --color-secondary-light-rgb: 220 206 228;
-  --color-secondary-soft-rgb: 238 231 242;
-  --color-secondary-dark-rgb: 87 64 98;
+  --color-primary-rgb: 60 169 167;
+  --color-primary-light-rgb: 137 194 193;
+  --color-primary-soft-rgb: 205 229 228;
 
-  /* Semantische Farben */
+  --color-secondary-rgb: 147 83 143;
+  --color-secondary-light-rgb: 187 144 185;
+  --color-secondary-soft-rgb: 226 208 225;
+  --color-secondary-dark-rgb: 65 37 63;
+
+  /* =========================================================
+     SEMANTISCHE FARBEN
+  ========================================================= */
+
   --color-primary: var(--turquoise);
   --color-primary-light: var(--turquoise-light);
   --color-primary-soft: var(--turquoise-soft);
@@ -39,41 +44,46 @@
   --color-secondary-soft: var(--berry-soft);
   --color-secondary-dark: var(--berry-dark);
 
-  /* Statusfarben */
-  --color-success: #2E6B50;
-  --color-success-soft: #E5F1EA;
+  /* Status */
 
-  --color-warning: #A3751C;
-  --color-warning-dark: #795614;
-  --color-warning-soft: #F9F1DD;
+  --color-success: #4c8378;
+  --color-success-soft: #e7f3ef;
 
-  --color-danger: #8C384F;
-  --color-danger-soft: #F3E3E8;
-  --color-danger-line: #D5A9B6;
+  --color-warning: #a3824b;
+  --color-warning-dark: #7a6035;
+  --color-warning-soft: #f7efe2;
 
-  --color-info: #42545C;
-  --color-info-soft: #EAF0F2;
+  --color-danger: #b56b63;
+  --color-danger-soft: #f5ddd8;
+  --color-danger-line: #d8b1ab;
 
-  /* Text und Flächen */
-  --text-dark: #2B2B2B;
+  --color-info: #8a927a;
+  --color-info-soft: #eef1e8;
+
+  /* =========================================================
+     TEXT UND FLÄCHEN
+  ========================================================= */
+
+  --text-dark: #2b2b2b;
   --text-dark-rgb: 43 43 43;
 
-  --text-light: #F7F8F9;
-  --text-muted: #555F64;
-  --text-subtle: #667176;
+  --text-light: #f8faf9;
+  --text-muted: #585f63;
+  --text-subtle: #6c7276;
 
-  --white: #FFFFFF;
+  --white: #ffffff;
   --white-rgb: 255 255 255;
 
-  --page-background: #F2F2EF;
-  --page-background-rgb: 242 242 239;
+  --page-background: #e2e7e9;
+  --page-background-rgb: 226 231 233;
 
-  --surface-card: #FFFFFF;
-  --surface-muted: #F7F7F4;
-  --surface-subtle: #ECEDEA;
+  --surface-card: #ffffff;
+  --surface-muted: #f1f4f5;
+  --surface-subtle: #e9eeef;
 
   --line: rgba(43, 43, 43, 0.12);
-  --line-strong: #D7DAD8;
+  --line-strong: #cfd6d7;
+
 
   /* Schrift */
   --font-body: "Nunito", sans-serif;
