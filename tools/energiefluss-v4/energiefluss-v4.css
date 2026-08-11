@@ -825,13 +825,29 @@
 
 /* V4.4 · letzte Druckfeinabstimmung 11.08.2026 */
 @media print {
-  /* Eine knappe Leerzeile zwischen Energieflussgrafik und den vier Vergleichskarten. */
+  /* Bewusst großzügige Leerzeile zwischen Energieflussgrafik und Vergleichskarten. */
   .v4-print-page--single .print-kpis {
-    margin: 5mm 0 2.4mm !important;
+    margin: 10mm 0 2.4mm !important;
   }
 
-  /* Erklärung und Hülltabelle optisch klar voneinander trennen. */
+  /* Plausibilitätshinweis und Hülltabelle klar voneinander trennen. */
   .v4-print-page--single .print-section--envelope {
-    margin-top: 5mm !important;
+    margin-top: 10mm !important;
+  }
+
+  .print-envelope-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2mm 5mm;
+    margin-top: 1.6mm;
+    padding-top: 1.4mm;
+    border-top: .2mm solid var(--line-strong);
+    font-size: 6.2pt;
+    line-height: 1.2;
+    color: var(--text-muted);
+  }
+
+  .print-envelope-summary strong {
+    color: var(--text-dark);
   }
 }

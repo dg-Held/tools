@@ -388,4 +388,7 @@ Die V1.0-Basis wurde mit mehreren realen bzw. einem theoretischen Beratungsfall 
 ## Letzte Druck- und Vergleichsfeinabstimmung · 11.08.2026
 
 - Hülltabelle: rechte Verlustspalte zeigt nun bewusst den **unabhängigen Transmissionsverlust aus U × A × Standortklima**; die Balkengrafik bleibt verbrauchsbasiert kalibriert. Damit ist ein Bauteil-für-Bauteil-Plausibilitätsvergleich möglich.
-- Druckfeinschliff: zusätzliche Luft nach der Energieflussgrafik und vor der Hülltabelle; Heizlast mit größerem Abstand vor den Beratungskennzahlen und leicht größerer Dauerlinie.
+- Druckfeinschliff: großzügige Luft nach der Energieflussgrafik und vor der Hülltabelle; Heizlast mit größerem Abstand vor den Beratungskennzahlen und leicht größerer Dauerlinie.
+- Energiefluss-Hülltabelle: rechte Spalte und Summenzeile zeigen die unabhängigen Transmissionsverluste aus U × A × Standortklima; die grafische Gebäudehülle bleibt bewusst die verbrauchsbasierte kalibrierte Restgröße.
+
+- Energiefluss-Kennzahl „Verbrauchsabweichung“ eindeutig benannt: sie vergleicht rechnerischen und eingegebenen Heizenergieverbrauch und ist nicht die Differenz der beiden HWB-Kennwerte.

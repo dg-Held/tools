@@ -509,6 +509,16 @@ Q_Bauteil,U = U_i × A_i × HGT_rech / 1.000
 
 Damit kann je Bauteil geprüft werden, ob die aus dem Verbrauch erforderliche Verlustgröße und die aus Fläche/U-Wert erwartete Verlustgröße in einer ähnlichen Größenordnung liegen. Wärmebrücken und Lüftung bleiben eigene Bilanzpositionen und werden nicht auf einzelne Bauteile verteilt. Fehlen Klimadaten, wird kein scheinbar genauer unabhängiger Bauteilverlust ausgegeben.
 
+Die Summenzeile der Hülltabelle folgt derselben Trennung:
+
+```text
+Summe UA = Σ(U_i × A_i) der aktiven Bauteile
+Kalibrierfaktor = Q_Bauteile,Verbrauch / ΣUA
+Hülle aus U-Werten = Σ Q_Bauteil,U = Q_Transmission
+```
+
+„Hülle aus U-Werten“ ist damit die Summe genau jener unabhängigen Transmissionsverluste, die in der rechten Tabellenspalte stehen. Sie ist **nicht** identisch mit der verbrauchskalibrierten „Gebäudehülle“ der Grafik. Wärmebrücken werden anschließend separat im unabhängigen HWB-U-Wert-Modell berücksichtigt.
+
 ### Unabhängiger Hüllvergleich
 
 Der verbrauchsbasierte HWB bleibt davon vollständig unabhängig. Für den zweiten Prüfweg werden U-Werte, Hüllflächen, Standortklima, Lüftung und Gewinne verwendet. Der frühere Ansatz mit 15 °C Bilanztemperatur und anschließend vollständigem Gewinnabzug wurde nach den Praxisfällen verworfen, weil dadurch Gewinne methodisch zu stark berücksichtigt werden konnten.
@@ -521,10 +531,10 @@ Q_Gewinne,nutzbar = (Q_intern + Q_solar) × 0,55
 Q_Raum,rech = max(Q_Transmission + Q_WB,rech + Q_Lüftung − Q_Gewinne,nutzbar, 0)
 HWB_U-Werte = Q_Raum,rech / BGF
 HEB_rechnerisch = (Q_Raum,rech + Q_WW) / f_Nutz
-Abweichung = (HEB_rechnerisch − HEB_eingegeben) / HEB_eingegeben × 100
+Verbrauchsabweichung = (HEB_rechnerisch − HEB_eingegeben) / HEB_eingegeben × 100
 ```
 
-Die Umrechnung der vorhandenen INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und der Gewinnnutzungsfaktor 0,55 sind bewusst vereinfachte Beratungsannahmen. Der **HWB aus U-Werten** bleibt ein unabhängiger Plausibilitätswert und ist vom **rechnerischen Heizenergieverbrauch** zu unterscheiden. Der Vergleich ist weder Energieausweis-HWB noch Normberechnung; er soll zeigen, ob Verbrauch, eingegebene U-Werte und gemeinsame Gebäudegeometrie in einer plausiblen Größenordnung liegen. Die Praxisfälle bleiben als Regression/Diagnose dokumentiert und werden mit weiteren realen Beratungsfällen weiter validiert.
+Die Umrechnung der vorhandenen INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und der Gewinnnutzungsfaktor 0,55 sind bewusst vereinfachte Beratungsannahmen. Der **HWB aus U-Werten** bleibt ein unabhängiger Plausibilitätswert und ist vom **rechnerischen Heizenergieverbrauch** zu unterscheiden. Die vierte Kennzahl heißt deshalb bewusst **Verbrauchsabweichung**; sie vergleicht nicht die beiden HWB-Werte, sondern `HEB_rechnerisch` mit dem eingegebenen Heizenergieverbrauch. Der Vergleich ist weder Energieausweis-HWB noch Normberechnung; er soll zeigen, ob Verbrauch, eingegebene U-Werte und gemeinsame Gebäudegeometrie in einer plausiblen Größenordnung liegen. Die Praxisfälle bleiben als Regression/Diagnose dokumentiert und werden mit weiteren realen Beratungsfällen weiter validiert.
 
 ### Bestands-U-Werte
 

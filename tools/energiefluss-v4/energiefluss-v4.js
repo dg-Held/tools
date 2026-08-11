@@ -769,7 +769,9 @@
     $('calibrationFactor').textContent = result.envelope.calibrationKwhPerWK > 0
       ? `${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a`
       : '–';
-    $('componentLossTotal').textContent = formatEnergy(result.losses.componentsKwh);
+    $('componentLossTotal').textContent = result.plausibility?.available
+      ? formatEnergy(result.plausibility.transmissionKwh)
+      : 'Klima berechnen';
     $('flowTotal').textContent = formatEnergy(result.gains.totalKwh);
 
     const gainItems = [
@@ -1187,10 +1189,10 @@
           <article><span>HWB aus Verbrauch</span><strong>${formatSpecific(result.consumption.hwbConsumptionKwhM2a)}</strong><small>Raumwärme / BGF</small></article>
           <article><span>HWB korrigiert</span><strong>${formatSpecific(result.consumption.hwbCorrectedKwhM2a)}</strong><small>Temperatur + beheizter Anteil</small></article>
           <article><span>HWB aus U-Werten</span><strong>${comparison.calculatedHwb}</strong><small>unabhängiger Hüllvergleich</small></article>
-          <article><span>Abweichung</span><strong>${comparison.deviation}</strong><small>Plausibilitätsvergleich</small></article>
+          <article><span>Verbrauchsabweichung</span><strong>${comparison.deviation}</strong><small>rechnerisch vs. eingegeben</small></article>
         </div>
         <p class="print-note">${comparison.note} Der gemessene Verbrauch bleibt die grafische Bilanzbasis; das Hüllmodell wird nicht daran kalibriert.</p>
-        <section class="print-section print-section--envelope"><h2>Gebäudehülle und Datenbasis</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>Verlust aus U-Wert</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
+        <section class="print-section print-section--envelope"><h2>Gebäudehülle und Datenbasis</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>Verlust aus U-Wert</th></tr></thead><tbody>${envelopeRows}</tbody></table><div class="print-envelope-summary"><span>Summe UA: <strong>${formatNumber(result.envelope.totalUaWK, 0)} W/K</strong></span><span>Kalibrierfaktor: <strong>${result.envelope.calibrationKwhPerWK > 0 ? `${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a` : '–'}</strong></span><span>Hülle aus U-Werten: <strong>${result.plausibility?.available ? formatEnergy(result.plausibility.transmissionKwh) : 'Klima berechnen'}</strong></span></div></section>
         <section class="print-section print-section--base-compact"><h2>Grunddaten</h2><div class="print-base-line">${baseData.map(([label, value]) => `<span><b>${label}</b> ${value}</span>`).join('')}</div></section>
         <p class="print-footer-note"><strong>Toolversion V4.4.</strong> Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Die grafische „Gebäudehülle“ ist die residuale Bilanzgröße des Verbrauchsmodells; die Verlustspalte der Hülltabelle zeigt dagegen unabhängig berechnete Transmissionsverluste aus U × A × Standortklima. Der HWB aus U-Werten wird unabhängig über Klima und ΣUA geprüft. Kein Ersatz für Energieausweis oder Normberechnung. Fallback-Datenstand ${config.data_date ?? '–'}.</p>
       </div>`;

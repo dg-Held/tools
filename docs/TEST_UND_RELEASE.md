@@ -179,6 +179,9 @@ Zusätzlich prüfen:
 
 - Die Balkengrafik verwendet weiterhin die verbrauchsbasierte kalibrierte Hüllverteilung.
 - Die rechte Verlustspalte in Web und Druck verwendet `U × A × HGT_rech / 1.000`.
+- Die Summenzeile zeigt `ΣUA`, den verbrauchsbasierten Kalibrierfaktor und als „Hülle aus U-Werten“ exakt die Summe der unabhängigen Tabellenverluste (= `Q_Transmission`).
 - Deaktivierte Bauteile ergeben dort 0 kWh/a.
 - Ohne Klimagrundlage wird kein unabhängiger Bauteilverlust vorgetäuscht.
 - Der verbrauchsbasierte HWB bleibt durch diese Darstellung unverändert.
+
+- Energiefluss: „Verbrauchsabweichung“ muss `HEB_rechnerisch` gegen den eingegebenen Heizenergieverbrauch darstellen; nicht als HWB-Differenz beschriften.
