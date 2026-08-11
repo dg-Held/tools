@@ -4,61 +4,76 @@
 ========================================================= */
 
 :root {
+
   /* Marke */
-  --turquoise: #34ab9f;
-  --berry: #b3446c;
-  --turquoise-light: #d8f3f0;
-  --berry-light: #f1dae2;
-  --turquoise-soft: #ebf9f8;
-  --berry-soft: #f8edf1;
-  --turquoise-dark: #24756d;
-  --berry-dark: #6f2a43;
+  --turquoise: #0E5064;
+  --berry: #7A5A8C;
+
+  --turquoise-light: #BFD4DA;
+  --berry-light: #DCCEE4;
+
+  --turquoise-soft: #DDE9EC;
+  --berry-soft: #EEE7F2;
+
+  --turquoise-dark: #083847;
+  --berry-dark: #574062;
 
   /* RGB-Kanäle für transparente Varianten */
-  --color-primary-rgb: 52 171 159;
-  --color-primary-light-rgb: 216 243 240;
-  --color-primary-soft-rgb: 235 249 248;
-  --color-secondary-rgb: 179 68 108;
-  --color-secondary-light-rgb: 241 218 226;
-  --color-secondary-soft-rgb: 248 237 241;
-  --color-secondary-dark-rgb: 111 42 67;
+  --color-primary-rgb: 14 80 100;
+  --color-primary-light-rgb: 191 212 218;
+  --color-primary-soft-rgb: 221 233 236;
+
+  --color-secondary-rgb: 122 90 140;
+  --color-secondary-light-rgb: 220 206 228;
+  --color-secondary-soft-rgb: 238 231 242;
+  --color-secondary-dark-rgb: 87 64 98;
 
   /* Semantische Farben */
   --color-primary: var(--turquoise);
   --color-primary-light: var(--turquoise-light);
   --color-primary-soft: var(--turquoise-soft);
   --color-primary-dark: var(--turquoise-dark);
+
   --color-secondary: var(--berry);
   --color-secondary-light: var(--berry-light);
   --color-secondary-soft: var(--berry-soft);
   --color-secondary-dark: var(--berry-dark);
 
-  --color-success: #24756d;
-  --color-success-soft: #ebf9f8;
-  --color-warning: #9a6a16;
-  --color-warning-dark: #6f4b0e;
-  --color-warning-soft: #fff5df;
-  --color-danger: #7a1f2d;
-  --color-danger-soft: #fde8ec;
-  --color-danger-line: #e7a5b2;
-  --color-info: #324542;
-  --color-info-soft: #eef8f6;
+  /* Statusfarben */
+  --color-success: #2E6B50;
+  --color-success-soft: #E5F1EA;
+
+  --color-warning: #A3751C;
+  --color-warning-dark: #795614;
+  --color-warning-soft: #F9F1DD;
+
+  --color-danger: #8C384F;
+  --color-danger-soft: #F3E3E8;
+  --color-danger-line: #D5A9B6;
+
+  --color-info: #42545C;
+  --color-info-soft: #EAF0F2;
 
   /* Text und Flächen */
-  --text-dark: #0c2724;
-  --text-dark-rgb: 12 39 36;
-  --text-light: #ebf9f8;
-  --text-muted: #526562;
-  --text-subtle: #60716f;
-  --white: #ffffff;
+  --text-dark: #2B2B2B;
+  --text-dark-rgb: 43 43 43;
+
+  --text-light: #F7F8F9;
+  --text-muted: #555F64;
+  --text-subtle: #667176;
+
+  --white: #FFFFFF;
   --white-rgb: 255 255 255;
-  --page-background: #f9fbfa;
-  --page-background-rgb: 249 251 250;
-  --surface-card: #ffffff;
-  --surface-muted: #f8fbfa;
-  --surface-subtle: #f3f7f6;
-  --line: rgba(12, 39, 36, 0.12);
-  --line-strong: #d7e3e1;
+
+  --page-background: #F2F2EF;
+  --page-background-rgb: 242 242 239;
+
+  --surface-card: #FFFFFF;
+  --surface-muted: #F7F7F4;
+  --surface-subtle: #ECEDEA;
+
+  --line: rgba(43, 43, 43, 0.12);
+  --line-strong: #D7DAD8;
 
   /* Schrift */
   --font-body: "Nunito", sans-serif;
