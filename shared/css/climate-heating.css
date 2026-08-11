@@ -2979,3 +2979,17 @@ button.info-tip {
   body[data-tool-mode="heating"] .heating-chart-legend { margin-top: 1.3mm !important; }
   body[data-tool-mode="heating"] .heating-chart-wrap { margin-top: .7mm !important; }
 }
+
+
+/* V1.0 · letzte Druckfeinabstimmung 11.08.2026 */
+@media print {
+  /* Etwas mehr Luft zwischen den drei Eingabeblöcken und den Beratungskennzahlen. */
+  body[data-tool-mode="heating"] .secondary-results {
+    margin-top: 5.5mm !important;
+  }
+
+  /* Nur das Dauerlinien-Diagramm wird etwas größer; Überschrift und Legende bleiben unverändert. */
+  body[data-tool-mode="heating"] .heating-chart-wrap .duration-chart {
+    height: 78mm !important;
+  }
+}

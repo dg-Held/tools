@@ -632,6 +632,13 @@
     });
   }
 
+  function independentComponentLossKwh(result, componentResult) {
+    if (!componentResult?.enabled || !(componentResult.uaWK > 0)) return 0;
+    const heatingDegreeHoursKh = finite(result?.plausibility?.heatingDegreeHoursKh, null);
+    if (heatingDegreeHoursKh === null || heatingDegreeHoursKh <= 0) return null;
+    return componentResult.uaWK * heatingDegreeHoursKh / 1000;
+  }
+
   function renderEnvelopeRows(project, result) {
     COMPONENTS.forEach((component) => {
       const row = document.querySelector(`[data-component-id="${component.id}"]`);
@@ -657,7 +664,10 @@
       ].filter(Boolean).join(' · ');
       uDetail.dataset.evaluation = uEvaluation?.level ?? 'none';
       row.querySelector('[data-component-ua]').textContent = componentResult ? `${formatNumber(componentResult.uaWK, 0)} W/K` : '–';
-      row.querySelector('[data-component-loss]').textContent = componentResult ? formatEnergy(componentResult.lossKwh) : '–';
+      const independentLossKwh = componentResult ? independentComponentLossKwh(result, componentResult) : null;
+      row.querySelector('[data-component-loss]').textContent = independentLossKwh === null
+        ? 'Klima berechnen'
+        : formatEnergy(independentLossKwh);
       row.classList.toggle('is-disabled', !enabledInfo.value);
     });
   }
@@ -1160,7 +1170,9 @@
       const component = COMPONENTS.find((entry) => entry.id === item.id);
       const areaInfo = describeAt(project, component.areaPath);
       const uInfo = describeAt(project, component.uPath);
-      return `<tr><td>${item.enabled ? 'ja' : 'nein'}</td><td><strong>${item.label}</strong></td><td>${formatNumber(item.areaM2)} m²<br><small>${printOrigin(areaInfo)}</small></td><td>${formatNumber(item.uValue, 2)} W/m²K<br><small>${printOrigin(uInfo)}</small></td><td>${formatEnergy(item.lossKwh)}</td></tr>`;
+      const independentLossKwh = independentComponentLossKwh(result, item);
+      const independentLossText = independentLossKwh === null ? 'Klima fehlt' : formatEnergy(independentLossKwh);
+      return `<tr><td>${item.enabled ? 'ja' : 'nein'}</td><td><strong>${item.label}</strong></td><td>${formatNumber(item.areaM2)} m²<br><small>${printOrigin(areaInfo)}</small></td><td>${formatNumber(item.uValue, 2)} W/m²K<br><small>${printOrigin(uInfo)}</small></td><td>${independentLossText}</td></tr>`;
     }).join('');
 
     $('v4PrintReport').innerHTML = `
@@ -1178,9 +1190,9 @@
           <article><span>Abweichung</span><strong>${comparison.deviation}</strong><small>Plausibilitätsvergleich</small></article>
         </div>
         <p class="print-note">${comparison.note} Der gemessene Verbrauch bleibt die grafische Bilanzbasis; das Hüllmodell wird nicht daran kalibriert.</p>
-        <section class="print-section print-section--envelope"><h2>Gebäudehülle und Datenbasis</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>Verlust</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
+        <section class="print-section print-section--envelope"><h2>Gebäudehülle und Datenbasis</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>Verlust aus U-Wert</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
         <section class="print-section print-section--base-compact"><h2>Grunddaten</h2><div class="print-base-line">${baseData.map(([label, value]) => `<span><b>${label}</b> ${value}</span>`).join('')}</div></section>
-        <p class="print-footer-note"><strong>Toolversion V4.4.</strong> Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Die grafische „Gebäudehülle“ ist die residuale Bilanzgröße des Verbrauchsmodells; der HWB aus U-Werten wird unabhängig über Klima und ΣUA geprüft. Kein Ersatz für Energieausweis oder Normberechnung. Fallback-Datenstand ${config.data_date ?? '–'}.</p>
+        <p class="print-footer-note"><strong>Toolversion V4.4.</strong> Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Die grafische „Gebäudehülle“ ist die residuale Bilanzgröße des Verbrauchsmodells; die Verlustspalte der Hülltabelle zeigt dagegen unabhängig berechnete Transmissionsverluste aus U × A × Standortklima. Der HWB aus U-Werten wird unabhängig über Klima und ΣUA geprüft. Kein Ersatz für Energieausweis oder Normberechnung. Fallback-Datenstand ${config.data_date ?? '–'}.</p>
       </div>`;
   }
 

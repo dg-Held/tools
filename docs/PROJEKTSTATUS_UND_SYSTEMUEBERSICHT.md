@@ -384,3 +384,8 @@ Nicht für die V1.0-Abnahme erforderlich, aber später sinnvoll: lokale Nunito-S
 ## Praxisvalidierung August 2026
 
 Die V1.0-Basis wurde mit mehreren realen bzw. einem theoretischen Beratungsfall sowie einem zusätzlichen Bestands-Energieausweis durchgespielt. Bestätigt wurden insbesondere die Bedeutung einer korrigierten NFL, die Plausibilität der Heizlastorientierung und der Nutzen der gemeinsamen Projektwerte. Der verbrauchsbasierte HWB bleibt unverändert. Für den unabhängigen „HWB aus U-Werten“ wurde nach der Praxisprüfung der frühere Ansatz `15 °C Bilanztemperatur + vollständiger Gewinnabzug` ersetzt: Die aktuelle Kandidatenmethode skaliert die INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und berücksichtigt interne/solare Gewinne mit einem transparenten pauschalen Nutzungsfaktor von 0,55. Der Wert bleibt als Beratungs-Plausibilitätsmodell gekennzeichnet und wird in V1.x weiter gegen reale Energieausweise validiert.
+
+## Letzte Druck- und Vergleichsfeinabstimmung · 11.08.2026
+
+- Hülltabelle: rechte Verlustspalte zeigt nun bewusst den **unabhängigen Transmissionsverlust aus U × A × Standortklima**; die Balkengrafik bleibt verbrauchsbasiert kalibriert. Damit ist ein Bauteil-für-Bauteil-Plausibilitätsvergleich möglich.
+- Druckfeinschliff: zusätzliche Luft nach der Energieflussgrafik und vor der Hülltabelle; Heizlast mit größerem Abstand vor den Beratungskennzahlen und leicht größerer Dauerlinie.

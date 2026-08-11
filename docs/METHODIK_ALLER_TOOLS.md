@@ -496,6 +496,19 @@ Q_Bauteil,i = UA_i × Q_Bauteile / ΣUA
 
 Die sichtbare Energiebilanz folgt damit dem eingegebenen Verbrauch. Eingerückte Bauteile sind lediglich die Aufteilung der Gebäudehülle und werden im Rechenkern nicht ein zweites Mal summiert; dieser technische Hinweis wird in der Oberfläche nicht mehr benötigt.
 
+### Bauteilvergleich in der Hülltabelle
+
+Die Energieflussgrafik und die rechte Verlustspalte der Hülltabelle zeigen bewusst zwei verschiedene Blickwinkel:
+
+```text
+Grafik oben = verbrauchsbasierter, kalibrierter Bauteilverlust
+Tabelle = unabhängiger Transmissionsverlust aus U × A × Standortklima
+
+Q_Bauteil,U = U_i × A_i × HGT_rech / 1.000
+```
+
+Damit kann je Bauteil geprüft werden, ob die aus dem Verbrauch erforderliche Verlustgröße und die aus Fläche/U-Wert erwartete Verlustgröße in einer ähnlichen Größenordnung liegen. Wärmebrücken und Lüftung bleiben eigene Bilanzpositionen und werden nicht auf einzelne Bauteile verteilt. Fehlen Klimadaten, wird kein scheinbar genauer unabhängiger Bauteilverlust ausgegeben.
+
 ### Unabhängiger Hüllvergleich
 
 Der verbrauchsbasierte HWB bleibt davon vollständig unabhängig. Für den zweiten Prüfweg werden U-Werte, Hüllflächen, Standortklima, Lüftung und Gewinne verwendet. Der frühere Ansatz mit 15 °C Bilanztemperatur und anschließend vollständigem Gewinnabzug wurde nach den Praxisfällen verworfen, weil dadurch Gewinne methodisch zu stark berücksichtigt werden konnten.

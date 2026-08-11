@@ -149,7 +149,7 @@
 </div>
 <span class="section-badge">Bestand</span>
 </div>
-<p class="section-note">Flächen stammen aus der gemeinsamen Gebäudegeometrie. U-Werte werden aus Baujahr oder Gebäudezustand vorgeschlagen und können bestätigt oder überschrieben werden.</p>
+<p class="section-note">Flächen stammen aus der gemeinsamen Gebäudegeometrie. U-Werte werden aus Baujahr oder Gebäudezustand vorgeschlagen und können bestätigt oder überschrieben werden. Die rechte Spalte zeigt den unabhängigen Transmissionsverlust aus Fläche × U-Wert × Standortklima; die Verluste in der Grafik darüber bleiben verbrauchsbasiert kalibriert.</p>
 <div class="envelope-table-wrap">
 <table class="envelope-table">
 <thead>
@@ -159,7 +159,7 @@
 <th>Fläche</th>
 <th>U-Wert</th>
 <th>UA-Anteil</th>
-<th>Verlust</th>
+<th>Verlust aus U-Wert</th>
 </tr>
 </thead>
 <tbody id="envelopeRows"></tbody>
@@ -187,7 +187,7 @@
 <div><h3>5 · Interne und solare Gewinne, Lüftung</h3><p><code>Q<sub>intern</sub> = 2,7 W/m² × beheizte NFL × 8,76</code>. <code>Q<sub>solar</sub> = 175 kWh/(m²a) × A<sub>Fenster</sub> × g<sub>Glas</sub> × f<sub>Nutzung</sub></code>; Standard <code>g<sub>Glas</sub> = 0,70</code> und <code>f<sub>Nutzung</sub> = 1,00</code>. <code>V<sub>kond</sub> = V<sub>brutto</sub> × beheizter Anteil / 100</code> und <code>Q<sub>Lüftung</sub> = 10 kWh/(m³a) × V<sub>kond</sub></code>. Diese Ansätze sind transparente Beratungsannahmen.</p></div>
 <div><h3>6 · Verbrauchskalibrierte Hüllbilanz</h3><p><code>Q<sub>Ein</sub> = HEB + Q<sub>Umwelt</sub> + Q<sub>intern</sub> + Q<sub>solar</sub></code>. <code>Q<sub>Rest</sub> = Q<sub>Ein</sub> − Q<sub>Anlage</sub> − Q<sub>WW</sub> − Q<sub>Lüftung</sub></code>. Mit Wärmebrückenanteil 7,5 % gilt <code>Q<sub>Bauteile</sub> = max(Q<sub>Rest</sub>, 0) / 1,075</code> und <code>Q<sub>WB</sub> = Q<sub>Bauteile</sub> × 0,075</code>. Für aktive Hüllbauteile: <code>UA<sub>i</sub> = U<sub>i</sub> × A<sub>i</sub></code> und <code>Q<sub>i</sub> = Q<sub>Bauteile</sub> × UA<sub>i</sub> / ΣUA</code>. Die Grafik bleibt damit am eingegebenen Verbrauch kalibriert.</p></div>
 <div><h3>7 · Bestands-U-Werte</h3><p>U-Wert-Priorität: bestätigter Wert → bekanntes Baujahr/Baubewilligung → verbrauchsbasierter Gebäudezustand → grober Zustandsfallback. Flächen werden in der Darstellung auf 5 m² bei Fenstern und 10 m² bei den übrigen Bauteilen gerundet; intern wird mit den Rechenwerten weitergearbeitet. Ein beispielhaftes Baujahr wird nicht automatisch gespeichert.</p></div>
-<div><h3>8 · Unabhängiger Hüllvergleich</h3><p>Der Verbrauchs-HWB bleibt unverändert und unabhängig. Der zweite Prüfweg verwendet überschlägig <code>HGT<sub>rech</sub> ≈ VLS × (T<sub>Raum</sub> − NAT)</code>, <code>Q<sub>Transmission</sub> = ΣUA × HGT<sub>rech</sub> / 1.000</code> und <code>Q<sub>WB,rech</sub> = Q<sub>Transmission</sub> × 0,075</code>. Interne und solare Gewinne werden mit einem vereinfachten Nutzungsfaktor von 0,55 berücksichtigt: <code>Q<sub>Gewinne,nutzbar</sub> = (Q<sub>intern</sub> + Q<sub>solar</sub>) × 0,55</code>. Daraus folgen <code>Q<sub>Raum,rech</sub></code>, <code>HWB<sub>U</sub> = Q<sub>Raum,rech</sub> / BGF</code> und der rechnerische Heizenergieverbrauch. Der Rechenweg ist eine Beratungspauschale und keine Norm-HWB-Berechnung.</p></div>
+<div><h3>8 · Unabhängiger Hüllvergleich</h3><p>Der Verbrauchs-HWB bleibt unverändert und unabhängig. Der zweite Prüfweg verwendet überschlägig <code>HGT<sub>rech</sub> ≈ VLS × (T<sub>Raum</sub> − NAT)</code>, <code>Q<sub>Transmission</sub> = ΣUA × HGT<sub>rech</sub> / 1.000</code> und <code>Q<sub>WB,rech</sub> = Q<sub>Transmission</sub> × 0,075</code>. Interne und solare Gewinne werden mit einem vereinfachten Nutzungsfaktor von 0,55 berücksichtigt: <code>Q<sub>Gewinne,nutzbar</sub> = (Q<sub>intern</sub> + Q<sub>solar</sub>) × 0,55</code>. Daraus folgen <code>Q<sub>Raum,rech</sub></code>, <code>HWB<sub>U</sub> = Q<sub>Raum,rech</sub> / BGF</code> und der rechnerische Heizenergieverbrauch. In der Hülltabelle wird zusätzlich je aktivem Bauteil <code>Q<sub>i,U</sub> = U<sub>i</sub> × A<sub>i</sub> × HGT<sub>rech</sub> / 1.000</code> gezeigt. Damit kann dieser unabhängige Transmissionsverlust direkt mit dem verbrauchsbasiert kalibrierten Bauteilverlust in der Grafik verglichen werden. Wärmebrücken und Lüftung bleiben eigene Bilanzpositionen. Der Rechenweg ist eine Beratungspauschale und keine Norm-HWB-Berechnung.</p></div>
 <div><h3>9 · Grenzen</h3><p>Die verbrauchskalibrierte Bilanz und der unabhängige U-Wert-Vergleich beantworten unterschiedliche Fragen. Solare Gewinne, Lüftung, Warmwasser, Wärmebrücken und Nutzung sind bewusst vereinfacht. Das Tool ist eine Beratungshilfe und ersetzt weder Energieausweis noch normgemäße Heizlast-, Lüftungs- oder Bauteilberechnung.</p></div>
 </div>
 </details>

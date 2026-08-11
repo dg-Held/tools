@@ -821,3 +821,17 @@
   .v4-print-page--single .print-section { margin-top: 2.4mm !important; }
   .v4-print-page--single .print-footer-note { margin-top: 2.1mm !important; }
 }
+
+
+/* V4.4 · letzte Druckfeinabstimmung 11.08.2026 */
+@media print {
+  /* Eine knappe Leerzeile zwischen Energieflussgrafik und den vier Vergleichskarten. */
+  .v4-print-page--single .print-kpis {
+    margin: 5mm 0 2.4mm !important;
+  }
+
+  /* Erklärung und Hülltabelle optisch klar voneinander trennen. */
+  .v4-print-page--single .print-section--envelope {
+    margin-top: 5mm !important;
+  }
+}

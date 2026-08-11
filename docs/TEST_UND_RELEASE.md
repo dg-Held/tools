@@ -171,3 +171,14 @@ Zusätzliche Release-Prüfungen für die finale V1.0-Schleife:
 - fehlende installierte Heizleistung/Mindestleistung erscheint im Heizlast-PDF nicht als 0,0 kW,
 - Klima-PDF bleibt einseitig, Energiefluss-PDF wird als kompakter Einseiter aufgebaut,
 - DKM-Overlay darf bei Nichterreichbarkeit die übrige Standortanalyse nicht blockieren.
+
+
+### Bauteilverlustvergleich Energiefluss · 11.08.2026
+
+Zusätzlich prüfen:
+
+- Die Balkengrafik verwendet weiterhin die verbrauchsbasierte kalibrierte Hüllverteilung.
+- Die rechte Verlustspalte in Web und Druck verwendet `U × A × HGT_rech / 1.000`.
+- Deaktivierte Bauteile ergeben dort 0 kWh/a.
+- Ohne Klimagrundlage wird kein unabhängiger Bauteilverlust vorgetäuscht.
+- Der verbrauchsbasierte HWB bleibt durch diese Darstellung unverändert.
