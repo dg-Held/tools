@@ -19,6 +19,7 @@
     "solar_radiation_factor_kwh_m2a": 175,
     "glazing_share": 0.7,
     "solar_utilization_factor": 1.0,
+    "comparison_gain_utilization_factor": 0.55,
     "ventilation_loss_kwh_m3a": 10,
     "hot_water_kwh_person_a": 1000,
     "thermal_bridge_share": 0.075

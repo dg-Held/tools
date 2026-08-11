@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stand:** 10.08.2026
+**Stand:** 11.08.2026
 
 ## Aktuelle finale V1.0-Schleife
 
@@ -14,28 +14,17 @@ Die drei geplanten Praxisfälle plus ein zusätzlicher realer Vergleichsfall wur
 6. Druckberichte aller bestehenden Tools auf einen gemeinsamen Stil bringen: Projektkopf, größerer Tooltitel, kompakter Beratungsinhalt, kleine Methoden-/Versionszeile.
 7. Vollständige zentrale Dokumentation, Datenmodell-, Wartungs- und Releasehinweise aktualisieren.
 
-## Fachlich noch offen vor einer Änderung des Rechenkerns
+## HWB aus U-Werten – V1.0-Methodenstand
 
-### HWB aus U-Werten
+Die Praxisprüfung ist in die aktuelle V1.0-Kandidatenfassung eingeflossen. Der verbrauchsbasierte HWB bleibt unverändert. Der unabhängige zweite Prüfweg verwendet nun:
 
-Höchste Priorität. Der aktuelle Rechenkern bleibt bis zur Entscheidung unverändert.
+- U-Werte und gemeinsame Hüllflächen,
+- INCA-Vollbenutzungsstunden und gewählte Raumtemperatur,
+- unveränderten vereinfachten Lüftungsansatz,
+- 7,5 % Wärmebrückenzuschlag,
+- interne und solare Gewinne mit einem transparenten pauschalen Gewinnnutzungsfaktor von 0,55.
 
-Zu prüfen:
-
-- Bilanztemperatur 15 °C und Bedeutung der daraus gebildeten HGT,
-- Verhältnis von tatsächlicher Innen-/Außentemperatur zu Bilanztemperatur,
-- interne Gewinne,
-- solare Gewinne und Gewinnnutzung,
-- Lüftungsverlustmodell,
-- Wärmebrückenzuschlag,
-- Abgrenzung zwischen verbrauchskalibrierter Restbilanz und unabhängigem U×A-Klimamodell.
-
-Zwei konsistente Kandidaten werden gegeneinander validiert:
-
-1. Bilanztemperatur-/Heizgradmodell ohne erneuten vollständigen Gewinnabzug.
-2. Explizite Wärmebilanz mit Innen-/Außentemperaturbezug und begrenzter Gewinnnutzung in der Heizperiode.
-
-Nach Auswahl der robustesten Beratungsmethode werden anonymisierte Praxisfälle als Regressionstests hinterlegt.
+Der Wert bleibt ausdrücklich ein Beratungs-Plausibilitätsmodell und keine Energieausweis- oder Norm-HWB-Berechnung. Weitere reale Energieausweise sollen als Regressionen ergänzt werden; falls sich ein stabileres einfaches Modell ergibt, wird dieser Punkt in einer V1.x-Version erneut bewertet.
 
 ## Für die nächste V1.x-Version vorgemerkt
 

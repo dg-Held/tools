@@ -30,6 +30,13 @@
     [model.ORIGIN.FALLBACK]: 'Fallback',
   };
 
+  const BUILDING_CONDITION_LABELS = Object.freeze({
+    unsanierter_altbau: 'Unsanierter Altbau',
+    teilsanierter_bestand: 'Teilsanierter Bestand',
+    sanierter_bestand: 'Sanierter Bestand',
+    neuerer_standard: 'Neuerer Standard / Neubau',
+  });
+
   const DEFAULT_CONFIG = {
     data_date: '2026-08-04',
     assumptions: {
@@ -63,7 +70,7 @@
 
   const COMPONENTS = [
     {
-      id: 'exteriorWall', label: 'Außenwand opak', note: 'Außenwand brutto minus Fenster',
+      id: 'exteriorWall', label: 'Außenwand opak', note: 'Außenwandfläche ohne Fenster; gemeinsamer Projektwert',
       areaPath: 'building.geometry.opaqueExteriorWallArea',
       uPath: 'building.thermal.envelope.exteriorWall.uValue',
       enabledPath: 'building.thermal.envelope.exteriorWall.enabled',
@@ -123,6 +130,7 @@
   let lastResultFingerprint = '';
   let fallbackUpdateRunning = false;
   let climateCalculationRunning = false;
+  let selectedAddressForAnalysis = null;
 
   function clone(value) {
     return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
@@ -223,6 +231,78 @@
     const field = getPath(project, path);
     if (sameCandidate(field, model.ORIGIN.FALLBACK, value)) return;
     updates.push({ path, origin: model.ORIGIN.FALLBACK, value, options });
+  }
+
+  function conditionFromHwb(value) {
+    if (value === null || value === undefined || value === '') return 'teilsanierter_bestand';
+    const hwb = Number(value);
+    if (!Number.isFinite(hwb) || hwb < 0) return 'teilsanierter_bestand';
+    if (hwb > 150) return 'unsanierter_altbau';
+    if (hwb >= 90) return 'teilsanierter_bestand';
+    if (hwb >= 45) return 'sanierter_bestand';
+    return 'neuerer_standard';
+  }
+
+  function buildingConditionSuggestion(project) {
+    const annualEnergy = Math.max(finite(valueAt(project, 'consumption.heating.annualEnergy'), 0), 0);
+    const usefulHeatFactor = Math.max(finite(valueAt(project, 'systems.heating.usefulHeatFactor'), 0), 0);
+    const persons = Math.max(finite(valueAt(project, 'usage.household.persons'), 0), 0);
+    const hotWaterIncluded = Boolean(valueAt(project, 'systems.heating.hotWaterIncluded', true));
+    const roomHeatKwh = Math.max(annualEnergy * usefulHeatFactor - (hotWaterIncluded ? persons * 1000 : 0), 0);
+    const usableFloorArea = finite(valueAt(project, 'building.geometry.usableFloorArea'), null);
+    const savedBgf = finite(valueAt(project, 'building.geometry.grossFloorArea'), null);
+    const bgfM2 = savedBgf > 0 ? savedBgf : usableFloorArea > 0 ? usableFloorArea / 0.75 : null;
+    const indoorTemperatureC = finite(valueAt(project, 'building.thermal.indoorTemperature'), 20);
+    const heatedSharePercent = finite(valueAt(project, 'building.thermal.heatedSharePercent'), 100);
+    const temperatureCorrection = 1 + ((indoorTemperatureC - 20) * 0.06);
+    const heatedShareCorrection = 1 + ((heatedSharePercent - 100) * 0.005);
+    const hwb = bgfM2 > 0 && temperatureCorrection > 0 && heatedShareCorrection > 0
+      ? roomHeatKwh / bgfM2 / temperatureCorrection / heatedShareCorrection
+      : null;
+    const id = conditionFromHwb(hwb);
+    return {
+      id,
+      label: BUILDING_CONDITION_LABELS[id],
+      hwb,
+      basis: savedBgf > 0
+        ? 'vorhandene Bruttogeschoßfläche'
+        : usableFloorArea > 0
+          ? 'BGF aus NFL ÷ 0,75'
+          : 'Fallback ohne verwertbare Flächenangabe',
+    };
+  }
+
+  function ensureBuildingConditionSuggestion(project) {
+    const suggestion = buildingConditionSuggestion(project);
+    const field = getPath(project, 'building.thermal.condition');
+    const updates = [];
+    if (!sameCandidate(field, model.ORIGIN.FALLBACK, 'teilsanierter_bestand')) {
+      updates.push({
+        path: 'building.thermal.condition',
+        origin: model.ORIGIN.FALLBACK,
+        value: 'teilsanierter_bestand',
+        options: { source: 'Energiefluss V4.4', method: 'Fallback ohne verwertbaren Verbrauchs-HWB' },
+      });
+    }
+    const derivedValue = Number.isFinite(suggestion.hwb) ? suggestion.id : null;
+    if (!sameCandidate(field, model.ORIGIN.DERIVED, derivedValue)) {
+      updates.push({
+        path: 'building.thermal.condition',
+        origin: model.ORIGIN.DERIVED,
+        value: derivedValue,
+        options: {
+          source: 'Energiefluss V4.4',
+          method: 'Vorschlag aus verbrauchsbasiertem HWB mit Standardkorrekturen',
+          quality: 'Beratungsvorschlag',
+          note: Number.isFinite(suggestion.hwb)
+            ? `${suggestion.label} · ${formatNumber(suggestion.hwb, 0)} kWh/m²a · ${suggestion.basis}`
+            : null,
+        },
+      });
+    }
+    if (!updates.length) return false;
+    store.setFieldCandidates(updates);
+    return true;
   }
 
   function effectiveGeometryFallbacks(project) {
@@ -336,7 +416,7 @@
     fallbackUpdate(updates, project, 'building.geometry.perimeter', geometry.perimeter, { unit: 'm', source: 'Energiefluss V4 Fallbackgeometrie', method: 'quadratischer Gebäudegrundriss' });
     fallbackUpdate(updates, project, 'building.geometry.heightMedian', geometry.heightMedian, { unit: 'm', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Geschoße × 3,2 m' });
     fallbackUpdate(updates, project, 'building.geometry.exteriorWallGrossArea', geometry.exteriorWallGrossArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Umfang × Höhe' });
-    fallbackUpdate(updates, project, 'building.geometry.windowArea', geometry.windowArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Außenwand brutto × 20 %' });
+    fallbackUpdate(updates, project, 'building.geometry.windowArea', geometry.windowArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'technische Brutto-Fassade × 20 %' });
     fallbackUpdate(updates, project, 'building.geometry.opaqueExteriorWallArea', geometry.opaqueWallArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Außenwand brutto − Fenster' });
     fallbackUpdate(updates, project, 'building.geometry.topFloorArea', geometry.footprintArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Gebäudegrundfläche' });
     fallbackUpdate(updates, project, 'building.geometry.roofSlopeArea', geometry.footprintArea, { unit: 'm²', source: 'Energiefluss V4 Fallbackgeometrie', method: 'Dachprojektion ohne bekannte Dachneigung' });
@@ -373,13 +453,14 @@
     const kind = host.dataset.kind || 'number';
     const unit = host.dataset.unit || '';
     const label = host.dataset.label || path;
-    const step = host.dataset.step || (kind === 'number' ? 'any' : '');
+    const step = host.dataset.step || (kind === 'number' || kind === 'range' ? 'any' : '');
     const min = host.dataset.min;
     const max = host.dataset.max;
+    const placeholder = host.dataset.placeholder || '';
 
     let control = '';
     if (kind === 'boolean-select') {
-      control = '<select data-value-input><option value="true">inkludiert</option><option value="false">nicht inkludiert</option></select>';
+      control = '<select data-value-input><option value="true">ja</option><option value="false">nein</option></select>';
     } else if (kind === 'condition-select') {
       control = `<select data-value-input>
         <option value="unsanierter_altbau">Unsanierter Altbau</option>
@@ -387,17 +468,26 @@
         <option value="sanierter_bestand">Sanierter Bestand</option>
         <option value="neuerer_standard">Neuerer Standard / Neubau</option>
       </select>`;
+    } else if (kind === 'range') {
+      control = `<input data-value-input type="range" step="${step}"${min !== undefined ? ` min="${min}"` : ''}${max !== undefined ? ` max="${max}"` : ''}><strong class="v4-range-output" data-range-output>–</strong>`;
     } else {
-      control = `<input data-value-input type="number" step="${step}"${min !== undefined ? ` min="${min}"` : ''}${max !== undefined ? ` max="${max}"` : ''}>`;
+      control = `<input data-value-input type="number" step="${step}"${min !== undefined ? ` min="${min}"` : ''}${max !== undefined ? ` max="${max}"` : ''}${placeholder ? ` placeholder="${placeholder}"` : ''}>`;
     }
 
     host.innerHTML = `
       <div class="v4-value-field__head"><label>${label}</label><span class="value-origin" data-value-origin>–</span></div>
-      <div class="v4-value-field__control">${control}${unit ? `<span class="value-unit">${unit}</span>` : ''}<button class="value-reset" data-value-reset type="button">↺</button></div>
+      <div class="v4-value-field__control">${control}${unit && kind !== 'range' ? `<span class="value-unit">${unit}</span>` : ''}<button class="value-reset" data-value-reset type="button">↺</button></div>
       <small data-value-detail></small>`;
 
     const input = host.querySelector('[data-value-input]');
     const reset = host.querySelector('[data-value-reset]');
+    const rangeOutput = host.querySelector('[data-range-output]');
+
+    if (kind === 'range') {
+      input.addEventListener('input', () => {
+        if (rangeOutput) rangeOutput.textContent = `${formatNumber(input.value, 0)} ${unit}`.trim();
+      });
+    }
 
     input.addEventListener('change', () => {
       if (rendering) return;
@@ -405,10 +495,41 @@
       if (kind === 'boolean-select') value = input.value === 'true';
       else if (kind === 'condition-select') value = input.value;
       else value = input.value.trim() === '' ? null : Number(input.value);
-      if (kind === 'number' && value !== null && !Number.isFinite(value)) return;
-      store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.4' });
+      if ((kind === 'number' || kind === 'range') && value !== null && !Number.isFinite(value)) return;
+      if (path === 'building.thermal.heatedSharePercent') {
+        const project = store.get();
+        const usableFloorArea = finite(valueAt(project, 'building.geometry.usableFloorArea'), null);
+        const heatedFloorArea = value !== null && usableFloorArea !== null && usableFloorArea > 0
+          ? roundToStep(usableFloorArea * Math.max(0, Math.min(100, value)) / 100, 5)
+          : null;
+        store.setFieldCandidates([
+          { path, origin: model.ORIGIN.MANUAL, value, options: { unit: unit || null, source: 'Energiefluss V4.4' } },
+          { path: 'building.geometry.heatedFloorArea', origin: model.ORIGIN.MANUAL, value: heatedFloorArea, options: { unit: 'm²', source: 'Energiefluss V4.4', method: 'Nutzfläche × beheizter Anteil' } },
+        ]);
+      } else if (path === 'building.geometry.windowSharePercent') {
+        store.setFieldCandidates([
+          { path, origin: model.ORIGIN.MANUAL, value, options: { unit: '%', source: 'Energiefluss V4.4', method: 'Fensteranteil an der technischen Brutto-Fassade' } },
+          { path: 'building.geometry.windowArea', origin: model.ORIGIN.MANUAL, value: null },
+        ]);
+      } else {
+        store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit: unit || null, source: 'Energiefluss V4.4' });
+      }
     });
-    reset.addEventListener('click', () => store.clearFieldCandidate(path, model.ORIGIN.MANUAL));
+    reset.addEventListener('click', () => {
+      if (path === 'building.thermal.heatedSharePercent') {
+        store.setFieldCandidates([
+          { path, origin: model.ORIGIN.MANUAL, value: null },
+          { path: 'building.geometry.heatedFloorArea', origin: model.ORIGIN.MANUAL, value: null },
+        ]);
+      } else if (path === 'building.geometry.windowSharePercent') {
+        store.setFieldCandidates([
+          { path, origin: model.ORIGIN.MANUAL, value: null },
+          { path: 'building.geometry.windowArea', origin: model.ORIGIN.MANUAL, value: null },
+        ]);
+      } else {
+        store.clearFieldCandidate(path, model.ORIGIN.MANUAL);
+      }
+    });
   }
 
   function renderValueField(host, project) {
@@ -421,18 +542,30 @@
     const origin = host.querySelector('[data-value-origin]');
     const reset = host.querySelector('[data-value-reset]');
     const detail = host.querySelector('[data-value-detail]');
+    const rangeOutput = host.querySelector('[data-range-output]');
 
     if (kind === 'boolean-select') input.value = String(Boolean(info.value));
     else input.value = info.value === null || info.value === undefined ? '' : String(info.value);
+    if (rangeOutput) rangeOutput.textContent = `${formatNumber(info.value, 0)} ${unit}`.trim();
     origin.textContent = ORIGIN_LABELS[info.origin] ?? 'offen';
     origin.dataset.origin = info.origin ?? 'empty';
     reset.hidden = !info.isManual;
 
-    const automaticText = info.isManual && info.automaticValue !== null
-      ? `Automatik: ${formatNumber(info.automaticValue, digits)}${unit ? ` ${unit}` : ''}`
+    let automaticText = '';
+    if (info.isManual && info.automaticValue !== null) {
+      if (kind === 'condition-select') {
+        automaticText = `Vorschlag: ${BUILDING_CONDITION_LABELS[info.automaticValue] ?? info.automaticValue}`;
+      } else {
+        automaticText = `Automatik: ${formatNumber(info.automaticValue, digits)}${unit ? ` ${unit}` : ''}`;
+      }
+    }
+    const heatedAreaText = path === 'building.thermal.heatedSharePercent'
+      ? `Beheizte Nutzfläche: ${formatNumber(valueAt(project, 'building.geometry.heatedFloorArea'), 0)} m²`
       : '';
     const sourceText = info.source ? `Quelle: ${info.source}` : '';
-    detail.textContent = [automaticText, sourceText].filter(Boolean).join(' · ');
+    detail.textContent = [host.dataset.detail || '', heatedAreaText, automaticText, info.note || '', sourceText]
+      .filter(Boolean)
+      .join(' · ');
   }
 
   function buildEnvelopeRows() {
@@ -465,7 +598,19 @@
         if (rawValue !== null && !Number.isFinite(rawValue)) return;
         const value = rawValue === null ? null : roundToStep(rawValue, component.areaStep);
         area.value = value === null ? '' : String(value);
-        store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` });
+        if (component.id === 'windows') {
+          const project = store.get();
+          const grossWallArea = finite(valueAt(project, 'building.geometry.exteriorWallGrossArea'), null);
+          const sharePercent = value !== null && grossWallArea > 0
+            ? Math.max(0, Math.min(100, value / grossWallArea * 100))
+            : null;
+          store.setFieldCandidates([
+            { path: component.areaPath, origin: model.ORIGIN.MANUAL, value, options: { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` } },
+            { path: 'building.geometry.windowSharePercent', origin: model.ORIGIN.MANUAL, value: sharePercent, options: { unit: '%', source: 'Energiefluss V4.4', method: 'manuelle Fensterfläche / technische Brutto-Fassade' } },
+          ]);
+        } else {
+          store.setFieldCandidate(component.areaPath, model.ORIGIN.MANUAL, value, { unit: 'm²', source: 'Energiefluss V4.4', method: `bewusst auf ${component.areaStep} m² gerundet` });
+        }
       });
       uValue.addEventListener('change', () => {
         if (rendering) return;
@@ -473,7 +618,16 @@
         if (value !== null && !Number.isFinite(value)) return;
         store.setFieldCandidate(component.uPath, model.ORIGIN.MANUAL, value, { unit: 'W/m²K', source: 'Energiefluss V4.4' });
       });
-      resetArea.addEventListener('click', () => store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL));
+      resetArea.addEventListener('click', () => {
+        if (component.id === 'windows') {
+          store.setFieldCandidates([
+            { path: component.areaPath, origin: model.ORIGIN.MANUAL, value: null },
+            { path: 'building.geometry.windowSharePercent', origin: model.ORIGIN.MANUAL, value: null },
+          ]);
+        } else {
+          store.clearFieldCandidate(component.areaPath, model.ORIGIN.MANUAL);
+        }
+      });
       resetU.addEventListener('click', () => store.clearFieldCandidate(component.uPath, model.ORIGIN.MANUAL));
     });
   }
@@ -570,24 +724,32 @@
     const plausibility = result.plausibility;
     const assessment = comparisonAssessment(plausibility.deviationPercent);
     const panel = $('comparisonPanel');
+    const button = $('calculateClimateHere');
     panel.dataset.level = assessment.level;
     $('comparisonStatus').textContent = assessment.label;
 
     if (!plausibility.available) {
-      $('calculatedDelivered').textContent = '–';
+      $('calculatedHwb').textContent = '–';
+      $('calculatedDeliveredInline').textContent = '–';
       $('modelDeviation').textContent = '–';
       $('modelDeviationNote').textContent = 'Klima einmal berechnen';
-      $('comparisonText').textContent = 'Für den unabhängigen Hüllvergleich fehlen noch die standortbezogenen INCA-Klimakennwerte. Sie können direkt hier berechnet werden; die ausführliche Klimaauswertung ist dafür nicht erforderlich.';
+      $('climateCalculationState').textContent = 'Noch nicht berechnet';
+      button.textContent = 'Klimawerte berechnen';
+      $('comparisonText').textContent = 'Für den unabhängigen Hüllvergleich fehlen noch standortbezogene INCA-Klimakennwerte. Die Energiebilanz selbst ist bereits verfügbar.';
       return;
     }
 
-    $('calculatedDelivered').textContent = formatEnergy(plausibility.calculatedDeliveredKwh);
+    $('calculatedHwb').textContent = formatSpecific(plausibility.calculatedHwbKwhM2a);
+    $('calculatedDeliveredInline').textContent = formatEnergy(plausibility.calculatedDeliveredKwh);
     $('modelDeviation').textContent = formatSignedPercent(plausibility.deviationPercent);
     $('modelDeviationNote').textContent = assessment.note;
+    $('climateCalculationState').textContent = plausibility.period
+      ? `INCA ${plausibility.period} vorhanden`
+      : 'Projektklima vorhanden';
+    button.textContent = 'Klimawerte aktualisieren';
     const direction = plausibility.deviationPercent > 0 ? 'über' : plausibility.deviationPercent < 0 ? 'unter' : 'bei';
     const roundedAbsolute = Math.round(Math.abs(plausibility.deviationPercent) / 5) * 5;
-    const period = plausibility.period ? `, INCA ${plausibility.period}` : '';
-    $('comparisonText').textContent = `Das Hüllmodell liegt rund ${number0.format(roundedAbsolute)} % ${direction} dem eingegebenen Heizenergieverbrauch. Rechnerischer HWB: ${formatSpecific(plausibility.calculatedHwbKwhM2a)}${period}; Raumtemperatur-basiertes Vergleichsmodell.`;
+    $('comparisonText').textContent = `Das Hüllmodell liegt rund ${number0.format(roundedAbsolute)} % ${direction} dem eingegebenen Heizenergieverbrauch. Raumtemperatur-basiertes Vergleichsmodell.`;
   }
 
   function renderResults(project, result) {
@@ -604,6 +766,9 @@
       ['Interne Gewinne', result.gains.internalKwh],
       ['Solare Gewinne', result.gains.solarKwh],
       ['Heizenergieverbrauch', result.gains.deliveredKwh],
+      ...(result.gains.environmentalHeatKwh > 0
+        ? [['Umweltwärme', result.gains.environmentalHeatKwh]]
+        : []),
     ];
     $('gainFlow').innerHTML = gainItems
       .map(([label, value]) => flowEntry(label, value, result.gains.totalKwh))
@@ -623,7 +788,7 @@
         ? flowEntry('Warmwasser', result.losses.hotWaterKwh, result.losses.totalKwh, { loss: true })
         : '',
     ].join('');
-    $('lossFlow').innerHTML = `${lossHtml}<small class="flow-detail-note">Eingerückte Bauteile sind die Aufschlüsselung der Gebäudehülle und werden nicht zusätzlich summiert.</small>`;
+    $('lossFlow').innerHTML = lossHtml;
 
     renderComparison(result);
 
@@ -654,6 +819,7 @@
         ventilationLossKwh: result.losses.ventilationKwh,
         systemLossKwh: result.losses.systemKwh,
         hotWaterKwh: result.losses.hotWaterKwh,
+        environmentalHeatKwh: result.gains.environmentalHeatKwh,
         totalUaWK: result.envelope.totalUaWK,
         calibrationKwhPerWK: result.envelope.calibrationKwhPerWK,
         components: result.envelope.components.map((item) => ({ id: item.id, areaM2: item.areaM2, uValue: item.uValue, enabled: item.enabled, uaWK: item.uaWK, lossKwh: item.lossKwh })),
@@ -677,13 +843,14 @@
       updates.push({ path: 'building.thermal.consumptionHwb', origin: model.ORIGIN.DERIVED, value: result.consumption.hwbCorrectedKwhM2a, options: { unit: 'kWh/m²a', source: 'Energiefluss V4.4', method: 'verbrauchsbasiert, raumtemperatur- und flächenkorrigiert' } });
     }
     if (!sameCandidate(roomHeatField, model.ORIGIN.DERIVED, result.consumption.roomHeatKwh)) {
-      updates.push({ path: 'consumption.heating.usefulRoomHeatAnnual', origin: model.ORIGIN.DERIVED, value: result.consumption.roomHeatKwh, options: { unit: 'kWh/a', source: 'Energiefluss V4.4', method: 'Verbrauch × Nutzungsgrad − Warmwasser' } });
+      updates.push({ path: 'consumption.heating.usefulRoomHeatAnnual', origin: model.ORIGIN.DERIVED, value: result.consumption.roomHeatKwh, options: { unit: 'kWh/a', source: 'Energiefluss V4.4', method: 'Heizenergieverbrauch × Nutzwärmefaktor − Warmwasser' } });
     }
     if (updates.length) store.setFieldCandidates(updates);
     if (existing !== fingerprint) store.patch({ modules: { energiefluss: resultSnapshot(result, fingerprint) } });
   }
 
   function renderProject(project) {
+    if (ensureBuildingConditionSuggestion(project)) return;
     if (ensureFallbackCandidates(project)) return;
     rendering = true;
     document.querySelectorAll('.v4-value-field').forEach((host) => renderValueField(host, project));
@@ -700,17 +867,33 @@
 
   function renderGeometryStatus(project) {
     const chip = $('geometryStatus');
+    const analyzeButton = $('v4AnalyzeLocation');
+    const analysisHint = $('v4AnalysisHint');
     const objectId = project.building?.identity?.objectId;
     const footprintInfo = describeAt(project, 'building.geometry.footprintArea');
+    const hasAddress = Boolean(normalizedProjectAddress(project));
+    analyzeButton.disabled = !hasAddress;
+
     if (objectId) {
       chip.textContent = `TIRIS Gebäude ${objectId}`;
       chip.className = 'status-chip is-success';
+      analyzeButton.textContent = 'Standort erneut analysieren';
+      analysisHint.textContent = 'Gebäudegeometrie ist vorhanden.';
     } else if (footprintInfo.origin === model.ORIGIN.DERIVED || footprintInfo.origin === model.ORIGIN.OFFICIAL) {
       chip.textContent = 'Projektgeometrie vorhanden';
       chip.className = 'status-chip is-success';
-    } else {
-      chip.textContent = 'sichtbare Fallbackgeometrie';
+      analyzeButton.textContent = 'Standort erneut analysieren';
+      analysisHint.textContent = 'Projektgeometrie wird verwendet.';
+    } else if (hasAddress) {
+      chip.textContent = 'Standort noch prüfen';
       chip.className = 'status-chip';
+      analyzeButton.textContent = 'Standort analysieren';
+      analysisHint.textContent = 'Adresse ist ausgewählt.';
+    } else {
+      chip.textContent = 'Bereit';
+      chip.className = 'status-chip';
+      analyzeButton.textContent = 'Standort analysieren';
+      analysisHint.textContent = 'Zuerst eine Adresse auswählen.';
     }
   }
 
@@ -738,6 +921,7 @@
     const merged = preserveManualFields(next, current.building);
     store.setPath('building', merged);
     $('v4BuildingCandidates').hidden = true;
+    $('v4AnalysisHint').textContent = 'Standort analysiert.';
     $('geometryStatus').textContent = `Gebäude ${feature.attributes?.OBJECTID ?? ''} übernommen`;
     $('geometryStatus').className = 'status-chip is-success';
   }
@@ -748,9 +932,11 @@
       host.hidden = true;
       $('geometryStatus').textContent = 'kein TIRIS-Gebäude gefunden';
       $('geometryStatus').className = 'status-chip';
+      $('v4AnalysisHint').textContent = 'Adresse übernommen; Gebäudegeometrie bitte manuell prüfen.';
       return;
     }
     host.hidden = false;
+    $('v4AnalysisHint').textContent = 'Mehrere Gebäude gefunden – bitte das passende auswählen.';
     host.innerHTML = `<strong>Gebäude bitte prüfen</strong>${result.features.map((feature, index) => {
       const item = geometryService.candidateSummary(feature, index);
       return `<button type="button" data-building-index="${index}"><strong>${item.label}</strong><small>${item.areaM2 !== null ? `${formatNumber(item.areaM2, 0)} m² Dachprojektion` : 'Fläche unbekannt'}${item.medianHeightM !== null ? ` · Medianhöhe ${formatNumber(item.medianHeightM, 1)} m` : ''}${Number.isFinite(item.distanceM) ? ` · ca. ${formatNumber(item.distanceM, 0)} m vom Adresspunkt` : ''}</small></button>`;
@@ -761,19 +947,30 @@
   }
 
   async function loadGeometryForAddress(address) {
+    if (!address) return;
+    selectedAddressForAnalysis = address;
+    const button = $('v4AnalyzeLocation');
+    button.disabled = true;
+    button.textContent = 'Standort wird analysiert …';
+    $('v4AnalysisHint').textContent = 'TIRIS-Gebäude wird zugeordnet.';
     $('geometryStatus').textContent = 'Gebäude wird zugeordnet …';
     $('geometryStatus').className = 'status-chip is-working';
     try {
       const result = await geometryService.findCandidates(address, { maxRadiusM: 30 });
       if (result.automaticallySelected) {
         applyBuildingFeature(result.automaticallySelected, 'automatic');
+        $('v4AnalysisHint').textContent = 'Standort analysiert.';
       } else {
         renderBuildingCandidates(result);
       }
     } catch (error) {
       $('geometryStatus').textContent = 'Gebäudeabfrage fehlgeschlagen';
       $('geometryStatus').className = 'status-chip is-error';
+      $('v4AnalysisHint').textContent = 'Gebäudegeometrie konnte nicht geladen werden.';
       $('v4AddressStatus').textContent = `Adresse wurde übernommen; TIRIS-Gebäude konnte nicht geladen werden: ${error.message}`;
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Standort erneut analysieren';
     }
   }
 
@@ -805,10 +1002,12 @@
     });
     $('v4AddressInput').value = selected.label;
     $('v4AddressResults').hidden = true;
+    selectedAddressForAnalysis = selected;
+    $('v4AnalyzeLocation').disabled = false;
+    $('v4AnalysisHint').textContent = 'Adresse gewählt; Standort kann analysiert werden.';
     $('v4AddressStatus').textContent = resolution.usedFallback
       ? (resolution.warning || 'BEV-Adresse übernommen; kein eindeutiger TIRIS-Live-Treffer.')
       : 'TIRIS-Live-Adresse übernommen.';
-    await loadGeometryForAddress(selected);
   }
 
   function renderAddressResults(results, guidance = '') {
@@ -819,6 +1018,7 @@
       return;
     }
     host.hidden = false;
+    $('v4AddressInput').setAttribute('aria-expanded', 'true');
     host.innerHTML = results.map((address, index) => `<button type="button" data-address-index="${index}"><strong>${address.label}</strong><small>${address.source || 'Adressvorschlag'}${address.dataset_date ? ` · Stand ${address.dataset_date}` : ''}</small></button>`).join('');
     host.querySelectorAll('[data-address-index]').forEach((button) => {
       button.addEventListener('click', () => selectAddress(results[Number(button.dataset.addressIndex)]));
@@ -838,7 +1038,7 @@
       if (sequence !== addressSearchSequence) return;
       renderAddressResults(result.results ?? [], result.guidance ?? '');
       $('v4AddressStatus').textContent = result.results?.length
-        ? 'Adresse auswählen. Danach wird das TIRIS-Gebäude automatisch geprüft.'
+        ? 'Adresse auswählen.'
         : (result.guidance || 'Keine Adresse gefunden.');
     } catch (error) {
       if (sequence !== addressSearchSequence) return;
@@ -854,27 +1054,33 @@
     hybridAddressProvider = new global.HybridAddressProvider({ suggestionProvider: localProvider, liveProvider });
     try {
       await hybridAddressProvider.init();
-      $('v4AddressStatus').textContent = 'BEV-Vorschläge und TIRIS-Live-Abgleich sind bereit.';
+      $('v4AddressStatus').textContent = '';
     } catch (error) {
       $('v4AddressStatus').textContent = `Adressindex konnte nicht geladen werden: ${error.message}`;
     }
 
-    const projectAddress = store.get().project?.addressLabel || '';
+    const project = store.get();
+    const projectAddress = project.project?.addressLabel || '';
+    const record = normalizedProjectAddress(project);
     input.value = projectAddress;
+    selectedAddressForAnalysis = record;
+    $('v4AnalyzeLocation').disabled = !record;
     input.addEventListener('input', () => {
       global.clearTimeout(addressSearchTimer);
+      input.setAttribute('aria-expanded', 'false');
+      selectedAddressForAnalysis = null;
+      $('v4AnalyzeLocation').disabled = true;
+      $('v4AnalysisHint').textContent = 'Bitte einen Adressvorschlag auswählen.';
       const visibleText = input.value;
       addressSearchTimer = global.setTimeout(() => searchAddress(visibleText), 280);
     });
-    $('v4UseProjectAddress').addEventListener('click', () => {
-      const project = store.get();
-      const record = project.location?.addressRecord;
-      if (!record) {
-        $('v4AddressStatus').textContent = 'Im Projekt ist noch keine bestätigte Adresse mit Koordinaten vorhanden.';
+    $('v4AnalyzeLocation').addEventListener('click', () => {
+      const current = selectedAddressForAnalysis || normalizedProjectAddress(store.get());
+      if (!current) {
+        $('v4AddressStatus').textContent = 'Bitte zuerst eine Adresse auswählen.';
         return;
       }
-      input.value = record.label || project.project?.addressLabel || '';
-      loadGeometryForAddress(record);
+      loadGeometryForAddress(current);
     });
   }
 
@@ -899,25 +1105,29 @@
     const plausibility = result.plausibility;
     if (!plausibility.available) {
       return {
-        calculated: '–',
+        calculatedDelivered: '–',
+        calculatedHwb: '–',
         deviation: '–',
-        note: 'Klimadaten fehlen; direkt im Energiefluss berechnen.',
+        note: 'Klimadaten fehlen; der unabhängige Hüllvergleich wurde noch nicht berechnet.',
       };
     }
     const assessment = comparisonAssessment(plausibility.deviationPercent);
     return {
-      calculated: formatEnergy(plausibility.calculatedDeliveredKwh),
+      calculatedDelivered: formatEnergy(plausibility.calculatedDeliveredKwh),
+      calculatedHwb: formatSpecific(plausibility.calculatedHwbKwhM2a),
       deviation: formatSignedPercent(plausibility.deviationPercent),
-      note: `${assessment.label} · rechnerischer HWB ${formatSpecific(plausibility.calculatedHwbKwhM2a)} · INCA ${plausibility.period ?? 'Projektklima'}`,
+      note: `${assessment.label} · rechnerischer Heizenergieverbrauch ${formatEnergy(plausibility.calculatedDeliveredKwh)} · INCA ${plausibility.period ?? 'Projektklima'}`,
     };
   }
 
   function buildPrintReport(project, result) {
-    const address = project.project?.addressLabel || 'Kein Standort gewählt';
     const gainsHtml = [
       printFlowEntry('Interne Gewinne', result.gains.internalKwh, result.gains.totalKwh),
       printFlowEntry('Solare Gewinne', result.gains.solarKwh, result.gains.totalKwh),
       printFlowEntry('Heizenergieverbrauch', result.gains.deliveredKwh, result.gains.totalKwh),
+      result.gains.environmentalHeatKwh > 0
+        ? printFlowEntry('Umweltwärme', result.gains.environmentalHeatKwh, result.gains.totalKwh)
+        : '',
     ].join('');
     const componentDetails = result.envelope.components
       .filter((item) => item.enabled && item.lossKwh > 0)
@@ -934,49 +1144,43 @@
         : '',
     ].join('');
     const comparison = printComparison(result);
-
     const constructionYear = valueAt(project, 'building.profile.constructionYear', null);
+
     const baseData = [
-      ['Baujahr / Baubewilligung', constructionYear ? formatNumber(constructionYear, 0) : '–', printOrigin(describeAt(project, 'building.profile.constructionYear'))],
-      ['Beheizte Nutzfläche', `${formatNumber(result.inputs.heatedFloorAreaM2)} m²`, printOrigin(describeAt(project, 'building.geometry.heatedFloorArea'))],
-      ['BGF', `${formatNumber(result.inputs.grossFloorAreaM2)} m²`, printOrigin(describeAt(project, 'building.geometry.grossFloorArea'))],
-      ['Volumen', `${formatNumber(result.inputs.grossVolumeM3)} m³`, printOrigin(describeAt(project, 'building.geometry.grossVolume'))],
-      ['Personen', formatNumber(result.inputs.persons), printOrigin(describeAt(project, 'usage.household.persons'))],
-      ['Verbrauch', `${formatNumber(result.inputs.annualEnergyKwh)} kWh/a`, printOrigin(describeAt(project, 'consumption.heating.annualEnergy'))],
-      ['JNG', formatNumber(result.inputs.usefulHeatFactor, 2), printOrigin(describeAt(project, 'systems.heating.usefulHeatFactor'))],
-      ['Raumtemperatur', `${formatNumber(result.inputs.indoorTemperatureC, 1)} °C`, printOrigin(describeAt(project, 'building.thermal.indoorTemperature'))],
-      ['Beheizter Anteil', `${formatNumber(result.inputs.heatedSharePercent)} %`, printOrigin(describeAt(project, 'building.thermal.heatedSharePercent'))],
+      ['Baujahr', constructionYear ? formatNumber(constructionYear, 0) : '–'],
+      ['NFL', `${formatNumber(valueAt(project, 'building.geometry.usableFloorArea', 0))} m²`],
+      ['beheizt', `${formatNumber(result.inputs.heatedSharePercent)} % · ${formatNumber(result.inputs.heatedFloorAreaM2)} m²`],
+      ['Personen', formatNumber(result.inputs.persons)],
+      ['Heizenergieverbrauch', `${formatNumber(result.inputs.annualEnergyKwh)} kWh/a`],
+      ['Nutzwärmefaktor', formatNumber(result.inputs.usefulHeatFactor, 2)],
+      ['Warmwasser enthalten', result.inputs.hotWaterIncluded ? 'ja' : 'nein'],
     ];
 
     const envelopeRows = result.envelope.components.map((item) => {
       const component = COMPONENTS.find((entry) => entry.id === item.id);
       const areaInfo = describeAt(project, component.areaPath);
       const uInfo = describeAt(project, component.uPath);
-      return `<tr><td>${item.enabled ? 'ja' : 'nein'}</td><td><strong>${item.label}</strong></td><td>${formatNumber(item.areaM2)} m²<br><small>${printOrigin(areaInfo)}</small></td><td>${formatNumber(item.uValue, 2)} W/m²K<br><small>${printOrigin(uInfo)}</small></td><td>${formatNumber(item.uaWK)} W/K</td><td>${formatEnergy(item.lossKwh)}</td></tr>`;
+      return `<tr><td>${item.enabled ? 'ja' : 'nein'}</td><td><strong>${item.label}</strong></td><td>${formatNumber(item.areaM2)} m²<br><small>${printOrigin(areaInfo)}</small></td><td>${formatNumber(item.uValue, 2)} W/m²K<br><small>${printOrigin(uInfo)}</small></td><td>${formatEnergy(item.lossKwh)}</td></tr>`;
     }).join('');
 
     $('v4PrintReport').innerHTML = `
-      <div class="v4-print-page">
-        <div class="print-title"><div><h1>Energiefluss im Gebäude · V4.4</h1><small>${address}</small></div><p>Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Kein Ersatz für Energieausweis oder Bauteilberechnung.</p></div>
+      <div class="v4-print-page v4-print-page--single">
+        <div class="print-title"><h1>Energiefluss im Gebäude</h1></div>
         <div class="print-flow">
           <div><h2>Einträge</h2>${gainsHtml}</div>
           <div class="print-house"><img src="../../shared/assets/energy-flow-house.svg" alt=""><strong>${formatEnergy(result.gains.totalKwh)}</strong></div>
-          <div><h2>Verluste</h2>${lossesHtml}<small class="print-detail-note">Bauteile = Aufschlüsselung der Gebäudehülle</small></div>
+          <div><h2>Verluste</h2>${lossesHtml}</div>
         </div>
         <div class="print-kpis">
           <article><span>HWB aus Verbrauch</span><strong>${formatSpecific(result.consumption.hwbConsumptionKwhM2a)}</strong><small>Raumwärme / BGF</small></article>
           <article><span>HWB korrigiert</span><strong>${formatSpecific(result.consumption.hwbCorrectedKwhM2a)}</strong><small>Temperatur + beheizter Anteil</small></article>
-          <article><span>Rechnerischer Verbrauch</span><strong>${comparison.calculated}</strong><small>U × A + Klima</small></article>
+          <article><span>HWB aus U-Werten</span><strong>${comparison.calculatedHwb}</strong><small>unabhängiger Hüllvergleich</small></article>
           <article><span>Abweichung</span><strong>${comparison.deviation}</strong><small>Plausibilitätsvergleich</small></article>
         </div>
-        <p class="print-note">${comparison.note} Der gemessene Verbrauch bleibt die farbige Bilanzbasis; das Hüllmodell wird nicht daran kalibriert.</p>
-        <section class="print-section"><h2>Projekt- und Verbrauchsbasis</h2><div class="print-data-grid">${baseData.map(([label, value, origin]) => `<div><span>${label}</span><strong>${value}</strong><small>${origin}</small></div>`).join('')}</div></section>
-      </div>
-      <div class="v4-print-page">
-        <div class="print-title"><div><h1>Gebäudehülle und Datenbasis</h1><small>${address}</small></div><p>Automatische, abgeleitete und manuelle Werte bleiben unterscheidbar.</p></div>
-        <section class="print-section"><h2>Bauteile</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>UA</th><th>Verlust</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
-        <section class="print-section"><h2>Zusammenfassung</h2><div class="print-data-grid"><div><span>Summe UA</span><strong>${formatNumber(result.envelope.totalUaWK)} W/K</strong></div><div><span>Kalibrierfaktor</span><strong>${formatNumber(result.envelope.calibrationKwhPerWK, 1)} kWh/(W/K)a</strong></div><div><span>Gebäudehülle</span><strong>${formatEnergy(result.losses.componentsKwh)}</strong></div><div><span>Wärmebrücken</span><strong>${formatEnergy(result.losses.thermalBridgesKwh)}</strong></div></div></section>
-        <p class="print-footer-note">Modell ${core.MODEL_VERSION} · Fallback-Datenstand ${config.data_date ?? '–'} · U-Wert-Vorschläge aus shared/data/building/existing-u-values.json; Zustandsfallbacks aus energy-flow-v4-defaults.json · Hüllvergleich mit INCA-Vollbenutzungsstunden, Raumtemperatur und vereinfachter Gewinnnutzung; Klimawerte können direkt im Energiefluss berechnet werden.</p>
+        <p class="print-note">${comparison.note} Der gemessene Verbrauch bleibt die grafische Bilanzbasis; das Hüllmodell wird nicht daran kalibriert.</p>
+        <section class="print-section print-section--envelope"><h2>Gebäudehülle und Datenbasis</h2><table class="print-envelope"><thead><tr><th>Aktiv</th><th>Bauteil</th><th>Fläche</th><th>U-Wert</th><th>Verlust</th></tr></thead><tbody>${envelopeRows}</tbody></table></section>
+        <section class="print-section print-section--base-compact"><h2>Grunddaten</h2><div class="print-base-line">${baseData.map(([label, value]) => `<span><b>${label}</b> ${value}</span>`).join('')}</div></section>
+        <p class="print-footer-note"><strong>Toolversion V4.4.</strong> Verbrauchsbasierte Beratungsauswertung mit unabhängigem Hüllvergleich. Die grafische „Gebäudehülle“ ist die residuale Bilanzgröße des Verbrauchsmodells; der HWB aus U-Werten wird unabhängig über Klima und ΣUA geprüft. Kein Ersatz für Energieausweis oder Normberechnung. Fallback-Datenstand ${config.data_date ?? '–'}.</p>
       </div>`;
   }
 
@@ -1092,7 +1296,7 @@
     } finally {
       climateCalculationRunning = false;
       button.disabled = false;
-      button.textContent = 'Klimawerte berechnen';
+      button.textContent = lastResult?.plausibility?.available ? 'Klimawerte aktualisieren' : 'Klimawerte berechnen';
     }
   }
 
@@ -1157,21 +1361,27 @@
   }
 
   async function init() {
-    initInfoTips();
     document.querySelectorAll('.v4-value-field').forEach(buildValueField);
+    initInfoTips();
     buildEnvelopeRows();
     await loadConfig();
     await initAddressSearch();
     $('calculateClimateHere').addEventListener('click', calculateClimateHere);
+    $('printEnergyBottomButton').addEventListener('click', () => {
+      global.dispatchEvent(new CustomEvent('energy-tools:prepare-print'));
+      global.requestAnimationFrame(() => global.print());
+    });
     store.subscribe(renderProject);
     global.addEventListener('energy-tools:prepare-print', () => {
       if (lastResult) buildPrintReport(store.get(), lastResult);
     });
     global.addEventListener('energy-tools:project-imported', (event) => renderProject(event.detail?.project ?? store.get()));
     global.addEventListener('energy-tools:project-reset', () => {
+      selectedAddressForAnalysis = null;
       $('v4AddressInput').value = '';
       $('v4AddressResults').hidden = true;
       $('v4BuildingCandidates').hidden = true;
+      $('v4AnalyzeLocation').disabled = true;
       renderProject(store.get());
     });
     renderProject(store.get());

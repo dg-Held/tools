@@ -4,13 +4,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="../../assets/svg/favicon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
 <title>Energiefluss V4.4 | Tools für Energieberatung</title>
 <meta content="Verbrauchsbasierter Energiefluss mit gemeinsamer Projektbasis, Gebäudegeometrie und nachvollziehbarer Bauteilverteilung." name="description"/>
-<link href="../../styles.css" rel="stylesheet"/>
-<link href="../../shared/css/tokens.css" rel="stylesheet"/>
-<link href="../../shared/css/components.css" rel="stylesheet"/>
+<link href="../../styles.css?v=2" rel="stylesheet"/>
+<link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
+<link href="../../shared/css/components.css?v=3" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="energiefluss-v4.css?v=6" rel="stylesheet"/>
+<link href="energiefluss-v4.css?v=8" rel="stylesheet"/>
 </head>
 <body data-tool-mode="energy-flow-v4">
 <header class="site-header no-print">
@@ -30,58 +31,65 @@
 </header>
 <main class="energy-v4-page">
 <section class="container tool-intro no-print">
-<p class="eyebrow">Tool · V4.4</p>
+<p class="eyebrow">Gebäude · Energiefluss</p>
 <h1>Energiefluss im Gebäude</h1>
-<p>Verbrauch, Nutzung und gemeinsame Gebäudegeometrie werden zu einer nachvollziehbaren Energiebilanz verbunden. Bekannte Projektwerte werden übernommen; nur unsichere Werte müssen geprüft oder überschrieben werden.</p>
+<p class="tool-lead">Verbrauchsbasierte Energiebilanz mit gemeinsamer Gebäudegeometrie, nachvollziehbaren Annahmen und unabhängigem Hüllvergleich.</p>
 </section>
 <div data-project-header=""></div>
-<section class="container address-card no-print" data-address-section="">
-<div class="section-heading section-heading--compact">
+<section class="container address-card shared-address-card no-print" data-address-section="">
+<div class="section-heading section-heading--compact shared-address-heading">
 <div>
-<p class="eyebrow">Standort</p>
-<h2>Adresse und Gebäudegeometrie</h2>
+<p class="eyebrow">Gebäudestandort</p>
+<h2>Standort auswählen</h2>
 </div>
-<span class="status-chip" id="geometryStatus">Projektwerte werden geprüft</span>
+<span class="status-chip" id="geometryStatus">Bereit</span>
 </div>
-<p class="section-note">Ist bereits ein Standortpass vorhanden, wird dessen bestätigte Geometrie direkt verwendet. Ohne Standortpass kann das Gebäude hier selbstständig über dieselbe gemeinsame TIRIS-Abfrage zugeordnet werden.</p>
-<div class="address-search-row">
-<label>
-<span>Adresse suchen</span>
-<input autocomplete="off" id="v4AddressInput" placeholder="z. B. 6123 Dorfstraße 1" type="search"/>
+<div class="address-field-meta">
+<span id="v4AddressLabel">PLZ, Gemeinde, Straße und Hausnummer</span>
+<span class="address-provider-label">BEV-Vorschläge 2026-04-01 · TIRIS live</span>
+</div>
+<div class="address-search-control">
+<label class="address-search-field">
+<span class="visually-hidden">PLZ, Gemeinde, Straße und Hausnummer</span>
+<input aria-autocomplete="list" aria-controls="v4AddressResults" aria-expanded="false" aria-labelledby="v4AddressLabel" autocomplete="off" id="v4AddressInput" placeholder="z. B. 6123 Dorfstraße 1" type="search"/>
 </label>
-<button class="quiet-button" id="v4UseProjectAddress" type="button">Projektadresse übernehmen</button>
+<div class="address-results" hidden="" id="v4AddressResults" role="listbox"></div>
 </div>
-<small id="v4AddressStatus">Die Eingabe bleibt während des Tippens unverändert; gesucht wird nach einer kurzen Pause.</small>
-<div class="address-results" hidden="" id="v4AddressResults"></div>
+<p aria-live="polite" class="compact-address-status" id="v4AddressStatus"></p>
 <div class="building-candidates" hidden="" id="v4BuildingCandidates"></div>
+<div class="analysis-action-row">
+<button class="primary-button analysis-button" disabled="" id="v4AnalyzeLocation" type="button">Standort analysieren</button>
+<p class="analysis-hint" id="v4AnalysisHint">Zuerst eine Adresse auswählen.</p>
+</div>
 </section>
 <section aria-label="Arbeitsoberfläche Energiefluss V4.4" class="container v4-workspace no-print">
 <div class="v4-card v4-card--basis">
 <div class="section-heading">
 <div>
-<p class="eyebrow">1 · Projekt- und Verbrauchsbasis</p>
-<h2>Bekannte Werte kompakt prüfen</h2>
+<p class="eyebrow">1 · Grunddaten</p>
+<h2>Grunddaten für die Berechnung</h2>
 </div>
-
 </div>
-<p class="section-note">Die wichtigsten Angaben stehen gemeinsam in einem Block. Manuelle Werte gelten projektweit; automatische Ursprungswerte bleiben erhalten.</p>
+<p class="section-note">Vorhandene Projektwerte werden übernommen. Änderungen gelten automatisch in allen Tools.</p>
 <div class="basis-group">
-<h3>Kernwerte für die Beratung</h3>
 <div class="value-grid value-grid--three value-grid--compact">
-<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Baujahr / Baubewilligung" data-max="2100" data-min="1500" data-project-path="building.profile.constructionYear" data-step="1"></div>
-<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Beheizte Nutzfläche" data-project-path="building.geometry.heatedFloorArea" data-unit="m²"></div>
-<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Personen" data-project-path="usage.household.persons" data-unit="Personen"></div>
-<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Heizenergieverbrauch" data-project-path="consumption.heating.annualEnergy" data-unit="kWh/a"></div>
-<div class="v4-value-field" data-digits="2" data-kind="number" data-label="Jahresnutzungsgrad" data-max="1" data-min="0.01" data-project-path="systems.heating.usefulHeatFactor" data-step="0.01" data-unit=""></div>
-<div class="v4-value-field" data-kind="boolean-select" data-label="Warmwasser im Verbrauch" data-project-path="systems.heating.hotWaterIncluded"></div>
+<div class="v4-value-field" data-detail="Nur eintragen, wenn das Jahr bekannt ist. Ohne Angabe wird kein stiller Standardwert verwendet." data-digits="0" data-kind="number" data-label="Baujahr / Baubewilligung" data-max="2100" data-min="1500" data-placeholder="z. B. 1970" data-project-path="building.profile.constructionYear" data-step="1"></div>
+<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Nutzfläche (NFL)" data-min="0" data-project-path="building.geometry.usableFloorArea" data-step="1" data-unit="m²"></div>
+<div class="v4-value-field" data-digits="0" data-kind="range" data-label="Davon beheizt" data-max="100" data-min="0" data-project-path="building.thermal.heatedSharePercent" data-step="1" data-unit="%"></div>
+<div class="v4-value-field" data-detail="Anteil der Fensterfläche an der technischen Gesamtfassade. Verändert Fensterfläche und solare Gewinne; die gemeinsame opake Außenwandfläche bleibt erhalten, wenn sie manuell bestätigt wurde." data-digits="0" data-kind="range" data-label="Fensterflächenanteil" data-max="50" data-min="10" data-project-path="building.geometry.windowSharePercent" data-step="1" data-unit="%"></div>
+<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Personen" data-min="0" data-project-path="usage.household.persons" data-step="1" data-unit="Personen"></div>
+<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Heizenergieverbrauch" data-min="0" data-project-path="consumption.heating.annualEnergy" data-step="1" data-unit="kWh/a"></div>
+<div class="v4-value-field" data-digits="2" data-kind="number" data-label="Nutzwärmefaktor (JNG / JAZ)" data-max="10" data-min="0.01" data-project-path="systems.heating.usefulHeatFactor" data-step="0.01"></div>
+<div class="v4-value-field" data-kind="boolean-select" data-label="Warmwasser enthalten" data-project-path="systems.heating.hotWaterIncluded"></div>
 </div>
 </div>
 <details class="basis-details">
 <summary>Weitere Berechnungsgrundlagen prüfen</summary>
-<div class="value-grid value-grid--three value-grid--compact"><div class="v4-value-field" data-digits="0" data-kind="number" data-label="Bruttogeschoßfläche" data-project-path="building.geometry.grossFloorArea" data-unit="m²"></div>
-<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Gebäudevolumen" data-project-path="building.geometry.grossVolume" data-unit="m³"></div>
+<div class="value-grid value-grid--three value-grid--compact">
+<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Oberirdische Geschoße" data-min="1" data-project-path="building.geometry.storeysAboveGround" data-step="1" data-unit="Geschoße"></div>
+<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Bruttogeschoßfläche (BGF)" data-min="0" data-project-path="building.geometry.grossFloorArea" data-step="1" data-unit="m²"></div>
+<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Gebäudevolumen" data-min="0" data-project-path="building.geometry.grossVolume" data-step="1" data-unit="m³"></div>
 <div class="v4-value-field" data-digits="1" data-kind="number" data-label="Raumtemperatur" data-max="30" data-min="10" data-project-path="building.thermal.indoorTemperature" data-step="0.5" data-unit="°C"></div>
-<div class="v4-value-field" data-digits="0" data-kind="number" data-label="Beheizter Anteil" data-max="100" data-min="0" data-project-path="building.thermal.heatedSharePercent" data-step="1" data-unit="%"></div>
 <div class="v4-value-field" data-kind="condition-select" data-label="Gebäudezustand (optional)" data-project-path="building.thermal.condition"></div>
 </div>
 </details>
@@ -109,24 +117,30 @@
 <div id="lossFlow"></div>
 </div>
 </div>
-<div class="result-kpis">
-<article><div class="kpi-heading"><span>HWB aus Verbrauch</span><button aria-label="Information zum HWB aus Verbrauch" class="info-tip" data-tooltip="Nutzwärme für Raumheizung geteilt durch die Bruttogeschoßfläche. Verbrauchsbasierter Orientierungswert, kein Energieausweis-HWB." title="Nutzwärme für Raumheizung geteilt durch die Bruttogeschoßfläche." type="button">i</button></div><strong id="hwbConsumption">–</strong></article>
-<article><div class="kpi-heading"><span>HWB korrigiert</span><button aria-label="Information zum korrigierten HWB" class="info-tip" data-tooltip="Verbrauchs-HWB, überschlägig auf 20 °C Raumtemperatur und 100 % beheizten Flächenanteil korrigiert." title="Verbrauchs-HWB mit Temperatur- und Flächenkorrektur." type="button">i</button></div><strong id="hwbCorrected">–</strong></article>
-<article><div class="kpi-heading"><span>Rechnerischer Verbrauch</span><button aria-label="Information zum rechnerischen Verbrauch" class="info-tip" data-tooltip="Unabhängige Abschätzung aus Summe U × A, INCA-Heizgradstunden, Lüftung, Wärmebrücken, Gewinnen, Warmwasser und Jahresnutzungsgrad." title="U × A + Klima + Lüftung − Gewinne." type="button">i</button></div><strong id="calculatedDelivered">–</strong></article>
-<article><div class="kpi-heading"><span>Abweichung</span><button aria-label="Information zur Abweichung" class="info-tip" data-tooltip="Prozentuale Differenz zwischen rechnerischem und eingegebenem Heizenergieverbrauch. Dient als Plausibilitätscheck der Eingaben." title="Plausibilitätsvergleich zwischen Modell und Verbrauch." type="button">i</button></div><strong id="modelDeviation">–</strong><span class="kpi-status" id="modelDeviationNote">Plausibilitätsvergleich</span></article>
-</div>
 <div class="comparison-panel" id="comparisonPanel">
-<div>
+<div class="comparison-copy">
 <span class="comparison-status" id="comparisonStatus">Klimadaten werden geprüft</span>
 <p id="comparisonText">Für den unabhängigen Hüllvergleich werden vorhandene INCA-Klimakennwerte aus dem gemeinsamen Projekt verwendet.</p>
 </div>
 <div class="comparison-actions">
-<button class="quiet-button" id="calculateClimateHere" type="button">Klimawerte berechnen</button>
-
+<div class="calculated-consumption">
+<span>Rechnerischer Heizenergieverbrauch</span>
+<strong id="calculatedDeliveredInline">–</strong>
 </div>
+<div class="climate-calculation-action">
+<small id="climateCalculationState">Klimastatus wird geprüft</small>
+<button class="quiet-button" id="calculateClimateHere" type="button">Klimawerte berechnen</button>
+</div>
+</div>
+</div>
+<div class="result-kpis">
+<article><div class="kpi-heading"><span>HWB aus Verbrauch</span><button aria-label="Information zum HWB aus Verbrauch" class="info-tip" data-tooltip="Nutzwärme für Raumheizung geteilt durch die Bruttogeschoßfläche. Verbrauchsbasierter Orientierungswert, kein Energieausweis-HWB." title="Nutzwärme für Raumheizung geteilt durch die Bruttogeschoßfläche." type="button">i</button></div><strong id="hwbConsumption">–</strong></article>
+<article><div class="kpi-heading"><span>HWB korrigiert</span><button aria-label="Information zum korrigierten HWB" class="info-tip" data-tooltip="Verbrauchs-HWB, überschlägig auf 20 °C Raumtemperatur und 100 % beheizten Flächenanteil korrigiert." title="Verbrauchs-HWB mit Temperatur- und Flächenkorrektur." type="button">i</button></div><strong id="hwbCorrected">–</strong></article>
+<article><div class="kpi-heading"><span>HWB aus U-Werten</span><button aria-label="Information zum HWB aus U-Werten" class="info-tip" data-tooltip="Unabhängige Raumwärmeabschätzung aus U-Werten, Hüllflächen, INCA-Klima, Lüftung, Wärmebrücken und Gewinnen – bezogen auf die BGF." title="Unabhängiger Hüllvergleich aus U × A und Klima." type="button">i</button></div><strong id="calculatedHwb">–</strong></article>
+<article><div class="kpi-heading"><span>Abweichung</span><button aria-label="Information zur Abweichung" class="info-tip" data-tooltip="Prozentuale Differenz zwischen rechnerischem und eingegebenem Heizenergieverbrauch. Dient als Plausibilitätscheck der Eingaben." title="Plausibilitätsvergleich zwischen Modell und Verbrauch." type="button">i</button></div><strong id="modelDeviation">–</strong><span class="kpi-status" id="modelDeviationNote">Plausibilitätsvergleich</span></article>
 </div>
 <div class="warnings" hidden="" id="v4Warnings"></div>
-<p class="calibration-note">Die farbige Energiebilanz bleibt am gemessenen Verbrauch kalibriert. Der zusätzliche Plausibilitätscheck rechnet unabhängig mit U-Werten, Flächen und vorhandenen Klimakennwerten und zeigt, ob beide Größenordnungen zusammenpassen.</p>
+<p class="calibration-note">Die Energiebilanz folgt dem eingegebenen Verbrauch. Der Hüllvergleich rechnet unabhängig mit U-Werten, Flächen und Klima.</p>
 </div><div class="v4-card v4-card--envelope">
 <div class="section-heading">
 <div>
@@ -135,7 +149,7 @@
 </div>
 <span class="section-badge">Bestand</span>
 </div>
-<p class="section-note">Bestandsflächen und U-Werte folgen unterhalb der Ergebnisgrafik. Flächen werden wie im Standortpass bewusst grob gerundet. U-Wert-Vorschläge kommen vorrangig aus der Bauperiode; ein manuell bestätigter U-Wert hat immer Vorrang.</p>
+<p class="section-note">Flächen stammen aus der gemeinsamen Gebäudegeometrie. U-Werte werden aus Baujahr oder Gebäudezustand vorgeschlagen und können bestätigt oder überschrieben werden.</p>
 <div class="envelope-table-wrap">
 <table class="envelope-table">
 <thead>
@@ -158,21 +172,34 @@
 </div>
 </div>
 <details class="v4-methodology">
-<summary>Methodik, Formeln, Annahmen und Grenzen</summary>
+<summary>Methode und Datenbasis</summary>
+<div class="method-data-strip">
+<span><strong>Adresse</strong> Projekt / BEV · 01.04.2026</span>
+<span><strong>Geometrie</strong> TIRIS-Gebäude · gemeinsame Projektbasis</span>
+<span><strong>Klima</strong> GeoSphere INCA · OIB NAT</span>
+<span><strong>Bauteile</strong> Bestands-U-Werte · lokale Datenpakete</span>
+</div>
 <div class="methodology-grid">
-<div><h3>1 · Nutzwärme und Raumwärme</h3><p><code>Q<sub>Nutz</sub> = HEB × η</code><br/><code>Q<sub>WW</sub> = Personen × 1.000 kWh/a</code>, sofern Warmwasser enthalten ist.<br/><code>Q<sub>Raum</sub> = Q<sub>Nutz</sub> − Q<sub>WW</sub></code>.</p></div>
-<div><h3>2 · Verbrauchsbezogener HWB</h3><p><code>HWB<sub>Verbrauch</sub> = Q<sub>Raum</sub> / BGF</code>.<br/>Korrektur: <code>K<sub>T</sub> = 1 + (T<sub>Raum</sub> − 20) × 0,06</code> und <code>K<sub>beheizt</sub> = 1 + (Anteil − 100) × 0,005</code>.</p></div>
-<div><h3>3 · Gewinne und Lüftung</h3><p><code>Q<sub>intern</sub> = 2,7 W/m² × NFL × 8,76</code>.<br/><code>Q<sub>solar</sub> = 175 kWh/m²a × A<sub>Fenster</sub> × 0,70</code>.<br/><code>Q<sub>Lüftung</sub> = 10 kWh/m³a × V<sub>konditioniert</sub></code>.</p></div>
-<div><h3>4 · Gebäudehülle in der Verbrauchsbilanz</h3><p>Nach Anlage, Warmwasser und Lüftung verbleibt die Gebäudehülle inklusive Wärmebrücken. Wärmebrücken werden mit 7,5 % der Bauteilverluste angesetzt. Die Aufteilung erfolgt proportional zu <code>U × A</code>.</p></div>
-<div><h3>5 · Unabhängiger Hüllvergleich</h3><p><code>HGT ≈ Vollbenutzungsstunden × (Raumtemperatur − NAT)</code>.<br/><code>Q<sub>Transmission</sub> = Σ(U × A) × HGT / 1.000</code>.<br/>Danach werden Wärmebrücken und Lüftung addiert; interne und solare Gewinne werden mit einem vereinfachten Nutzungsfaktor berücksichtigt.</p></div>
-<div><h3>6 · Rechnerischer Heizenergieverbrauch</h3><p><code>HEB<sub>rechnerisch</sub> = (Q<sub>Raum,rech</sub> + Q<sub>WW</sub>) / η</code>.<br/><code>Abweichung = (HEB<sub>rechnerisch</sub> − HEB<sub>gemessen</sub>) / HEB<sub>gemessen</sub></code>.</p></div>
-<div><h3>7 · Datenpriorität und Rundung</h3><p>Manuell bestätigt → amtlich → abgeleitet → Fallback. Bauperiodenwerte werden nur als sichtbare Ausgangsvorschläge verwendet. Automatische Hüllflächen werden für Anzeige und Rechnung bewusst gerundet: Fenster auf 5 m², übrige Flächen auf 10 m².</p></div>
-<div><h3>8 · Grenzen</h3><p>Überschlägige Beratungshilfe, kein Energieausweis und keine normgemäße Bauteilberechnung. Baujahr- und Zustandswerte sind Fallbacks; Sanierungen und tatsächliche Aufbauten müssen über bestätigte U-Werte abgebildet werden. Vollständige Methodik: <code>tools/energiefluss-v4/docs/</code>.</p></div>
+<div><h3>1 · Gemeinsame Projektwerte</h3><p>Heizenergieverbrauch, Nutzwärmefaktor, Warmwasser enthalten, Personen, Nutzfläche (NFL), beheizter Anteil, BGF, Geschoßzahl, Gebäudezustand und Hüllstatus verwenden dieselben Projektfelder wie Standortpass, Heizlast und Bauteil &amp; Sanierung. Datenpriorität: manuell bestätigt → amtlich → abgeleitet → Fallback.</p></div>
+<div><h3>2 · Gebäudegeometrie</h3><p>Fehlt eine bekannte BGF, gilt bei bekannter NFL <code>BGF = NFL / 0,75</code>. <code>A<sub>beheizt</sub> = NFL × beheizter Anteil / 100</code>, <code>A<sub>Grund</sub> = BGF / Geschoße</code> und <code>V<sub>brutto</sub> = A<sub>Grund</sub> × Medianhöhe</code>. Nutzerseitig ist die Außenwand in allen Tools immer die <strong>opake Fläche ohne Fenster</strong>; die Fensterfläche wird separat als gemeinsamer Projektwert geführt. Die technische Brutto-Fassade dient nur der automatischen Ableitung. Die Dachfläche bleibt am TIRIS-Dachpolygon und folgt nur der Dachneigung.</p></div>
+<div><h3>3 · Nutzwärme, Anlage, Umweltwärme und Warmwasser</h3><p><code>Q<sub>Nutz</sub> = HEB × f<sub>Nutz</sub></code>. <code>Q<sub>Anlage</sub> = max(HEB − Q<sub>Nutz</sub>, 0)</code>. Bei einem Nutzwärmefaktor über 1 wird <code>Q<sub>Umwelt</sub> = max(Q<sub>Nutz</sub> − HEB, 0)</code> als zusätzlicher Energiezufluss dargestellt. Falls Warmwasser enthalten ist: <code>Q<sub>WW</sub> = Personen × 1.000 kWh/a</code>. <code>Q<sub>Raum</sub> = max(Q<sub>Nutz</sub> − Q<sub>WW</sub>, 0)</code>.</p></div>
+<div><h3>4 · Verbrauchs-HWB und Gebäudezustand</h3><p><code>HWB<sub>Verbrauch</sub> = Q<sub>Raum</sub> / BGF</code>. Korrektur: <code>K<sub>T</sub> = 1 + (T<sub>Raum</sub> − 20) × 0,06</code>, <code>K<sub>beheizt</sub> = 1 + (Anteil − 100) × 0,005</code> und <code>HWB<sub>korr</sub> = HWB<sub>Verbrauch</sub> / K<sub>T</sub> / K<sub>beheizt</sub></code>. Vorschlag: &gt;150 unsanierter Altbau, 90–150 teilsaniert, 45–unter 90 saniert, &lt;45 neuerer Standard.</p></div>
+<div><h3>5 · Interne und solare Gewinne, Lüftung</h3><p><code>Q<sub>intern</sub> = 2,7 W/m² × beheizte NFL × 8,76</code>. <code>Q<sub>solar</sub> = 175 kWh/(m²a) × A<sub>Fenster</sub> × g<sub>Glas</sub> × f<sub>Nutzung</sub></code>; Standard <code>g<sub>Glas</sub> = 0,70</code> und <code>f<sub>Nutzung</sub> = 1,00</code>. <code>V<sub>kond</sub> = V<sub>brutto</sub> × beheizter Anteil / 100</code> und <code>Q<sub>Lüftung</sub> = 10 kWh/(m³a) × V<sub>kond</sub></code>. Diese Ansätze sind transparente Beratungsannahmen.</p></div>
+<div><h3>6 · Verbrauchskalibrierte Hüllbilanz</h3><p><code>Q<sub>Ein</sub> = HEB + Q<sub>Umwelt</sub> + Q<sub>intern</sub> + Q<sub>solar</sub></code>. <code>Q<sub>Rest</sub> = Q<sub>Ein</sub> − Q<sub>Anlage</sub> − Q<sub>WW</sub> − Q<sub>Lüftung</sub></code>. Mit Wärmebrückenanteil 7,5 % gilt <code>Q<sub>Bauteile</sub> = max(Q<sub>Rest</sub>, 0) / 1,075</code> und <code>Q<sub>WB</sub> = Q<sub>Bauteile</sub> × 0,075</code>. Für aktive Hüllbauteile: <code>UA<sub>i</sub> = U<sub>i</sub> × A<sub>i</sub></code> und <code>Q<sub>i</sub> = Q<sub>Bauteile</sub> × UA<sub>i</sub> / ΣUA</code>. Die Grafik bleibt damit am eingegebenen Verbrauch kalibriert.</p></div>
+<div><h3>7 · Bestands-U-Werte</h3><p>U-Wert-Priorität: bestätigter Wert → bekanntes Baujahr/Baubewilligung → verbrauchsbasierter Gebäudezustand → grober Zustandsfallback. Flächen werden in der Darstellung auf 5 m² bei Fenstern und 10 m² bei den übrigen Bauteilen gerundet; intern wird mit den Rechenwerten weitergearbeitet. Ein beispielhaftes Baujahr wird nicht automatisch gespeichert.</p></div>
+<div><h3>8 · Unabhängiger Hüllvergleich</h3><p>Der Verbrauchs-HWB bleibt unverändert und unabhängig. Der zweite Prüfweg verwendet überschlägig <code>HGT<sub>rech</sub> ≈ VLS × (T<sub>Raum</sub> − NAT)</code>, <code>Q<sub>Transmission</sub> = ΣUA × HGT<sub>rech</sub> / 1.000</code> und <code>Q<sub>WB,rech</sub> = Q<sub>Transmission</sub> × 0,075</code>. Interne und solare Gewinne werden mit einem vereinfachten Nutzungsfaktor von 0,55 berücksichtigt: <code>Q<sub>Gewinne,nutzbar</sub> = (Q<sub>intern</sub> + Q<sub>solar</sub>) × 0,55</code>. Daraus folgen <code>Q<sub>Raum,rech</sub></code>, <code>HWB<sub>U</sub> = Q<sub>Raum,rech</sub> / BGF</code> und der rechnerische Heizenergieverbrauch. Der Rechenweg ist eine Beratungspauschale und keine Norm-HWB-Berechnung.</p></div>
+<div><h3>9 · Grenzen</h3><p>Die verbrauchskalibrierte Bilanz und der unabhängige U-Wert-Vergleich beantworten unterschiedliche Fragen. Solare Gewinne, Lüftung, Warmwasser, Wärmebrücken und Nutzung sind bewusst vereinfacht. Das Tool ist eine Beratungshilfe und ersetzt weder Energieausweis noch normgemäße Heizlast-, Lüftungs- oder Bauteilberechnung.</p></div>
 </div>
 </details>
 </section>
 <section aria-label="Druckbericht Energiefluss V4" class="container v4-print-report print-only" id="v4PrintReport"></section>
-<div data-report-actions="" data-report-actions-label="Drucken / PDF"></div>
+<section class="container bottom-report-actions no-print energy-next-actions">
+<a class="primary-button button-link" href="../standortpass/index.html">Standortpass</a>
+<a class="primary-button button-link" href="../klima/index.html">Klima</a>
+<a class="primary-button button-link" href="../heizlast/index.html">Heizlast</a>
+<a class="primary-button button-link" href="../bauteil-sanierung/index.html">Bauteil &amp; Sanierung</a>
+<button class="secondary-button" id="printEnergyBottomButton" type="button">Drucken / PDF</button>
+</section>
 </main>
 <footer class="site-footer no-print">
 <div class="container footer-inner">
@@ -186,20 +213,20 @@
 <script src="../../shared/js/data-model.js?v=2"></script>
 <script src="../../shared/js/project-migrations.js?v=1"></script>
 <script src="../../shared/js/value-resolver.js?v=1"></script>
-<script src="../../shared/js/project-store.js?v=4"></script>
+<script src="../../shared/js/project-store.js?v=6"></script>
 <script src="../../shared/js/project-header.js?v=2"></script>
-<script src="../../shared/js/project-address-manager.js?v=1"></script>
+<script src="../../shared/js/project-address-manager.js?v=2"></script>
 <script src="../../shared/js/services/address-provider-core.js?v=1"></script>
 <script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script>
 <script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
 <script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
-<script src="../../shared/js/services/building-geometry-service.js?v=1"></script>
+<script src="../../shared/js/services/building-geometry-service.js?v=2"></script>
 <script src="../../shared/data/standards/oib/nat-tirol.js?v=1"></script>
 <script src="../../shared/data/standards/oib/tnat13-tirol.js?v=1"></script>
 <script src="../../shared/js/domain/climate/oib-nat-core.js?v=1"></script>
 <script src="../../shared/js/domain/climate/oib-tnat13-core.js?v=1"></script>
 <script src="../../shared/js/domain/climate/precomputed-climate-core.js?v=2"></script>
-<script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=5"></script>
-<script src="energiefluss-v4.js?v=5"></script>
+<script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=6"></script>
+<script src="energiefluss-v4.js?v=10"></script>
 </body>
 </html>

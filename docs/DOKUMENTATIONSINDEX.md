@@ -1,123 +1,27 @@
 # Dokumentationsindex – Tools für Energieberatung
 
-**Stand:** 05.08.2026  
+**Stand:** 10.08.2026  
 **Projektmodell:** Schema 2.0
 
-## 0. Aktuelle Übergabe für neue Chats
+Die Projektdokumentation wird bewusst zentral gepflegt. Frühere toolbezogene Änderungs-, Installations- und Methodik-Einzeldateien sind nicht mehr Bestandteil des verbindlichen Websitepakets.
 
-- `docs/PROJEKTSTATUS_UND_SYSTEMUEBERSICHT.md`
+## Verbindliche Dokumente
 
-Diese Datei enthält den kompakten verbindlichen Gesamtstand und wird bei jedem Paket aktualisiert.
+1. `docs/PROJEKTSTATUS_UND_SYSTEMUEBERSICHT.md`  
+   Vollständiger aktueller Gesamtstand und erste Datei für neue Chats.
+2. `docs/ARCHITEKTUR_UND_DATENMODELL.md`  
+   Ordnerstruktur, gemeinsames Projektmodell, Werteherkunft, Geometrieketten und Zuständigkeiten.
+3. `docs/METHODIK_ALLER_TOOLS.md`  
+   Aufgaben, Berechnungswege, Rundungen, Datenherkunft und Grenzen aller Werkzeuge.
+4. `docs/DATENQUELLEN_WARTUNG_UND_AKTUALISIERUNG.md`  
+   Adress-, Klima-, Gebäude-, Kosten- und Standarddaten sowie deren Pflege.
+5. `docs/TEST_UND_RELEASE.md`  
+   Lokaler Start, Regressionstests, Linkprüfung, Druckprüfung und Freigabecheck; enthält auch die Regeln für den offenen, anonymisierten HWB-U-Diagnosesatz.
+6. `docs/ROADMAP.md`  
+   Nächste fachliche und technische Entwicklungsschritte.
+7. `docs/NORMVALIDIERUNG-OENORM-B-8110-4-2024.md` und `.json`  
+   Getrennte Validierung des gemeinsamen Wirtschaftlichkeitskerns.
 
-## 1. Grundarchitektur
+## Dokumentationsregel
 
-- `docs/ARCHITEKTUR-V1.md`
-- `docs/FACHKONZEPT-BAUTEIL-UND-SANIERUNG-V1.md`
-- `docs/NORMVALIDIERUNG-OENORM-B-8110-4-2024.md`
-- `docs/NORMVALIDIERUNG-OENORM-B-8110-4-2024.json`
-
-## 2. Standortpass Gebäude & Umgebung
-
-- `tools/standortpass/docs/METHODIK-UND-DATENBASIS.md`
-- `tools/standortpass/docs/WARTUNG-UND-VALIDIERUNG.md`
-
-## 3. Klima am Standort
-
-- `tools/klima/docs/METHODIK-UND-DATENBASIS.md`
-- `tools/klima/docs/WARTUNG-INCA-JAHRESPAKETE.md`
-
-Klima und Heizlast sind getrennte Oberflächen, verwenden aber dieselbe Klimabasis.
-
-## 4. Heizlast
-
-- `tools/heizlast/docs/METHODIK-UND-ABGRENZUNG.md`
-- `tools/heizlast/docs/WARTUNG-UND-VALIDIERUNG.md`
-
-## 5. Energiefluss
-
-### V3 – extern archivierter Referenzstand
-
-Der V3-Code kann nach externer ZIP-Sicherung von der Website entfernt bleiben.
-
-### V4.4 – funktional abgeschlossen
-
-- `tools/energiefluss-v4/docs/METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md`
-- `tools/energiefluss-v4/docs/WARTUNG-UND-VALIDIERUNG.md`
-- `tools/energiefluss-v4/docs/DOKUMENTATIONSSTAND.json`
-
-Energiefluss diagnostiziert Verbrauch und Gebäudehülle. Maßnahmen und Wirtschaftlichkeit werden im eigenständigen Tool „Bauteil & Sanierung“ untersucht.
-
-## 6. Bauteil & Sanierung – Arbeitsversion V0.5
-
-- `docs/AENDERUNGEN-BAUTEIL-UND-SANIERUNG-V0-5.md`
-- `docs/INSTALLATION-BAUTEIL-UND-SANIERUNG-V0-5.md`
-- `docs/TESTPLAN-BAUTEIL-UND-SANIERUNG-V0-5.md`
-- `tools/bauteil-sanierung/docs/METHODIK-UND-BERECHNUNGSGRUNDLAGEN.md`
-- `tools/bauteil-sanierung/docs/WARTUNG-UND-DATENPFLEGE.md`
-- `tools/bauteil-sanierung/docs/DOKUMENTATIONSSTAND.json`
-
-V0.5 unterstützt:
-
-- Außenwand,
-- Dach/Dachschräge,
-- oberste Geschoßdecke,
-- Kellerdecke,
-- Boden gegen Erdreich,
-- Fenster als diskrete Austauschmaßnahme,
-- Haustür/Außentür als diskrete Austauschmaßnahme.
-
-Baujahr-Fallback, U-Wert-Pflichtstatus, eigene SVGs und BGF→Volumen-Nachführung sind integriert.
-
-## 7. Gemeinsamer Wirtschaftlichkeitskern
-
-```text
-shared/js/domain/economics/economics-core.js
-```
-
-Validierung:
-
-```text
-node tests/validate-oenorm-b8110-4.js
-```
-
-## 8. Gemeinsamer Maßnahmenkern
-
-```text
-shared/js/domain/measures/envelope-renovation-core.js
-```
-
-Version V0.5 unterstützt kontinuierliche Dämmdicken sowie diskrete Fenster- und Türvarianten.
-
-## 9. Zentrale Daten
-
-```text
-shared/data/
-├── building/
-├── climate/
-├── costs/
-├── economics/
-├── emissions/
-├── measures/
-│   ├── envelope-targets.json
-│   └── exchange-variants.json
-└── standards/
-    ├── economics/
-    │   └── component-lifetimes.json
-    └── oib/
-        └── envelope-u-values.json
-```
-
-Förderungen sind keine automatisch gepflegten Standarddaten. Sie werden projektbezogen als Landes-, Bundes- und sonstige Förderung bestätigt.
-
-## 10. Dokumentationsregel
-
-Bei fachlichen Änderungen gleichzeitig prüfen:
-
-1. Rechenkern oder Datenpaket,
-2. sichtbare Beschriftung und Methodik,
-3. Methodikdokument,
-4. Wartungs-/Validierungsdokument,
-5. Modellversion und Datenstand,
-6. Regressionstest,
-7. Druckbericht,
-8. Quellen und Lizenzgrenzen.
+Bei jeder Änderung wird mindestens `PROJEKTSTATUS_UND_SYSTEMUEBERSICHT.md` aktualisiert. Ändern sich Rechenweg, Datenquelle, Wartung oder Testablauf, wird zusätzlich das jeweils betroffene zentrale Dokument angepasst. Neue toolbezogene Einzel-Dokumentationen werden nicht angelegt.

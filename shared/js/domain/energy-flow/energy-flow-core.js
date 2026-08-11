@@ -25,7 +25,7 @@
   function calculate(inputs) {
     const assumptions = inputs.assumptions ?? {};
     const annualEnergyKwh = positive(inputs.annualEnergyKwh);
-    const usefulHeatFactor = clamp(finite(inputs.usefulHeatFactor, 0.85), 0.01, 1);
+    const usefulHeatFactor = clamp(finite(inputs.usefulHeatFactor, 0.85), 0.01, 10);
     const persons = positive(inputs.persons);
     const hotWaterIncluded = Boolean(inputs.hotWaterIncluded);
     const heatedFloorAreaM2 = positive(inputs.heatedFloorAreaM2);
@@ -70,11 +70,12 @@
     const roomHeatRawKwh = usefulHeatTotalKwh - hotWaterKwh;
     const roomHeatKwh = Math.max(roomHeatRawKwh, 0);
     const systemLossKwh = Math.max(annualEnergyKwh - usefulHeatTotalKwh, 0);
+    const environmentalHeatKwh = Math.max(usefulHeatTotalKwh - annualEnergyKwh, 0);
 
     const internalGainsKwh = internalGainsWM2 * heatedFloorAreaM2 * 8.76;
     const solarGainsKwh = solarRadiationFactor * windowAreaM2 * glazingShare * solarUtilizationFactor;
     const ventilationLossKwh = ventilationLossKwhM3a * conditionedVolumeM3;
-    const totalInputsKwh = annualEnergyKwh + internalGainsKwh + solarGainsKwh;
+    const totalInputsKwh = annualEnergyKwh + environmentalHeatKwh + internalGainsKwh + solarGainsKwh;
 
     const residualEnvelopeWithBridgesKwh =
       totalInputsKwh - systemLossKwh - hotWaterKwh - ventilationLossKwh;
@@ -104,13 +105,14 @@
 
     /*
      * Unabhängige Hüllplausibilität:
-     * Das gemeinsame Klimatool speichert die mittleren Vollbenutzungsstunden nach
-     * Σ max(0, (15 - Ta) / (15 - NAT)). Daraus lassen sich die Heizgradstunden
-     * zur Bilanztemperatur 15 °C exakt zurückrechnen.
+     * Die gemeinsamen INCA-Pakete liefern mittlere Vollbenutzungsstunden auf
+     * Basis der 15-°C-Klimakurve. Für diesen bewusst vereinfachten zweiten
+     * Beratungsweg wird diese Klimakenngröße auf die gewählte Raumtemperatur
+     * skaliert. Interne und solare Gewinne werden anschließend nur anteilig
+     * über einen transparenten Gewinnnutzungsfaktor berücksichtigt.
      *
-     * Der Vergleich ist bewusst überschlägig: Transmission + Wärmebrücken +
-     * Lüftungsannahme minus interne/solare Gewinne. Er kalibriert sich NICHT am
-     * gemessenen Verbrauch und eignet sich deshalb zur Plausibilisierung.
+     * Der Vergleich kalibriert sich NICHT am gemessenen Verbrauch und bleibt
+     * ausdrücklich eine Plausibilisierung, keine Norm-HWB-Berechnung.
      */
     const climate = inputs.climate ?? {};
     const natC = optionalFinite(climate.natC);
@@ -151,6 +153,9 @@
     };
 
     if (climateAvailable) {
+      /* Die gespeicherten Vollbenutzungsstunden stammen aus der 15-°C-Klimakurve.
+         Für die unabhängige Beratungspauschale werden sie auf die gewählte
+         Raumtemperatur skaliert. Das ist bewusst keine Norm-HWB-Berechnung. */
       const heatingDegreeHoursKh = averageFullLoadHours * (comparisonIndoorTemperatureC - natC);
       const calculatedTransmissionKwh = totalUaWK * heatingDegreeHoursKh / 1000;
       const calculatedThermalBridgesKwh = calculatedTransmissionKwh * thermalBridgeShare;
@@ -185,10 +190,10 @@
 
     const warnings = [];
     if (roomHeatRawKwh < 0) {
-      warnings.push('Der Warmwasserabzug ist größer als die berechnete Nutzwärme. Verbrauch, Nutzungsgrad oder Personenzahl prüfen.');
+      warnings.push('Der Warmwasserabzug ist größer als die berechnete Nutzwärme. Verbrauch, Nutzwärmefaktor oder Personenzahl prüfen.');
     }
     if (residualEnvelopeWithBridgesKwh < 0) {
-      warnings.push('Die gewählten Eingaben ergeben negative Verluste der Gebäudehülle. Verbrauch, Volumen, Lüftungsannahme oder Nutzungsgrad prüfen.');
+      warnings.push('Die gewählten Eingaben ergeben negative Verluste der Gebäudehülle. Verbrauch, Volumen, Lüftungsannahme oder Nutzwärmefaktor prüfen.');
     }
     if (!activeComponents.length) {
       warnings.push('Es ist kein Bauteil mit positiver Fläche und positivem U-Wert aktiviert.');
@@ -227,6 +232,7 @@
         internalKwh: internalGainsKwh,
         solarKwh: solarGainsKwh,
         deliveredKwh: annualEnergyKwh,
+        environmentalHeatKwh,
         totalKwh: totalInputsKwh,
       },
       losses: {

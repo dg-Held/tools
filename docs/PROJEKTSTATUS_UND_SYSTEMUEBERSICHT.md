@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 05.08.2026  
+**Stand:** 10.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -31,16 +31,22 @@ Leitgedanke: Der Berater spricht mit dem Kunden; das Tool stellt bekannte Daten 
 - gemeinsamer Projektkopf: Projekttitel/Adresse etwa 2/3, Projekt-ID/Datum etwa 1/3.
 - Drucken/PDF oben und am Berichtsende.
 - erweiterte technische und finanzielle Angaben standardmäßig einklappen.
+- gemeinsame Adresskarten zeigen vorrangig nur Suchfeld, Datenanbieter, Status und die jeweilige Hauptaktion; technische Korrekturen bleiben eingeklappt.
+- vollständige Rechenwege und Datenquellen stehen am Seitenende unter „Methode und Datenbasis“.
+- Marken-, Status-, Text- und Flächenfarben werden zentral über `shared/css/tokens.css` verwaltet.
 - projektbezogene Förderungen sichtbar und manuell bestätigbar halten.
 
 Zentrale Gestaltung:
 
 ```text
+styles.css
 shared/css/tokens.css
-shared/css/base.css
 shared/css/components.css
 shared/css/print.css
+shared/css/climate-heating.css
 ```
+
+`styles.css` enthält die allgemeine Seitenbasis und importiert die zentralen Farb-/Designvariablen aus `shared/css/tokens.css`. Eine separate `shared/css/base.css` existiert bewusst nicht.
 
 ## 3. Gemeinsames Projektmodell
 
@@ -116,40 +122,43 @@ beheizte NFL_verwendet = manuell oder NFL_verwendet
 
 Die beheizte Nutzfläche darf nie größer als die Nutzfläche sein. Eine zu große manuelle Eingabe wird auf die Nutzfläche begrenzt und mit einem Hinweis versehen.
 
-Das äußere geometrische Bruttovolumen ist unabhängig von BGF und Geschoßzahl:
+Die reine TIRIS-Referenz bleibt unverändert:
 
 ```text
-Bruttovolumen = Dachprojektion × Medianhöhe
+Bruttovolumen_ref = Dachprojektion × Medianhöhe
 ```
 
-Ein manuelles Bruttovolumen behält Vorrang; der automatische Wert bleibt erhalten.
-
-Zusätzlich wird vorbereitet beziehungsweise abgeleitet:
+In der verwendeten Geometriekette folgt das Volumen einer korrigierten BGF/NFL:
 
 ```text
-beheizter Anteil = beheizte NFL / NFL
+Grundfläche_verwendet = BGF / Geschoße
+Bruttovolumen = Grundfläche_verwendet × Medianhöhe
 beheiztes Volumen = Bruttovolumen × beheizter Anteil
 ```
 
-Das beheizte Volumen ist eine überschlägige Projektgröße und noch kein normativ bestimmtes Luftvolumen.
+Ein manuelles Bruttovolumen behält Vorrang. Referenz- und verwendeter Wert bleiben getrennt nachvollziehbar; das beheizte Volumen ist kein normativ bestimmtes Luftvolumen.
 
 ## 5. Aktuelle Werkzeuge
 
 ### Standortpass Gebäude & Umgebung
 
-Status: V1, fachlich weitgehend fertig; Geometriekette V1.2.
+Status: V1.0, praxisgeprüfte Basis; Geometriekette V1.5.
 
 - Adresse und TIRIS-Gebäudezuordnung,
 - gespeicherter Gebäude-/Polygon-Snapshot,
 - Orthofoto, Geländehöhe und Gebäudehöhen,
 - Dachprojektion, Umfang, Dachneigung und Dachfläche,
-- Geschoße, BGF, NFL, beheizte NFL und Bruttovolumen,
+- Geschoße und NFL als priorisierte Prüfeingaben; BGF wird bei bekannter NFL mit dem transparenten Beratungsfaktor 0,75 nachgeführt,
+- kompakte Geometriezusammenfassung oberhalb der eingeklappten Detailtabelle: Geschoße, NFL, beheizter Anteil und Plausibilitätsstatus,
+- beheizter Anteil als 0–100-%-Regler sowie Fensteranteil als 10–50-%-Regler,
+- Geschoßflächen, Fassade und Bruttovolumen folgen der verwendeten Grundfläche; die Dachfläche bleibt am TIRIS-Dachpolygon und reagiert nur auf die Dachneigung,
+- automatische TIRIS-Referenzen bleiben parallel erhalten,
 - Wärmeversorgung und Umweltwärmehinweise,
 - Solar-/Verschattungsinformationen,
 - Hochwasser, Naturgefahren, WLV, Radon, Denkmal- und Kulturkontext,
-- zwei verdichtete A4-Seiten.
+- zwei verdichtete A4-Seiten mit DKM/Orthofoto-/Gebäudekontrolle, einheitlichem Berichtstitel und abgestimmtem Projektkopf.
 
-### Klima am Standort
+### Klima am Standort V1.0
 
 Status: eigenständiges Tool.
 
@@ -158,33 +167,52 @@ Status: eigenständiges Tool.
 - vorberechnete INCA-Jahrespakete ab 2012,
 - Jahreslinien, Median, Kennwerte und Datenstand,
 - GeoSphere-Liveabruf als Fallback.
+- Oberfläche V1.0: verkürzte Einleitung, kompakte gemeinsame Adressauswahl, Quellenkarten und JSON-Export im Methodenbereich sowie direkte Übergänge zu Heizlast und Energiefluss.
+- automatischer Beratungsimpuls direkt unter dem Diagramm; Einordnung über klimatische Vollbenutzungsstunden sowie ergänzende Hinweise zu ausgeprägten Kälte- und Sommerbelastungen.
+- geplante Erweiterungen: Temperatur-Heatmap nach Ergänzung zeitlicher Aggregate; Windrose erst nach Aufnahme von Windgeschwindigkeit und Windrichtung.
 
-### Heizlast abschätzen
+### Heizlast abschätzen V1.0
 
 Status: eigenständiges, mit Klima verschränktes Tool.
 
 - verbrauchsbasierte Abschätzung,
 - flächenbezogene Orientierung,
-- gemeinsame Klimagrundlage,
-- editierbare Heizgrenztemperatur,
+- gemeinsame Klimagrundlage ohne redundante Klimafelder,
+- editierbare Heizgrenztemperatur mit transparentem Vorschlag,
+- automatischer Gebäudezustandsvorschlag aus korrigiertem Verbrauchs-HWB beziehungsweise Ersatzkennwert; manuelle Auswahl hat Vorrang,
 - vorhandene Heizung und Dauerlinie,
+- zwei bis drei priorisierte Beratungsaussagen: Leistung für 90 % der Heizstunden, zusätzliche Spitzenleistung und bei vorhandenen Anlagendaten ein gemeinsamer Reserve-/Teillastabgleich,
+- technische Standortdaten auf beratungsrelevante Werte reduziert,
+- Quellen, Annahmen und JSON-Export unter „Methode und Datenbasis“,
+- direkte Übergänge zu Klima und Energiefluss,
 - kompakter Ein-Seiten-Ausdruck.
 
 ### Energiefluss im Gebäude V4.4
 
-Status: funktional abgeschlossen. V3 ist extern archiviert und online nicht mehr erforderlich.
+Status: funktional abgeschlossen; Vereinfachungs- und Konsistenzschleife umgesetzt. V3 ist extern archiviert und online nicht mehr erforderlich.
 
-- bekannte Projekt- und Verbrauchswerte kompakt prüfen,
-- verbrauchsbasierte Bilanz,
-- Gebäudehülle und Einzelbauteilverluste,
-- Plausibilitätsvergleich aus U-Werten, Flächen und Klima,
-- Baujahr als Fallback für nicht bestätigte Bestands-U-Werte,
+- verkürzte, an Klima und Heizlast angeglichene Einleitung sowie gemeinsame Projektkopf- und Adresslogik,
+- Grunddaten mit gemeinsamen Projektbezeichnungen: Nutzfläche (NFL), davon beheizt, Personen, Heizenergieverbrauch, Nutzwärmefaktor (JNG/JAZ) und Warmwasser enthalten,
+- Fensterflächenanteil direkt regelbar; Fensterfläche, opake Außenwand und solare Gewinne werden gemeinsam nachgeführt,
+- Baujahr/Baubewilligung bleibt eine wichtige optionale Prüfeingabe; 1970 wird nur als Beispiel gezeigt und nicht automatisch gespeichert,
+- oberirdische Geschoße, BGF, Gebäudevolumen, Raumtemperatur und Gebäudezustand liegen kompakt im erweiterten Prüfbereich,
+- NFL-, BGF-, Geschoß-, Volumen- und Hüllflächenwerte verwenden dieselbe Geometriekette wie der Standortpass; die Dachfläche bleibt am TIRIS-Dachpolygon,
+- Gebäudezustand wird mit derselben verbrauchsbasierten HWB-Logik wie im Heizlasttool vorgeschlagen; manuelle Angaben haben Vorrang,
+- verbrauchsbasierte Bilanz mit gemeinsamem Heizenergieverbrauch und gemeinsamem Nutzwärmefaktor,
+- bei Wärmepumpenfaktoren über 1,0 wird Umweltwärme als eigener Energiezufluss bilanziert,
+- ruhiger Ergebnisbereich mit HWB aus Verbrauch, korrigiertem HWB, HWB aus U-Werten und Abweichung,
+- rechnerischer Heizenergieverbrauch steht direkt beim unabhängigen Hüllvergleich,
+- sichtbarer Klimastatus unterscheidet fehlende, berechnete und aktualisierbare Klimagrundlage,
+- Stand-alone-Ablauf: „Standort analysieren“ lädt die Geometrie; „Klimawerte berechnen“ ergänzt nur den unabhängigen Hüllvergleich. Verbrauchsbilanz und sichtbare Ergebnisse reagieren ohne zusätzlichen allgemeinen Berechnen-Knopf auf Eingabeänderungen,
+- Bestands-U-Werte und Hüllflächen bleiben prüf- und überschreibbar; das Baujahr dient nur bei tatsächlicher Angabe als Fallback,
+- direkte Übergänge zu Standortpass, Klima, Heizlast sowie Bauteil & Sanierung neben Drucken/PDF,
+- vollständige Rechenwege, Datenbasis, Annahmen und Grenzen im gemeinsamen Methodenbereich,
 - sichtbare Flächenrundung: Fenster 5 m², übrige Hüllflächen 10 m²,
 - direkte Übergabe an Bauteil & Sanierung.
 
-### Bauteil & Sanierung V0.6
+### Bauteil & Sanierung V1.0
 
-Status: Abschlussstand vor Freigabe als erste stabile Version.
+Status: V1.0 technisch freigegeben; Vereinfachungsschleife, thermische Hülle, automatische Maßnahmenpakete und Abschlussprüfung umgesetzt. Die Praxisvalidierung mit realen Beratungsfällen folgt als fachliche Validierungsrunde.
 
 Dämmmaßnahmen:
 
@@ -201,17 +229,27 @@ Austauschmaßnahmen:
 
 Funktionen:
 
-- eigenständiger Adress- und Geometrieeinstieg,
-- Baujahr als U-Wert-Fallback,
+- an Klima, Heizlast und Energiefluss angeglichener Adress- und Geometrieeinstieg mit bewusstem Analysebutton,
+- Stand-alone-Ablauf: Der Analysebutton lädt die Geometrie. Energiegrundlage in der Reihenfolge kalibrierter Energiefluss → vorhandenes INCA-Klima → transparenter HGT-Fallback; INCA kann direkt im Tool nachgeladen werden. Die Bauteilrechnung reagiert anschließend direkt auf Eingaben,
+- kompakte Projektbasis aus Baujahr/Baubewilligung und Nutzfläche (NFL),
+- Baujahr legt U-Wert-Vorschläge für alle unterstützten Bauteile vor, nicht nur für das gerade geöffnete Bauteil,
+- gemeinsame Geometrie liefert die Bauteilflächen; abweichende Werte bleiben überschreibbar,
+- gemeinsamer Hüllstatus mit Energiefluss: relevante Bauteile türkis schraffiert, nicht betrachtete Bauteile beerenfarben; der Status kann im geöffneten Bauteil geändert werden,
+- automatische Maßnahmenpakete berücksichtigen ausschließlich als thermische Hülle relevante Bauteile; der Status wird in der Maßnahmenkarte mitgespeichert,
 - Berry-Pflichtkennzeichnung bei fehlendem Bestands-U-Wert,
+- separaten Variantenblock entfernt; Mindeststandard, wirtschaftlicher Bereich und ambitionierte Variante stehen direkt im Ergebnis,
 - Dämmdicken in 2-cm-Schritten bei exakter interner Rechnung,
 - diskrete Fenster- und Türvarianten,
 - Kostenoptimum und dynamische Amortisation getrennt,
 - Energie, Heizkosten, Betriebs-CO₂ und Oberflächentemperatur,
-- Sowiesokosten und drei manuelle Förderpositionen,
+- vereinheitlichte Kostenkarten mit i-Hinweisen, eingeklappte Kosten-/Finanzannahmen und drei offen sichtbare Förderpositionen,
 - Infografik „Sanierung auf einen Blick“,
 - eigene SVGs mit Fallback,
-- gemeinsame Projektmaßnahme.
+- gemeinsame Projektmaßnahme,
+- automatische Auswertung aller ausreichend vorbereiteten und für die thermische Hülle relevanten Bauteile,
+- drei gespeicherte Hüllpakete für Mindeststandard, wirtschaftliche Variante und ambitionierte Variante,
+- automatische Vorschläge bleiben mit `automatic-proposal / not-reviewed` klar von bestätigten Maßnahmen getrennt,
+- Fingerprint markiert Pakete nach Änderungen an Geometrie, U-Werten, Klima, Kosten oder Finanzannahmen als veraltet.
 
 Haustür:
 
@@ -297,11 +335,26 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 
 ## 9. Nächste Schritte
 
-1. V0.6 praktisch testen und Bauteil & Sanierung als V1.0 freigeben.
-2. Master-Excel vervollständigen und Excel→JSON-Export umsetzen.
-3. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen.
-4. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren.
-5. später Heizung & Verteilung, Sommerkomfort sowie Speicher/Eigenverbrauch.
+1. Drei reale Beratungsfälle vollständig durchspielen und dabei insbesondere TIRIS-Geometrie, NFL/BGF-Nachführung, Hüllstatus, Klimabezug und Druckausgaben fachlich validieren.
+2. Auffälligkeiten aus den Praxisfällen als gezielte V1.x-Korrekturen einarbeiten.
+3. Master-Excel fachlich vervollständigen und die vorhandene Excel→JSON-Datenpipeline mit den freigegebenen Datenbeständen prüfen.
+4. allgemeines Wirtschaftlichkeitstool für gespeicherte Maßnahmen und automatische Hüllpakete.
+5. Sanierungsfahrplan mit sortierbaren Maßnahmenkacheln, Abhängigkeiten und Kommentaren; später Heizung & Verteilung, Sommerkomfort sowie Speicher/Eigenverbrauch.
+
+## 9a. Technischer Bereinigungsstand 07.08.2026
+
+- fehlendes `shared/js/project-address-manager.js` ergänzt, einschließlich sicherer Behandlung von Adresswechseln,
+- veralteten Startseitenlink auf Energiefluss V4.4 korrigiert,
+- Dokumentationsindex auf die tatsächlich vorhandenen zentralen Dokumente reduziert,
+- Versionsangaben der Toolübersicht vervollständigt und Bild `in_arbeit.jpg` eingebunden.
+
+- Favicon zentral unter `assets/svg/favicon.svg` eingebunden; alle Seiten verwenden denselben Pfad,
+- Bauteil & Sanierung auf V1.0 gesetzt,
+- Methodenbereiche von Klima, Heizlast, Energiefluss und Bauteil um die tatsächlich verwendeten Formeln ergänzt,
+- HGT-Fallback im Bauteiltool auch rechnerisch als Stand-alone-Energiegrundlage aktiviert,
+- abschließender statischer Release-Check für lokale Ressourcen, gemeinsame UI-Bausteine und Produktionsdatenbestand ergänzt,
+- ungenutzte Altdateien `assets/svg/48x48.svg` und `tools/manifest.json` aus dem Zielstand entfernt; das neue Favicon liegt ausschließlich unter `assets/svg/favicon.svg`,
+- die kompakte Struktur-ZIP enthält absichtlich nicht alle großen BEV-/INCA-Dateien; für den Produktionsordner ist die Vollständigkeit gegen die jeweiligen Manifeste als eigener Releasepunkt dokumentiert.
 
 ## 10. Übergaberegeln
 
@@ -311,3 +364,23 @@ Intern exakt rechnen, bewusst gerundet anzeigen:
 - vor dem Löschen alter Dateien abhängige Tools testen,
 - bei jedem Paket Syntax-, JSON-, Rechen-, Import/Export- und Druckprüfung durchführen,
 - diese Datei bei jedem Paket aktualisieren.
+
+## 11. Finaler V1.0-Vorcheck 07.08.2026
+
+Der statische und automatisierte Gesamtcheck ist abgeschlossen. Alle fünf Werkzeuge können aus einem leeren Projekt heraus gestartet werden; notwendige Standort-, Geometrie-, Klima- oder HGT-Schritte werden im jeweiligen Werkzeug selbst angeboten. Gemeinsame Werte verwenden die kanonischen Projektpfade aus `ARCHITEKTUR_UND_DATENMODELL.md`.
+
+Die sichtbaren Methodenbereiche dokumentieren die tatsächlich implementierten Rechenwege. Für den Wirtschaftlichkeitskern sind Barwert, wiederkehrende Kosten, Ersatzinvestitionen, Entsorgung, Restwert, Gesamtkostenbarwert, Annuität, dynamische Amortisation und analytische Dämmdicke beschrieben. Die Normdokumentation reproduziert keinen lizenzierten Normtext; der Rechenkern wird separat gegen hinterlegte Validierungsfälle geprüft.
+
+Offene Punkte für die Praxisabnahme:
+
+- vollständigen Produktionsordner auf alle BEV-/INCA-Dateien gegen die Manifeste prüfen,
+- visuelle Druckabnahme mit realen Projektdaten,
+- Geometrieableitung an drei realen Beratungsobjekten mit Plan-/Energieausweisdaten vergleichen,
+- bekannte Grenze: Haustüren besitzen im Energiefluss noch keinen eigenen kalibrierten Verlustanteil und nutzen im Bauteiltool daher Klima/HGT für die Energieeinsparung.
+
+Nicht für die V1.0-Abnahme erforderlich, aber später sinnvoll: lokale Nunito-Schriftdateien auf eine Variable-Font-Lösung reduzieren und die gemeinsame Klima-/Heizlast-Seitenstruktur technisch weiter entflechten, falls die Wartbarkeit wichtiger wird als die derzeitige gemeinsame Implementierung.
+
+
+## Praxisvalidierung August 2026
+
+Die V1.0-Basis wurde mit mehreren realen bzw. einem theoretischen Beratungsfall sowie einem zusätzlichen Bestands-Energieausweis durchgespielt. Bestätigt wurden insbesondere die Bedeutung einer korrigierten NFL, die Plausibilität der Heizlastorientierung und der Nutzen der gemeinsamen Projektwerte. Der verbrauchsbasierte HWB bleibt unverändert. Für den unabhängigen „HWB aus U-Werten“ wurde nach der Praxisprüfung der frühere Ansatz `15 °C Bilanztemperatur + vollständiger Gewinnabzug` ersetzt: Die aktuelle Kandidatenmethode skaliert die INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und berücksichtigt interne/solare Gewinne mit einem transparenten pauschalen Nutzungsfaktor von 0,55. Der Wert bleibt als Beratungs-Plausibilitätsmodell gekennzeichnet und wird in V1.x weiter gegen reale Energieausweise validiert.

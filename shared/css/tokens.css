@@ -4,15 +4,24 @@
 ========================================================= */
 
 :root {
-  /* Marke · V1.1 Farbfeinschliff */
-  --turquoise: #126575;
-  --berry: #a52d52;
-  --turquoise-light: #d8e9e8;
-  --berry-light: #ebcdd6;
-  --turquoise-soft: #f0f6f5;
-  --berry-soft: #faf1f4;
-  --turquoise-dark: #0a4350;
-  --berry-dark: #76203d;
+  /* Marke */
+  --turquoise: #34ab9f;
+  --berry: #b3446c;
+  --turquoise-light: #d8f3f0;
+  --berry-light: #f1dae2;
+  --turquoise-soft: #ebf9f8;
+  --berry-soft: #f8edf1;
+  --turquoise-dark: #24756d;
+  --berry-dark: #6f2a43;
+
+  /* RGB-Kanäle für transparente Varianten */
+  --color-primary-rgb: 52 171 159;
+  --color-primary-light-rgb: 216 243 240;
+  --color-primary-soft-rgb: 235 249 248;
+  --color-secondary-rgb: 179 68 108;
+  --color-secondary-light-rgb: 241 218 226;
+  --color-secondary-soft-rgb: 248 237 241;
+  --color-secondary-dark-rgb: 111 42 67;
 
   /* Semantische Farben */
   --color-primary: var(--turquoise);
@@ -24,28 +33,32 @@
   --color-secondary-soft: var(--berry-soft);
   --color-secondary-dark: var(--berry-dark);
 
-  --color-success: #0a4350;
-  --color-success-soft: #f0f6f5;
-  --color-warning: #d8a532;
-  --color-warning-dark: #8a6515;
-  --color-warning-soft: #fbf6e9;
-  --color-danger: #8f2244;
-  --color-danger-soft: #f9e7ee;
+  --color-success: #24756d;
+  --color-success-soft: #ebf9f8;
+  --color-warning: #9a6a16;
+  --color-warning-dark: #6f4b0e;
+  --color-warning-soft: #fff5df;
+  --color-danger: #7a1f2d;
+  --color-danger-soft: #fde8ec;
+  --color-danger-line: #e7a5b2;
   --color-info: #324542;
-  --color-info-soft: #eef5f4;
+  --color-info-soft: #eef8f6;
 
   /* Text und Flächen */
-  --text-dark: #2d3133;
-  --text-light: #f8f6f1;
-  --text-muted: #5a6468;
-  --text-subtle: #70797c;
+  --text-dark: #0c2724;
+  --text-dark-rgb: 12 39 36;
+  --text-light: #ebf9f8;
+  --text-muted: #526562;
+  --text-subtle: #60716f;
   --white: #ffffff;
-  --page-background: #f8f6f1;
-  --surface-card: #fffefb;
-  --surface-muted: #f4f1eb;
-  --surface-subtle: #f1eee8;
-  --line: rgba(45, 49, 51, 0.12);
-  --line-strong: #d7d9d2;
+  --white-rgb: 255 255 255;
+  --page-background: #f9fbfa;
+  --page-background-rgb: 249 251 250;
+  --surface-card: #ffffff;
+  --surface-muted: #f8fbfa;
+  --surface-subtle: #f3f7f6;
+  --line: rgba(12, 39, 36, 0.12);
+  --line-strong: #d7e3e1;
 
   /* Schrift */
   --font-body: "Nunito", sans-serif;
@@ -65,12 +78,22 @@
   --radius-round: 50%;
 
   /* Schatten */
-  --shadow-soft: 0 12px 35px rgba(45, 49, 51, 0.08);
-  --shadow-hover: 0 16px 42px rgba(45, 49, 51, 0.13);
-  --shadow-card: 0 12px 32px rgba(18, 101, 117, 0.10);
+  --shadow-soft: 0 12px 35px rgba(12, 39, 36, 0.08);
+  --shadow-hover: 0 16px 42px rgba(12, 39, 36, 0.13);
+  --shadow-rgb: 28 75 71;
+  --shadow-card: 0 12px 32px rgb(var(--shadow-rgb) / 0.08);
 
   /* Layout */
   --content-width: 820px;
   --project-header-main-ratio: 2fr;
   --project-header-side-ratio: 1fr;
+
+  /* Kompatibilitäts-Aliase für bestehende Tool-Styles */
+  --color-border: var(--line-strong);
+  --color-surface-muted: var(--surface-muted);
+  --color-text-muted: var(--text-muted);
+  --radius-md: var(--radius-medium);
+  --space-sm: var(--space-1);
+  --space-md: var(--space-2);
+  --space-lg: var(--space-4);
 }

@@ -1,10 +1,11 @@
 'use strict';
 
 /*
- * Diagnosewerkzeug für die Praxisvalidierung des unabhängigen „HWB aus U-Werten“.
- * Die Fälle sind bewusst anonymisiert und enthalten nur die numerischen Größen,
- * die für den Methodenvergleich benötigt werden. Sie legen NOCH KEINEN fachlichen
- * Sollwert fest. Der produktive Energiefluss-Rechenkern bleibt unverändert.
+ * Praxisdiagnose für den unabhängigen „HWB aus U-Werten“.
+ * Die Fälle sind anonymisiert. Sie dokumentieren sowohl den früheren Ansatz
+ * (HGT15 + vollständiger Gewinnabzug) als auch die V1.0-Kandidatenmethode
+ * (Raumtemperaturbezug + 55 % Gewinnnutzung). Die Referenzwerte sind
+ * Beratungskontrollen und keine normativen Sollwerte.
  */
 
 const assert = require('node:assert/strict');
@@ -12,72 +13,82 @@ const assert = require('node:assert/strict');
 const cases = [
   {
     id: 'A', kind: 'real + Energieausweis',
-    correctedHwb: 51.20798319327731, bgf: 3400,
-    uaAfterWallSemantics: 1368.5, nat: -10.5, fullLoadHours: 2047.2094957983195,
+    referenceHwb: 48.0, bgf: 3400,
+    ua: 1368.5, nat: -10.5, fullLoadHours: 2047.2094957983195,
     ventilation: 88000, internalGains: 60312.6, solarGains: 49000,
-    expectedCurrentAfterWallSemantics: 16.31953818248161,
-    expectedNoExplicitGains: 48.47030288836397,
+    expectedCandidate: 36.987996011121325,
   },
   {
-    id: 'B', kind: 'real + Energieausweis',
-    correctedHwb: 181.5237583774927, bgf: 131,
-    uaAfterWallSemantics: 287.5, nat: -12.8, fullLoadHours: 2284.9590698869474,
+    id: 'B', kind: 'real + Energieausweis / Verbrauchsreferenz',
+    referenceHwb: 181.5237583774927, bgf: 131,
+    ua: 287.5, nat: -12.8, fullLoadHours: 2284.9590698869474,
     ventilation: 3969.9, internalGains: 3074.76, solarGains: 2450,
-    expectedCurrentAfterWallSemantics: 137.9951566299755,
-    expectedNoExplicitGains: 180.16889708799076,
+    expectedCandidate: 194.7089592082849,
   },
   {
     id: 'C', kind: 'theoretischer Testfall',
-    correctedHwb: 177.82738095238093, bgf: 150,
-    uaAfterWallSemantics: 474.5, nat: -12.7, fullLoadHours: 2024.9456162970603,
+    referenceHwb: 177.82738095238093, bgf: 150,
+    ua: 474.5, nat: -12.7, fullLoadHours: 2024.9456162970603,
     ventilation: 4100, internalGains: 2838.24, solarGains: 3062.5,
-    expectedCurrentAfterWallSemantics: 178.73716455577377,
-    expectedNoExplicitGains: 218.07543122244044,
+    expectedCandidate: 244.64135875157706,
   },
   {
     id: 'D', kind: 'real, ohne Energieausweis',
-    correctedHwb: 159.07459374796056, bgf: 220,
-    uaAfterWallSemantics: 594, nat: -12.5, fullLoadHours: 2101.98,
+    referenceHwb: 159.07459374796056, bgf: 220,
+    ua: 594, nat: -12.5, fullLoadHours: 2101.98,
     ventilation: 9405, internalGains: 3902.58, solarGains: 8575,
-    expectedCurrentAfterWallSemantics: 153.81114339772728,
-    expectedNoExplicitGains: 210.527416125,
+    expectedCandidate: 222.040444775,
+  },
+  {
+    id: 'E', kind: 'real + Bestands-Energieausweis',
+    referenceHwb: 79.3, bgf: 580,
+    ua: 500.5, nat: -12.6, fullLoadHours: 2014,
+    ventilation: 16800, internalGains: 10289, solarGains: 12250,
+    expectedCandidate: 72.23512131896554,
   },
 ];
 
-function close(actual, expected, tolerance = 1e-6) {
+const indoorTemperatureC = 22;
+const gainUtilizationFactor = 0.55;
+
+function close(actual, expected, tolerance = 1e-9) {
   assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} != ${expected}`);
 }
 
 const diagnostics = cases.map((item) => {
   const hgt15 = item.fullLoadHours * (15 - item.nat);
-  const transmission = item.uaAfterWallSemantics * hgt15 / 1000;
-  const bridges = transmission * 0.075;
-  const grossLossBeforeGains = transmission + bridges + item.ventilation;
+  const transmission15 = item.ua * hgt15 / 1000;
+  const bridges15 = transmission15 * 0.075;
   const gains = item.internalGains + item.solarGains;
-  const currentHwb = Math.max(grossLossBeforeGains - gains, 0) / item.bgf;
-  const noExplicitGainsHwb = grossLossBeforeGains / item.bgf;
-  const targetRoomHeat = item.correctedHwb * item.bgf;
-  const gainUtilizationRequired = gains > 0
-    ? (grossLossBeforeGains - targetRoomHeat) / gains
-    : null;
+  const formerHwb = Math.max(transmission15 + bridges15 + item.ventilation - gains, 0) / item.bgf;
 
-  close(currentHwb, item.expectedCurrentAfterWallSemantics);
-  close(noExplicitGainsHwb, item.expectedNoExplicitGains);
+  const hgtCandidate = item.fullLoadHours * (indoorTemperatureC - item.nat);
+  const transmissionCandidate = item.ua * hgtCandidate / 1000;
+  const bridgesCandidate = transmissionCandidate * 0.075;
+  const utilizedGains = gains * gainUtilizationFactor;
+  const candidateHwb = Math.max(
+    transmissionCandidate + bridgesCandidate + item.ventilation - utilizedGains,
+    0
+  ) / item.bgf;
+
+  close(candidateHwb, item.expectedCandidate);
 
   return {
     id: item.id,
     kind: item.kind,
-    correctedHwb: Number(item.correctedHwb.toFixed(1)),
-    currentHwb: Number(currentHwb.toFixed(1)),
-    noExplicitGainsHwb: Number(noExplicitGainsHwb.toFixed(1)),
-    gainUtilizationRequired: gainUtilizationRequired === null
-      ? null
-      : Number(gainUtilizationRequired.toFixed(3)),
+    referenceHwb: Number(item.referenceHwb.toFixed(1)),
+    formerHwb: Number(formerHwb.toFixed(1)),
+    candidateHwb: Number(candidateHwb.toFixed(1)),
+    candidateDeviationPercent: Number(((candidateHwb - item.referenceHwb) / item.referenceHwb * 100).toFixed(1)),
   };
 });
 
 console.log(JSON.stringify({
   passed: true,
-  note: 'Diagnose – kein produktiver Sollwert. Negative bzw. >1 liegende erforderliche Gewinnnutzungsgrade zeigen, dass ein einzelner pauschaler Gewinnfaktor die vier Fälle nicht konsistent erklärt.',
+  method: {
+    indoorTemperatureC,
+    gainUtilizationFactor,
+    note: 'V1.0-Beratungskandidat; keine Norm-HWB-Berechnung. Weitere reale Energieausweise bleiben Teil der Validierung.',
+  },
   diagnostics,
 }, null, 2));

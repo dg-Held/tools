@@ -160,9 +160,9 @@ Das kompakte Übergabepaket enthält absichtlich nur einen kleinen Ausschnitt de
 Der Quellcode der Druckansichten und die gemeinsame Druck-CSS wurden statisch abgeglichen. Die visuelle Endabnahme im Browser beziehungsweise im erzeugten PDF erfolgt mit den drei realen Beratungsfällen; dabei insbesondere Seitenumbrüche, Diagrammgrößen und lange Projekttitel/Adressen prüfen.
 
 
-## Praxisfälle 08/2026 – offener HWB-U-Regressionssatz
+## Praxisfälle 08/2026 – HWB-U-Diagnose und Regression
 
-Vier Beratungsfälle wurden als Diagnosebasis ausgewertet. Solange die methodische Entscheidung zwischen Bilanztemperaturmodell und expliziter Wärmebilanz nicht abgeschlossen ist, werden **keine neuen produktiven Sollwerte des HWB-U-Modells festgeschrieben**; sonst würde eine möglicherweise falsche Methode durch Regressionstests konserviert. `tests/diagnose-hwb-u-practice-cases.js` hält die anonymisierten Zahlenstände und beide aktuell diskutierten Rechenvarianten reproduzierbar fest, ist aber ausdrücklich ein Diagnose- und kein Freigabetest. Nach der fachlichen Auswahl werden daraus feste Regressionstests für den gewählten Rechenkern. Bis dahin müssen bestehende Rechen-, Geometrie-, Hüllstatus-, Wirtschafts- und Release-Tests unverändert bestehen.
+Fünf anonymisierte Praxis-/Referenzfälle dokumentieren den Methodenvergleich des unabhängigen HWB-U-Modells. `tests/diagnose-hwb-u-practice-cases.js` hält sowohl den früheren Ansatz `HGT15 + vollständiger Gewinnabzug` als auch die V1.0-Kandidatenmethode mit Raumtemperaturbezug und 55 % Gewinnnutzung reproduzierbar fest. Die Kandidatenwerte sind Regressionen für die implementierte Beratungslogik, **keine normativen Sollwerte**. Weitere reale Energieausweise sollen ergänzt werden; eine spätere V1.x-Methodenverbesserung darf die Regressionen bewusst aktualisieren, muss die fachliche Änderung aber dokumentieren. Die übrigen Rechen-, Geometrie-, Hüllstatus-, Wirtschafts- und Release-Tests müssen unverändert bestehen.
 
 Zusätzliche Release-Prüfungen für die finale V1.0-Schleife:
 - ältere Außenwandeingabe wird korrekt nach „opak ohne Fenster“ migriert,
