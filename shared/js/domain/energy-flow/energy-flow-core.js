@@ -25,7 +25,7 @@
   function calculate(inputs) {
     const assumptions = inputs.assumptions ?? {};
     const annualEnergyKwh = positive(inputs.annualEnergyKwh);
-    const usefulHeatFactor = clamp(finite(inputs.usefulHeatFactor, 0.85), 0.01, 10);
+    const usefulHeatFactor = clamp(finite(inputs.usefulHeatFactor, 0.85), 0.01, 1);
     const persons = positive(inputs.persons);
     const hotWaterIncluded = Boolean(inputs.hotWaterIncluded);
     const heatedFloorAreaM2 = positive(inputs.heatedFloorAreaM2);
@@ -70,12 +70,11 @@
     const roomHeatRawKwh = usefulHeatTotalKwh - hotWaterKwh;
     const roomHeatKwh = Math.max(roomHeatRawKwh, 0);
     const systemLossKwh = Math.max(annualEnergyKwh - usefulHeatTotalKwh, 0);
-    const environmentalHeatKwh = Math.max(usefulHeatTotalKwh - annualEnergyKwh, 0);
 
     const internalGainsKwh = internalGainsWM2 * heatedFloorAreaM2 * 8.76;
     const solarGainsKwh = solarRadiationFactor * windowAreaM2 * glazingShare * solarUtilizationFactor;
     const ventilationLossKwh = ventilationLossKwhM3a * conditionedVolumeM3;
-    const totalInputsKwh = annualEnergyKwh + environmentalHeatKwh + internalGainsKwh + solarGainsKwh;
+    const totalInputsKwh = annualEnergyKwh + internalGainsKwh + solarGainsKwh;
 
     const residualEnvelopeWithBridgesKwh =
       totalInputsKwh - systemLossKwh - hotWaterKwh - ventilationLossKwh;
@@ -117,6 +116,12 @@
     const natC = optionalFinite(climate.natC);
     const averageFullLoadHours = optionalFinite(climate.averageFullLoadHours);
     const balanceTemperatureC = optionalFinite(climate.balanceTemperatureC) ?? 15;
+    const comparisonIndoorTemperatureC = Math.max(indoorTemperatureC, balanceTemperatureC);
+    const comparisonGainUtilizationFactor = clamp(
+      finite(assumptions.comparisonGainUtilizationFactor, 0.55),
+      0,
+      1
+    );
     const climateAvailable = natC !== null
       && averageFullLoadHours !== null
       && averageFullLoadHours > 0
@@ -128,6 +133,8 @@
       natC,
       averageFullLoadHours,
       balanceTemperatureC,
+      comparisonIndoorTemperatureC,
+      comparisonGainUtilizationFactor,
       period: climate.period ?? null,
       source: climate.source ?? null,
       heatingDegreeHoursKh: null,
@@ -135,6 +142,7 @@
       thermalBridgesKwh: null,
       ventilationKwh: ventilationLossKwh,
       gainsKwh: internalGainsKwh + solarGainsKwh,
+      utilizedGainsKwh: (internalGainsKwh + solarGainsKwh) * comparisonGainUtilizationFactor,
       calculatedRoomHeatKwh: null,
       calculatedDeliveredKwh: null,
       calculatedHwbKwhM2a: null,
@@ -143,14 +151,15 @@
     };
 
     if (climateAvailable) {
-      const heatingDegreeHoursKh = averageFullLoadHours * (balanceTemperatureC - natC);
+      const heatingDegreeHoursKh = averageFullLoadHours * (comparisonIndoorTemperatureC - natC);
       const calculatedTransmissionKwh = totalUaWK * heatingDegreeHoursKh / 1000;
       const calculatedThermalBridgesKwh = calculatedTransmissionKwh * thermalBridgeShare;
+      const utilizedGainsKwh = (internalGainsKwh + solarGainsKwh) * comparisonGainUtilizationFactor;
       const calculatedGrossHeatLossKwh = calculatedTransmissionKwh
         + calculatedThermalBridgesKwh
         + ventilationLossKwh;
       const calculatedRoomHeatKwh = Math.max(
-        calculatedGrossHeatLossKwh - internalGainsKwh - solarGainsKwh,
+        calculatedGrossHeatLossKwh - utilizedGainsKwh,
         0
       );
       const calculatedDeliveredKwh = (calculatedRoomHeatKwh + hotWaterKwh) / usefulHeatFactor;
@@ -165,6 +174,7 @@
         heatingDegreeHoursKh,
         transmissionKwh: calculatedTransmissionKwh,
         thermalBridgesKwh: calculatedThermalBridgesKwh,
+        utilizedGainsKwh,
         calculatedRoomHeatKwh,
         calculatedDeliveredKwh,
         calculatedHwbKwhM2a: safeBgf ? calculatedRoomHeatKwh / safeBgf : null,
@@ -175,10 +185,10 @@
 
     const warnings = [];
     if (roomHeatRawKwh < 0) {
-      warnings.push('Der Warmwasserabzug ist größer als die berechnete Nutzwärme. Verbrauch, Nutzwärmefaktor oder Personenzahl prüfen.');
+      warnings.push('Der Warmwasserabzug ist größer als die berechnete Nutzwärme. Verbrauch, Nutzungsgrad oder Personenzahl prüfen.');
     }
     if (residualEnvelopeWithBridgesKwh < 0) {
-      warnings.push('Die gewählten Eingaben ergeben negative Verluste der Gebäudehülle. Verbrauch, Volumen, Lüftungsannahme oder Nutzwärmefaktor prüfen.');
+      warnings.push('Die gewählten Eingaben ergeben negative Verluste der Gebäudehülle. Verbrauch, Volumen, Lüftungsannahme oder Nutzungsgrad prüfen.');
     }
     if (!activeComponents.length) {
       warnings.push('Es ist kein Bauteil mit positiver Fläche und positivem U-Wert aktiviert.');
@@ -196,6 +206,7 @@
         solarRadiationFactor,
         glazingShare,
         solarUtilizationFactor,
+        comparisonGainUtilizationFactor,
         ventilationLossKwhM3a,
         thermalBridgeShare,
       },
@@ -216,7 +227,6 @@
         internalKwh: internalGainsKwh,
         solarKwh: solarGainsKwh,
         deliveredKwh: annualEnergyKwh,
-        environmentalHeatKwh,
         totalKwh: totalInputsKwh,
       },
       losses: {

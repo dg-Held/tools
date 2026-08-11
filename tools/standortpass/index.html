@@ -3,11 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<link href="../../assets/svg/favicon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
 <title>Standortpass Gebäude &amp; Umgebung | Tools für Energieberatung</title>
 <meta content="Standortpass für die Vorbereitung einer Energieberatung mit amtlichen Standort-, Gebäude-, Solar- und Risikodaten." name="description"/>
-<link href="../../styles.css?v=2" rel="stylesheet"/>
-<link href="standortpass.css?v=13" rel="stylesheet"/><link href="../../shared/css/components.css?v=3" rel="stylesheet"/><link href="../../shared/css/print.css?v=4" rel="stylesheet"/>
+<link href="../../styles.css" rel="stylesheet"/>
+<link href="standortpass.css?v=8" rel="stylesheet"/><link href="../../shared/css/components.css?v=2" rel="stylesheet"/><link href="../../shared/css/print.css?v=1" rel="stylesheet"/>
 </head>
 <body>
 <header class="site-header">
@@ -27,32 +26,38 @@
 </header>
 <main class="standortpass-page">
 <section class="container test-intro report-title-block">
-<p class="eyebrow">Standort · Gebäude</p>
+<p class="eyebrow">Beratungsvorbereitung · Tirol</p>
 <h1>Standortpass Gebäude &amp; Umgebung</h1>
-<p class="test-lead">Amtliche Standortdaten und überschlägige Gebäudegrößen für die Vorbereitung der Energieberatung – automatisch gebündelt und nachvollziehbar dokumentiert.</p>
+<p class="test-lead">
+        Amtliche Standortinformationen, bewusst überschlägige Gebäudeableitungen und klare Prüfhilfen in einer gemeinsamen Projektbasis.
+      </p>
+<p class="test-disclaimer">
+        Der Standortpass ersetzt keine Detailplanung. Amtliche Daten, Ableitungen und manuelle Angaben bleiben unterscheidbar; automatische Gebäudegrößen sind Orientierungswerte und können später korrigiert werden.
+      </p>
 </section>
 <div data-project-header=""></div>
-
-<section aria-labelledby="live-address-title" class="container test-panel shared-address-card" data-address-section="">
+<section aria-labelledby="overview-title" class="container overview-panel">
+<div class="panel-heading"><div><p class="eyebrow">Projektübersicht</p><h2 id="overview-title">Prüfstatus</h2><p>Die Übersicht aktualisiert sich während der Standortprüfung automatisch.</p></div></div>
+<div class="project-overview-grid" id="projectOverviewGrid"></div>
+</section>
+<section aria-labelledby="live-address-title" class="container test-panel" data-address-section="">
 <div class="panel-heading">
 <div>
-<p class="eyebrow">Gebäudestandort</p>
+<p class="eyebrow">1 · Projektstandort</p>
 <h2 id="live-address-title">Standort auswählen</h2>
-
+<p>
+            Adresse suchen und als gemeinsame Projektadresse übernehmen.
+          </p>
 </div>
 <span class="status-chip status-chip--muted" id="tirisLiveAddressStatus">nicht geprüft</span>
 </div>
-<div class="address-field-meta">
-<span id="tirisLiveAddressLabel">PLZ, Gemeinde, Straße und Hausnummer</span>
-<span class="address-provider-label">BEV-Vorschläge 2026-04-01 · TIRIS live</span>
-</div>
 <label class="search-field">
-<span class="visually-hidden">PLZ, Gemeinde, Straße und Hausnummer</span>
-<input aria-labelledby="tirisLiveAddressLabel" aria-controls="tirisLiveAddressResults" aria-expanded="false" autocomplete="off" id="tirisLiveAddressInput" placeholder="z. B. 6112 w oder 6020 Bürgerstraße 1" type="search"/>
+<span>Adresse – schnelle BEV-Vorschläge, anschließend TIRIS-Live-Abgleich</span>
+<input aria-controls="tirisLiveAddressResults" aria-expanded="false" autocomplete="off" id="tirisLiveAddressInput" placeholder="z. B. 6112 w oder 6020 Bürgerstraße 1" type="search"/>
 </label>
 <div class="action-row address-action-row">
-<button class="visually-hidden" id="searchTirisLiveAddressButton" tabindex="-1" type="button">Adresse suchen</button>
-<span class="action-note address-live-note" id="tirisParsedAddress">Mindestens drei Zeichen eingeben.</span>
+<button class="primary-button" id="searchTirisLiveAddressButton" type="button">Adresse suchen</button>
+<span class="action-note" id="tirisParsedAddress">Mindestens drei Zeichen eingeben. Die gewählte Adresse wird live mit TIRIS abgeglichen.</span>
 </div>
 <div class="suggestions" hidden="" id="tirisLiveAddressResults" role="listbox"></div>
 <details class="location-data-details no-print">
@@ -81,9 +86,10 @@
 </div>
 </details>
 <div class="report-run-card no-print" id="reportRunCard">
-<div class="report-run-summary">
-<strong>Standortbericht erstellen</strong>
-<details class="metric-info report-info"><summary aria-label="Information zum Prüflauf" class="info-tip">i</summary><div class="metric-info-popover" id="reportRunMessage">Gebäude, Höhenlage, Solar, Umweltwärme, Naturgefahren, Schutzstatus und Radon werden nacheinander geprüft.</div></details>
+<div>
+<span class="mini-label">Automatischer Ablauf</span>
+<strong>Standortbericht in einem Durchlauf erstellen</strong>
+<p id="reportRunMessage">Nach der Adressauswahl werden Gebäude, Höhenlage, Solar, Umweltwärme, Naturgefahren, Schutzstatus und Radon nacheinander geprüft.</p>
 <div class="report-progress" hidden="" id="reportProgress">
 <div class="report-progress-bar"><span id="reportProgressBar"></span></div>
 <small id="reportProgressText">Bereit.</small>
@@ -91,13 +97,9 @@
 </div>
 <div class="report-run-actions">
 <span class="status-chip status-chip--muted" id="reportRunStatus">Adresse fehlt</span>
-<button class="primary-button" disabled="" id="runReportButton" type="button">Standort analysieren</button>
+<button class="primary-button" disabled="" id="runReportButton" type="button">Bericht erstellen</button>
 </div>
 </div>
-</section>
-<section aria-labelledby="overview-title" class="container overview-panel">
-<div class="panel-heading"><div><p class="eyebrow">Projektübersicht</p><h2 id="overview-title">Prüfstatus</h2></div></div>
-<div class="project-overview-grid" id="projectOverviewGrid"></div>
 </section>
 <section aria-labelledby="basis-title" class="container test-panel dev-only">
 <div class="panel-heading">
@@ -117,14 +119,16 @@
 <div class="service-result" hidden="" id="basisResult"></div>
 <div class="service-result" hidden="" id="tirisAddressLayerResult"></div>
 </section>
-<section aria-labelledby="area-building-title" class="container main-tool-area" hidden="" id="area-building">
-<div class="main-area-heading"><div><p class="eyebrow">1 · Gebäude</p><h2 id="area-building-title">Gebäude &amp; Standort</h2><p>TIRIS-Gebäude und daraus abgeleitete, prüfbare Beratungsgrößen.</p></div></div>
+<section aria-labelledby="area-building-title" class="container main-tool-area" id="area-building">
+<div class="main-area-heading"><div><p class="eyebrow">1 · Gebäude</p><h2 id="area-building-title">Gebäude &amp; Standort</h2><p>Amtliche Gebäude- und Höhendaten plus bewusst überschlägige, manuell korrigierbare Beratungswerte.</p></div></div>
 <section aria-labelledby="building-title" class="tool-subpanel">
 <div class="panel-heading">
 <div>
 <p class="eyebrow">Gebäudegeometrie</p>
 <h2 id="building-title">Gebäude automatisch zuordnen</h2>
-<p>Das passendste TIRIS-Gebäude wird automatisch vorgeschlagen.</p>
+<p>
+            Zuerst wird der Adresspunkt direkt gegen die TIRIS-Dachpolygone geprüft. Nur bei fehlendem oder mehrdeutigem Treffer wird die Umgebung geladen.
+          </p>
 </div>
 <span class="status-chip status-chip--muted" id="buildingStatus">Adresse fehlt</span>
 </div>
@@ -152,7 +156,7 @@
 </div>
 <div>
 <div class="geometry-heading-row">
-<h3>Orthofoto + DKM + TIRIS-Polygon</h3>
+<h3>Orthofoto + TIRIS-Polygon</h3>
 <label class="compact-field orthophoto-scale-field">
 <span>Ausschnitt</span>
 <select id="orthophotoScale">
@@ -164,7 +168,6 @@
 </div>
 <div class="geometry-stage" id="geometryStage">
 <img alt="TIRIS Orthofoto des Gebäudestandorts" class="orthophoto-image" hidden="" id="orthophotoImage"/>
-<img alt="DKM-Grundstücksgrenzen" class="dkm-overlay-image" hidden="" id="dkmOverlayImage"/>
 <svg aria-label="Gefundene Gebäudegeometrien" id="buildingSvg" role="img" viewbox="0 0 520 360"></svg>
 </div>
 <p class="geometry-note" id="orthophotoStatus">Orthofoto wird mit der Geometrie geladen.</p>
@@ -178,7 +181,6 @@
 </div>
 <div class="selected-building-actions">
 <span class="origin-label">Amtlich · TIRIS</span>
-<details class="metric-info"><summary aria-label="Info zur Gebäudequelle" class="info-tip">i</summary><div class="metric-info-popover">Datenstand: <strong id="metricStand">–</strong><br/>Technisch aktualisiert: <strong id="metricUpdated">–</strong></div></details>
 </div>
 </div>
 <div class="metric-grid-test metric-grid-test--compact">
@@ -199,8 +201,8 @@
 <strong id="metricHeightMedian">–</strong>
 </div>
 <div class="metric metric--summary">
-<div class="compact-card-heading"><span>Gebäudevolumen</span><details class="metric-info"><summary aria-label="Info zum Gebäudevolumen" class="info-tip">i</summary><div class="metric-info-popover">Automatischer TIRIS-Orientierungswert: Dachprojektion × Medianhöhe. Das ist das äußere geometrische Volumen, nicht das konditionierte Volumen.</div></details></div>
-<strong id="metricVolumeRounded">–</strong>
+<div class="compact-card-heading"><span>Datenstand Gebäude</span><details class="metric-info"><summary aria-label="Info zum Datenstand" class="info-tip">i</summary><div class="metric-info-popover">Datenstand des TIRIS-Gebäudeobjekts.<br/>Technisch aktualisiert: <strong id="metricUpdated">–</strong></div></details></div>
+<strong id="metricStand">–</strong>
 </div>
 </div>
 <div class="action-row manual-step-action terrain-inline-action" id="terrainManualAction">
@@ -213,37 +215,49 @@
 </div>
 <div class="estimate-block">
 <div class="validation-heading">
-<div><span class="mini-label">Beratungsentwurf</span><h3>Gebäudegrößen prüfen</h3></div>
+<div>
+<span class="mini-label">Beratungsentwurf</span>
+<h3>Überschlägige Gebäudegrößen</h3>
 </div>
-<input id="storeyHeightModule" type="hidden" value="3.2"/>
-<input id="usableFloorAreaFactor" type="hidden" value="75"/>
-<input id="manualHeatedFloorAreaValue" type="hidden"/>
-<div aria-live="polite" class="geometry-quick-summary" id="geometryQuickSummary">Gebäudegeometrie noch nicht verfügbar.</div>
-<details class="estimate-details">
-<summary><span>Abgeleitete Gebäudegrößen</span><small>Automatik, Eingabe und verwendeter Wert</small></summary>
+</div>
+<p class="geometry-note">Automatikwerte bleiben als Referenz erhalten. Ein manueller Wert ersetzt nur den verwendeten Beratungswert. Mit <strong>Auto</strong> wird die manuelle Korrektur wieder gelöscht.</p>
+<div class="estimate-settings estimate-settings--three">
+<label>
+<span>Höhenmodul je Geschoß</span>
+<input id="storeyHeightModule" max="5" min="2.3" step="0.1" type="number" value="3.2"/>
+<small>m je oberirdischem Geschoß</small>
+</label>
+<label>
+<span>Nutzflächenfaktor</span>
+<input id="usableFloorAreaFactor" max="100" min="40" step="1" type="number" value="75"/>
+<small>% der BGF als Erstannahme</small>
+</label>
+<label>
+<span>Fensterflächenanteil</span>
+<input id="windowSharePercent" max="100" min="0" step="1" type="number" value="20"/>
+<small>% der Brutto-Außenwand als grobe Erstannahme</small>
+</label>
+</div>
 <div class="estimate-table-wrap">
 <table class="estimate-table">
 <thead><tr><th>Bauteil / Größe</th><th>Automatik</th><th>Manuell</th><th>Verwendet</th></tr></thead>
 <tbody>
-<tr class="estimate-key-row"><th>Oberirdische Geschoße</th><td id="autoStoreysValue">–</td><td><div class="manual-value-control"><input id="manualStoreysValue" min="1" placeholder="prüfen" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualStoreysValue" type="button">↺ Auto</button></div></td><td id="effectiveStoreysValue">–</td></tr>
-<tr class="estimate-key-row"><th>Nutzfläche (NFL)</th><td id="autoUsableFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualUsableFloorAreaValue" min="0" placeholder="prüfen" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualUsableFloorAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveUsableFloorAreaValue">–</td></tr>
-<tr class="estimate-slider-row"><th>Davon beheizt</th><td colspan="3"><div class="estimate-range-control"><span>0 %</span><input aria-label="Anteil der beheizten Nutzfläche" id="heatedSharePercent" max="100" min="0" step="1" type="range" value="100"/><strong id="heatedShareOutput">100 %</strong></div></td></tr>
-<tr><th>Bruttogeschoßfläche (BGF)</th><td id="autoGrossFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualGrossFloorAreaValue" min="0" placeholder="nur wenn bekannt" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualGrossFloorAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveGrossFloorAreaValue">–</td></tr>
-<tr><th>Beheizte Nutzfläche</th><td id="autoHeatedFloorAreaValue">–</td><td><span class="derived-input-note">NFL × beheizter Anteil</span></td><td id="effectiveHeatedFloorAreaValue">–</td></tr>
-<tr><th>Außenwandfläche (ohne Fenster)</th><td id="autoExteriorWallValue">–</td><td><div class="manual-value-control"><input id="manualExteriorWallValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualExteriorWallValue" type="button">↺ Auto</button></div></td><td id="effectiveExteriorWallValue">–</td></tr>
-<tr class="estimate-slider-row"><th>Fensterflächenanteil</th><td colspan="3"><div class="estimate-range-control"><span>gering · 10 %</span><input aria-label="Fensterflächenanteil an der technischen Brutto-Fassade" id="windowSharePercent" max="50" min="10" step="1" type="range" value="20"/><strong id="windowShareOutput">20 %</strong><span>sehr hoch · 50 %</span></div></td></tr>
-<tr><th>Fensterfläche</th><td id="autoWindowAreaValue">–</td><td><div class="manual-value-control"><input id="manualWindowAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualWindowAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveWindowAreaValue">–</td></tr>
-<tr><th>Oberste Geschoßfläche</th><td id="autoTopFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualTopFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualTopFloorAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveTopFloorAreaValue">–</td></tr>
-<tr><th>Kellerdecke / unterste Geschoßfläche</th><td id="autoBasementAreaValue">–</td><td><div class="manual-value-control"><input id="manualBasementAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualBasementAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveBasementAreaValue">–</td></tr>
-<tr><th>Dachneigung</th><td id="autoRoofPitchValue">0°</td><td><div class="manual-value-control"><input id="manualRoofPitchValue" max="89" min="0" placeholder="0" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualRoofPitchValue" type="button">↺ Auto</button></div></td><td id="effectiveRoofPitchValue">0°</td></tr>
-<tr><th>Dachschrägefläche</th><td id="autoRoofSlopeAreaValue">–</td><td><div class="manual-value-control"><input id="manualRoofSlopeAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualRoofSlopeAreaValue" type="button">↺ Auto</button></div></td><td id="effectiveRoofSlopeAreaValue">–</td></tr>
-<tr><th>Gebäudevolumen</th><td id="autoVolumeValue">–</td><td><div class="manual-value-control"><input id="manualVolumeValue" min="0" placeholder="ganze m³" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualVolumeValue" type="button">↺ Auto</button></div></td><td id="effectiveVolumeValue">–</td></tr>
+<tr><th>Oberirdische Geschoße</th><td id="autoStoreysValue">–</td><td><div class="manual-value-control"><input id="manualStoreysValue" min="1" placeholder="ganze Zahl" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualStoreysValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveStoreysValue">–</td></tr>
+<tr><th>Bruttogeschoßfläche (BGF)</th><td id="autoGrossFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualGrossFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualGrossFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveGrossFloorAreaValue">–</td></tr>
+<tr><th>Nutzfläche (NFL)</th><td id="autoUsableFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualUsableFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualUsableFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveUsableFloorAreaValue">–</td></tr>
+<tr><th>Beheizte Nutzfläche</th><td id="autoHeatedFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualHeatedFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualHeatedFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveHeatedFloorAreaValue">–</td></tr>
+<tr><th>Außenwandfläche</th><td id="autoExteriorWallValue">–</td><td><div class="manual-value-control"><input id="manualExteriorWallValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualExteriorWallValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveExteriorWallValue">–</td></tr>
+<tr><th>Fensterfläche</th><td id="autoWindowAreaValue">–</td><td><div class="manual-value-control"><input id="manualWindowAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualWindowAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveWindowAreaValue">–</td></tr>
+<tr><th>Oberste Geschoßfläche</th><td id="autoTopFloorAreaValue">–</td><td><div class="manual-value-control"><input id="manualTopFloorAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualTopFloorAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveTopFloorAreaValue">–</td></tr>
+<tr><th>Kellerdecke / unterste Geschoßfläche</th><td id="autoBasementAreaValue">–</td><td><div class="manual-value-control"><input id="manualBasementAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualBasementAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveBasementAreaValue">–</td></tr>
+<tr><th>Dachneigung</th><td id="autoRoofPitchValue">–</td><td><div class="manual-value-control"><input id="manualRoofPitchValue" max="89" min="0" placeholder="Grad" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualRoofPitchValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveRoofPitchValue">–</td></tr>
+<tr><th>Dachschrägefläche</th><td id="autoRoofSlopeAreaValue">–</td><td><div class="manual-value-control"><input id="manualRoofSlopeAreaValue" min="0" placeholder="ganze m²" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualRoofSlopeAreaValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveRoofSlopeAreaValue">–</td></tr>
+<tr><th>Gebäudevolumen</th><td id="autoVolumeValue">–</td><td><div class="manual-value-control"><input id="manualVolumeValue" min="0" placeholder="ganze m³" step="1" type="number"/><button class="estimate-reset" data-reset-id="manualVolumeValue" title="Manuelle Eingabe löschen und Automatikwert verwenden" type="button">↺ Auto</button></div></td><td id="effectiveVolumeValue">–</td></tr>
 </tbody>
 </table>
 </div>
-</details>
 <div class="notice notice--soft" id="heatedFloorAreaConstraintNote" hidden></div>
-<div class="notice notice--soft" id="geometryConsistencyNote" hidden></div>
+<p class="geometry-note estimate-method-note">Kurzmethodik: Geschoße = Medianhöhe / 3,2 m, auf ganze Zahlen gerundet · BGF ≈ Dachprojektion × Geschoße · NFL ≈ BGF × 0,75 · beheizte Nutzfläche zunächst ≈ NFL · Außenwand ≈ Umfang × Medianhöhe · Fenster = Außenwand × Fensteranteil · oberste/unterste Fläche ≈ Dachprojektion · Dachschräge = Dachprojektion / cos(Dachneigung) · Volumen ≈ Dachprojektion × Medianhöhe. Details unten unter „Methodik &amp; Datenbasis“.</p>
 </div>
 <div class="validation-block dev-only">
 <div class="validation-heading"><div><span class="mini-label">Nur Entwicklung</span><h3>Mit bekannten Gebäudeabmessungen vergleichen</h3></div><button class="quiet-button" id="clearValidationButton" type="button">Werte leeren</button></div>
@@ -251,7 +265,7 @@
 <label><span>Grund-/EG-Fläche</span><input id="knownFootprint" min="0" placeholder="z. B. 205" step="1" type="number"/><small>m²</small></label>
 <label><span>Fassadenumfang</span><input id="knownPerimeter" min="0" placeholder="z. B. 58" step="1" type="number"/><small>m</small></label>
 <label><span>mittlere Gebäudehöhe</span><input id="knownHeight" min="0" placeholder="z. B. 8,9" step="0.1" type="number"/><small>m</small></label>
-<label><span>Außenwand opak (ohne Fenster)</span><input id="knownWallArea" min="0" placeholder="z. B. 522" step="1" type="number"/><small>m²</small></label>
+<label><span>Außenwand brutto</span><input id="knownWallArea" min="0" placeholder="z. B. 522" step="1" type="number"/><small>m²</small></label>
 </div>
 <button class="secondary-button" id="compareBuildingButton" type="button">Vergleich berechnen</button>
 <div class="comparison-result" hidden="" id="buildingComparisonResult"></div>
@@ -266,36 +280,38 @@
 </article>
 </section>
 </section>
-<section aria-labelledby="area-heat-title" class="container main-tool-area" hidden="" id="area-heat">
-<div class="main-area-heading"><div><p class="eyebrow">2 · Wärmeversorgung</p><h2 id="area-heat-title">Wärmeversorgung</h2><p>Wärmenetz, Erdsonden und Grundwasser als kompakte Vorprüfung.</p></div></div>
+<section aria-labelledby="area-heat-title" class="container main-tool-area" id="area-heat">
+<div class="main-area-heading"><div><p class="eyebrow">2 · Wärmeversorgung</p><h2 id="area-heat-title">Wärmeversorgung</h2><p>Wärmenetz-Check sowie Hinweise zu Erdsonden, Grundwasser und wasserrechtlichen Randbedingungen.</p></div></div>
 <section aria-labelledby="heat-v1-title" class="tool-subpanel">
-<div class="panel-heading"><div><p class="eyebrow">Wärmenetz</p><h2 id="heat-v1-title">Wärmenetz</h2><p>Bis zur Klärung der Schnittstelle direkt in TIRIS prüfen.</p></div><span class="status-chip status-chip--warning">manueller Check</span></div>
-<div class="manual-check-card"><div><strong>Direkter Kartencheck</strong><p>Die Projektadresse wird für die manuelle Prüfung übernommen.</p></div><a class="external-action-link" href="https://maps.tirol.gv.at/" id="heatTirisLink" rel="noopener noreferrer" target="_blank">Wärmenetz am Standort in TIRIS prüfen ↗</a></div>
+<div class="panel-heading"><div><p class="eyebrow">Wärmenetz</p><h2 id="heat-v1-title">Wärmenetz</h2><p>Die TIRIS-Daten sind identifiziert; ein stabiler öffentlicher Datenzugang ist beim Land Tirol angefragt.</p></div><span class="status-chip status-chip--warning">manueller Check</span></div>
+<div class="manual-check-card"><div><strong>Automatische Prüfung derzeit nicht verfügbar</strong><p>Bis zur Klärung der Schnittstelle wird das Wärmenetz direkt in tirisMaps kontrolliert.</p></div><a class="external-action-link" href="https://maps.tirol.gv.at/" id="heatTirisLink" rel="noopener noreferrer" target="_blank">Wärmenetz am Standort in TIRIS prüfen ↗</a></div>
 </section>
 <section aria-labelledby="environmental-heat-title" class="tool-subpanel">
 <div class="panel-heading">
 <div>
 <p class="eyebrow">Umweltwärme</p>
-<h2 id="environmental-heat-title">Wasser &amp; Untergrund</h2>
-<p>Amtliche Hinweise zu Erdsonden, Grundwasser und Schutzbereichen.</p>
+<h2 id="environmental-heat-title">Wasser &amp; Untergrund – Standortinformationen</h2>
+<p>Bestehende Erdsonden, Grundwassernutzungen, Messstellen sowie wasserrechtliche Hinweise im Standortumfeld.</p>
 </div>
 <span class="status-chip status-chip--muted" id="environmentalHeatStatus">Adresse fehlt</span>
 </div>
 <div class="action-row manual-step-action" id="environmentalHeatManualAction">
 <button class="primary-button" disabled="" id="testEnvironmentalHeatButton" type="button">Umweltwärme-Daten prüfen</button>
-<span class="action-note">500-m-Umkreis · Standortflächen · TIRIS/WIS.</span>
+<span class="action-note">500-m-Umkreis für Anlagen/Beobachtungspunkte · Flächenhinweise direkt am Standort · mit TIRIS- und WIS-Links.</span>
 </div>
 <div class="service-result" hidden="" id="environmentalHeatResult"></div>
 </section>
 </section>
-<section aria-labelledby="area-solar-title" class="container main-tool-area" hidden="" id="area-solar">
+<section aria-labelledby="area-solar-title" class="container main-tool-area" id="area-solar">
 <div class="main-area-heading"><div><p class="eyebrow">3 · Solar</p><h2 id="area-solar-title">Solar</h2></div></div>
 <section aria-labelledby="solar-title" class="tool-subpanel">
 <div class="panel-heading">
 <div>
 <p class="eyebrow">Solar</p>
 <h2 id="solar-title">Sonnenbahn &amp; Verschattung</h2>
-<p>Sonnenbahn und Verschattung durch Gelände, Gebäude und Vegetation.</p>
+<p>
+            Sonnenbahn und Verschattung aus GeoLand-Daten – Gelände sowie zusätzliche Verschattung durch Gebäude und Vegetation.
+          </p>
 </div>
 <span class="status-chip status-chip--muted" id="solarStatus">Adresse fehlt</span>
 </div>
@@ -351,14 +367,14 @@
 </div>
 </section>
 </section>
-<section aria-labelledby="area-risks-title" class="container main-tool-area" hidden="" id="area-risks">
+<section aria-labelledby="area-risks-title" class="container main-tool-area" id="area-risks">
 <div class="main-area-heading"><div><p class="eyebrow">4 · Standort &amp; Risiken</p><h2 id="area-risks-title">Standort &amp; Risiken</h2></div></div>
 <section aria-labelledby="heritage-title" class="tool-subpanel">
 <div class="panel-heading">
 <div>
 <p class="eyebrow">Kultur &amp; Schutzstatus</p>
 <h2 id="heritage-title">Denkmalschutz &amp; baukultureller Kontext</h2>
-<p>BDA-Denkmalliste und TIRIS-Hinweise zum baukulturellen Kontext.</p>
+<p>BDA-Denkmalliste sowie TIRIS-Hinweise zu Kunstkataster, Ensemble und Archäologie.</p>
 </div>
 <span class="status-chip status-chip--muted" id="heritageStatus">Adresse fehlt</span>
 </div>
@@ -373,7 +389,7 @@
 <div>
 <p class="eyebrow">Hochwasser &amp; Naturgefahren</p>
 <h2 id="hazards-title">Hochwasser &amp; Naturgefahren</h2>
-<p>HQ30, HQ100, HQ300 und weitere amtliche Gefahrenhinweise; mit Gebäude wird das gesamte Polygon geprüft.</p>
+<p>HQ30, HQ100, HQ300 sowie weitere amtliche Gefahren- und Hinweisbereiche. Mit Gebäude wird das gesamte Polygon geprüft.</p>
 </div>
 <span class="status-chip status-chip--muted" id="hazardStatus">Adresse fehlt</span>
 </div>
@@ -388,7 +404,7 @@
 <div>
 <p class="eyebrow">Radon</p>
 <h2 id="radon-title">Radon · Gebietsstatus</h2>
-<p>Amtlicher Gemeinde-Gebietsstatus für Radonvorsorge und Radonschutz.</p>
+<p>Amtlicher Gebietsstatus über die Gemeindekennziffer: Radonvorsorgegebiet und zusätzlich ausgewiesenes Radonschutzgebiet.</p>
 </div>
 <span class="status-chip status-chip--muted" id="radonStatus">Adresse fehlt</span>
 </div>
@@ -454,35 +470,34 @@
 </section>
 <section aria-labelledby="methodology-title" class="container methodology-panel no-print">
 <details>
-<summary><span><strong id="methodology-title">Methode und Datenbasis</strong><small>Formeln, Rundungen, Datenquellen und Grenzen nachvollziehbar dokumentiert.</small></span></summary>
+<summary><span><strong id="methodology-title">Methodik &amp; Datenbasis</strong><small>Formeln, Rundungen, Datenquellen und Grenzen nachvollziehbar dokumentiert.</small></span></summary>
 <div class="methodology-content">
 <div>
 <h3>Gebäudeableitungen</h3>
 <ul>
-<li><strong>Geschoße:</strong> TIRIS-Medianhöhe ÷ 3,2 m, auf ganze Geschoße gerundet. 3,2 m ist keine Norm-Geschoßhöhe, sondern eine bewusst gerundete Standortpass-Annahme. In OIB-Energiekennzahlen wurde für bestimmte Bezugsgrößen mit 3,0 m Geschoßhöhe gerechnet; der zusätzliche Spielraum von 0,2 m berücksichtigt hier überschlägig Deckenaufbau und Dachanteile.</li>
-<li><strong>BGF:</strong> zunächst Dachprojektion × verwendete Geschoßzahl. Wird eine Nutzfläche eingetragen und keine bekannte BGF vorgegeben, folgt BGF = NFL ÷ 0,75. Eine bekannte BGF aus Plan oder Energieausweis hat Vorrang.</li>
-<li><strong>Nutzfläche:</strong> zunächst BGF × 0,75. Der Faktor ist eine bewusst einfache, eher großzügige Beratungsannahme und kein allgemeiner Normwert. Eine TU-Wien-Auswertung von 337 Ein- und Zweifamilienhäusern ergab einen Mittelwert von 67,56 %, einen Median von 67,41 % und für die mittleren 50 % der Objekte 63,39–71,60 %. Deshalb bleibt die NFL eine besonders wichtige Prüfeingabe und bekannte Plan- oder Energieausweiswerte haben Vorrang.</li>
-<li><strong>Beheizte Nutzfläche:</strong> verwendete NFL × eingestellter beheizter Anteil; Standard 100 %.</li>
-<li><strong>Grundfläche:</strong> verwendete BGF ÷ verwendete Geschoße. Oberste und unterste Geschoßfläche folgen dieser Grundfläche; die Dachprojektion bleibt dagegen das amtliche TIRIS-Dachpolygon.</li>
-<li><strong>Außenwand:</strong> Nutzerseitig immer als opake Außenwand <em>ohne Fenster</em>. Intern wird zunächst die technische Brutto-Fassade aus TIRIS-Umfang × Medianhöhe abgeleitet; bei geänderter Grundfläche wird der Umfang bei ähnlicher Gebäudeform mit der Quadratwurzel des Flächenverhältnisses skaliert. Davon wird die Fensterfläche einmalig abgezogen.</li>
-<li><strong>Fenster:</strong> technische Brutto-Fassade × Fensterflächenanteil; Standard 20 %, Regler 10–50 %. Die OIB-Belichtungsanforderung bezieht sich auf die Lichteintrittsfläche einzelner Aufenthaltsräume im Verhältnis zu deren Bodenfläche und ist kein fixer Mindestanteil an der gesamten Fassade.</li>
-<li><strong>Dachschräge:</strong> TIRIS-Dachprojektion ÷ cos(Dachneigung); Standard 0°. Änderungen an NFL, BGF oder Geschoßzahl verändern die Dachfläche daher nicht.</li>
-<li><strong>Gebäudevolumen:</strong> verwendete Grundfläche × TIRIS-Medianhöhe. BGF × Gebäudehöhe wäre dimensionsmäßig zwar ebenfalls ein Volumen, würde bei mehrgeschoßigen Gebäuden das äußere Gebäudevolumen aber ungefähr um die Geschoßzahl überhöhen.</li>
+<li><strong>Oberirdische Geschoße:</strong> TIRIS-Medianhöhe / Höhenmodul; Standard 3,2 m. Das Ergebnis wird bewusst auf eine ganze Geschoßzahl gerundet, Halbgeschoße bleiben außerhalb dieser Orientierung.</li>
+<li><strong>Bruttogeschoßfläche (BGF):</strong> Dachprojektion × oberirdische Geschoße.</li>
+<li><strong>Nutzfläche (NFL):</strong> BGF × Nutzflächenfaktor; Standard 75 %, weil von der Dachprojektion als Grundfläche ausgegangen wird.</li>
+<li><strong>Beheizte Nutzfläche:</strong> zunächst gleich NFL. Ein manueller Projektwert – etwa aus Heizlast oder Energieausweis – hat Vorrang.</li>
+<li><strong>Außenwandfläche:</strong> Dachpolygon-Umfang × TIRIS-Medianhöhe. Bewusst ohne universellen Korrekturfaktor.</li>
+<li><strong>Fensterfläche:</strong> Brutto-Außenwand × eingestellter Fensterflächenanteil; Standard 20 %, jederzeit manuell ersetzbar. Die opake Außenwand wird für die gemeinsame Datennutzung intern als Außenwand minus Fenster mitgeführt.</li>
+<li><strong>Oberste / unterste Geschoßfläche:</strong> zunächst Dachprojektion als Orientierungswert.</li>
+<li><strong>Dachschräge:</strong> Dachprojektion / cos(Dachneigung), sobald eine Dachneigung angegeben wurde.</li>
+<li><strong>Gebäudevolumen:</strong> Dachprojektion × Medianhöhe; geometrischer Orientierungswert, kein konditioniertes Volumen.</li>
 </ul>
-<p class="method-source-links"><strong>Herkunft:</strong> <a href="https://www.oib.or.at/sites/default/files/erlaeuternde_bemerkungen_richtlinie_6_26.03.15_0.pdf" rel="noopener noreferrer" target="_blank">OIB-Erläuterungen: Bezugs-Geschoßhöhe</a> · <a href="https://repositum.tuwien.at/handle/20.500.12708/15291" rel="noopener noreferrer" target="_blank">TU Wien: Verhältnis NUF/BGF</a> · <a href="https://www.oib.or.at/sites/default/files/oib-rl_3_ausgabe_mai_2023.pdf" rel="noopener noreferrer" target="_blank">OIB-Richtlinie 3, Belichtung</a>.</p>
 </div>
 <div>
-<h3>Priorität und Rundung</h3>
-<p>Priorität: bekannter manueller Wert → aus manueller Basis abgeleiteter Wert → TIRIS-Automatik → Fallback. Geschoßzahl und Nutzfläche sind im Beratungsablauf besonders hervorgehoben. Eine manuelle BGF ist nur sinnvoll, wenn sie tatsächlich aus Plan oder Energieausweis bekannt ist.</p>
-<p>Automatische Geschoße werden ganzzahlig gerundet. Große Flächen werden bewusst grob gerundet; manuelle Werte bleiben exakt. 0 löscht bei Flächen/Volumen die manuelle Korrektur, bei der Dachneigung ist 0° ein gültiges Flachdach.</p>
+<h3>Rundung &amp; Priorität</h3>
+<p>Automatische Geschoße werden auf ganze Zahlen gerundet. Große Flächen werden bewusst grob gerundet: meist 10 m², NFL 5 m² und Fenster 5 m². Manuelle Werte bleiben exakt und haben Vorrang vor Automatikwerten. 0 löscht bei Flächen/Volumen die manuelle Korrektur; bei Dachneigung ist 0° als Flachdach zulässig.</p>
+<p>Priorität: manuell bestätigt → amtlich automatisch → abgeleiteter Orientierungswert → Fallback.</p>
 </div>
 <div>
 <h3>Datenquellen</h3>
-<p>TIRIS/Land Tirol: Adresse, Katastralgemeinde, Gebäude, DGM, Orthofoto, DKM/Kataster, Wasser/Umweltwärme, Hochwasser/Naturgefahren und Kulturkontext. GeoLand/voibos: Sonnenbahn, Gelände- und Oberflächenhorizont sowie theoretische Sonnenscheindauer. BDA: veröffentlichte Denkmalliste. RIS: Radonschutzverordnung.</p>
+<p>TIRIS/Land Tirol: Adresse, Katastralgemeinde, Gebäude, DGM, Orthofoto, Wasser/Umweltwärme, Hochwasser/Naturgefahren und Kulturkontext. GeoLand/voibos: Sonnenbahn, Gelände- und Oberflächenhorizont sowie theoretische Sonnenscheindauer. BDA: veröffentlichte Denkmalliste. RIS: Radonschutzverordnung.</p>
 </div>
 <div>
 <h3>Grenzen</h3>
-<p>Der Standortpass ist eine Vorprüfung. Orthofotos können erhöhte Dächer lageversetzt darstellen; DKM-Grenzen sind daher eine visuelle Plausibilitätsprüfung und keine zentimetergenaue Grenzabstandsmessung. Das digitale Geländemodell beschreibt das Gelände; das Oberflächenmodell berücksichtigt zusätzlich Gebäude und Vegetation. Kein Treffer in einer ausgewerteten Gefahrenfläche ist keine Sicherheitsbestätigung. Wasser-/Erdwärmehinweise sind keine Eignungszusage.</p>
+<p>Der Standortpass ist eine Vorprüfung. Orthofotos können erhöhte Dächer lageversetzt darstellen. Das digitale Geländemodell beschreibt das Gelände; das Oberflächenmodell berücksichtigt zusätzlich Gebäude und Vegetation. Kein Treffer in einer ausgewerteten Gefahrenfläche ist keine Sicherheitsbestätigung. Wasser-/Erdwärmehinweise sind keine Eignungszusage.</p>
 </div>
 </div>
 </details>
@@ -499,7 +514,7 @@
 <div><h3>TIRIS BASIS</h3><pre id="rawBasis">–</pre></div>
 <div><h3>TIRIS Adress-Layer</h3><pre id="rawTirisAddresses">–</pre></div>
 <div><h3>Gebäude</h3><pre id="rawBuildings">–</pre></div>
-<div><h3>Orthofoto + DKM</h3><pre id="rawOrthophoto">–</pre></div>
+<div><h3>Orthofoto</h3><pre id="rawOrthophoto">–</pre></div>
 <div><h3>DGM</h3><pre id="rawTerrain">–</pre></div>
 <div><h3>GeoLand Sonnenstand</h3><pre id="rawSolar">–</pre></div>
 <div><h3>TIRIS Solarpotenzial-WMS</h3><pre id="rawSolarMap">–</pre></div>
@@ -513,23 +528,18 @@
 </details>
 </section>
 <section aria-label="Kompakter Standortbericht" class="container print-report-only" id="printReportSummary">
-<header class="print-report-header standortpass-print-title">
-<h1>Standortpass Gebäude &amp; Umgebung</h1>
-</header>
 <div class="print-report-grid" id="printReportGrid"></div>
 </section>
-<section class="container bottom-report-actions no-print tool-next-actions">
-<a class="primary-button button-link" href="../klima/index.html">Klima</a>
-<a class="primary-button button-link" href="../heizlast/index.html">Heizlast</a>
-<a class="primary-button button-link" href="../energiefluss-v4/index.html">Energiefluss</a>
+<section class="container bottom-report-actions no-print">
 <button class="secondary-button" id="printReportButtonBottom" type="button">Drucken / PDF</button>
+<span>Der Ausdruck verwendet eine verdichtete Beratungsansicht statt der vollständigen Arbeitsoberfläche.</span>
 </section>
 </main>
 <footer class="site-footer">
 <div class="container footer-inner">
 <div>
 <p class="footer-name">Tools</p>
-<p class="footer-note">Standortpass V1.0 · gemeinsame Datenbasis</p>
+<p class="footer-note">Standortpass Gebäude &amp; Umgebung · V1.0 · gemeinsame Datenbasis</p>
 </div>
 <nav aria-label="Rechtliche Informationen" class="footer-links">
 <a href="../../pages/kontakt.html#impressum">Impressum</a>
@@ -547,7 +557,7 @@
 
 
 
-<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=6"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-address-manager.js?v=2"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/js/services/building-geometry-service.js?v=2"></script><script src="standortpass.js?v=14"></script>
-<script src="standortpass-v1.js?v=16"></script>
+<script src="../../shared/js/paths.js?v=1"></script><script src="../../shared/js/data-model.js?v=2"></script><script src="../../shared/js/project-migrations.js?v=1"></script><script src="../../shared/js/value-resolver.js?v=1"></script><script src="../../shared/js/project-store.js?v=4"></script><script src="../../shared/js/project-header.js?v=2"></script><script src="../../shared/js/project-address-manager.js?v=1"></script><script src="../../shared/js/project-value-field.js?v=1"></script><script src="../../shared/js/services/address-provider-core.js?v=1"></script><script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script><script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script><script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script><script src="../../shared/js/services/location-core.js?v=1"></script><script src="../../shared/js/services/building-geometry-service.js?v=1"></script><script src="standortpass.js?v=10"></script>
+<script src="standortpass-v1.js?v=12"></script>
 </body>
 </html>

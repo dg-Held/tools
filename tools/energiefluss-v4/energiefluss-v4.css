@@ -23,7 +23,7 @@
 .v4-methodology {
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-large);
-  background: rgb(var(--white-rgb) / 0.97);
+  background: rgba(255, 255, 255, 0.97);
   box-shadow: var(--shadow-card);
 }
 
@@ -252,18 +252,18 @@
 @page { size: A4 portrait; margin: 8mm; }
 
 @media print {
-  .energy-v4-page { padding: 0 !important; background: var(--white) !important; }
+  .energy-v4-page { padding: 0 !important; background: #fff !important; }
   .v4-workspace,
   .address-card,
   .tool-intro { display: none !important; }
   .v4-print-report { display: block !important; width: 194mm; margin: 0; }
   .v4-print-page { page-break-after: always; break-after: page; }
   .v4-print-page:last-child { page-break-after: auto; break-after: auto; }
-  .print-title { display: flex; justify-content: space-between; gap: 8mm; align-items: end; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 0.3mm solid var(--line-strong); }
+  .print-title { display: flex; justify-content: space-between; gap: 8mm; align-items: end; margin-bottom: 4mm; padding-bottom: 2mm; border-bottom: 0.3mm solid var(--line-strong); }
   .print-title h1 { margin: 0; font-size: 14pt; }
   .print-title p { margin: 0; max-width: 75mm; font-size: 7pt; text-align: right; color: var(--text-muted); }
-  .print-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; margin-bottom: 3mm; }
-  .print-kpis article { padding: 2.2mm; border-radius: 2mm; text-align: center; color: var(--white); background: var(--color-primary); }
+  .print-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; margin-bottom: 4mm; }
+  .print-kpis article { padding: 2.2mm; border-radius: 2mm; text-align: center; color: #fff; background: var(--color-primary); }
   .print-kpis article:nth-child(even) { background: var(--color-secondary); }
   .print-kpis span { display: block; font-size: 6pt; }
   .print-kpis strong { display: block; margin: 0.5mm 0; font-size: 10pt; }
@@ -272,14 +272,14 @@
   .print-flow h2 { margin: 0 0 2mm; font-size: 10pt; }
   .print-flow-entry { margin-bottom: 1.5mm; }
   .print-flow-entry div:first-child { display: flex; justify-content: space-between; gap: 2mm; font-size: 7pt; }
-  .print-flow-bar { height: 1.8mm; margin-top: 0.5mm; border-radius: 99mm; background: var(--surface-subtle); overflow: hidden; }
+  .print-flow-bar { height: 1.8mm; margin-top: 0.5mm; border-radius: 99mm; background: #edf3f2; overflow: hidden; }
   .print-flow-bar i { display: block; height: 100%; background: var(--color-primary); }
   .print-flow > div:last-child .print-flow-bar i { background: var(--color-secondary); }
   .print-house { display: grid; place-items: center; min-height: 70mm; }
   .print-house img { width: 38mm; max-height: 55mm; }
   .print-house strong { font-size: 9pt; }
-  .print-note { margin-top: 3mm; padding: 2mm; border-left: 1mm solid var(--color-primary); font-size: 7pt; color: var(--text-muted); background: var(--color-primary-soft); }
-  .print-section { margin-top: 3mm; break-inside: avoid; }
+  .print-note { margin-top: 4mm; padding: 2mm; border-left: 1mm solid var(--color-primary); font-size: 7pt; color: var(--text-muted); background: var(--color-primary-soft); }
+  .print-section { margin-top: 4mm; break-inside: avoid; }
   .print-section h2 { margin: 0 0 1.5mm; font-size: 10pt; }
   .print-data-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; }
   .print-data-grid div { padding: 1.8mm; border: 0.25mm solid var(--line-strong); border-radius: 1.5mm; }
@@ -289,7 +289,7 @@
   .print-envelope th,
   .print-envelope td { padding: 1.5mm; border-bottom: 0.25mm solid var(--line-strong); font-size: 7pt; text-align: left; }
   .print-envelope th { background: var(--surface-muted); color: var(--text-muted); }
-  .print-footer-note { margin-top: 3mm; font-size: 6.5pt; color: var(--text-muted); }
+  .print-footer-note { margin-top: 4mm; font-size: 6.5pt; color: var(--text-muted); }
 }
 
 /* V4.3 – kompakte gemeinsame Ausgangslage */
@@ -391,7 +391,7 @@
   /* Keine künstliche Seitenhöhe: sie verursachte den leeren zweiten Bogen. */
   .v4-print-page { min-height: 0 !important; page-break-after: always; break-after: page; }
   .v4-print-page:last-child { page-break-after: auto; break-after: auto; }
-  .print-kpis { margin-top: 3mm; }
+  .print-kpis { margin-top: 4mm; }
   .print-flow-entry--group { font-weight: 800; margin-bottom: 1.2mm; }
   .print-flow-entry--group .print-flow-bar { height: 2.1mm; }
   .print-flow-entry--detail { margin-left: 3mm; margin-bottom: 0.9mm; opacity: 0.72; }
@@ -428,21 +428,21 @@
   width: 18px;
   height: 18px;
   padding: 0;
-  border: 1px solid rgb(var(--white-rgb) / 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.65);
   border-radius: 50%;
   font: inherit;
   font-size: 0.66rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--white);
-  background: rgb(var(--white-rgb) / 0.10);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.10);
   cursor: help;
 }
 .info-tip:hover,
 .info-tip:focus-visible {
   color: var(--text-dark);
-  background: var(--white);
-  border-color: var(--white);
+  background: #fff;
+  border-color: #fff;
   outline: none;
 }
 .info-tip::after {
@@ -507,307 +507,3 @@
 .envelope-field small[data-evaluation="lightgreen"] { color: var(--color-primary-dark); font-weight: 700; }
 .envelope-field small[data-evaluation="orange"] { color: var(--color-warning-dark); font-weight: 700; }
 .envelope-field small[data-evaluation="red"] { color: var(--color-danger); font-weight: 700; }
-
-/* V4.4 · Vereinfachungsschleife und gemeinsame Bedienlogik */
-.address-search-control,
-.address-search-field {
-  display: block;
-  position: relative;
-}
-
-.address-search-control .address-results {
-  margin-top: 0.55rem;
-}
-
-.analysis-action-row {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  margin-top: 0.8rem;
-}
-
-.analysis-button {
-  flex: 0 0 auto;
-}
-
-.analysis-hint {
-  margin: 0;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
-
-.v4-value-field input[type="range"] {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  accent-color: var(--color-primary);
-}
-
-.v4-value-field input[type="range"]:focus {
-  border-color: transparent;
-  outline: 3px solid var(--color-primary-light);
-  outline-offset: 3px;
-}
-
-.v4-range-output {
-  flex: 0 0 auto;
-  min-width: 3.8rem;
-  font-size: 0.82rem;
-  text-align: right;
-  color: var(--color-primary-dark);
-}
-
-/* Ergebniskennzahlen bewusst ruhiger als die Energieflussgrafik. */
-.result-kpis article,
-.result-kpis article:nth-child(even) {
-  color: var(--text-dark);
-  background: var(--surface-card);
-  border: 1px solid var(--line-strong);
-  border-top: 4px solid var(--color-primary);
-  box-shadow: 0 6px 18px rgb(var(--shadow-rgb) / 0.06);
-}
-
-.result-kpis article:nth-child(even) {
-  border-top-color: var(--color-secondary);
-}
-
-.result-kpis article strong {
-  color: var(--text-dark);
-}
-
-.result-kpis article .kpi-status {
-  color: var(--text-muted);
-  opacity: 1;
-}
-
-.result-kpis .info-tip {
-  color: var(--color-primary-dark);
-  border-color: var(--line-strong);
-  background: var(--color-primary-soft);
-}
-
-.result-kpis article:nth-child(even) .info-tip {
-  color: var(--color-secondary-dark);
-  background: var(--color-secondary-light);
-}
-
-.result-kpis .info-tip:hover,
-.result-kpis .info-tip:focus-visible {
-  color: var(--text-light);
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-}
-
-.comparison-copy {
-  min-width: 0;
-}
-
-.comparison-actions {
-  min-width: min(100%, 320px);
-  align-items: stretch;
-}
-
-.calculated-consumption,
-.climate-calculation-action {
-  display: grid;
-  gap: 0.2rem;
-  min-width: 0;
-}
-
-.calculated-consumption {
-  padding-right: 0.9rem;
-  border-right: 1px solid var(--line-strong);
-}
-
-.calculated-consumption span,
-.climate-calculation-action small {
-  font-size: 0.68rem;
-  color: var(--text-muted);
-}
-
-.calculated-consumption strong {
-  font-size: 1rem;
-  color: var(--text-dark);
-}
-
-.climate-calculation-action {
-  justify-items: end;
-}
-
-.method-data-strip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.55rem;
-  margin-top: 0.9rem;
-}
-
-.method-data-strip span {
-  display: grid;
-  gap: 0.15rem;
-  padding: 0.65rem 0.7rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  background: var(--surface-muted);
-}
-
-.method-data-strip strong {
-  color: var(--text-dark);
-}
-
-.energy-next-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.65rem;
-  margin-top: 1.25rem;
-  margin-bottom: 2rem;
-}
-
-@media (max-width: 760px) {
-  .analysis-action-row,
-  .comparison-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .analysis-button {
-    width: 100%;
-  }
-
-  .calculated-consumption {
-    padding-right: 0;
-    padding-bottom: 0.55rem;
-    border-right: 0;
-    border-bottom: 1px solid var(--line-strong);
-  }
-
-  .climate-calculation-action {
-    justify-items: start;
-  }
-
-  .method-data-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .energy-next-actions {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 500px) {
-  .method-data-strip {
-    grid-template-columns: 1fr;
-  }
-
-  .energy-next-actions > * {
-    width: 100%;
-  }
-}
-
-@media print {
-  .print-kpis article,
-  .print-kpis article:nth-child(even) {
-    color: var(--text-dark);
-    background: var(--white);
-    border: 0.25mm solid var(--line-strong);
-    border-top: 1mm solid var(--color-primary);
-  }
-
-  .print-kpis article:nth-child(even) {
-    border-top-color: var(--color-secondary);
-  }
-}
-
-/* =========================================================
-   ENERGIEFLUSS V4.4 · EINHEITLICHER A4-DRUCK
-========================================================= */
-@media print {
-  .v4-print-page--single {
-    page-break-after: auto !important;
-    break-after: auto !important;
-    padding: 0 !important;
-  }
-  .v4-print-page--single .print-title {
-    display: block !important;
-    margin: 0 0 2mm !important;
-    padding: 0 !important;
-    border-bottom: .2mm solid var(--line-strong);
-  }
-  .v4-print-page--single .print-title h1 {
-    margin: 0 0 1.5mm !important;
-    font-size: 17pt !important;
-    line-height: 1.12 !important;
-  }
-  .v4-print-page--single .print-flow {
-    grid-template-columns: 1fr 37mm 1fr !important;
-    gap: 3mm !important;
-  }
-  .v4-print-page--single .print-house {
-    min-height: 48mm !important;
-  }
-  .v4-print-page--single .print-house img {
-    width: 34mm !important;
-    max-height: 42mm !important;
-  }
-  .v4-print-page--single .print-flow-entry { margin-bottom: 1mm !important; }
-  .v4-print-page--single .print-flow-entry--detail { margin-bottom: .55mm !important; }
-  .v4-print-page--single .print-kpis {
-    margin: 2mm 0 !important;
-    gap: 1.5mm !important;
-  }
-  .v4-print-page--single .print-kpis article {
-    padding: 1.6mm !important;
-  }
-  .v4-print-page--single .print-note {
-    margin: 1.8mm 0 0 !important;
-    padding: 1.4mm 1.7mm !important;
-    font-size: 6.3pt !important;
-    line-height: 1.28 !important;
-  }
-  .v4-print-page--single .print-section {
-    margin-top: 2mm !important;
-  }
-  .v4-print-page--single .print-section h2 {
-    margin-bottom: 1mm !important;
-    font-size: 9.5pt !important;
-  }
-  .v4-print-page--single .print-envelope th,
-  .v4-print-page--single .print-envelope td {
-    padding: .9mm 1.1mm !important;
-    font-size: 6.4pt !important;
-    line-height: 1.15 !important;
-  }
-  .v4-print-page--single .print-envelope small {
-    font-size: 5.2pt !important;
-  }
-  .print-base-line {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1mm 3mm;
-    padding: 1.5mm 1.8mm;
-    border: .2mm solid var(--line-strong);
-    border-radius: 1.8mm;
-    background: var(--surface-subtle);
-    font-size: 6.5pt;
-    line-height: 1.25;
-  }
-  .print-base-line span {
-    white-space: nowrap;
-  }
-  .print-base-line b {
-    margin-right: .6mm;
-    color: var(--text-muted);
-    font-weight: 700;
-  }
-  .v4-print-page--single .print-footer-note {
-    margin-top: 1.8mm !important;
-    padding-top: 1.2mm;
-    border-top: .2mm solid var(--line-strong);
-    font-size: 5.6pt !important;
-    line-height: 1.25 !important;
-  }
-}
