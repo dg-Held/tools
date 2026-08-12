@@ -1,6 +1,6 @@
 # Architektur und Datenmodell
 
-**Stand:** 11.08.2026
+**Stand:** 12.08.2026
 
 ## 1. Schichten
 
@@ -266,3 +266,28 @@ Verwendete Bezeichnungen sind insbesondere `aussenwand`, `ogd`, `dach`, `kellerd
 ## Semantikmigration Außenwand v1.5
 
 Beim Laden älterer Projekte wird eine manuelle Standortpass-Eingabe unter `building.geometry.exteriorWallGrossArea` einmalig als opake Außenwand interpretiert und nach `building.geometry.opaqueExteriorWallArea` verschoben. Dadurch werden bereits fensterbereinigte Energieausweisflächen nicht erneut um die Fensterfläche reduziert. Die technische Brutto-Fassade bleibt als abgeleitete Referenz erhalten.
+
+
+## 11. Gemeinsame Beratungs- und Wirtschaftlichkeitsfelder · ab V0.1
+
+Zentrale, toolübergreifende Entscheidungsfelder:
+
+```text
+advice.reason
+advice.timeHorizon
+advice.budgetBand
+advice.budgetEur
+advice.priorities[]
+```
+
+Gemeinsame wirtschaftliche Ebene:
+
+```text
+economics.assumptions
+economics.energyPriceOverrides
+economics.latestCalculation
+```
+
+Toolbezogene, noch nicht kanonische Bedienzustände (z. B. temporäre Maßnahmenselektion oder manuell bestätigte Förderbeträge) bleiben unter `modules.wirtschaftlichkeit`. Rechenannahmen dürfen nicht parallel in Bauteil- und Wirtschaftlichkeitstool gepflegt werden; beide lesen `shared/data/economics/financial-defaults.json` bzw. projektspezifische Overrides.
+
+Der Wirtschaftlichkeitskern bleibt fachneutral: Fachmodule liefern Investitions-/Referenzkomponenten, jährliche Kosten und kostenmindernde Positionen; der Kern berechnet Barwerte, Annuitäten, kumulierte Kostenverläufe und Schnittpunkte.

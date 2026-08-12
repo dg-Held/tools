@@ -5,8 +5,8 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.EnergyEconomicsCore = Object.freeze(api);
 })(typeof window !== 'undefined' ? window : globalThis, function economicsFactory() {
-  const MODEL_VERSION = '1.0.0';
-  const NORM_REFERENCE = 'ÖNORM B 8110-4:2024-04-15';
+  const MODEL_VERSION = '1.1.0';
+  const NORM_REFERENCE = 'ÖNORM B 8110-4:2024-04-15 · ÖNORM M 7140:2021-01 · ÖNORM EN 15459-1:2017';
   const EPSILON = 1e-12;
 
   function finite(value, fallback = 0) {
@@ -108,29 +108,46 @@
   }
 
   function componentCapitalPresentValue(component, periodYears, interestFactor) {
-    const initial = presentValueInitial(component.initialCost);
-    const replacements = presentValueReplacements({
-      cost: component.replacementCost ?? component.initialCost,
-      priceFactor: component.capitalPriceFactor ?? 1,
-      interestFactor,
-      lifetimeYears: component.lifetimeYears,
-      periodYears,
-    });
-    const disposal = presentValueDisposal({
-      cost: component.disposalCost ?? 0,
-      priceFactor: component.disposalPriceFactor ?? component.capitalPriceFactor ?? 1,
-      interestFactor,
-      lifetimeYears: component.lifetimeYears,
-      periodYears,
-    });
-    const residual = presentValueResidual({
-      initialCost: component.initialCost,
-      replacementCost: component.replacementCost ?? component.initialCost,
-      priceFactor: component.capitalPriceFactor ?? 1,
-      interestFactor,
-      lifetimeYears: component.lifetimeYears,
-      periodYears,
-    });
+    const period = nonNegative(periodYears, 0);
+    const startYear = nonNegative(component.startYear, 0);
+    const lifetime = nonNegative(component.lifetimeYears, 0);
+    const capitalP = component.capitalPriceFactor ?? 1;
+    const disposalP = component.disposalPriceFactor ?? capitalP;
+    const initialCost = nonNegative(component.initialCost, 0);
+    const replacementCost = nonNegative(component.replacementCost ?? component.initialCost, 0);
+    const disposalCost = nonNegative(component.disposalCost ?? 0, 0);
+
+    if (startYear > period + EPSILON) {
+      return { initial: 0, replacements: 0, disposal: 0, residual: 0, total: 0 };
+    }
+
+    const initial = presentValue(initialCost, capitalP, interestFactor, startYear);
+    let replacements = 0;
+    let disposal = 0;
+    let lastInstallYear = startYear;
+    let lastInstallCost = initialCost;
+
+    if (lifetime > 0) {
+      for (let year = startYear + lifetime; year < period - EPSILON; year += lifetime) {
+        replacements += presentValue(replacementCost, capitalP, interestFactor, year);
+        disposal += presentValue(disposalCost, disposalP, interestFactor, year);
+        lastInstallYear = year;
+        lastInstallCost = replacementCost;
+      }
+    }
+
+    let residual = 0;
+    if (lifetime > 0 && period > lastInstallYear + EPSILON) {
+      const elapsed = period - lastInstallYear;
+      const remainingShare = Math.max(0, Math.min(1, 1 - elapsed / lifetime));
+      if (remainingShare > EPSILON) {
+        residual = presentValue(lastInstallCost * remainingShare, capitalP, interestFactor, period);
+        disposal += presentValue(disposalCost * (elapsed / lifetime), disposalP, interestFactor, period);
+      } else if (Math.abs(elapsed - lifetime) < EPSILON) {
+        disposal += presentValue(disposalCost, disposalP, interestFactor, period);
+      }
+    }
+
     return { initial, replacements, disposal, residual, total: initial + replacements + disposal - residual };
   }
 
@@ -147,6 +164,25 @@
     return { details, total: details.reduce((sum, item) => sum + item.presentValue, 0) };
   }
 
+  function timedCapitalEventPresentValue(event, interestFactor) {
+    const year = nonNegative(event?.year, 0);
+    return presentValue(
+      finite(event?.amount, 0),
+      event?.priceFactor ?? 1,
+      interestFactor,
+      year
+    );
+  }
+
+  function timedCapitalEventsPresentValue(events, interestFactor) {
+    const details = (events ?? []).map((event) => ({
+      ...event,
+      year: nonNegative(event?.year, 0),
+      presentValue: timedCapitalEventPresentValue(event, interestFactor),
+    }));
+    return { details, total: details.reduce((sum, item) => sum + item.presentValue, 0) };
+  }
+
   function calculateVariant(variant, assumptions = {}) {
     const periodYears = nonNegative(assumptions.periodYears, 0);
     const interestFactor = assumptions.interestFactor ?? factorFromPercent(assumptions.interestRatePercent ?? 0);
@@ -155,7 +191,9 @@
       label: component.label ?? null,
       ...componentCapitalPresentValue(component, periodYears, interestFactor),
     }));
-    const capital = capitalDetails.reduce((sum, item) => sum + item.total, 0);
+    const componentCapital = capitalDetails.reduce((sum, item) => sum + item.total, 0);
+    const timedCapital = timedCapitalEventsPresentValue(variant.capitalEvents, interestFactor);
+    const capital = componentCapital + timedCapital.total;
     const consumption = annualGroupPresentValue(variant.consumptionCosts, periodYears, interestFactor);
     const operation = annualGroupPresentValue(variant.operationCosts, periodYears, interestFactor);
     const total = capital + consumption.total + operation.total;
@@ -164,7 +202,7 @@
       label: variant.label ?? null,
       periodYears,
       interestFactor,
-      capital: { details: capitalDetails, total: capital },
+      capital: { details: capitalDetails, timedEvents: timedCapital.details, componentTotal: componentCapital, total: capital },
       consumption,
       operation,
       totalPresentValue: total,
@@ -185,15 +223,23 @@
     const q = assumptions.interestFactor ?? factorFromPercent(assumptions.interestRatePercent ?? 0);
     const t = nonNegative(timeYears, 0);
     let total = 0;
+    for (const event of variant.capitalEvents ?? []) {
+      const year = nonNegative(event?.year, 0);
+      if (year <= t + EPSILON && year <= nonNegative(assumptions.periodYears, t) + EPSILON) {
+        total += timedCapitalEventPresentValue(event, q);
+      }
+    }
     for (const component of variant.capitalComponents ?? []) {
-      total += nonNegative(component.initialCost, 0);
+      const startYear = nonNegative(component.startYear, 0);
+      if (startYear > t + EPSILON) continue;
+      const capitalP = component.capitalPriceFactor ?? 1;
+      total += presentValue(nonNegative(component.initialCost, 0), capitalP, q, startYear);
       const lifetime = nonNegative(component.lifetimeYears, 0);
       if (!(lifetime > 0)) continue;
       const replacementCost = component.replacementCost ?? component.initialCost ?? 0;
-      const capitalP = component.capitalPriceFactor ?? 1;
       const disposalCost = component.disposalCost ?? 0;
       const disposalP = component.disposalPriceFactor ?? capitalP;
-      for (let year = lifetime; year <= t + EPSILON; year += lifetime) {
+      for (let year = startYear + lifetime; year <= t + EPSILON; year += lifetime) {
         if (year < assumptions.periodYears - EPSILON) {
           total += presentValue(replacementCost, capitalP, q, year);
         }
@@ -254,6 +300,59 @@
     return crossings;
   }
 
+  function differenceSeries(candidate, reference, assumptions, method = 'cumulative', stepYears = 1) {
+    const periodYears = nonNegative(assumptions.periodYears, 0);
+    const step = Math.max(0.25, finite(stepYears, 1));
+    const costAt = method === 'average' ? costAtTimeAverage : costAtTimeCumulative;
+    const points = [];
+    for (let year = 0; year < periodYears - EPSILON; year += step) {
+      const candidateCost = costAt(candidate, assumptions, year);
+      const referenceCost = costAt(reference, assumptions, year);
+      points.push({
+        year,
+        candidateCost,
+        referenceCost,
+        advantage: referenceCost - candidateCost,
+      });
+    }
+    const candidateCost = costAt(candidate, assumptions, periodYears);
+    const referenceCost = costAt(reference, assumptions, periodYears);
+    points.push({
+      year: periodYears,
+      candidateCost,
+      referenceCost,
+      advantage: referenceCost - candidateCost,
+    });
+    return points;
+  }
+
+  function durableAdvantageYear(candidate, reference, assumptions, method = 'cumulative') {
+    const crossings = findCrossings(candidate, reference, assumptions, method);
+    const endYear = nonNegative(assumptions.periodYears, 0);
+    const costAt = method === 'average' ? costAtTimeAverage : costAtTimeCumulative;
+    const endDifference = costAt(candidate, assumptions, endYear) - costAt(reference, assumptions, endYear);
+    if (!(endDifference < -EPSILON)) return null;
+    const amortisations = crossings.filter((entry) => entry.type === 'amortisation');
+    return amortisations.length ? amortisations.at(-1).year : 0;
+  }
+
+  function compareVariants(candidate, reference, assumptions, method = 'cumulative') {
+    const candidateResult = calculateVariant(candidate, assumptions);
+    const referenceResult = calculateVariant(reference, assumptions);
+    const crossings = findCrossings(candidate, reference, assumptions, method);
+    return {
+      candidate: candidateResult,
+      reference: referenceResult,
+      deltaPresentValue: candidateResult.totalPresentValue - referenceResult.totalPresentValue,
+      advantagePresentValue: referenceResult.totalPresentValue - candidateResult.totalPresentValue,
+      deltaAnnuity: candidateResult.annuity - referenceResult.annuity,
+      advantageAnnuity: referenceResult.annuity - candidateResult.annuity,
+      crossings,
+      durableAdvantageYear: durableAdvantageYear(candidate, reference, assumptions, method),
+      series: differenceSeries(candidate, reference, assumptions, method, assumptions.seriesStepYears ?? 1),
+    };
+  }
+
   function energyCostCapitalizationFactor(energyPriceFactor, interestFactor, periodYears) {
     return recurringPresentValueThrough(1, energyPriceFactor, interestFactor, periodYears);
   }
@@ -305,11 +404,16 @@
     presentValueReplacements,
     presentValueDisposal,
     presentValueResidual,
+    timedCapitalEventPresentValue,
+    timedCapitalEventsPresentValue,
     calculateVariant,
     calculateAnnuity,
     costAtTimeAverage,
     costAtTimeCumulative,
     findCrossings,
+    differenceSeries,
+    durableAdvantageYear,
+    compareVariants,
     energyCostCapitalizationFactor,
     usefulEnergyPrice,
     simplifiedOptimalInsulationThickness,

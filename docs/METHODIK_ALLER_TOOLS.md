@@ -1,6 +1,6 @@
 # Methodik aller Tools
 
-**Stand:** 11.08.2026
+**Stand:** 12.08.2026
 
 ## Standortpass
 
@@ -614,3 +614,35 @@ Der gemeinsame Kern kann Anfangsinvestition, Wiederbeschaffung, Restwert, Entsor
 ### Nutzungsdauer
 
 Die Standarddatei unterscheidet informative Normwerte und transparent gekennzeichnete Projekt-Fallbacks. Jeder Wert bleibt überschreibbar und benötigt Quelle, Status und Datenstand.
+
+
+## Wirtschaftlichkeit V0.1
+
+### Grundprinzip
+
+Das Tool vergleicht zwei vollständige Szenarien: Referenzzustand und Sanierungsvariante. Eine ohnehin zu erwartende Erneuerung wird zu ihrem erwarteten Zeitpunkt in der Referenz verbucht und nicht pauschal als heutige Sowiesokosten abgezogen.
+
+Allgemeiner Barwert einer Zahlung `K` im Jahr `t`:
+
+```text
+P_m = 1 + p_m / 100
+Q   = 1 + q / 100
+BW  = K × (P_m / Q)^t
+```
+
+Der gemeinsame Kern berücksichtigt Anfangsinvestitionen, zeitlich verschobene Referenzinvestitionen, Wiederbeschaffungen, Restwerte, jährliche Energie-/Betriebskosten und kostenmindernde Positionen. Für die Kundengrafik wird die Kumulationsmethode verwendet; dadurch können mehrere Amortisations- und Deamortisationspunkte auftreten. Die sichtbare Hauptaussage verwendet nach Möglichkeit den Zeitpunkt, ab dem die Sanierungsvariante dauerhaft günstiger bleibt.
+
+### Gemeinsame Finanzannahmen
+
+`shared/data/economics/financial-defaults.json` enthält ab 12.08.2026 die gemeinsamen Defaults. Informative Vorschlagswerte aus ÖNORM M 7140 werden für Kalkulationszins, Energiepreisentwicklung, HKLS-Personal und haustechnische Anlagenteile getrennt von EAT-Projektentscheidungen gekennzeichnet. Der 30-jährige Betrachtungszeitraum bleibt eine EAT-Beratungsentscheidung.
+
+### Kosten, Förderung und Referenz
+
+- projektspezifisches Angebot > manuell bestätigter Projektwert > EAT-Richtkosten > Fallback,
+- BKI nur interne Plausibilisierungsquelle, nicht öffentliche Laufzeit-Datentabelle,
+- sichtbare Finanzierung (`Gesamtinvestition − mögliche Förderung`) und wirtschaftlich relevante Mehrinvestition werden getrennt ausgewiesen,
+- Förderungen werden vorsichtig als `bis zu` dargestellt und vor Umsetzung bei den Förderstellen verifiziert.
+
+### V0.1-Grenze
+
+Die Oberfläche und der dynamische Rechenkern sind testbar. Die Förderengine ist noch nicht regelbasiert; Heizungs-/PV-Schnellmodelle werden in V0.1 nur mit projektspezifisch ergänzten Werten vollständig wirtschaftlich bewertet.

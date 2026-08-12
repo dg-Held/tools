@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="../../assets/svg/favicon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
+<title>Wirtschaftlichkeit V0.1 | Tools für Energieberatung</title>
+<meta content="Kosten, Förderung und langfristige Wirkung von Sanierungsmaßnahmen verständlich vergleichen." name="description"/>
+<link href="../../styles.css?v=2" rel="stylesheet"/>
+<link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
+<link href="../../shared/css/components.css?v=3" rel="stylesheet"/>
+<link href="../../shared/css/print.css" rel="stylesheet"/>
+<link href="wirtschaftlichkeit.css?v=1" rel="stylesheet"/>
+</head>
+<body data-tool-mode="economics">
+<header class="site-header no-print">
+<div class="container header-inner">
+<a aria-label="Zur Startseite" class="circle-btn logo-circle" href="../../index.html"><img alt="Tools für Energieberatung" height="74" src="../../assets/svg/logo/logo_48.svg" width="74"/></a>
+<nav aria-label="Hauptnavigation"><ul class="nav-list">
+<li><a aria-label="Startseite" class="circle-btn nav-circle" href="../../index.html"><img alt="" class="nav-icon" src="../../assets/svg/icons/icon-home-48.svg"/></a></li>
+<li><a aria-current="page" aria-label="Tools" class="circle-btn nav-circle active" href="../../pages/tools.html"><img alt="" class="nav-icon" src="../../assets/svg/icons/icon-tools-48.svg"/></a></li>
+<li><a aria-label="Über mich" class="circle-btn nav-circle" href="../../pages/about.html"><img alt="" class="nav-icon" src="../../assets/svg/icons/icon-about-48.svg"/></a></li>
+<li><a aria-label="Kontakt" class="circle-btn nav-circle" href="../../pages/kontakt.html"><img alt="" class="nav-icon" src="../../assets/svg/icons/icon-mail-48.svg"/></a></li>
+</ul></nav>
+</div>
+</header>
+<main class="economics-page">
+<section class="container tool-intro no-print">
+<p class="eyebrow">Sanierung · Entscheidung</p>
+<h1>Wirtschaftlichkeit</h1>
+<p class="tool-lead">Kosten, mögliche Förderung und langfristige Wirkung in wenigen Minuten gemeinsam mit Kundinnen und Kunden einordnen.</p>
+</section>
+<div data-project-header></div>
+
+<section class="container address-card shared-address-card no-print" data-address-section>
+<div class="section-heading section-heading--compact shared-address-heading">
+<div><p class="eyebrow">Gebäudestandort</p><h2>Standort auswählen</h2></div>
+<span class="status-chip" id="geometryStatus">Bereit</span>
+</div>
+<div class="address-field-meta"><span id="econAddressLabel">PLZ, Gemeinde, Straße und Hausnummer</span><span class="address-provider-label">BEV-Vorschläge 2026-04-01 · TIRIS live</span></div>
+<div class="address-search-control"><label class="address-search-field"><span class="visually-hidden">Adresse</span><input aria-autocomplete="list" aria-controls="econAddressResults" autocomplete="off" id="econAddressInput" placeholder="z. B. 6020 Innsbruck Musterstraße 1" type="search"/></label><div class="address-results" hidden id="econAddressResults" role="listbox"></div></div>
+<p aria-live="polite" class="compact-address-status" id="econAddressStatus"></p>
+<div class="building-candidates" hidden id="econBuildingCandidates"></div>
+<div class="analysis-action-row"><button class="primary-button analysis-button" disabled id="econAnalyzeLocation" type="button">Standort analysieren</button><p class="analysis-hint" id="econAnalysisHint">Zuerst eine Adresse auswählen.</p></div>
+</section>
+
+<section class="container economics-workspace no-print">
+<article class="econ-card" id="basisCard">
+<div class="section-heading"><div><p class="eyebrow">1 · Ausgangslage</p><h2>Vorhandene Werte prüfen</h2></div><span class="status-chip" id="basisQuality">Wird geprüft</span></div>
+<p class="section-note">Bekannte Projektwerte werden automatisch übernommen. Nur fehlende oder besonders entscheidende Angaben sollen ergänzt werden.</p>
+<div class="econ-kpi-grid econ-kpi-grid--basis">
+<div><span>Beheizte Fläche</span><strong id="basisArea">–</strong><small id="basisAreaSource">–</small></div>
+<div><span>Heizenergie</span><strong id="basisEnergy">–</strong><small id="basisEnergySource">–</small></div>
+<div><span>Energieträger</span><strong id="basisCarrier">–</strong><small id="basisCarrierSource">–</small></div>
+<div><span>Heutige Energiekosten</span><strong id="basisAnnualCost">–</strong><small id="basisAnnualCostSource">–</small></div>
+</div>
+<div class="econ-hint is-info" id="basisHint">Projektbasis wird geprüft.</div>
+<details class="econ-details" id="basisDetails"><summary>Ausgangsdaten ergänzen</summary>
+<div class="econ-input-grid econ-input-grid--four">
+<label><span>Nutzfläche (NFL)</span><div class="input-with-unit"><input id="inputArea" min="0" step="1" type="number"/><em>m²</em></div></label>
+<label><span>Heizenergieverbrauch</span><div class="input-with-unit"><input id="inputEnergy" min="0" step="100" type="number"/><em>kWh/a</em></div></label>
+<label><span>Energieträger</span><select id="inputCarrier"></select></label>
+<label><span>Energiepreis</span><div class="input-with-unit"><input id="inputEnergyPrice" min="0" step="0.001" type="number"/><em>€/kWh</em></div><small id="energyPriceSource">zentraler Richtwert</small></label>
+<label><span>Baujahr Gebäude</span><input id="inputConstructionYear" min="1500" max="2100" step="1" type="number"/></label>
+<label><span>Baujahr Heizung</span><input id="inputHeatingYear" min="1900" max="2100" step="1" type="number"/></label>
+<label><span>Nutzwärmefaktor / JNG</span><input id="inputEfficiency" min="0.1" max="5" step="0.01" type="number"/></label>
+<label><span>Betrachtungszeitraum</span><div class="input-with-unit"><input id="inputPeriod" min="5" max="60" step="1" type="number"/><em>Jahre</em></div></label>
+</div></details>
+</article>
+
+<article class="econ-card" id="goalsCard">
+<div class="section-heading"><div><p class="eyebrow">2 · Ziel &amp; Maßnahmen</p><h2>Rahmen in wenigen Klicks festlegen</h2></div><span class="status-chip" id="goalStatus">offen</span></div>
+<div class="decision-grid">
+<fieldset><legend>Anlass</legend><div class="choice-row" id="reasonChoices">
+<button type="button" data-value="costs">Kosten senken</button><button type="button" data-value="renewal">Bauteil ohnehin sanieren</button><button type="button" data-value="heating">Heizung erneuern</button><button type="button" data-value="full">Gesamtsanierung</button><button type="button" data-value="comfort">Komfort</button><button type="button" data-value="open">noch offen</button>
+</div></fieldset>
+<fieldset><legend>Zeitraum</legend><div class="choice-row" id="timeChoices"><button type="button" data-value="now">jetzt</button><button type="button" data-value="1-3">1–3 Jahre</button><button type="button" data-value="3-10">3–10 Jahre</button><button type="button" data-value="later">langfristig</button></div></fieldset>
+<fieldset><legend>Budget</legend><div class="choice-row" id="budgetChoices"><button type="button" data-value="open">offen</button><button type="button" data-value="lt25">&lt; 25 T€</button><button type="button" data-value="25-50">25–50 T€</button><button type="button" data-value="50-100">50–100 T€</button><button type="button" data-value="gt100">&gt; 100 T€</button></div></fieldset>
+</div>
+<div class="priorities-panel"><h3>Was ist Ihnen besonders wichtig?</h3><div class="priority-grid" id="priorityChoices">
+<button type="button" data-value="costs"><span>€</span>Kosten</button><button type="button" data-value="comfort"><span>♡</span>Komfort &amp; Gesundheit</button><button type="button" data-value="climate"><span>♻</span>Klimaschutz</button><button type="button" data-value="independence"><span>⚡</span>Unabhängigkeit</button><button type="button" data-value="value"><span>⌂</span>Werterhalt</button><button type="button" data-value="effort"><span>⚒</span>wenig Aufwand</button>
+</div></div>
+<div class="future-fit-panel"><div><p class="eyebrow">Zielbild</p><h3>Zukunftsfit 2050</h3></div><div class="future-fit-track" id="futureFitTrack"></div></div>
+<div class="measure-heading"><div><h3>Was soll betrachtet werden?</h3><p id="measureSourceNote">Maßnahmen werden aus dem Projekt übernommen oder orientierend vorbereitet.</p></div><div class="segmented-control" id="comparisonMode"><button class="is-selected" data-value="package" type="button">Als Paket</button><button data-value="single" type="button">Einzeln</button></div></div>
+<div class="measure-list" id="measureList"></div>
+<div class="measure-actions"><button class="secondary-button" id="futureFitButton" type="button">Zukunftsfit-Paket vorschlagen</button><span id="futureFitHint">Vorschlag berücksichtigt den vorhandenen Projektstand.</span></div>
+</article>
+
+<article class="econ-card" id="costCard">
+<div class="section-heading"><div><p class="eyebrow">3 · Kosten &amp; Förderung</p><h2>Investition verständlich aufteilen</h2></div><span class="status-chip" id="costStatus">Berechnung offen</span></div>
+<div class="cost-headline"><span>Gesamtinvestition</span><strong id="totalInvestment">–</strong><small id="costBasisText">zentrale Richtwerte</small></div>
+<div class="bar-block"><h3>Woraus besteht die Investition?</h3><div class="stacked-bar" id="costCompositionBar"></div><div class="bar-legend" id="costCompositionLegend"></div></div>
+<div class="bar-block"><h3>Wie wird sie finanziert?</h3><div class="stacked-bar" id="fundingBar"></div><div class="bar-legend" id="fundingLegend"></div></div>
+<div class="funding-summary"><div><span>Mögliche Förderung</span><strong id="fundingTotal">–</strong><small>immer nur orientierend · bis zu</small></div><div><span>Restinvestition</span><strong id="netInvestment">–</strong><small>Gesamtinvestition minus angenommene Förderung</small></div></div>
+<div class="relevant-investment"><span>Für den Wirtschaftlichkeitsvergleich relevant</span><strong id="relevantInvestment">–</strong><p id="relevantInvestmentNote">Referenzkosten und deren Zeitpunkt werden berücksichtigt.</p></div>
+<details class="econ-details"><summary>Kosten &amp; Förderung prüfen</summary>
+<div class="funding-inputs"><label><span>Landesförderung</span><div class="input-with-unit"><input id="fundState" min="0" step="500" type="number"/><em>€</em></div></label><label><span>Bundesförderung</span><div class="input-with-unit"><input id="fundFederal" min="0" step="500" type="number"/><em>€</em></div></label><label><span>Paket-/Sanierungsbonus</span><div class="input-with-unit"><input id="fundBonus" min="0" step="500" type="number"/><em>€</em></div></label></div>
+<div id="measureCostDetails" class="measure-cost-details"></div>
+<p class="funding-caution">Förderungen werden in diesem Prototyp orientierend eingegeben. Die spätere Förderengine prüft Programme, Grenzen, Kombinationen und Paketboni regelbasiert.</p>
+</details>
+</article>
+
+<article class="econ-card econ-card--result" id="resultCard">
+<div class="section-heading"><div><p class="eyebrow">4 · Ergebnis</p><h2>Wirtschaftliche Wirkung im Gespräch</h2></div><span class="status-chip" id="resultStatus">noch keine vollständige Rechnung</span></div>
+<div class="econ-kpi-grid econ-kpi-grid--result"><div><span>Restinvestition</span><strong id="resultNet">–</strong></div><div><span>Mehrinvestition</span><strong id="resultRelevant">–</strong></div><div><span>Energiekosten heute</span><strong id="resultSavings">–</strong><small>Einsparung pro Jahr</small></div><div><span id="resultFourthLabel">Dauerhaft günstiger</span><strong id="resultFourth">–</strong><small id="resultFourthNote">dynamischer Vergleich</small></div></div>
+<div class="economics-chart-card"><div class="chart-title"><h3>Wirtschaftlicher Verlauf gegenüber der Referenz</h3><span id="chartStatus">–</span></div><svg aria-label="Wirtschaftlicher Verlauf" id="economicsChart" role="img" viewBox="0 0 760 300"></svg></div>
+<div class="result-bottom-grid"><div><h3>Mehr als Wirtschaftlichkeit</h3><div class="effect-list" id="effectsList"></div></div><div class="interpretation-card"><span>Einordnung</span><p id="interpretationText">Wählen Sie Maßnahmen aus und ergänzen Sie bei Bedarf fehlende Daten.</p></div></div>
+<details class="econ-details"><summary>Sensitivität anzeigen</summary><div id="sensitivityBox" class="sensitivity-box">Die automatische Sensitivitätsbewertung wird im Prototyp aus Kostenband, Energiepreis und Referenzzeitpunkt abgeleitet.</div></details>
+</article>
+
+<details class="econ-methodology">
+<summary>Methode und Datenbasis</summary>
+<div class="method-data-strip" id="methodDataStrip"></div>
+<div class="methodology-grid" id="methodologyGrid"></div>
+</details>
+</section>
+
+<section class="container economics-print-report print-only" id="economicsPrintReport"></section>
+<section class="container bottom-report-actions no-print energy-next-actions"><a class="primary-button button-link" href="../energiefluss-v4/index.html">Energiefluss</a><a class="primary-button button-link" href="../bauteil-sanierung/index.html">Bauteil &amp; Sanierung</a><button class="secondary-button" id="printEconomicsButton" type="button">Drucken / PDF</button></section>
+</main>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Wirtschaftlichkeit V0.1 · gemeinsamer Projekt- und Rechenkern</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<script src="../../script.js"></script>
+<script src="../../shared/js/paths.js?v=1"></script>
+<script src="../../shared/js/data-model.js?v=3"></script>
+<script src="../../shared/js/project-migrations.js?v=1"></script>
+<script src="../../shared/js/value-resolver.js?v=1"></script>
+<script src="../../shared/js/project-store.js?v=6"></script>
+<script src="../../shared/js/project-header.js?v=2"></script>
+<script src="../../shared/js/project-address-manager.js?v=2"></script>
+<script src="../../shared/js/services/address-provider-core.js?v=1"></script>
+<script src="../../shared/js/services/address-provider-bev-local.js?v=3"></script>
+<script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
+<script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
+<script src="../../shared/js/services/building-geometry-service.js?v=2"></script>
+<script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=2"></script>
+<script src="../../shared/js/domain/economics/economics-core.js?v=2"></script>
+<script src="wirtschaftlichkeit.js?v=1"></script>
+</body>
+</html>

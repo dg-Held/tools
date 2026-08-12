@@ -1,0 +1,155 @@
+{
+  "modelVersion": "1.1.0",
+  "normReference": "ÖNORM B 8110-4:2024-04-15",
+  "generatedAt": "2026-08-12T13:25:00.000Z",
+  "passed": true,
+  "checks": [
+    {
+      "label": "A.4.1 Anfangsinvestition",
+      "actual": 3569.9999999999995,
+      "expected": 3570,
+      "difference": 4.547473508864641e-13,
+      "passed": true
+    },
+    {
+      "label": "A.4.2 Entsorgung",
+      "actual": 206.5300707980045,
+      "expected": 206.5301,
+      "difference": 2.920199551681435e-05,
+      "passed": true
+    },
+    {
+      "label": "A.4.3 Summe Variante 1",
+      "actual": 3776.530070798004,
+      "expected": 3776.5301,
+      "difference": 2.9201995857874863e-05,
+      "passed": true
+    },
+    {
+      "label": "A.4.4 Verbrauchskosten Variante 2",
+      "actual": 8017.65217116143,
+      "expected": 8017.6522,
+      "difference": 2.883857086999342e-05,
+      "passed": true
+    },
+    {
+      "label": "A.4.5 Gesamtkostendifferenz",
+      "actual": 4241.1221003634255,
+      "expected": 4241.1221,
+      "difference": 3.6342589737614617e-07,
+      "passed": true
+    },
+    {
+      "label": "A.5 Annuität Variante 1",
+      "actual": 150.44273244538772,
+      "expected": 150.4427,
+      "difference": 3.2445387716961704e-05,
+      "passed": true
+    },
+    {
+      "label": "A.5 Annuität Variante 2",
+      "actual": 319.3930613059686,
+      "expected": 319.3931,
+      "difference": 3.869403138878624e-05,
+      "passed": true
+    },
+    {
+      "label": "A.6 Amortisation Durchschnittsmethode",
+      "actual": 19.81279834402828,
+      "expected": 19.8128,
+      "difference": 1.6559717188613376e-06,
+      "passed": true
+    },
+    {
+      "label": "A.7 Amortisation Kumulationsmethode",
+      "actual": 18.777199604249567,
+      "expected": 18.7772,
+      "difference": 3.957504333129691e-07,
+      "passed": true
+    },
+    {
+      "label": "B.3 Nutzenergiepreis",
+      "actual": 0.1,
+      "expected": 0.1,
+      "difference": 0,
+      "passed": true
+    },
+    {
+      "label": "B.3 Verzinsungsfaktor",
+      "actual": 61.54888431406249,
+      "expected": 61.5489,
+      "difference": 1.568593751244407e-05,
+      "passed": true
+    },
+    {
+      "label": "B.3 Basiswiderstand",
+      "actual": 0.2569565217391304,
+      "expected": 0.257,
+      "difference": 4.347826086958939e-05,
+      "passed": true
+    },
+    {
+      "label": "B.3 optimale Dicke",
+      "actual": 0.40495915205416366,
+      "expected": 0.405,
+      "difference": 4.08479458363642e-05,
+      "passed": true
+    },
+    {
+      "label": "B.4 Nutzenergiepreis",
+      "actual": 0.14285714285714288,
+      "expected": 0.1429,
+      "difference": 4.285714285712228e-05,
+      "passed": true
+    },
+    {
+      "label": "B.4 Verzinsungsfaktor",
+      "actual": 61.54888431406249,
+      "expected": 61.5489,
+      "difference": 1.568593751244407e-05,
+      "passed": true
+    },
+    {
+      "label": "B.4 Basiswiderstand",
+      "actual": 1.2315384615384617,
+      "expected": 1.2315,
+      "difference": 3.846153846165379e-05,
+      "passed": true
+    },
+    {
+      "label": "B.4 optimale Dicke",
+      "actual": 0.2232038419602245,
+      "expected": 0.2232,
+      "difference": 3.841960224487684e-06,
+      "passed": true
+    },
+    {
+      "label": "Sonderfall Preisfaktor = Zinsfaktor",
+      "actual": 3000,
+      "expected": 3000,
+      "difference": 0,
+      "passed": true
+    },
+    {
+      "label": "Wiederbeschaffung nicht am Periodenende",
+      "actual": 2000,
+      "expected": 2000,
+      "difference": 0,
+      "passed": true
+    },
+    {
+      "label": "Entsorgung inklusive Periodenende",
+      "actual": 300,
+      "expected": 300,
+      "difference": 0,
+      "passed": true
+    },
+    {
+      "label": "Linearer Restwert",
+      "actual": 1000,
+      "expected": 1000,
+      "difference": 0,
+      "passed": true
+    }
+  ]
+}

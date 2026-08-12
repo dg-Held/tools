@@ -1,18 +1,52 @@
 {
   "schema": "energy-tools-financial-defaults",
-  "version": "2026-08-04-master-v1.1",
-  "status": "visible-project-defaults",
+  "version": "2026-08-12-v1.2",
+  "status": "shared-project-defaults",
   "defaults": {
     "period_years": 30,
-    "interest_rate_percent": 3.0,
-    "energy_price_escalation_percent": 3.0,
+    "interest_rate_percent": 2.5,
+    "energy_price_escalation_percent": 2.7,
+    "maintenance_labor_escalation_percent": 3.2,
+    "technical_component_price_escalation_percent": 3.5,
     "investment_price_escalation_percent": 2.0,
     "disposal_price_escalation_percent": 2.0,
     "include_vat": true
   },
+  "sources": {
+    "interest_rate_percent": {
+      "source": "ÖNORM M 7140:2021",
+      "nature": "informativer Vorschlagswert für Haushalt / Wohnbau / Kleingewerbe"
+    },
+    "energy_price_escalation_percent": {
+      "source": "ÖNORM M 7140:2021",
+      "nature": "informativer Vorschlagswert für Haushalt / Wohnbau / Kleingewerbe"
+    },
+    "maintenance_labor_escalation_percent": {
+      "source": "ÖNORM M 7140:2021",
+      "nature": "informativer Vorschlagswert Personal HKLS"
+    },
+    "technical_component_price_escalation_percent": {
+      "source": "ÖNORM M 7140:2021",
+      "nature": "informativer Vorschlagswert haustechnische Anlagenteile"
+    },
+    "period_years": {
+      "source": "EAT-Projektentscheidung",
+      "nature": "Beratungsstandard; projektspezifisch überschreibbar"
+    },
+    "investment_price_escalation_percent": {
+      "source": "EAT-Projektannahme – noch zu finalisieren",
+      "nature": "vorläufiger Wert für bauliche Kosten; kein Normwert"
+    },
+    "disposal_price_escalation_percent": {
+      "source": "EAT-Projektannahme – noch zu finalisieren",
+      "nature": "vorläufiger Wert; kein Normwert"
+    }
+  },
   "sensitivity": {
-    "investment_price_escalation_percent": [0,2,4],
-    "disposal_price_escalation_percent": [0,2,4]
+    "interest_rate_percent": [1.5, 2.5, 3.5],
+    "energy_price_escalation_percent": [0.0, 2.7, 5.0],
+    "investment_cost_factor": [0.85, 1.0, 1.15],
+    "reference_time_shift_years": [-3, 0, 3]
   },
   "rounding": {
     "thickness_cm": 2,
@@ -22,5 +56,5 @@
     "annual_eur": 50,
     "co2_kg": 100
   },
-  "notice": "Keine normativ festgelegten Prognosewerte. Projektbezogen prüfbar; Sensitivität empfohlen. Intern wird ohne Rundung gerechnet."
+  "notice": "Gemeinsame Finanzannahmen für Bauteil & Sanierung und Wirtschaftlichkeit. Norm-Vorschlagswerte sind informative Defaults; projektspezifische Werte haben Vorrang. Intern wird ohne Rundung gerechnet."
 }

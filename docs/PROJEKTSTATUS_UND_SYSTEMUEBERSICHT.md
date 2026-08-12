@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 11.08.2026  
+**Stand:** 12.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -37,7 +37,7 @@ Leitgedanke: Der Berater spricht mit dem Kunden; das Tool stellt bekannte Daten 
 - gemeinsame Adresskarten zeigen vorrangig nur Suchfeld, Datenanbieter, Status und die jeweilige Hauptaktion; technische Korrekturen bleiben eingeklappt.
 - vollständige Rechenwege und Datenquellen stehen am Seitenende unter „Methode und Datenbasis“.
 - Marken-, Status-, Text- und Flächenfarben werden zentral über `shared/css/tokens.css` verwaltet.
-- Im Standortpass-Druck werden tatsächliche Treffer in Wärmeversorgung sowie Standort/Risiken mit der hellsten Türkisfläche hervorgehoben; offene Prüfungen bleiben als Warnfarbe, reine Nicht-Treffer neutral.
+- Im Standortpass-Druck verwenden Wärmeversorgung sowie die normalen Karten unter Standort/Risiken die helle Türkisfläche. Ein tatsächlicher WLV-Flächentreffer wird als besondere planerische Aufmerksamkeit mit lila Rand und helllila Fläche hervorgehoben; offene Prüfungen bleiben in der Warnfarbe.
 - projektbezogene Förderungen sichtbar und manuell bestätigbar halten.
 
 Zentrale Gestaltung:
@@ -374,7 +374,7 @@ Das nächste Werkzeug beziehungsweise die nächste Erweiterung wird bewusst als 
 
 ## 11. Finaler V1.0-Abschluss 11.08.2026
 
-Der statische und automatisierte Gesamtcheck ist abgeschlossen. Alle fünf Werkzeuge können aus einem leeren Projekt heraus gestartet werden; notwendige Standort-, Geometrie-, Klima- oder HGT-Schritte werden im jeweiligen Werkzeug selbst angeboten. Gemeinsame Werte verwenden die kanonischen Projektpfade aus `ARCHITEKTUR_UND_DATENMODELL.md`.
+Der statische und automatisierte Gesamtcheck ist abgeschlossen. Alle fünf abgeschlossenen V1.0-Basiswerkzeuge können aus einem leeren Projekt heraus gestartet werden; notwendige Standort-, Geometrie-, Klima- oder HGT-Schritte werden im jeweiligen Werkzeug selbst angeboten. Gemeinsame Werte verwenden die kanonischen Projektpfade aus `ARCHITEKTUR_UND_DATENMODELL.md`.
 
 Die sichtbaren Methodenbereiche dokumentieren die tatsächlich implementierten Rechenwege. Für den Wirtschaftlichkeitskern sind Barwert, wiederkehrende Kosten, Ersatzinvestitionen, Entsorgung, Restwert, Gesamtkostenbarwert, Annuität, dynamische Amortisation und analytische Dämmdicke beschrieben. Die Normdokumentation reproduziert keinen lizenzierten Normtext; der Rechenkern wird separat gegen hinterlegte Validierungsfälle geprüft.
 
@@ -388,6 +388,12 @@ Nicht für V1.0 erforderlich, aber später technisch sinnvoll: lokale Nunito-Sch
 ## Praxisvalidierung August 2026
 
 Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Beratungsfall sowie einem zusätzlichen Bestands-Energieausweis durchgespielt. Bestätigt wurden insbesondere die Bedeutung einer korrigierten NFL, die Plausibilität der Heizlastorientierung und der Nutzen der gemeinsamen Projektwerte. Der verbrauchsbasierte HWB bleibt unverändert. Für den unabhängigen „HWB aus U-Werten“ wurde nach der Praxisprüfung der frühere Ansatz `15 °C Bilanztemperatur + vollständiger Gewinnabzug` ersetzt: Der festgelegte V1.0-Ansatz skaliert die INCA-Vollbenutzungsstunden auf die gewählte Raumtemperatur und berücksichtigt interne/solare Gewinne mit einem transparenten pauschalen Nutzungsfaktor von 0,55. Der Wert bleibt als Beratungs-Plausibilitätsmodell gekennzeichnet; spätere V1.x-Änderungen benötigen eine erneute dokumentierte Regression gegen Referenzfälle.
+
+## Standortpass · Druckfarben Standort & Risiken · 11.08.2026
+
+- Die graublaue Infofläche der normalen Karten unter `Standort & Risiken` wurde im Ausdruck durch `--color-primary-soft` mit `--color-primary-light` ersetzt und entspricht damit der visuellen Grundlogik der Wärmeversorgung.
+- Ein tatsächlicher `WLV-Planungsbereich`-Flächentreffer erhält im Ausdruck eine eigene Semantik: `--color-secondary-soft` als Fläche und `--color-secondary-light` als Rand.
+- Warn-/Prüfzustände bleiben unverändert in der Warnfarbe. Die Runtime-Datenlogik und die fachliche Bewertung wurden nicht verändert.
 
 ## Letzte Druck- und Vergleichsfeinabstimmung · 11.08.2026
 
@@ -403,3 +409,14 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Die Dateien unter `docs/` sind die einzige verbindliche fachliche und technische Projektdokumentation.
 - Frühere lokale README-Dateien in Daten-, Tool- und Assetordnern wurden in die zentralen Dokumente überführt und können entfallen.
 - Fachliche Werte, Rechenwege, Datenpflege und Releaseabläufe werden künftig ausschließlich in den passenden zentralen Dokumenten nachgezogen.
+
+
+## Wirtschaftlichkeit V0.1 · Prototypstart 12.08.2026
+
+- Neues eigenständig nutzbares Tool `tools/wirtschaftlichkeit/` auf derselben Projekt-/Adressbasis wie die bestehenden Werkzeuge.
+- Sichtbare Struktur: Ausgangslage → Ziel & Maßnahmen → Kosten & Förderung → Ergebnis → Methode & Datenbasis.
+- Kunden-/Entscheidungsfelder liegen zentral unter `advice`; wirtschaftliche Annahmen und der letzte Berechnungssnapshot unter `economics`.
+- Gespeicherte Maßnahmen aus `Bauteil & Sanierung` werden bevorzugt übernommen; fehlen sie, werden orientierende Schnellwerte aus gemeinsamen Flächen, U-Werten, Energiefluss und zentralen Richtkosten vorbereitet.
+- Der gemeinsame Wirtschaftlichkeitskern V1.1 unterstützt zusätzlich zeitlich verschobene Kapitalereignisse bzw. Komponentenstartjahre und den Vergleich Referenz ↔ Sanierungsvariante nach Kumulationsmethode.
+- Förderungen sind in V0.1 noch manuell bestätigte Orientierungswerte; die regelbasierte Förderengine folgt nach Prüfung der Programme.
+- BKI dient ausschließlich der internen Plausibilisierung der EAT-Kostenkennwerte. Regionalfaktor Tirol: 1,019.

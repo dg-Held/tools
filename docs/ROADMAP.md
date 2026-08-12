@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stand:** 11.08.2026
+**Stand:** 12.08.2026
 
 ## V1.0-Basis abgeschlossen · 11.08.2026
 
@@ -51,9 +51,9 @@ Keine komplexe Randbedingungsmatrix. Später sauber festlegen:
 - Klima/Standort: Windrose, sobald geeignete amtliche Windrichtungs-/Windgeschwindigkeitsdaten in die Datenpipeline aufgenommen sind.
 - Standortpass: DKM-/Orthofoto-Prüfung weiter verfeinern; später ggf. angrenzende Gebäude einfacher erfassen.
 
-### Allgemeines Wirtschaftlichkeitstool
+### Wirtschaftlichkeit · V0.1 in Umsetzung
 
-Vergleicht gespeicherte Maßnahmen und automatische Maßnahmenpakete:
+Der erste direkt im Projekt integrierte Prototyp ist gestartet. Er vergleicht gespeicherte Maßnahmen und vorbereitete Schnellmaßnahmen:
 
 - Außenwand,
 - Fenster,
@@ -62,11 +62,7 @@ Vergleicht gespeicherte Maßnahmen und automatische Maßnahmenpakete:
 - Kellerdecke/Boden,
 - später Heizung, Verteilung und Lüftung.
 
-Stufen:
-
-- Schnellabschätzung,
-- verbrauchsbasiert,
-- energieausweisbasiert.
+Die Datenqualität wird automatisch aus den vorhandenen Projektwerten abgeleitet; es gibt keine sichtbare Moduswahl Schnell/Verbrauch/Energieausweis. Nächste Schritte: Referenzkosten/Lebensdauern vervollständigen, Förderengine, Heizungs- und PV-Adapter, Sensitivität und Druckfeinschliff.
 
 ### Sanierungsfahrplan
 

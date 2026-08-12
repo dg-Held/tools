@@ -1,6 +1,6 @@
 # Test und Release
 
-**Stand:** 11.08.2026
+**Stand:** 12.08.2026
 
 ## Installation kleiner Austauschpakete
 
@@ -191,4 +191,19 @@ Zusätzlich prüfen:
 - finale Markenfarben werden ausschließlich über `shared/css/tokens.css` gesteuert: Türkis `#3CA9A7`, Berry/Violett `#93538F`, neutrale Graphit-/Grautöne;
 - Seitenhintergrund und Eingabeflächen wurden leicht aufgehellt;
 - Schatten verwenden neutrale Graphitwerte und keine alten grünstichigen RGB-Werte;
-- Standortpass-Druck: positive Treffer in Wärmeversorgung und Standort/Risiken verwenden `--color-primary-soft`; Warn-/Prüfzustände und neutrale Nicht-Treffer bleiben semantisch getrennt.
+- Standortpass-Druck: Wärmeversorgung sowie normale Karten unter Standort/Risiken verwenden `--color-primary-soft`; ein tatsächlicher WLV-Flächentreffer verwendet `--color-secondary-soft` mit `--color-secondary-light`; Warn-/Prüfzustände bleiben semantisch getrennt.
+
+
+### Wirtschaftlichkeit V0.1 · 12.08.2026
+
+Zusätzlich prüfen:
+
+- `tests/validate-economics-core.js` besteht; zeitlich verschobene Kapitalereignisse und Variantenvergleich liefern endliche Werte.
+- bestehende Bauteil-Wirtschaftlichkeit bleibt mit dem erweiterten Kern rückwärtskompatibel.
+- Wirtschaftlichkeit startet aus leerem Projekt, Adresse/TIRIS können innerhalb des Tools gewählt werden.
+- vorhandene Projektwerte und gespeicherte Bauteilmaßnahmen werden übernommen; fehlende Werte sind als Schnellabschätzung bzw. manuell ergänzbar erkennbar.
+- `advice.*` bleibt nach Toolwechsel erhalten.
+- Gesamtinvestition, mögliche Förderung, Restinvestition und wirtschaftlich relevante Mehrinvestition werden nicht vermischt.
+- Zeitgrafik zeigt Vorteil gegenüber der Referenz; bei mehreren Schnittpunkten wird nicht automatisch der erste als dauerhaftes Ergebnis ausgegeben.
+- Förderangaben werden immer als orientierend/`bis zu` gekennzeichnet.
+- Druckansicht enthält den Förderhinweis und die vier wesentlichen Ergebnisgrößen.

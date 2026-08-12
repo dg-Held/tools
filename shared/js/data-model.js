@@ -151,6 +151,18 @@
       systems: {
         heating: {},
       },
+      advice: {
+        reason: null,
+        timeHorizon: null,
+        budgetBand: null,
+        budgetEur: null,
+        priorities: [],
+      },
+      economics: {
+        assumptions: {},
+        energyPriceOverrides: {},
+        latestCalculation: null,
+      },
       measures: {},
       scenarios: {
         activeId: 'existing',
