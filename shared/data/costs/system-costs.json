@@ -1,30 +1,259 @@
 {
   "schema": "energy-tools-system-costs",
-  "version": "2026-08-13-v0.2-prototype",
+  "version": "2026-08-13-v1.0-eat-reviewed",
   "data_date": "2026-08",
-  "status": "prototype-orientation",
-  "notice": "Orientierende EAT-Kostenansätze für den Wirtschaftlichkeits-Prototyp. Projektspezifische Angebote haben Vorrang. Vor finaler V1.0 mit der zentralen Kostenkennwertbasis abgleichen.",
+  "status": "eat-advisory-costs-internally-plausibilized",
+  "notice": "EAT-Richtwerte Stand August 2026; projektspezifische Angebote haben Vorrang. BKI 2025 dient nur der internen Plausibilisierung. Die Werte sind keine Angebots- oder Förderzusage.",
   "items": [
     {
       "id": "heat_pump_air",
       "label": "Luft/Wasser-Wärmepumpe",
       "unit": "€/Anlage",
-      "range": { "low": 20000, "middle": 27500, "high": 35000 },
+      "range": {
+        "low": 20000,
+        "middle": 27500,
+        "high": 35000
+      },
       "lifetime_years": 18,
+      "maintenance_percent_initial_per_year": 3.0,
       "target_carrier_id": "electricity",
       "target_efficiency": 3.2,
       "reference_lifetime_years": 20,
-      "source_id": "EAT_COST_WORKING_2026_08",
+      "source_id": "EAT_COSTS_2026_08",
       "active": true
+    },
+    {
+      "id": "heat_pump_ground",
+      "label": "Sole/Wasser-Wärmepumpe",
+      "unit": "€/Anlage",
+      "range": {
+        "low": 30000,
+        "middle": 40000,
+        "high": 50000
+      },
+      "lifetime_years": 18,
+      "maintenance_percent_initial_per_year": 3.0,
+      "target_carrier_id": "electricity",
+      "target_efficiency": 4.0,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true,
+      "note": "Erschließung der Wärmequelle projektspezifisch prüfen."
+    },
+    {
+      "id": "heat_pump_water",
+      "label": "Wasser/Wasser-Wärmepumpe",
+      "unit": "€/Anlage",
+      "range": {
+        "low": 40000,
+        "middle": 50000,
+        "high": 60000
+      },
+      "lifetime_years": 18,
+      "maintenance_percent_initial_per_year": 3.0,
+      "target_carrier_id": "electricity",
+      "target_efficiency": 4.5,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "pellet_heating",
+      "label": "Pelletheizung",
+      "unit": "€/Anlage",
+      "range": {
+        "low": 25000,
+        "middle": 30000,
+        "high": 35000
+      },
+      "lifetime_years": 20,
+      "target_carrier_id": "pellets",
+      "target_efficiency": 0.9,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "district_heat_connection",
+      "label": "Fernwärmeanschluss",
+      "unit": "€/Anschluss",
+      "range": {
+        "low": 10000,
+        "middle": 17500,
+        "high": 25000
+      },
+      "lifetime_years": 25,
+      "target_carrier_id": "district_heat",
+      "target_efficiency": 0.98,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "radiator_replace",
+      "label": "Heizkörpertausch",
+      "unit": "€/Stk.",
+      "range": {
+        "low": 400,
+        "middle": 800,
+        "high": 1200
+      },
+      "lifetime_years": 35,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "floor_heating",
+      "label": "Fußbodenheizung (neu)",
+      "unit": "€/m²",
+      "range": {
+        "low": 60,
+        "middle": 90,
+        "high": 120
+      },
+      "lifetime_years": 50,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "hot_water_boiler",
+      "label": "Boiler / Warmwasserspeicher",
+      "unit": "€/Stk.",
+      "range": {
+        "low": 1500,
+        "middle": 2750,
+        "high": 4000
+      },
+      "lifetime_years": 20,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "buffer_freshwater",
+      "label": "Pufferspeicher mit Frischwassermodul",
+      "unit": "€/Anlage",
+      "range": {
+        "low": 4000,
+        "middle": 6000,
+        "high": 8000
+      },
+      "lifetime_years": 20,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "solar_thermal",
+      "label": "Thermische Solaranlage",
+      "unit": "€/Anlage bis ca. 10 m²",
+      "range": {
+        "low": 12000,
+        "middle": 15000,
+        "high": 18000
+      },
+      "lifetime_years": 20,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "system_adjustment",
+      "label": "Systemanpassung / Nebenmaßnahmen",
+      "unit": "€/Projekt",
+      "range": {
+        "low": 2000,
+        "middle": 6000,
+        "high": 10000
+      },
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "ventilation_single_room",
+      "label": "Einzelraumlüftung mit WRG",
+      "unit": "€/Stk.",
+      "range": {
+        "low": 3000,
+        "middle": 3750,
+        "high": 4500
+      },
+      "lifetime_years": 15,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "ventilation_decentral",
+      "label": "Dezentrale Wohnraumlüftung mehrere Räume",
+      "unit": "€/Projekt",
+      "range": {
+        "low": 6000,
+        "middle": 10500,
+        "high": 15000
+      },
+      "lifetime_years": 15,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "ventilation_central",
+      "label": "Zentrale Komfortlüftung mit WRG",
+      "unit": "€/Projekt",
+      "range": {
+        "low": 10000,
+        "middle": 17500,
+        "high": 25000
+      },
+      "lifetime_years": 20,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "gas_boiler_info",
+      "label": "Gas-Brennwertgerät (INFO)",
+      "unit": "€/Anlage",
+      "range": {
+        "low": 10000,
+        "middle": 13500,
+        "high": 17000
+      },
+      "lifetime_years": 20,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true,
+      "future_fit": false
+    },
+    {
+      "id": "oil_boiler_info",
+      "label": "Öl-Brennwertkessel (INFO)",
+      "unit": "€/Anlage",
+      "range": {
+        "low": 12000,
+        "middle": 17000,
+        "high": 22000
+      },
+      "lifetime_years": 20,
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true,
+      "future_fit": false
     },
     {
       "id": "pv_standard",
       "label": "PV-Anlage",
       "unit": "€/kWp",
-      "range": { "low": 1200, "middle": 1500, "high": 1800 },
+      "range": {
+        "low": 1200,
+        "middle": 1500,
+        "high": 1800
+      },
       "default_size_kwp": 10,
       "lifetime_years": 25,
-      "source_id": "EAT_COST_WORKING_2026_08",
+      "source_id": "EAT_COSTS_2026_08",
+      "active": true
+    },
+    {
+      "id": "battery_storage",
+      "label": "Batteriespeicher",
+      "unit": "€/kWh",
+      "range": {
+        "low": 800,
+        "middle": 1050,
+        "high": 1300
+      },
+      "lifetime_years": 15,
+      "source_id": "EAT_COSTS_2026_08",
       "active": true
     }
   ]

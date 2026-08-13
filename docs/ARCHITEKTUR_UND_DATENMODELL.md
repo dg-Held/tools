@@ -315,13 +315,13 @@ Automatisch abgeleitete Maßnahmeneinsparungen sind **ephemere/laufend neu berec
 
 `economics.latestCalculation` speichert zusätzlich die verwendete Energiebrücken-Version sowie HWB-Plausibilitätswerte, damit ein früheres Beratungsergebnis nachvollziehbar bleibt.
 
-### Bedien- und Override-Semantik V0.4
+### Bedien- und Override-Semantik V0.5
 
-`modules.wirtschaftlichkeit.measureDrafts.*` unterscheidet ab V0.4 automatische Werte und bewusste manuelle Überschreibungen. Für Kosten werden `fullInvestmentManual` und `referenceCostManual`, für den Referenzzeitpunkt `referenceYearConfirmed` und für die Energieeinsparung `energySavingsManual` verwendet. Fehlt das jeweilige Manual-Flag, wird der Wert aus dem aktuell besten Projekt-/Standardwert neu abgeleitet. Die Bedienoberfläche bietet dafür `↺ automatisch`.
+`modules.wirtschaftlichkeit.measureDrafts.*` unterscheidet automatische Werte und bewusste manuelle Überschreibungen. Für Kosten werden `fullInvestmentManual` und `referenceCostManual`, für den Referenzzeitpunkt `referenceYearConfirmed` und für die Energieeinsparung `energySavingsManual` verwendet. Fehlt das jeweilige Manual-Flag, wird der Wert aus dem aktuell besten Projekt-/Standardwert neu abgeleitet. Die Bedienoberfläche bietet dafür `↺ automatisch`.
 
 Der aufklappbare Maßnahmendetailbereich darf bei einer Werteänderung nicht seinen offenen Zustand verlieren. Der UI-Zustand des Accordions ist bewusst **kein Fachdatenwert** und wird nur während des Renderings erhalten.
 
-Das Zielbild `Zukunftsfit 2050` wird in V0.4 doppelt dargestellt:
+Das Zielbild `Zukunftsfit 2050` wird doppelt dargestellt:
 
 - **Bestand heute** aus dem aktuellen Gebäude-/Anlagenzustand,
 - **mit gewählter Sanierung** aus demselben Bestand plus aktuell ausgewählten Maßnahmen.

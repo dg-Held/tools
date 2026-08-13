@@ -411,14 +411,14 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Fachliche Werte, Rechenwege, Datenpflege und Releaseabläufe werden künftig ausschließlich in den passenden zentralen Dokumenten nachgezogen.
 
 
-## Wirtschaftlichkeit V0.4 · Web-Abschlussrunde · 13.08.2026
+## Wirtschaftlichkeit V0.5 · Datenrunde & Vorabnahme · 13.08.2026
 
 - Das Tool bleibt eigenständig nutzbar und verwendet denselben Projekt-/Adresskopf wie die bestehenden Werkzeuge.
 - Sichtbare Struktur: **Projektbasis → Rahmen festlegen → Kosten & Förderung → Ergebnis → Methode & Datenbasis**.
 - Neue Projekte können über **„Maßnahmen aus Gebäude vorbereiten“** orientierende Hüllmaßnahmen direkt aus gemeinsamer Geometrie, Baujahr/Bestands-U-Werten, Ziel-U-Werten und Energiefluss bzw. HGT-Fallback erzeugen. Das Bauteiltool muss dafür nicht vorher geöffnet werden.
 - Dach/OGD, Kellerdecke/Boden und weitere Hüllbauteile folgen dem zentral gespeicherten thermischen Hüllstatus; vorhandene gespeicherte Bauteilmaßnahmen haben Vorrang.
-- Heizung und PV erhalten erste zentrale System-Kostenvorschläge aus `shared/data/costs/system-costs.json`. Die PV-Kosten können bereits berücksichtigt werden; das objektspezifische PV-Ertrags-/Eigenverbrauchsmodell ist noch nicht Bestandteil von V0.4.
-- Förderungen aus gespeicherten Bauteilmaßnahmen werden übernommen. Ergänzende Landes-/Bundes-/sonstige Förderungen und Paketboni bleiben in V0.4 orientierende Eingaben; eine regelbasierte Förderengine folgt.
+- Heizung und PV erhalten erste zentrale System-Kostenvorschläge aus `shared/data/costs/system-costs.json`. Die PV-Kosten können bereits berücksichtigt werden; das objektspezifische PV-Ertrags-/Eigenverbrauchsmodell ist noch nicht Bestandteil von V0.5.
+- Förderungen aus gespeicherten Bauteilmaßnahmen werden übernommen. Ergänzende Landes-/Bundes-/sonstige Förderungen und Paketboni bleiben in V0.5 orientierende Eingaben; eine regelbasierte Förderengine folgt.
 - **Förderbasis und Kostenstruktur sind bewusst getrennt:** Förderfähige Kosten sind programmabhängig und können auch Gerüst, Putz oder andere Begleitarbeiten umfassen, die nominal zugleich Referenz-/Instandsetzungsarbeiten darstellen. Förderung wird daher nicht auf die nominalen energetischen Mehrkosten begrenzt; sie wird nur auf die Gesamtinvestition begrenzt.
 - Die wirtschaftlich zusätzliche Investition ist `Gesamtinvestition − Förderung − Barwert der erwarteten Referenzerneuerungen` und kann negativ werden; in diesem Fall wird ein **wirtschaftlicher Startvorteil** ausgewiesen.
 - Ergebnisdarstellung ergänzt Budgetabgleich, gewählte Kundenprioritäten, Energiekosten vorher/nachher und eine explizit beschriftete Referenzlinie. Optional können die kumulierten Lebenszykluskosten von Referenz und Sanierung als zwei Kurven angezeigt werden.
@@ -429,13 +429,17 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Maßnahmen-Details wurden platzsparend auf 2×2 Felder umgestellt; sichtbare kWh-Werte werden überall auf 10 kWh/a gerundet. Referenzzeitpunkte werden als `jetzt / kurzfristig`, `ca. x J.` oder `offen` dargestellt. Ein offener Zeitpunkt wird nicht automatisch als Jahr 0 in die Referenzrechnung übernommen.
 - Förderinformationen aus Einzelmaßnahmen stehen direkt bei der Maßnahme; der Kostenblock enthält nur noch die gemeinsame Förderprüfung/-ergänzung. 0-€-Fördersegmente werden nicht mehr gezeichnet.
 - Beide Zeitgrafiken besitzen eine beschriftete €-Achse und machen Anfangsdifferenz bzw. Startkosten sichtbar.
-- BKI dient weiterhin ausschließlich der internen Plausibilisierung der EAT-Kostenkennwerte. Regionalfaktor Tirol: **1,019**.
-- **Zukunftsfit 2050** ist ab V0.4 zweistufig: oben `Bestand heute`, im Ergebnis `mit gewählter Sanierung`. Hülle, Technik, fossilfrei und PV werden fachlich bewertet; reine Datenbekanntheit wird nicht mehr als Zielerreichung dargestellt.
+- BKI dient weiterhin ausschließlich der internen Plausibilisierung der EAT-Kostenkennwerte; lizenzierte Rohwerte und Regionalfaktoren bleiben außerhalb der öffentlichen Runtime-Daten.
+- **Zukunftsfit 2050** ist zweistufig: oben `Bestand heute`, im Ergebnis `mit gewählter Sanierung`. Hülle, Technik, fossilfrei und PV werden fachlich bewertet; reine Datenbekanntheit wird nicht mehr als Zielerreichung dargestellt.
 - Der Zielbild-Verlauf wurde gestalterisch von Berry (Bestand) nach Türkis (Zukunft) gedreht.
 - Förderdarstellung ergänzt neben `% der Gesamtinvestition` auch `% der nominalen energetischen Investition`; Werte über 100 % sind bei förderfähigen Begleitarbeiten ausdrücklich zulässig.
 - Das Referenzsegment der Investitionsgrafik ist neutral/grau.
 - Maßnahmen-Accordions bleiben bei Werteänderungen geöffnet. Manuelle Overrides für Vollkosten, Referenzkosten, Referenzzeitpunkt und Energieeinsparung erhalten `↺ automatisch`.
 - Zeitdiagramme verwenden die Hauptfarben und versetzen Start-/Zonenbeschriftungen bei Kollisionsgefahr.
 - `Mehr als Wirtschaftlichkeit` wird als kompakte Vierer-Wirkungsmatrix über der Einordnung dargestellt; `Aussagequalität & Unsicherheiten` ist standardmäßig geöffnet.
-- Die Web-Methodik enthält nun die implementierten Kernformeln. Druckfinalisierung bleibt bewusst offen bis nach erneutem Praxistest.
+- Die Web-Methodik enthält die implementierten Kernformeln.
+- Datenrunde V0.5: zentrale EAT-Richtkosten Hülle/Haustechnik Stand 08/2026 geprüft und vereinheitlicht; alle direkt verwendeten Hüllmaßnahmen besitzen explizite Referenzsemantik. Dachreferenz ist ergänzt; OGD/Kellerdecke sind bewusst `none`, Boden gegen Erdreich `project_specific`. BKI bleibt interne Plausibilisierung; lizenzierte Rohwerte/Regionalfaktoren werden nicht veröffentlicht und EAT-Werte werden nicht doppelt regionalisiert.
+- Maßnahmenkarten zeigen Förderhöhen kompakt rechts; der frühere Fördertext im aufgeklappten Teil entfällt. Zahl und Einheit stehen dort platzsparend in einer Zeile.
+- Hauptdiagramm reserviert die rechte Kante für den kumulierten Endwert; die Zonenbezeichnung `Sanierung günstiger` liegt mittig und kollidiert nicht mehr mit dem Endlabel.
+- Erster konkreter 2-seitiger Beratungsausdruck ist integriert: Seite 1 mit Kundenergebnis, Zukunftsfit Bestand/Sanierung, Kosten-/Finanzierungsbalken und Hauptgrafik; Seite 2 mit Maßnahmentabelle, Lebenszykluskosten, Kundenrahmen, Zusatzwirkungen, Einordnung und Aussagequalität. Finale Druckabnahme folgt nach V0.5-Gesamttest.
 

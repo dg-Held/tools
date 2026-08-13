@@ -607,7 +607,7 @@ Bauteil-Quickcheck: Relevante Eigeninvestition = max(energetische Mehrkosten −
 Instandhaltung_a = Vollkosten × Instandhaltungssatz / 100
 ```
 
-Hinweis: Diese Bauteil-Quickcheck-Kennzahl ist **nicht** identisch mit der wirtschaftlich zusätzlichen Investition des Wirtschaftlichkeitstools V0.4. Dort werden vollständige Referenz- und Sanierungsvarianten samt Erneuerungszeitpunkten verglichen und Förderungen können programmabhängig auch Begleitarbeiten umfassen.
+Hinweis: Diese Bauteil-Quickcheck-Kennzahl ist **nicht** identisch mit der wirtschaftlich zusätzlichen Investition des Wirtschaftlichkeitstools V0.5. Dort werden vollständige Referenz- und Sanierungsvarianten samt Erneuerungszeitpunkten verglichen und Förderungen können programmabhängig auch Begleitarbeiten umfassen.
 
 ### Dynamische Wirtschaftlichkeit
 
@@ -618,7 +618,7 @@ Der gemeinsame Kern kann Anfangsinvestition, Wiederbeschaffung, Restwert, Entsor
 Die Standarddatei unterscheidet informative Normwerte und transparent gekennzeichnete Projekt-Fallbacks. Jeder Wert bleibt überschreibbar und benötigt Quelle, Status und Datenstand.
 
 
-## Wirtschaftlichkeit V0.4
+## Wirtschaftlichkeit V0.5 · Vorabnahme
 
 ### Grundprinzip
 
@@ -641,7 +641,7 @@ Der gemeinsame Kern berücksichtigt Anfangsinvestitionen, zeitlich verschobene R
 ### Kosten, Förderung und Referenz
 
 - projektspezifisches Angebot > manuell bestätigter Projektwert > EAT-Richtkosten > Fallback,
-- BKI nur interne Plausibilisierungsquelle, nicht öffentliche Laufzeit-Datentabelle; interner Regionalfaktor Tirol `1,019`,
+- BKI nur interne Plausibilisierungsquelle, nicht öffentliche Laufzeit-Datentabelle; regionale BKI-Faktoren bleiben außerhalb der öffentlichen Runtime-Daten,
 - sichtbare Finanzierung (`Gesamtinvestition − mögliche Förderung`) und wirtschaftlich zusätzliche Investition werden getrennt ausgewiesen,
 - **Kostenstruktur ≠ Förderbasis:** nominale Referenzarbeiten und energetische Verbesserung werden für die Beratung getrennt gezeigt; die Förderfähigkeit richtet sich aber nach dem jeweiligen Programm und kann beide nominalen Segmente umfassen,
 - Förderung wird daher nicht auf die nominale energetische Mehrinvestition begrenzt. Sie kann bei einer förderfähigen thermischen Maßnahme auch Gerüst, Putz oder andere notwendige Begleitarbeiten mitfinanzieren,
@@ -649,7 +649,7 @@ Der gemeinsame Kern berücksichtigt Anfangsinvestitionen, zeitlich verschobene R
 - die wirtschaftlich zusätzliche Investition wird als `Gesamtinvestition − Förderung − Barwert der Referenzerneuerungen` berechnet und **nicht auf 0 begrenzt**. Ein negativer Wert wird als wirtschaftlicher Startvorteil ausgewiesen.
 - ist eine Referenz-Erneuerung kostenmäßig bekannt, ihr Zeitpunkt aber noch `offen`, bleibt der Kostenwert sichtbar, wird bis zur zeitlichen Klärung aber **nicht** als heutige Sowieso-Investition vom Vergleich abgezogen.
 
-### Eigenständiger Schnellstart V0.4
+### Eigenständiger Schnellstart V0.5
 
 Fehlen gespeicherte Maßnahmen aus `Bauteil & Sanierung`, kann Wirtschaftlichkeit selbst Vorschläge vorbereiten. Priorität der Datengrundlage:
 
@@ -660,7 +660,7 @@ Fehlen gespeicherte Maßnahmen aus `Bauteil & Sanierung`, kann Wirtschaftlichkei
 
 Der thermische Hüllstatus entscheidet, ob beispielsweise Dach oder oberste Geschoßdecke betrachtet wird. Automatisch abgeleitete Maßnahmeneinsparungen werden **nicht als statischer Projektwert eingefroren**, sondern bei besseren Projekt-, Klima- oder Hülldaten live neu berechnet. In sichtbaren Maßnahmenfeldern werden kWh-Werte auf 10 kWh/a gerundet; der Paketvergleich arbeitet mit den ungerundeten Rechenwerten. Nur ein bewusst gesetzter manueller Einsparungswert bleibt als Override gespeichert.
 
-### Verbrauchsverankerte Einsparung V0.4
+### Verbrauchsverankerte Einsparung V0.5
 
 Die absolute Einsparung einer Hüllmaßnahme wird nicht mehr aus der Differenz einzelner `U × A × HGT`-Werte direkt vom realen Verbrauch abgezogen. Stattdessen werden Verbrauch und unabhängiges Hüllmodell bewusst verschränkt:
 
@@ -681,7 +681,7 @@ Ein anschließender Heizungstausch wird erst auf den nach der Hüllsanierung ver
 
 Als Plausibilitätscheck werden der verbrauchsbasierte korrigierte HWB und der unabhängige HWB aus U-Werten gegenübergestellt. Große Abweichungen stoppen die Berechnung nicht, sondern erzeugen den Hinweis **„Hüllzustand prüfen“**. Mögliche Ursachen sind bereits sanierte Bauteile, von Bauperiodenwerten abweichende tatsächliche U-Werte, abweichende Beheizung/Nutzung, Warmwasserannahmen oder Klimadaten. Die aktuellen Hinweisstufen sind transparente EAT-Plausibilitätsregeln und keine normativen Grenzwerte.
 
-### Zielbild Zukunftsfit 2050 · V0.4
+### Zielbild Zukunftsfit 2050 · V0.5
 
 Das Zielbild ist keine zusätzliche Kundeneingabe, sondern ein fachlicher Orientierungsrahmen. Es wird zweimal mit derselben Grafik gezeigt:
 
@@ -690,20 +690,24 @@ Das Zielbild ist keine zusätzliche Kundeneingabe, sondern ein fachlicher Orient
 
 Die Hülle wird aus den tatsächlich relevanten thermischen Hüllbauteilen und ihrem Verhältnis zu den zentralen Ziel-U-Werten abgeleitet. Ein komplett schlechter, aber bekannter Hüllzustand wird als `Sanierung nötig` und nicht als `teilweise` gewertet. Zwischenstufen sind `teilweise`, `weitgehend` und `zukunftsfit`. Technik bewertet grob Erneuerungsnähe/Zukunftsfähigkeit; `fossilfrei` und `PV` werden separat geführt. Ausgewählte Heizungs- bzw. PV-Maßnahmen verändern nur die **Sanierungsziel-Grafik**, nicht den Bestandsstatus.
 
-### Förderdarstellung V0.4
+### Förderdarstellung V0.5
 
 Zusätzlich zum Anteil an der Gesamtinvestition wird der angenommene Förderbetrag orientierend auch ins Verhältnis zur **nominalen energetischen Investition** gesetzt. Dieser Prozentwert kann über 100 % liegen und ist dann kein Rechenfehler: Förderprogramme können Begleitarbeiten aus dem nominalen Referenzanteil als förderfähige Kosten anerkennen. Die Förderbasis bleibt daher weiterhin eine dritte, regelabhängige Ebene neben Kostenstruktur und Finanzierung.
 
-### Manuelle Overrides V0.4
+### Manuelle Overrides V0.5
 
 Vollkosten, Referenz-Erneuerung, Referenzzeitpunkt und Energieeinsparung können im Beratungsgespräch manuell überschrieben werden. Solche Eingriffe werden sichtbar als `manuell überschrieben` bzw. `manueller Override` gekennzeichnet. `↺ automatisch` entfernt nur den Override und stellt die aktuell beste automatische Ableitung wieder her; dadurch gehen neuere Projekt-, Klima- oder Kostendaten nicht verloren.
 
-### Kundenergebnis V0.4
+### Kundenergebnis V0.5
 
 Der Hauptbereich zeigt Restinvestition, wirtschaftlich zusätzliche Investition bzw. Startvorteil, Energiekosten vorher/nachher samt jährlicher Einsparung und den dauerhaften wirtschaftlichen Schnittpunkt. Kundenbudget und gewählte Prioritäten werden im Ergebnis wieder aufgegriffen. Die Hauptgrafik zeigt den kumulierten Vorteil **gegenüber der Referenz**; die Nulllinie ist ausdrücklich „Referenz · beide Varianten gleich teuer“. Optional werden die kumulierten Lebenszykluskosten von Referenz und Sanierung als zwei Linien dargestellt.
 
 `Barwertvorteil` wird in der Kundenoberfläche nicht als isolierter Fachbegriff verwendet, sondern als „über den Betrachtungszeitraum x € günstiger/teurer als die Referenz“.
 
-### V0.4-Grenze
+### V0.5 · Daten- und Vorabnahmestand
 
-Die Oberfläche und der dynamische Rechenkern sind testbar. Die Förderengine ist noch nicht regelbasiert. Heizungsmaßnahmen erhalten einen ersten zentralen System-/Kostenansatz; PV-Kosten können berücksichtigt werden, das objektspezifische Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.4 noch nicht Teil des Lebenszyklusvergleichs.
+Die EAT-Richtkosten für die in Wirtschaftlichkeit direkt verwendeten Hüll- und Systemmaßnahmen sind mit Stand August 2026 zentralisiert. Alle Quick-Maßnahmen besitzen nun eine explizite Referenzsemantik: `renewal`, `none` oder `project_specific`. Dadurch bedeutet ein leeres Referenzfeld nicht mehr automatisch „Daten fehlen“: OGD und Kellerdecke erhalten bewusst keine regelmäßige Referenz-Erneuerung, Boden gegen Erdreich bleibt projektspezifisch, Fassaden/Dach/Fenster/Tür erhalten eigene Referenzkostenmodelle, Heizung wird als zeitlich verschobener späterer Wärmeerzeugerersatz modelliert. BKI wird weiterhin nur intern zur Plausibilisierung verwendet; lizenzierte Rohwerte und Regionalfaktoren werden nicht in die öffentliche Runtime-Datenbasis übernommen. Die veröffentlichten EAT-Richtwerte werden im Tool nicht nochmals regionalisiert.
+
+Der erste konkrete Beratungsausdruck ist in V0.5 integriert und umfasst zwei Seiten: Kundenergebnis mit Zukunftsfit `Bestand ↔ Sanierungsziel`, Kosten-/Finanzierungsbalken und Haupt-Zeitgrafik sowie eine Detailseite mit Maßnahmen, kumulierten Lebenszykluskosten, Kundenprioritäten, Zusatzwirkungen, Einordnung und `Aussagequalität & Unsicherheiten`.
+
+Noch nicht regelbasiert sind die Förderengine und echte automatische Sensitivitätsläufe. PV-Kosten können berücksichtigt werden; ein objektspezifisches Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.5 noch nicht Teil des Lebenszyklusvergleichs.

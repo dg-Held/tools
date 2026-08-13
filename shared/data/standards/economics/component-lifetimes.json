@@ -1,9 +1,9 @@
 {
   "schema": "energy-tools-component-lifetimes",
-  "version": "2026-08-05-v0.5-final",
-  "data_date": "2017-12-01",
-  "status": "mixed-normative-informative-and-project-fallback",
-  "notice": "Fensterwerte Holz und Aluminium stammen aus dem informativen Anhang D der ÖNORM EN 15459-1:2017. Kunststoff, Holz-Aluminium, Außentüren und opake Dämmmaßnahmen bleiben transparente, überschreibbare Projekt-Fallbacks, soweit im bereitgestellten Auszug kein direkt zuordenbarer Eintrag enthalten ist.",
+  "version": "2026-08-13-v0.7-eat-reviewed",
+  "data_date": "2026-08",
+  "status": "mixed-norm-informative-and-eat-reviewed-fallback",
+  "notice": "Fensterwerte Holz und Aluminium stammen aus dem informativen Anhang D der ÖNORM EN 15459-1:2017. Opake Dämmmaßnahmen, Kunststoff-/Holz-Alu-Fenster und Außentüren sind transparente EAT-Beratungsdefaults; sie wurden mit den intern bereitgestellten BKI-Lebensdauerangaben plausibilisiert, ohne BKI-Rohtabellen öffentlich zu reproduzieren. Projektspezifische Angaben haben Vorrang.",
   "source": {
     "title": "ÖNORM EN 15459-1:2017, Anhang D – Daten für Komponenten",
     "source_id": "SRC_EN15459_D",
@@ -15,54 +15,54 @@
       "cost_model_id": "wall_wdvs",
       "years": 40,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Normauszug kein direkt zuordenbarer WDVS-Eintrag."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
     },
     {
       "id": "wall_ventilated",
       "cost_model_id": "wall_ventilated",
       "years": 50,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Normauszug kein direkt zuordenbarer Fassadensystem-Eintrag."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
     },
     {
       "id": "top_ceiling",
       "cost_model_id": "top_ceiling",
       "years": 50,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Normauszug kein direkt zuordenbarer Dämmmaßnahmen-Eintrag."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
     },
     {
       "id": "roof",
       "cost_model_id": "roof",
       "years": 40,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Normauszug kein direkt zuordenbarer Dach-Dämmmaßnahmen-Eintrag."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
     },
     {
       "id": "basement_ceiling",
       "cost_model_id": "basement_ceiling",
       "years": 50,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Normauszug kein direkt zuordenbarer Dämmmaßnahmen-Eintrag."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
     },
     {
       "id": "ground_floor",
       "cost_model_id": "ground_floor",
       "years": 50,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Normauszug kein direkt zuordenbarer Boden-Dämmmaßnahmen-Eintrag."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
     },
     {
       "id": "window_wood",
@@ -97,9 +97,9 @@
       "maintenance_percent_initial_per_year": 0.5,
       "disposal_percent_initial": null,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Anhang-D-Auszug kein eigener Kunststofffenster-Eintrag; überschreibbarer Projekt-Fallback."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit den bereitgestellten BKI-Lebensdauerangaben plausibilisiert, projektspezifisch überschreibbar."
     },
     {
       "id": "window_wood_aluminium",
@@ -110,18 +110,18 @@
       "maintenance_percent_initial_per_year": 0.5,
       "disposal_percent_initial": null,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Anhang-D-Auszug kein eigener Holz-Aluminium-Fenster-Eintrag; überschreibbarer Projekt-Fallback."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit den bereitgestellten BKI-Lebensdauerangaben plausibilisiert, projektspezifisch überschreibbar."
     },
     {
       "id": "door_replace",
       "cost_model_id": "door_replace",
       "years": 30,
       "active": true,
-      "status": "project-fallback",
-      "source_id": "PROJECT_DECISION",
-      "note": "Im bereitgestellten Normauszug kein direkt zuordenbarer Außentür-Eintrag."
+      "status": "eat-reviewed-fallback",
+      "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
     }
   ]
 }

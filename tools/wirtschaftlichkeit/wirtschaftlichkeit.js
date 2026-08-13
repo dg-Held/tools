@@ -105,6 +105,15 @@
   function systemCost(id) { return (systemCostConfig?.items ?? []).find((item) => item.id === id && item.active !== false) ?? null; }
   function costModel(id) { return (costConfig?.models ?? []).find((item) => item.id === id && item.active !== false) ?? null; }
   function lifetimeFor(id) { return (lifetimeConfig?.items ?? []).find((item) => item.cost_model_id === id && item.active !== false) ?? null; }
+
+  function referenceCostFor(cost, quantity = 1, kind = 'area') {
+    const reference = cost?.reference ?? null;
+    const mode = reference?.mode ?? (finite(cost?.sunk_cost_eur_m2, 0) > 0 ? 'renewal' : 'none');
+    if (mode === 'none') return { value: 0, mode, label: reference?.label ?? 'keine regelmäßige Referenz-Erneuerung angesetzt', explicit: true };
+    const unitCost = finite(reference?.default_cost, finite(cost?.sunk_cost_eur_m2, 0));
+    const value = kind === 'item' ? unitCost : Math.max(0, finite(quantity, 0)) * unitCost;
+    return { value: Math.max(0, value), mode, label: reference?.label ?? 'Referenz-Erneuerung', explicit: Boolean(reference) };
+  }
   function flowComponent(project, id) { return project.modules?.energiefluss?.resultSummary?.components?.find((item) => item.id === id) ?? null; }
 
   function currentCarrier(project) {
@@ -139,7 +148,7 @@
     return `${ORIGIN_LABEL[info.origin] ?? 'Projektwert'}${info.source ? ` · ${info.source}` : ''}`;
   }
 
-  function writeManualField(path, value, unit = null, source = 'Nutzereingabe Wirtschaftlichkeit V0.4') {
+  function writeManualField(path, value, unit = null, source = 'Nutzereingabe Wirtschaftlichkeit V0.5') {
     if (value === null || value === '') store.clearFieldCandidate(path, model.ORIGIN.MANUAL);
     else store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit, source });
   }
@@ -384,7 +393,9 @@
     const cost = costModel(definition.costModelId);
     const life = lifetimeFor(definition.costModelId);
     const lifetimeYears = finite(draft.lifetimeYears, finite(life?.years, 40));
-    const referenceYearAuto = referenceTiming(project, definition, lifetimeYears);
+    const referenceMeta = cost?.reference ?? null;
+    const referenceMode = referenceMeta?.mode ?? (finite(cost?.sunk_cost_eur_m2, 0) > 0 ? 'renewal' : 'none');
+    const referenceYearAuto = ['none','project_specific'].includes(referenceMode) ? null : referenceTiming(project, definition, lifetimeYears);
     const flow = flowComponent(project, definition.flowId);
     const existingLoss = finite(flow?.lossKwh, null);
     const efficiency = finite(valueAt(project, 'systems.heating.usefulHeatFactor', 0.85), 0.85);
@@ -408,7 +419,7 @@
       const middle = finite(cost?.range_eur_m2?.middle, finite(cost?.base_cost_eur_m2, 0));
       if (definition.kind === 'door') fullInvestment = middle;
       else fullInvestment = (area ?? 0) * middle;
-      referenceCost = definition.kind === 'door' ? finite(cost?.sunk_cost_eur_m2, 0) : (area ?? 0) * finite(cost?.sunk_cost_eur_m2, 0);
+      referenceCost = referenceCostFor(cost, definition.kind === 'door' ? 1 : (area ?? 0), definition.kind === 'door' ? 'item' : 'area').value;
       selectedVariantLabel = exchange?.short_label ?? exchange?.label ?? 'Mindeststandard';
     } else if (area !== null && u.value !== null && target !== null) {
       const thicknessRaw = measureCore.requiredThicknessCm(u.value, target, 0.035);
@@ -423,7 +434,7 @@
           renewalContext: 'renewal_due',
         });
         fullInvestment = investment.fullInvestmentEur;
-        referenceCost = investment.sunkCostEur;
+        referenceCost = referenceCostFor(cost, area ?? 0, 'area').value;
         selectedVariantLabel = `${number0.format(thickness)} cm`; 
       }
     }
@@ -442,13 +453,14 @@
       fullInvestmentAutoEur: fullInvestment, fullInvestmentManual,
       referenceCostEur: referenceCostManual ? finite(draft.referenceCostEur, referenceCost) : referenceCost,
       referenceCostAutoEur: referenceCost, referenceCostManual,
+      referenceMode, referenceLabel: referenceMeta?.label ?? (referenceMode === 'none' ? 'keine regelmäßige Referenz-Erneuerung angesetzt' : 'Referenz-Erneuerung'),
       referenceYear, referenceYearAuto, referenceYearManual: Boolean(draft.referenceYearConfirmed),
       deliveredSavingsKwh: energySavingsManual ? roundTo(finite(draft.deliveredSavingsKwh, 0), 10) : 0,
       energySavingsManual,
       lifetimeYears, manualOnly: false, informational: false, dataQuality, areaM2: area,
       existingUValue: u.value, targetUValue: newU, costRange: cost?.range_eur_m2 ?? null,
       selectedVariantLabel, energyMethod: energySavingsManual ? 'manueller Override' : 'verbrauchsverankert · wird live berechnet', fundingEntries: [], fundingEur: 0,
-      note: referenceYearAuto === null && referenceCost > 0 ? 'Bauteilalter unbekannt: Referenzkosten werden konservativ noch nicht angerechnet.' : null,
+      note: referenceMode === 'project_specific' && referenceCost > 0 ? 'Referenzkosten sind vorhanden; der tatsächliche Erneuerungszeitpunkt ist projektspezifisch zu bestätigen.' : (referenceYearAuto === null && referenceCost > 0 && referenceMode !== 'none' ? 'Bauteilalter unbekannt: Referenzkosten werden konservativ noch nicht angerechnet.' : null),
     };
   }
 
@@ -485,6 +497,7 @@
       fullInvestmentAutoEur: fullInvestment, fullInvestmentManual,
       referenceCostEur: referenceCostManual ? finite(draft.referenceCostEur, referenceCost) : referenceCost,
       referenceCostAutoEur: referenceCost, referenceCostManual,
+      referenceMode: definition.id === 'heating' ? 'renewal' : 'none', referenceLabel: definition.id === 'heating' ? 'späterer Ersatz des Wärmeerzeugers' : 'keine Referenz-Erneuerung angesetzt',
       referenceYear: draft.referenceYearConfirmed ? finite(draft.referenceYear, referenceYear) : referenceYear,
       referenceYearAuto: referenceYear, referenceYearManual: Boolean(draft.referenceYearConfirmed),
       deliveredSavingsKwh: finite(draft.deliveredSavingsKwh, deliveredSavingsKwh),
@@ -503,9 +516,11 @@
     const fundingEntries = clone(stored.funding?.entries ?? []);
     const fundingEur = finite(stored.funding?.amountEur, fundingEntries.reduce((sum, item) => sum + finite(item.amountEur, 0), 0));
     const lifetimeYears = finite(draft.lifetimeYears, finite(stored.costModel?.lifetimeYears, finite(lifetimeFor(definition.costModelId)?.years, 40)));
-    const referenceYearAuto = referenceTiming(project, definition, lifetimeYears);
-    const fallbackReference = envelopeFallbackMeasure(project, definition).referenceCostEur;
+    const fallbackMeasureData = envelopeFallbackMeasure(project, definition);
     const storedReference = finite(stored.sunkCosts?.totalEur, 0);
+    const referenceMode = storedReference > 0 ? 'renewal' : fallbackMeasureData.referenceMode;
+    const referenceYearAuto = ['none','project_specific'].includes(referenceMode) ? null : referenceTiming(project, definition, lifetimeYears);
+    const fallbackReference = fallbackMeasureData.referenceCostEur;
     const referenceCostAuto = storedReference > 0 ? storedReference : fallbackReference;
     const referenceYear = draft.referenceYearConfirmed ? finite(draft.referenceYear, referenceYearAuto) : referenceYearAuto;
     const energySavingsManual = Boolean(draft.energySavingsManual);
@@ -519,6 +534,7 @@
       fullInvestmentAutoEur: fullInvestmentAuto, fullInvestmentManual,
       referenceCostEur: referenceCostManual ? finite(draft.referenceCostEur, referenceCostAuto) : referenceCostAuto,
       referenceCostAutoEur: referenceCostAuto, referenceCostManual,
+      referenceMode, referenceLabel: storedReference > 0 ? 'Referenz aus Bauteil & Sanierung' : fallbackMeasureData.referenceLabel,
       referenceYear, referenceYearAuto, referenceYearManual: Boolean(draft.referenceYearConfirmed),
       deliveredSavingsKwh: energySavingsManual ? roundTo(finite(draft.deliveredSavingsKwh, 0), 10) : 0,
       energySavingsManual,
@@ -526,7 +542,7 @@
       dataQuality: 'objektspezifisch', areaM2: finite(stored.existingState?.areaM2, null), existingUValue: finite(stored.existingState?.uValue, null), targetUValue: finite(stored.selectedVariant?.uValue, null),
       manualOnly: false, informational: false, fundingEntries, fundingEur,
       energyMethod: energySavingsManual ? 'manueller Override' : 'verbrauchsverankert · wird live berechnet',
-      note: stored.funding?.confirmed ? 'Förderung aus Bauteil & Sanierung übernommen.' : (referenceYearAuto === null && referenceCostAuto > 0 ? 'Bauteilalter unbekannt: Referenzzeitpunkt prüfen.' : null),
+      note: referenceYearAuto === null && referenceCostAuto > 0 && referenceMode !== 'none' ? 'Referenzzeitpunkt prüfen.' : null,
     };
   }
 
@@ -592,12 +608,17 @@
       const energyValue = item.deliveredSavingsKwh > 0 ? roundTo(item.deliveredSavingsKwh, 10) : '';
       const energyNote = item.energySavingsManual ? 'manueller Override' : 'automatisch · realer Verbrauch × relative Hüllwirkung';
       const fullCostNote = item.fullInvestmentManual ? 'manuell überschrieben' : 'automatisch / Projektdaten bzw. Richtwert';
-      const referenceCostNote = item.referenceCostEur > 0 ? (item.referenceCostManual ? 'manuell überschrieben' : 'automatisch / Referenzkostenmodell') : 'Referenzkosten noch offen';
-      const referenceTimingNote = item.referenceYearManual ? `${referenceTimingText(item.referenceYear)} · manuell` : `${referenceTimingText(item.referenceYear)} · automatisch`;
-      const fundingText = item.fundingEur > 0 ? `bis zu ${formatMoney(item.fundingEur)}` : (item.source === 'Bauteil & Sanierung' ? 'keine Förderung hinterlegt' : 'noch keine Förderung hinterlegt');
-      const fundingSource = item.source === 'Bauteil & Sanierung' ? 'aus Bauteil & Sanierung' : 'kann unter Kosten & Förderung ergänzt werden';
+      const referenceCostNote = item.referenceMode === 'none'
+        ? 'keine reguläre Referenz-Erneuerung angesetzt'
+        : item.referenceCostEur > 0
+          ? (item.referenceCostManual ? 'manuell überschrieben' : 'automatisch / Referenzkostenmodell')
+          : item.referenceMode === 'project_specific' ? 'projektspezifisch prüfen' : 'Referenzkosten noch offen';
+      const referenceTimingNote = item.referenceMode === 'none'
+        ? 'kein Referenzzeitpunkt erforderlich'
+        : item.referenceYearManual ? `${referenceTimingText(item.referenceYear)} · manuell` : `${referenceTimingText(item.referenceYear)} · automatisch`;
+      const fundingCard = item.fundingEur > 0 ? `<small class="measure-card-funding">Förderung bis zu ${escapeHtml(formatMoney(item.fundingEur))}</small>` : '';
       const reset = (field, visible) => visible ? `<button class="measure-reset" data-reset-field="${field}" type="button">↺ automatisch</button>` : '';
-      return `<div class="measure-item ${disabled ? 'is-unprepared' : ''}" data-measure-id="${escapeHtml(item.id)}"><div class="measure-item-header"><input type="checkbox" ${item.selected ? 'checked' : ''} ${disabled ? 'disabled' : ''} aria-label="${escapeHtml(item.label)} auswählen"><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.source)} · ${escapeHtml(item.dataQuality)}</small>${item.note ? `<small class="measure-note">${escapeHtml(item.note)}</small>` : ''}</div><div class="measure-item-values"><strong>${cost}</strong><small>${escapeHtml(saving)}</small></div></div><details ${openMeasureIds.has(item.id) ? 'open' : ''}><summary>Werte prüfen</summary><div class="measure-detail-grid"><label><span>Vollkosten</span><div class="input-with-unit"><input data-field="fullInvestmentEur" type="number" min="0" step="500" value="${item.fullInvestmentEur || ''}"><em>€</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(fullCostNote)}</small>${reset('fullInvestmentEur', item.fullInvestmentManual)}</div></label><label><span>Referenz-Erneuerung</span><div class="input-with-unit"><input data-field="referenceCostEur" type="number" min="0" step="500" value="${item.referenceCostEur || ''}" placeholder="offen"><em>€</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(referenceCostNote)}</small>${reset('referenceCostEur', item.referenceCostManual)}</div></label><label><span>Referenz in</span><div class="input-with-unit"><input data-field="referenceYear" type="number" min="0" max="60" step="1" value="${referenceValue}" placeholder="offen"><em>J.</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(referenceTimingNote)}</small>${reset('referenceYear', item.referenceYearManual)}</div></label><label><span>Energieeinsparung</span><div class="input-with-unit"><input data-field="deliveredSavingsKwh" type="number" min="0" step="10" value="${energyValue}" placeholder="offen"><em>kWh/a</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(energyNote)}</small>${reset('deliveredSavingsKwh', item.energySavingsManual)}</div></label></div><div class="measure-funding-line"><span>Förderung aus Maßnahme</span><span><b>${escapeHtml(fundingText)}</b> · ${escapeHtml(fundingSource)}</span></div></details></div>`;
+      return `<div class="measure-item ${disabled ? 'is-unprepared' : ''}" data-measure-id="${escapeHtml(item.id)}"><div class="measure-item-header"><input type="checkbox" ${item.selected ? 'checked' : ''} ${disabled ? 'disabled' : ''} aria-label="${escapeHtml(item.label)} auswählen"><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.source)} · ${escapeHtml(item.dataQuality)}</small>${item.note ? `<small class="measure-note">${escapeHtml(item.note)}</small>` : ''}</div><div class="measure-item-values"><strong>${cost}</strong><small>${escapeHtml(saving)}</small>${fundingCard}</div></div><details ${openMeasureIds.has(item.id) ? 'open' : ''}><summary>Werte prüfen</summary><div class="measure-detail-grid"><label><span>Vollkosten</span><div class="input-with-unit measure-input-unit"><input data-field="fullInvestmentEur" type="number" min="0" step="500" value="${item.fullInvestmentEur || ''}"><em>€</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(fullCostNote)}</small>${reset('fullInvestmentEur', item.fullInvestmentManual)}</div></label><label><span>Referenz-Erneuerung</span><div class="input-with-unit measure-input-unit"><input data-field="referenceCostEur" type="number" min="0" step="500" value="${item.referenceCostEur || ''}" placeholder="offen"><em>€</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(referenceCostNote)}</small>${reset('referenceCostEur', item.referenceCostManual)}</div></label><label><span>Referenz in</span><div class="input-with-unit measure-input-unit"><input data-field="referenceYear" type="number" min="0" max="60" step="1" value="${referenceValue}" placeholder="offen"><em>J.</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(referenceTimingNote)}</small>${reset('referenceYear', item.referenceYearManual)}</div></label><label><span>Energieeinsparung</span><div class="input-with-unit measure-input-unit measure-input-unit--energy"><input data-field="deliveredSavingsKwh" type="number" min="0" step="10" value="${energyValue}" placeholder="offen"><em>kWh/a</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(energyNote)}</small>${reset('deliveredSavingsKwh', item.energySavingsManual)}</div></label></div></details></div>`;
     }).join('');
     $('measureList').querySelectorAll('.measure-item').forEach((row) => {
       const id = row.dataset.measureId;
@@ -894,8 +915,8 @@
     add('line',{x1:ml,y1:y0,x2:width-mr,y2:y0,class:'chart-zero'}); add('line',{x1:ml,y1:mt,x2:ml,y2:height-mb,class:'chart-axis'});
     const axisTitle=add('text',{x:18,y:mt+plotH/2,'text-anchor':'middle',class:'chart-axis-title',transform:`rotate(-90 18 ${mt+plotH/2})`});axisTitle.textContent='€ Vorteil gegenüber Referenz';
     const zeroLabel=add('text',{x:width-mr-4,y:Math.max(mt+14,Math.min(height-mb-8,y0-7)),'text-anchor':'end',class:'chart-label-strong'});zeroLabel.textContent='Referenz · beide Varianten gleich teuer';
-    const top=add('text',{x:width-mr-6,y:mt+16,'text-anchor':'end',class:'chart-label-strong'});top.textContent='Sanierung günstiger';
-    const bottom=add('text',{x:width-mr-6,y:height-mb-10,'text-anchor':'end',class:'chart-label-strong'});bottom.textContent='Sanierung noch teurer';
+    const top=add('text',{x:ml+plotW/2,y:mt+16,'text-anchor':'middle',class:'chart-label-strong'});top.textContent='Sanierung günstiger';
+    const bottom=add('text',{x:ml+plotW/2,y:height-mb-10,'text-anchor':'middle',class:'chart-label-strong'});bottom.textContent='Sanierung noch teurer';
     const pts=series.map((p)=>`${x(p.year)},${y(p.advantage)}`).join(' '); add('polyline',{points:pts,class:'chart-line'});
     const start=series[0];
     if(start){const sy=y(start.advantage);add('circle',{cx:x(start.year),cy:sy,r:4,class:'chart-point'});const labelY=start.advantage<=0?Math.max(mt+14,sy-10):Math.min(height-mb-8,sy+18);const st=add('text',{x:x(start.year)+8,y:labelY,class:'chart-label-strong'});st.textContent=`heute ${formatSignedMoney(start.advantage)}`;}
@@ -950,7 +971,7 @@
     else text += `Die Energie- und Lebenszykluswirkung deckt die wirtschaftlich zusätzliche Investition im betrachteten Zeitraum nicht vollständig. `;
     if (priorities.length) text += `Für das Kundengespräch besonders relevant: ${priorities.slice(0,3).join(', ')}. `;
     if (Math.abs(finite(result.energy.hwbDeviationPercent,0)) > 60) text += 'Verbrauch und U-Wert-Hüllmodell weichen deutlich voneinander ab; die Energieeinsparung wurde deshalb verbrauchsverankert gerechnet und der Bestandszustand sollte geprüft werden. ';
-    if (result.selected.some((m)=>m.informational)) text += 'PV-Kosten sind bereits in der Investition enthalten; ein objektspezifisches PV-Ertragsmodell ist in V0.4 noch nicht Bestandteil der Zeitrechnung.';
+    if (result.selected.some((m)=>m.informational)) text += 'PV-Kosten sind bereits in der Investition enthalten; ein objektspezifisches PV-Ertragsmodell ist in V0.5 noch nicht Bestandteil der Zeitrechnung.';
     return text.trim();
   }
 
@@ -973,6 +994,7 @@
   function renderResult(project) {
     const result = calculate(project); currentComparison = result;
     $('totalInvestment').textContent = formatMoney(result.totalInvestment);
+    $('costBasisText').textContent = `EAT-Richtwerte ${costConfig?.data_date ?? '–'} · Angebote haben Vorrang`;
     $('fundingEditorTotal').textContent = `bis zu ${formatMoney(result.funding.total)}`;
     $('fundingTotal').textContent = `bis zu ${formatMoney(result.funding.total)}`;
     const fundingTotalPercent = result.totalInvestment > 0 ? result.funding.total / result.totalInvestment * 100 : null;
@@ -1034,16 +1056,81 @@
       ['11 · Amortisation / Gesamtkostenverlauf','Die Zeitgrafik folgt der Kumulationsmethode. Zahlungsströme werden in dem Jahr berücksichtigt, in dem sie anfallen; dadurch sind mehrere Amortisations- und Deamortisationspunkte möglich.'],
       ['12 · Hüllplausibilität','Verbrauchsbasierter korrigierter HWB und unabhängiger U-Wert-HWB werden als Plausibilitätscheck gegenübergestellt. Deutliche Abweichungen sind ein Beratungsanlass, keine automatische Fehlerdiagnose.'],
       ['13 · Datenpriorität / Overrides','Projektspezifische bzw. manuell bestätigte Werte haben Vorrang vor zentralen EAT-Richtwerten. Automatisch abgeleitete Werte werden bei besseren Projektdaten neu berechnet. Ein manueller Override kann über „↺ automatisch“ wiederhergestellt werden.'],
-      ['14 · PV in V0.4','PV-Kosten können für Finanzierung und Zukunftsfit-Paket berücksichtigt werden. Ein objektspezifisches PV-Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.4 noch nicht Teil der wirtschaftlichen Zeitrechnung.'],
+      ['14 · PV in V0.5','PV-Kosten können für Finanzierung und Zukunftsfit-Paket berücksichtigt werden. Ein objektspezifisches PV-Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.5 noch nicht Teil der wirtschaftlichen Zeitrechnung.'],
       ['15 · Regelwerke und Grenzen','Methodische Grundlage: ÖNORM B 8110-4:2024-04-15, ÖNORM M 7140:2021-01 und ÖNORM EN 15459-1:2017. Beratungshilfe, keine Finanzierungs- oder Förderzusage. Richtkosten, Lebensdauern, Energiepreise, Förderfähigkeit und Förderhöhe sind vor Umsetzung projektspezifisch zu prüfen.'],
     ].map(([h,p])=>`<div><h3>${h}</h3><p>${p}</p></div>`).join('');
   }
+  function printFutureFitMarkup(project, candidate = false) {
+    return `<div class="print-future-fit-track">${futureFitSteps(project, candidate).map(([label, info], i) => {
+      const cls = info.state === 'done' ? 'is-done' : info.state === 'advanced' ? 'is-advanced' : info.state === 'partial' ? 'is-partial' : info.state === 'needs' ? 'is-needs' : '';
+      return `<div class="print-future-step ${cls}"><i>${i + 1}</i><span>${escapeHtml(label)}</span><small>${escapeHtml(info.note)}</small></div>`;
+    }).join('')}</div>`;
+  }
+
+  function printChartMarkup(id, viewBox) {
+    const source = $(id);
+    return `<svg class="print-econ-chart" viewBox="${viewBox}" aria-hidden="true">${source?.innerHTML ?? ''}</svg>`;
+  }
+
+  function printBarMarkup(result) {
+    const composition = segment('Referenz', result.referenceNominal, result.totalInvestment, 'bar-segment--reference') + segment('energetisch', result.energeticNominal, result.totalInvestment, 'bar-segment--energy');
+    const total = result.totalInvestment || 1;
+    const categoryTotal = result.funding.state + result.funding.federal + result.funding.other + result.funding.bonus;
+    const scale = categoryTotal > 0 && result.funding.total < categoryTotal ? result.funding.total / categoryTotal : 1;
+    const state = result.funding.state * scale, federal = result.funding.federal * scale, other = result.funding.other * scale, bonus = result.funding.bonus * scale;
+    const finance = segment('Land', state, total, 'bar-segment--state') + segment('Bund', federal, total, 'bar-segment--federal') + segment('Sonstige', other, total, 'bar-segment--other') + segment('Bonus', bonus, total, 'bar-segment--bonus') + segment('Eigenanteil', result.netInvestment, total, 'bar-segment--own');
+    const financeLegend = [state > 0 ? `Land ${formatMoney(state)}` : '', federal > 0 ? `Bund ${formatMoney(federal)}` : '', other > 0 ? `Sonstige ${formatMoney(other)}` : '', bonus > 0 ? `Bonus ${formatMoney(bonus)}` : '', `Eigenanteil ${formatMoney(result.netInvestment)}`].filter(Boolean).join(' · ');
+    return `<div class="print-econ-bar-group"><h3>Woraus besteht die Investition?</h3><div class="stacked-bar">${composition}</div><p>Referenz-/ohnehin notwendige Arbeiten <b>${formatMoney(result.referenceNominal)}</b> · energetische Verbesserung <b>${formatMoney(result.energeticNominal)}</b></p></div><div class="print-econ-bar-group"><h3>Wie wird sie finanziert?</h3><div class="stacked-bar">${finance}</div><p>${escapeHtml(financeLegend)}</p></div>`;
+  }
+
   function buildPrintReport(result, project) {
     const host=$('economicsPrintReport'); if(!host)return;
     const selected=result.selected.map((m)=>m.label).join(' · ') || 'keine Maßnahme';
-    const priorities=(project.advice?.priorities??[]).map((id)=>PRIORITY_LABEL[id]).filter(Boolean).join(' · ')||'–';
+    const priorities=(project.advice?.priorities??[]).map((id)=>PRIORITY_LABEL[id]).filter(Boolean);
     const budget=budgetAssessment(project,result);
-    host.innerHTML=`<section class="print-econ-section"><h1 class="print-econ-title">Wirtschaftlichkeit</h1><p><strong>${escapeHtml(project.project?.title||'Energieberatung')}</strong><br>${escapeHtml(project.project?.addressLabel||'')}</p><p>Betrachtet: ${escapeHtml(selected)}</p><p><strong>Schwerpunkte:</strong> ${escapeHtml(priorities)} · <strong>Budget:</strong> ${escapeHtml(budget.label)}</p><div class="print-econ-grid"><div class="print-econ-kpi"><span>Gesamtinvestition</span><strong>${formatMoney(result.totalInvestment)}</strong></div><div class="print-econ-kpi"><span>Mögliche Förderung</span><strong>bis zu ${formatMoney(result.funding.total)}</strong></div><div class="print-econ-kpi"><span>Restinvestition</span><strong>${formatMoney(result.netInvestment)}</strong></div><div class="print-econ-kpi"><span>${result.relevantInvestment<0?'Wirtschaftlicher Startvorteil':'Wirtschaftliche Mehrinvestition'}</span><strong>${formatMoney(Math.abs(result.relevantInvestment))}</strong></div></div></section><section class="print-econ-section print-econ-note"><strong>Einordnung</strong><p>${escapeHtml(interpretation(result,project))}</p></section><section class="print-econ-section"><h2>Energiekosten</h2><p>Vorher: <strong>${formatMoney(result.energy.annualBaseCost,50)}/a</strong> · nachher: <strong>${formatMoney(result.energy.annualCandidateCost,50)}/a</strong> · Einsparung: <strong>${formatMoney(result.energy.annualSavingsEur,50)}/a</strong></p><p>${result.comparison?.durableAdvantageYear!==null&&result.comparison?.durableAdvantageYear!==undefined?`Dauerhaft wirtschaftlich günstiger ab etwa Jahr ${Math.round(result.comparison.durableAdvantageYear)}.`:'Im Betrachtungszeitraum wird kein eindeutiger dauerhafter wirtschaftlicher Schnittpunkt ausgewiesen.'}</p><p class="print-funding-note">Förderungen wurden orientierend abgeschätzt. Förderfähige Kosten können auch notwendige Begleitarbeiten umfassen. Bitte klären Sie vor Beauftragung bzw. Umsetzung die tatsächliche Förderhöhe, Verfügbarkeit, Voraussetzungen, förderfähigen Kosten und Einreichfristen direkt mit den zuständigen Förderstellen.</p></section>`;
+    const fundingTotalPercent = result.totalInvestment > 0 ? result.funding.total / result.totalInvestment * 100 : null;
+    const fundingEnergeticPercent = result.energeticNominal > 0 ? result.funding.total / result.energeticNominal * 100 : null;
+    const fundingPercentText = fundingTotalPercent === null ? '–' : `ca. ${number0.format(fundingTotalPercent)} % gesamt${fundingEnergeticPercent !== null ? ` / ${number0.format(fundingEnergeticPercent)} % energetischer Anteil` : ''}`;
+    const durable = result.comparison?.durableAdvantageYear;
+    const longTerm = result.comparison?.advantagePresentValue;
+    const longTermText = longTerm === null || longTerm === undefined ? '–' : `${formatMoney(Math.abs(longTerm))} ${longTerm >= 0 ? 'günstiger' : 'teurer'}`;
+    const effectMarkup = effectRows(result,project).map(([label,value])=>`<div class="print-effect"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+    const measureRows = result.selected.map((m)=>{
+      const reference = m.referenceMode === 'none' ? 'keine reguläre' : m.referenceCostEur > 0 ? `${formatMoney(m.referenceCostEur)}${finite(m.referenceYear,null)!==null ? ` · ${referenceTimingText(m.referenceYear)}` : ' · Zeitpunkt offen'}` : 'offen';
+      const saving = m.id === 'heating' ? (m.targetEfficiency ? `Zielsystem · JAZ ${number1.format(m.targetEfficiency)}` : 'Systemwechsel') : m.informational ? 'Ertragsmodell offen' : m.deliveredSavingsKwh > 0 ? formatEnergy(m.deliveredSavingsKwh,10) : '–';
+      return `<tr><td><strong>${escapeHtml(m.label)}</strong><small>${escapeHtml(m.source)} · ${escapeHtml(m.dataQuality)}</small></td><td>${formatMoney(m.fullInvestmentEur)}</td><td>${m.fundingEur>0?`bis zu ${formatMoney(m.fundingEur)}`:'–'}</td><td>${escapeHtml(reference)}</td><td>${escapeHtml(saving)}</td></tr>`;
+    }).join('');
+    const quality = $('sensitivityBox')?.textContent ?? 'Aussagequalität konnte nicht bestimmt werden.';
+    const methodMeta = `Rechenkern ${economics.MODEL_VERSION} · Energiebrücke ${anchorCore.MODEL_VERSION} · Kostenstand ${costConfig?.data_date ?? '–'} · Betrachtung ${result.assumptions.periodYears} Jahre · Zins ${number1.format(result.assumptions.interestRatePercent)} %`;
+    host.innerHTML=`
+      <section class="print-econ-page">
+        <header class="print-report-header"><p class="print-kicker">Beratungsausdruck</p><h1>Wirtschaftlichkeit</h1></header>
+        <div class="print-econ-intro"><div><span>Betrachtet</span><strong>${escapeHtml(selected)}</strong></div><div><span>Budget</span><strong>${escapeHtml(budget.label)}</strong><small>${escapeHtml(budget.note)}</small></div></div>
+        <div class="print-econ-grid print-econ-grid--top">
+          <div class="print-econ-kpi"><span>Gesamtinvestition</span><strong>${formatMoney(result.totalInvestment)}</strong></div>
+          <div class="print-econ-kpi"><span>Mögliche Förderung</span><strong>bis zu ${formatMoney(result.funding.total)}</strong><small>${escapeHtml(fundingPercentText)}</small></div>
+          <div class="print-econ-kpi"><span>Restinvestition</span><strong>${formatMoney(result.netInvestment)}</strong></div>
+          <div class="print-econ-kpi"><span>Energiekosten</span><strong>${formatMoney(result.energy.annualCandidateCost,50)}/a</strong><small>vorher ${formatMoney(result.energy.annualBaseCost,50)}/a · Δ ${formatMoney(Math.abs(result.energy.annualSavingsEur),50)}/a</small></div>
+        </div>
+        <div class="print-future-fit-compare">
+          <div><p class="eyebrow">Zielbild · Bestand</p><h2>Zukunftsfit 2050</h2>${printFutureFitMarkup(project,false)}</div>
+          <div><p class="eyebrow">Zielbild · Sanierung</p><h2>Mit gewählten Maßnahmen</h2>${printFutureFitMarkup(project,true)}</div>
+        </div>
+        <div class="print-econ-bars">${printBarMarkup(result)}</div>
+        <div class="print-econ-chart-card"><div class="print-chart-title"><h2>Wirtschaftlicher Verlauf gegenüber der Referenz</h2><strong>${escapeHtml(longTermText)}</strong></div>${printChartMarkup('economicsChart','0 0 760 320')}<p>Die Nulllinie ist die Referenz. ${durable!==null&&durable!==undefined?`Die Sanierungsvariante liegt ab etwa Jahr ${Math.round(durable)} dauerhaft günstiger.`:'Im Betrachtungszeitraum wird kein eindeutiger dauerhafter Schnittpunkt ausgewiesen.'}</p></div>
+      </section>
+      <section class="print-econ-page print-econ-page--break">
+        <header class="print-report-header"><h1>Wirtschaftlichkeit · Details</h1></header>
+        <h2>Gewählte Maßnahmen</h2>
+        <table class="print-measure-table"><thead><tr><th>Maßnahme</th><th>Vollkosten</th><th>Förderung</th><th>Referenz</th><th>Energie</th></tr></thead><tbody>${measureRows||'<tr><td colspan="5">Keine Maßnahme gewählt.</td></tr>'}</tbody></table>
+        <div class="print-econ-chart-card print-econ-chart-card--compact"><div class="print-chart-title"><h2>Kumulierte Lebenszykluskosten</h2><strong>Referenz ↔ Sanierung</strong></div>${printChartMarkup('comparisonChart','0 0 760 300')}</div>
+        <div class="print-customer-row"><div><span>Ihre Schwerpunkte</span><strong>${escapeHtml(priorities.join(' · ')||'noch nicht festgelegt')}</strong></div><div><span>Budget</span><strong>${escapeHtml(budget.label)}</strong><small>${escapeHtml(budget.note)}</small></div></div>
+        <div class="print-effects"><h2>Mehr als Wirtschaftlichkeit</h2><div>${effectMarkup}</div></div>
+        <div class="print-econ-note"><strong>Einordnung</strong><p>${escapeHtml(interpretation(result,project))}</p></div>
+        <div class="print-quality"><strong>Aussagequalität & Unsicherheiten</strong><p>${escapeHtml(quality)}</p></div>
+        <p class="print-funding-note"><strong>Förderhinweis:</strong> Förderungen wurden orientierend abgeschätzt. Förderfähige Kosten können auch notwendige Begleitarbeiten umfassen. Vor Beauftragung bzw. Umsetzung sind tatsächliche Förderhöhe, Verfügbarkeit, Voraussetzungen, förderfähige Kosten und Einreichfristen bei den zuständigen Förderstellen zu prüfen.</p>
+        <p class="print-method-meta">${escapeHtml(methodMeta)}. Details und Formeln: „Methode und Datenbasis“ im Webtool.</p>
+      </section>`;
   }
 
   function persistSnapshot(result, project) {

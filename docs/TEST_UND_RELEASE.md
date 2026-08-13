@@ -240,3 +240,18 @@ Zusätzlich zu den V0.3-Fachtests ist vor Freigabe zu prüfen:
 - `Methode und Datenbasis` enthält die implementierten Kernformeln für reale Ausgangswärme, verbrauchsverankerte Hüllwirkung, Zielsystem-Endenergie, Barwert und Annuität.
 
 Der Druck ist in V0.4 **noch nicht freigegeben**. Die finale Druckrunde folgt erst nach abgeschlossenem Web-Praxistest und vollständiger Referenzkosten-/Förderdatenrunde.
+
+
+### Wirtschaftlichkeit V0.5 · Vorabnahme · 13.08.2026
+
+Zusätzlich zu V0.4 prüfen:
+
+- Maßnahmenkarte bleibt luftig, zeigt rechts Vollkosten, Einsparung und nur bei `>0` die übernommene Fördersumme; der Förderhinweis wird im aufgeklappten Teil nicht doppelt dargestellt.
+- Im 2×2-Detailraster stehen Zahl und Einheit in derselben Zeile; auf Mobile fällt das Raster sauber auf eine Spalte zurück.
+- Referenzsemantik ist für alle Quick-Maßnahmen explizit: Fassade/Dach/Fenster/Tür `renewal`, OGD/Kellerdecke `none`, Boden gegen Erdreich `project_specific`, PV `none`, Heizung zeitlich verschobener Ersatz.
+- `node tests/validate-economics-cost-data.js` muss ohne Fehler laufen.
+- Die Zonenbeschriftung des Hauptdiagramms kollidiert auch bei sehr hohem kumuliertem Endwert nicht mit dem Endlabel.
+- Beratungsausdruck: zwei Seiten, keine abgeschnittenen Texte/Grafiken; Zielbild Bestand und Sanierungsziel, beide Kostenbalken, Hauptdiagramm, Detailtabelle, Lebenszyklusdiagramm und `Aussagequalität & Unsicherheiten` sind enthalten.
+- Förderhinweis und Methoden-/Datenstand sind im Ausdruck vorhanden; Rohwerte aus lizenzierter BKI-Datenbasis werden nicht ausgegeben.
+
+Vor V1.0: vollständiger V0.5-Praxistest und visuelle Druckabnahme; danach ggf. eine gezielte Korrekturschleife.

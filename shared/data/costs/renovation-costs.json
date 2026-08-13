@@ -1,17 +1,221 @@
 {
   "schema": "energy-tools-renovation-costs",
-  "version": "2026-08-04-master-v1.1",
-  "data_date": "2026-03",
-  "status": "mixed-confirmed-and-proposal",
-  "notice": "Bestätigte EAT-Richtwerte und klar gekennzeichnete Projektvorschläge. Intern exakt rechnen; Beratungsausgabe auf 10 €/m² bzw. 500 € runden.",
+  "version": "2026-08-13-v1.3-eat-reviewed",
+  "data_date": "2026-08",
+  "status": "eat-advisory-costs-internally-plausibilized",
+  "notice": "EAT-Beratungskennwerte Stand August 2026. Lokale EAT-Richtwerte und Angebote haben Vorrang; BKI 2025 wurde intern zur Plausibilisierung herangezogen und nicht als öffentliche Rohkostentabelle übernommen. Intern exakt rechnen; Beratungsausgabe gerundet. Referenzkosten sind ausdrücklich als eigene Vergleichskosten hinterlegt.",
   "models": [
-    {"id":"wall_wdvs","component_id":"wall_external","label":"Außenwand – WDVS","base_cost_eur_m2":120,"variable_cost_eur_m2_cm":1.5,"sunk_cost_eur_m2":80,"range_eur_m2":{"low":130,"middle":160,"high":200},"status":"confirmed","active":true,"source_id":"Kosten EAT"},
-    {"id":"wall_ventilated","component_id":"wall_external","label":"Außenwand – hinterlüftete Fassade","base_cost_eur_m2":220,"variable_cost_eur_m2_cm":2.5,"sunk_cost_eur_m2":140,"range_eur_m2":{"low":220,"middle":280,"high":360},"status":"proposal","active":true,"source_id":"PROJECT_PROPOSAL"},
-    {"id":"top_ceiling","component_id":"roof_top_ceiling","label":"Oberste Geschoßdecke dämmen","base_cost_eur_m2":50,"variable_cost_eur_m2_cm":0.5,"sunk_cost_eur_m2":0,"range_eur_m2":{"low":30,"middle":60,"high":100},"status":"confirmed","active":true,"source_id":"Kosten EAT"},
-    {"id":"roof","component_id":"roof_top_ceiling","label":"Dach / Dachschräge dämmen","base_cost_eur_m2":180,"variable_cost_eur_m2_cm":2.0,"sunk_cost_eur_m2":120,"range_eur_m2":{"low":150,"middle":240,"high":350},"status":"proposal","active":true,"source_id":"PROJECT_PROPOSAL"},
-    {"id":"basement_ceiling","component_id":"ceiling_unheated","label":"Kellerdecke dämmen","base_cost_eur_m2":100,"variable_cost_eur_m2_cm":1.0,"sunk_cost_eur_m2":0,"range_eur_m2":{"low":60,"middle":100,"high":150},"status":"confirmed","active":true,"source_id":"Kosten EAT"},
-    {"id":"ground_floor","component_id":"floor_ground","label":"Boden gegen Erdreich sanieren","base_cost_eur_m2":220,"variable_cost_eur_m2_cm":1.5,"sunk_cost_eur_m2":170,"range_eur_m2":{"low":180,"middle":280,"high":420},"status":"proposal","active":true,"source_id":"PROJECT_PROPOSAL"},
-    {"id":"window_replace","component_id":"window_external","label":"Fenster austauschen","base_cost_eur_m2":1000,"variable_cost_eur_m2_cm":0,"sunk_cost_eur_m2":700,"range_eur_m2":{"low":700,"middle":1000,"high":1300},"status":"confirmed","active":true,"source_id":"Kosten EAT"},
-    {"id":"door_replace","component_id":"door_external","label":"Außentür austauschen","base_cost_eur_m2":4000,"variable_cost_eur_m2_cm":0,"sunk_cost_eur_m2":3000,"range_eur_m2":{"low":2500,"middle":4000,"high":5750},"status":"proposal","active":true,"source_id":"PROJECT_PROPOSAL","unit":"€/Stk."}
-  ]
+    {
+      "id": "wall_wdvs",
+      "component_id": "wall_external",
+      "label": "Außenwand – WDVS",
+      "base_cost_eur_m2": 145,
+      "variable_cost_eur_m2_cm": 1.8,
+      "sunk_cost_eur_m2": 85,
+      "range_eur_m2": {
+        "low": 130,
+        "middle": 180,
+        "high": 230
+      },
+      "status": "eat-reviewed",
+      "active": true,
+      "source_id": "EAT_COSTS_2026_08",
+      "reference": {
+        "mode": "renewal",
+        "label": "Putz-/Fassadeninstandsetzung ohne Dämmung",
+        "unit": "€/m²",
+        "range": {
+          "low": 50,
+          "middle": 85,
+          "high": 120
+        },
+        "default_cost": 85,
+        "status": "eat-reviewed-internal-bki-plausibility"
+      }
+    },
+    {
+      "id": "wall_ventilated",
+      "component_id": "wall_external",
+      "label": "Außenwand – hinterlüftete Fassade",
+      "base_cost_eur_m2": 280,
+      "variable_cost_eur_m2_cm": 2.5,
+      "sunk_cost_eur_m2": 85,
+      "range_eur_m2": {
+        "low": 250,
+        "middle": 330,
+        "high": 450
+      },
+      "status": "eat-reviewed",
+      "active": true,
+      "source_id": "EAT_COSTS_2026_08",
+      "reference": {
+        "mode": "renewal",
+        "label": "Fassadeninstandsetzung ohne energetische Verbesserung",
+        "unit": "€/m²",
+        "range": {
+          "low": 50,
+          "middle": 85,
+          "high": 120
+        },
+        "default_cost": 85,
+        "status": "eat-reviewed-internal-bki-plausibility"
+      }
+    },
+    {
+      "id": "top_ceiling",
+      "component_id": "roof_top_ceiling",
+      "label": "Oberste Geschoßdecke dämmen",
+      "base_cost_eur_m2": 60,
+      "variable_cost_eur_m2_cm": 1.0,
+      "sunk_cost_eur_m2": 0,
+      "range_eur_m2": {
+        "low": 50,
+        "middle": 80,
+        "high": 110
+      },
+      "status": "eat-reviewed",
+      "active": true,
+      "source_id": "EAT_COSTS_2026_08",
+      "reference": {
+        "mode": "none",
+        "label": "keine regelmäßige Referenz-Erneuerung angesetzt",
+        "default_cost": 0,
+        "status": "eat-project-decision"
+      }
+    },
+    {
+      "id": "roof",
+      "component_id": "roof_top_ceiling",
+      "label": "Dach / Dachschräge dämmen",
+      "base_cost_eur_m2": 190,
+      "variable_cost_eur_m2_cm": 3.0,
+      "sunk_cost_eur_m2": 150,
+      "range_eur_m2": {
+        "low": 120,
+        "middle": 260,
+        "high": 400
+      },
+      "status": "eat-reviewed-wide-band",
+      "active": true,
+      "source_id": "EAT_COSTS_2026_08",
+      "reference": {
+        "mode": "renewal",
+        "label": "Dachdeckung / Unterdach ohne energetische Zusatzmaßnahme",
+        "unit": "€/m²",
+        "range": {
+          "low": 120,
+          "middle": 150,
+          "high": 200
+        },
+        "default_cost": 150,
+        "status": "eat-reviewed-internal-bki-plausibility",
+        "note": "Dachstuhl, Spengler, Gerüst und Sonderdetails projektspezifisch prüfen."
+      }
+    },
+    {
+      "id": "basement_ceiling",
+      "component_id": "ceiling_unheated",
+      "label": "Kellerdecke dämmen",
+      "base_cost_eur_m2": 90,
+      "variable_cost_eur_m2_cm": 1.0,
+      "sunk_cost_eur_m2": 0,
+      "range_eur_m2": {
+        "low": 60,
+        "middle": 110,
+        "high": 160
+      },
+      "status": "eat-reviewed",
+      "active": true,
+      "source_id": "EAT_COSTS_2026_08",
+      "reference": {
+        "mode": "none",
+        "label": "keine regelmäßige Referenz-Erneuerung angesetzt",
+        "default_cost": 0,
+        "status": "eat-project-decision"
+      }
+    },
+    {
+      "id": "ground_floor",
+      "component_id": "floor_ground",
+      "label": "Boden gegen Erdreich sanieren",
+      "base_cost_eur_m2": 220,
+      "variable_cost_eur_m2_cm": 1.5,
+      "sunk_cost_eur_m2": 170,
+      "range_eur_m2": {
+        "low": 180,
+        "middle": 300,
+        "high": 420
+      },
+      "status": "eat-orientation",
+      "active": true,
+      "source_id": "EAT_COSTS_2026_08",
+      "reference": {
+        "mode": "project_specific",
+        "label": "Boden-/Belagserneuerung nur bei tatsächlich anstehendem Eingriff",
+        "unit": "€/m²",
+        "default_cost": 170,
+        "status": "project-specific",
+        "note": "Nicht automatisch als heutige Sowiesokosten interpretieren."
+      }
+    },
+    {
+      "id": "window_replace",
+      "component_id": "window_external",
+      "label": "Fenster austauschen",
+      "base_cost_eur_m2": 850,
+      "variable_cost_eur_m2_cm": 0,
+      "sunk_cost_eur_m2": 700,
+      "range_eur_m2": {
+        "low": 700,
+        "middle": 850,
+        "high": 1000
+      },
+      "status": "eat-reviewed",
+      "active": true,
+      "source_id": "EAT_COSTS_2026_08",
+      "reference": {
+        "mode": "renewal",
+        "label": "Fenstertausch auf üblichen Ersatzstandard",
+        "unit": "€/m² Fensterfläche",
+        "range": {
+          "low": 700,
+          "middle": 700,
+          "high": 900
+        },
+        "default_cost": 700,
+        "status": "eat-orientation",
+        "note": "Konkretes Angebot und tatsächlich notwendiger Ersatzstandard haben Vorrang."
+      }
+    },
+    {
+      "id": "door_replace",
+      "component_id": "door_external",
+      "label": "Außentür austauschen",
+      "base_cost_eur_m2": 5250,
+      "variable_cost_eur_m2_cm": 0,
+      "sunk_cost_eur_m2": 3500,
+      "range_eur_m2": {
+        "low": 3500,
+        "middle": 5250,
+        "high": 7000
+      },
+      "status": "eat-reviewed",
+      "active": true,
+      "source_id": "EAT_COSTS_2026_08",
+      "unit": "€/Stk.",
+      "reference": {
+        "mode": "renewal",
+        "label": "notwendiger Haustür-/Außentürtausch",
+        "unit": "€/Stk.",
+        "range": {
+          "low": 3500,
+          "middle": 3500,
+          "high": 5000
+        },
+        "default_cost": 3500,
+        "status": "eat-orientation"
+      }
+    }
+  ],
+  "internal_plausibility": "Regionale BKI-Anpassungen werden ausschließlich intern angewendet; veröffentlichte EAT-Richtwerte sind bereits Beratungswerte und werden im Tool nicht nochmals regionalisiert."
 }

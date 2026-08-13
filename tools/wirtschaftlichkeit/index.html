@@ -4,13 +4,13 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <link href="../../assets/svg/favicon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
-<title>Wirtschaftlichkeit V0.4 | Tools für Energieberatung</title>
+<title>Wirtschaftlichkeit V0.5 | Tools für Energieberatung</title>
 <meta content="Kosten, Förderung und langfristige Wirkung von Sanierungsmaßnahmen verständlich vergleichen." name="description"/>
 <link href="../../styles.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/components.css?v=3" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="wirtschaftlichkeit.css?v=3" rel="stylesheet"/>
+<link href="wirtschaftlichkeit.css?v=5" rel="stylesheet"/>
 </head>
 <body data-tool-mode="economics">
 <header class="site-header no-print">
@@ -96,7 +96,7 @@
 <div class="funding-editor"><div><span class="funding-editor-label">Mögliche Förderung</span><strong id="fundingEditorTotal">bis zu –</strong><small id="fundingOriginNote">Noch keine Förderung übernommen oder ergänzt.</small></div></div>
 <details class="econ-details funding-details-compact" id="costFundingDetails"><summary>Förderung prüfen / ergänzen</summary>
 <div class="funding-inputs"><label><span>Landesförderung</span><div class="input-with-unit"><input id="fundState" min="0" step="500" type="number"/><em>€</em></div><small id="fundStateSource">–</small></label><label><span>Bundesförderung</span><div class="input-with-unit"><input id="fundFederal" min="0" step="500" type="number"/><em>€</em></div><small id="fundFederalSource">–</small></label><label><span>Sonstige Förderung</span><div class="input-with-unit"><input id="fundOther" min="0" step="500" type="number"/><em>€</em></div><small id="fundOtherSource">–</small></label><label><span>Paket-/Sanierungsbonus</span><div class="input-with-unit"><input id="fundBonus" min="0" step="500" type="number"/><em>€</em></div><small>im Wirtschaftlichkeitstool ergänzen</small></label></div>
-<p class="funding-caution">Förderfähige Kosten und Förderhöhen hängen von Programm, Maßnahme und Kombination ab. V0.4 übernimmt vorhandene Bauteilförderungen und erlaubt ergänzende/abweichende Beträge; die regelbasierte Förderengine folgt später.</p>
+<p class="funding-caution">Förderfähige Kosten und Förderhöhen hängen von Programm, Maßnahme und Kombination ab. V0.5 übernimmt vorhandene Bauteilförderungen und erlaubt ergänzende/abweichende Beträge; die regelbasierte Förderengine folgt später.</p>
 </details>
 <div class="bar-block"><h3>Woraus besteht die Investition?</h3><div class="stacked-bar" id="costCompositionBar"></div><div class="bar-legend" id="costCompositionLegend"></div></div>
 <div class="bar-block"><h3>Wie wird sie finanziert?</h3><div class="stacked-bar" id="fundingBar"></div><div class="bar-legend" id="fundingLegend"></div><p class="bar-explainer" id="fundingBasisNote">Förderfähige Kosten sind programmabhängig und können auch Gerüst, Putz und andere notwendige Begleitarbeiten umfassen.</p></div>
@@ -127,7 +127,7 @@
 <section class="container economics-print-report print-only" id="economicsPrintReport"></section>
 <section class="container bottom-report-actions no-print energy-next-actions"><a class="primary-button button-link" href="../energiefluss-v4/index.html">Energiefluss</a><a class="primary-button button-link" href="../bauteil-sanierung/index.html">Bauteil &amp; Sanierung</a><button class="secondary-button" id="printEconomicsButton" type="button">Drucken / PDF</button></section>
 </main>
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Wirtschaftlichkeit V0.4 · Web-Abschlussrunde</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Wirtschaftlichkeit V0.5 · Vorabnahme</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
 <script src="../../shared/js/data-model.js?v=3"></script>
@@ -145,6 +145,6 @@
 <script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=4"></script>
 <script src="../../shared/js/domain/economics/energy-anchor-core.js?v=1"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=2"></script>
-<script src="wirtschaftlichkeit.js?v=4"></script>
+<script src="wirtschaftlichkeit.js?v=5"></script>
 </body>
 </html>
