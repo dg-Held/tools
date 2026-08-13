@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 12.08.2026  
+**Stand:** 13.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -411,12 +411,17 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Fachliche Werte, Rechenwege, Datenpflege und Releaseabläufe werden künftig ausschließlich in den passenden zentralen Dokumenten nachgezogen.
 
 
-## Wirtschaftlichkeit V0.1 · Prototypstart 12.08.2026
+## Wirtschaftlichkeit V0.2 · Beratungsprototyp 13.08.2026
 
-- Neues eigenständig nutzbares Tool `tools/wirtschaftlichkeit/` auf derselben Projekt-/Adressbasis wie die bestehenden Werkzeuge.
-- Sichtbare Struktur: Ausgangslage → Ziel & Maßnahmen → Kosten & Förderung → Ergebnis → Methode & Datenbasis.
-- Kunden-/Entscheidungsfelder liegen zentral unter `advice`; wirtschaftliche Annahmen und der letzte Berechnungssnapshot unter `economics`.
-- Gespeicherte Maßnahmen aus `Bauteil & Sanierung` werden bevorzugt übernommen; fehlen sie, werden orientierende Schnellwerte aus gemeinsamen Flächen, U-Werten, Energiefluss und zentralen Richtkosten vorbereitet.
-- Der gemeinsame Wirtschaftlichkeitskern V1.1 unterstützt zusätzlich zeitlich verschobene Kapitalereignisse bzw. Komponentenstartjahre und den Vergleich Referenz ↔ Sanierungsvariante nach Kumulationsmethode.
-- Förderungen sind in V0.1 noch manuell bestätigte Orientierungswerte; die regelbasierte Förderengine folgt nach Prüfung der Programme.
-- BKI dient ausschließlich der internen Plausibilisierung der EAT-Kostenkennwerte. Regionalfaktor Tirol: 1,019.
+- Das Tool bleibt eigenständig nutzbar und verwendet denselben Projekt-/Adresskopf wie die bestehenden Werkzeuge.
+- Sichtbare Struktur: **Projektbasis → Rahmen festlegen → Kosten & Förderung → Ergebnis → Methode & Datenbasis**.
+- Neue Projekte können über **„Maßnahmen aus Gebäude vorbereiten“** orientierende Hüllmaßnahmen direkt aus gemeinsamer Geometrie, Baujahr/Bestands-U-Werten, Ziel-U-Werten und Energiefluss bzw. HGT-Fallback erzeugen. Das Bauteiltool muss dafür nicht vorher geöffnet werden.
+- Dach/OGD, Kellerdecke/Boden und weitere Hüllbauteile folgen dem zentral gespeicherten thermischen Hüllstatus; vorhandene gespeicherte Bauteilmaßnahmen haben Vorrang.
+- Heizung und PV erhalten erste zentrale System-Kostenvorschläge aus `shared/data/costs/system-costs.json`. Die PV-Kosten können bereits berücksichtigt werden; das objektspezifische PV-Ertrags-/Eigenverbrauchsmodell ist noch nicht Bestandteil von V0.2.
+- Förderungen aus gespeicherten Bauteilmaßnahmen werden übernommen. Ergänzende Landes-/Bundes-/sonstige Förderungen und Paketboni bleiben in V0.2 orientierende Eingaben; eine regelbasierte Förderengine folgt.
+- **Förderbasis und Kostenstruktur sind bewusst getrennt:** Förderfähige Kosten sind programmabhängig und können auch Gerüst, Putz oder andere Begleitarbeiten umfassen, die nominal zugleich Referenz-/Instandsetzungsarbeiten darstellen. Förderung wird daher nicht auf die nominalen energetischen Mehrkosten begrenzt; sie wird nur auf die Gesamtinvestition begrenzt.
+- Die wirtschaftlich zusätzliche Investition ist `Gesamtinvestition − Förderung − Barwert der erwarteten Referenzerneuerungen` und kann negativ werden; in diesem Fall wird ein **wirtschaftlicher Startvorteil** ausgewiesen.
+- Ergebnisdarstellung ergänzt Budgetabgleich, gewählte Kundenprioritäten, Energiekosten vorher/nachher und eine explizit beschriftete Referenzlinie. Optional können die kumulierten Lebenszykluskosten von Referenz und Sanierung als zwei Kurven angezeigt werden.
+- Die frühere Bezeichnung „Sensitivität“ wird in V0.2 solange als **Aussagequalität & Unsicherheiten** geführt, bis echte automatische Sensitivitätsläufe implementiert sind.
+- BKI dient weiterhin ausschließlich der internen Plausibilisierung der EAT-Kostenkennwerte. Regionalfaktor Tirol: **1,019**.
+

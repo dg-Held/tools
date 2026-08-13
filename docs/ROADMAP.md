@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stand:** 12.08.2026
+**Stand:** 13.08.2026
 
 ## V1.0-Basis abgeschlossen · 11.08.2026
 
@@ -51,18 +51,21 @@ Keine komplexe Randbedingungsmatrix. Später sauber festlegen:
 - Klima/Standort: Windrose, sobald geeignete amtliche Windrichtungs-/Windgeschwindigkeitsdaten in die Datenpipeline aufgenommen sind.
 - Standortpass: DKM-/Orthofoto-Prüfung weiter verfeinern; später ggf. angrenzende Gebäude einfacher erfassen.
 
-### Wirtschaftlichkeit · V0.1 in Umsetzung
+### Wirtschaftlichkeit · V0.2 Beratungsprototyp
 
-Der erste direkt im Projekt integrierte Prototyp ist gestartet. Er vergleicht gespeicherte Maßnahmen und vorbereitete Schnellmaßnahmen:
+Der zweite direkt im Projekt integrierte Prototyp setzt den vollständigen Beratungsablauf auf derselben Projektbasis um:
 
-- Außenwand,
-- Fenster,
-- Haustür,
-- Dach/OGD,
-- Kellerdecke/Boden,
-- später Heizung, Verteilung und Lüftung.
+- Projektbasis prüfen; NFL als zentrale Geometriegröße hervorgehoben,
+- Rahmen, Budget und Kundenprioritäten in wenigen Klicks festlegen,
+- Maßnahmen eigenständig aus Gebäude/Baujahr/U-Werten vorbereiten oder aus `Bauteil & Sanierung` übernehmen,
+- thermischen Hüllstatus (u. a. Dach ↔ OGD) respektieren,
+- erste Heizung-/PV-Kostenvorschläge,
+- bestehende Bauteilförderungen übernehmen und Paketförderungen ergänzen,
+- Kostenstruktur, Förderbasis und Finanzierung fachlich getrennt erklären,
+- Energiekosten vorher/nachher, Budgetabgleich und Kundenprioritäten im Ergebnis zeigen,
+- Hauptgrafik mit expliziter Referenzlinie plus optionaler Lebenszykluskosten-Zweilinienansicht.
 
-Die Datenqualität wird automatisch aus den vorhandenen Projektwerten abgeleitet; es gibt keine sichtbare Moduswahl Schnell/Verbrauch/Energieausweis. Nächste Schritte: Referenzkosten/Lebensdauern vervollständigen, Förderengine, Heizungs- und PV-Adapter, Sensitivität und Druckfeinschliff.
+Nächste Schritte: freigegebene EAT-Kostenkennwerte vollständig einspielen, regelbasierte Förderengine, echte automatische Sensitivitätsläufe, PV-Ertrags-/Eigenverbrauchsadapter und Druckfeinschliff.
 
 ### Sanierungsfahrplan
 

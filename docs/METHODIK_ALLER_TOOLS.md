@@ -1,6 +1,6 @@
 # Methodik aller Tools
 
-**Stand:** 12.08.2026
+**Stand:** 13.08.2026
 
 ## Standortpass
 
@@ -603,9 +603,11 @@ Förderung_%voll = Vollkosten × Fördersatz / 100
 Förderung_%energetisch = energetische Mehrkosten × Fördersatz / 100
 Förderung_Fix = Fixbetrag
 Förderung_gesamt = begrenzt auf vorhandene Obergrenzen und höchstens Vollkosten
-Relevante Eigeninvestition = max(energetische Mehrkosten − Förderung_gesamt, 0)
+Bauteil-Quickcheck: Relevante Eigeninvestition = max(energetische Mehrkosten − Förderung_gesamt, 0)
 Instandhaltung_a = Vollkosten × Instandhaltungssatz / 100
 ```
+
+Hinweis: Diese Bauteil-Quickcheck-Kennzahl ist **nicht** identisch mit der wirtschaftlich zusätzlichen Investition des Wirtschaftlichkeitstools V0.2. Dort werden vollständige Referenz- und Sanierungsvarianten samt Erneuerungszeitpunkten verglichen und Förderungen können programmabhängig auch Begleitarbeiten umfassen.
 
 ### Dynamische Wirtschaftlichkeit
 
@@ -616,7 +618,7 @@ Der gemeinsame Kern kann Anfangsinvestition, Wiederbeschaffung, Restwert, Entsor
 Die Standarddatei unterscheidet informative Normwerte und transparent gekennzeichnete Projekt-Fallbacks. Jeder Wert bleibt überschreibbar und benötigt Quelle, Status und Datenstand.
 
 
-## Wirtschaftlichkeit V0.1
+## Wirtschaftlichkeit V0.2
 
 ### Grundprinzip
 
@@ -639,10 +641,30 @@ Der gemeinsame Kern berücksichtigt Anfangsinvestitionen, zeitlich verschobene R
 ### Kosten, Förderung und Referenz
 
 - projektspezifisches Angebot > manuell bestätigter Projektwert > EAT-Richtkosten > Fallback,
-- BKI nur interne Plausibilisierungsquelle, nicht öffentliche Laufzeit-Datentabelle,
-- sichtbare Finanzierung (`Gesamtinvestition − mögliche Förderung`) und wirtschaftlich relevante Mehrinvestition werden getrennt ausgewiesen,
-- Förderungen werden vorsichtig als `bis zu` dargestellt und vor Umsetzung bei den Förderstellen verifiziert.
+- BKI nur interne Plausibilisierungsquelle, nicht öffentliche Laufzeit-Datentabelle; interner Regionalfaktor Tirol `1,019`,
+- sichtbare Finanzierung (`Gesamtinvestition − mögliche Förderung`) und wirtschaftlich zusätzliche Investition werden getrennt ausgewiesen,
+- **Kostenstruktur ≠ Förderbasis:** nominale Referenzarbeiten und energetische Verbesserung werden für die Beratung getrennt gezeigt; die Förderfähigkeit richtet sich aber nach dem jeweiligen Programm und kann beide nominalen Segmente umfassen,
+- Förderung wird daher nicht auf die nominale energetische Mehrinvestition begrenzt. Sie kann bei einer förderfähigen thermischen Maßnahme auch Gerüst, Putz oder andere notwendige Begleitarbeiten mitfinanzieren,
+- Förderungen werden vorsichtig als `bis zu` dargestellt und vor Umsetzung bei den Förderstellen verifiziert,
+- die wirtschaftlich zusätzliche Investition wird als `Gesamtinvestition − Förderung − Barwert der Referenzerneuerungen` berechnet und **nicht auf 0 begrenzt**. Ein negativer Wert wird als wirtschaftlicher Startvorteil ausgewiesen.
 
-### V0.1-Grenze
+### Eigenständiger Schnellstart V0.2
 
-Die Oberfläche und der dynamische Rechenkern sind testbar. Die Förderengine ist noch nicht regelbasiert; Heizungs-/PV-Schnellmodelle werden in V0.1 nur mit projektspezifisch ergänzten Werten vollständig wirtschaftlich bewertet.
+Fehlen gespeicherte Maßnahmen aus `Bauteil & Sanierung`, kann Wirtschaftlichkeit selbst Vorschläge vorbereiten. Priorität der Datengrundlage:
+
+1. gespeicherte objektspezifische Maßnahme bzw. Energiefluss,
+2. gemeinsame Hüllfläche + Projekt-U-Wert + zentraler Ziel-U-Wert,
+3. gemeinsame Hüllfläche + Bauperioden-U-Wert + Ziel-U-Wert,
+4. Klima/HGT aus Projekt; falls nicht verfügbar vorläufiger Tirol-HGT-Fallback.
+
+Der thermische Hüllstatus entscheidet, ob beispielsweise Dach oder oberste Geschoßdecke betrachtet wird. Die Maßnahmeneinsparung wird in der Übersicht auf 10 kWh/a gerundet; intern wird mit ungerundeten Werten gerechnet.
+
+### Kundenergebnis V0.2
+
+Der Hauptbereich zeigt Restinvestition, wirtschaftlich zusätzliche Investition bzw. Startvorteil, Energiekosten vorher/nachher samt jährlicher Einsparung und den dauerhaften wirtschaftlichen Schnittpunkt. Kundenbudget und gewählte Prioritäten werden im Ergebnis wieder aufgegriffen. Die Hauptgrafik zeigt den kumulierten Vorteil **gegenüber der Referenz**; die Nulllinie ist ausdrücklich „Referenz · beide Varianten gleich teuer“. Optional werden die kumulierten Lebenszykluskosten von Referenz und Sanierung als zwei Linien dargestellt.
+
+`Barwertvorteil` wird in der Kundenoberfläche nicht als isolierter Fachbegriff verwendet, sondern als „über den Betrachtungszeitraum x € günstiger/teurer als die Referenz“.
+
+### V0.2-Grenze
+
+Die Oberfläche und der dynamische Rechenkern sind testbar. Die Förderengine ist noch nicht regelbasiert. Heizungsmaßnahmen erhalten einen ersten zentralen System-/Kostenansatz; PV-Kosten können berücksichtigt werden, das objektspezifische Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.2 noch nicht Teil des Lebenszyklusvergleichs.

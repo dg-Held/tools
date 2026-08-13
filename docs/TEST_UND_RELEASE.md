@@ -1,6 +1,6 @@
 # Test und Release
 
-**Stand:** 12.08.2026
+**Stand:** 13.08.2026
 
 ## Installation kleiner Austauschpakete
 
@@ -194,16 +194,21 @@ Zusätzlich prüfen:
 - Standortpass-Druck: Wärmeversorgung sowie normale Karten unter Standort/Risiken verwenden `--color-primary-soft`; ein tatsächlicher WLV-Flächentreffer verwendet `--color-secondary-soft` mit `--color-secondary-light`; Warn-/Prüfzustände bleiben semantisch getrennt.
 
 
-### Wirtschaftlichkeit V0.1 · 12.08.2026
+### Wirtschaftlichkeit V0.2 · 13.08.2026
 
 Zusätzlich prüfen:
 
 - `tests/validate-economics-core.js` besteht; zeitlich verschobene Kapitalereignisse und Variantenvergleich liefern endliche Werte.
 - bestehende Bauteil-Wirtschaftlichkeit bleibt mit dem erweiterten Kern rückwärtskompatibel.
 - Wirtschaftlichkeit startet aus leerem Projekt, Adresse/TIRIS können innerhalb des Tools gewählt werden.
-- vorhandene Projektwerte und gespeicherte Bauteilmaßnahmen werden übernommen; fehlende Werte sind als Schnellabschätzung bzw. manuell ergänzbar erkennbar.
-- `advice.*` bleibt nach Toolwechsel erhalten.
-- Gesamtinvestition, mögliche Förderung, Restinvestition und wirtschaftlich relevante Mehrinvestition werden nicht vermischt.
-- Zeitgrafik zeigt Vorteil gegenüber der Referenz; bei mehreren Schnittpunkten wird nicht automatisch der erste als dauerhaftes Ergebnis ausgegeben.
-- Förderangaben werden immer als orientierend/`bis zu` gekennzeichnet.
-- Druckansicht enthält den Förderhinweis und die vier wesentlichen Ergebnisgrößen.
+- `Maßnahmen aus Gebäude vorbereiten` erzeugt ohne vorherigen Toolwechsel orientierende Hüll-/Systemvorschläge; gespeicherte Bauteilmaßnahmen haben Vorrang.
+- thermischer Hüllstatus wird respektiert: gespeichertes/relevantes Dach darf nicht durch eine pauschale OGD-Auswahl verdrängt werden.
+- Maßnahmen-Energieeinsparungen werden in der Übersicht auf 10 kWh/a gerundet, intern ungerundet verarbeitet.
+- Förderungen aus `Bauteil & Sanierung` werden übernommen; manuelle V0.2-Overrides bleiben als `bis zu` gekennzeichnet.
+- Förderung darf die nominalen energetischen Mehrkosten übersteigen, wenn förderfähige Begleitarbeiten enthalten sind; sie wird nur auf die Gesamtinvestition begrenzt.
+- wirtschaftlich zusätzliche Investition wird nicht auf 0 begrenzt; negative Werte werden als Startvorteil dargestellt.
+- `advice.*` bleibt nach Toolwechsel erhalten; Budget und Prioritäten erscheinen erneut im Ergebnis.
+- Energiekosten werden vorher/nachher plus jährliche Einsparung gezeigt.
+- Zeitgrafik beschriftet die Referenz-Nulllinie explizit; optionaler Zweilinienchart zeigt kumulierte Lebenszykluskosten von Referenz und Sanierung.
+- Förderangaben werden immer als orientierend/`bis zu` gekennzeichnet; Förderbasis und nominale Kostenstruktur werden nicht gleichgesetzt.
+- Druckansicht enthält Förderhinweis, Energiekosten vorher/nachher und die wesentlichen Ergebnisgrößen.

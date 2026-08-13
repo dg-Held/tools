@@ -1,6 +1,6 @@
 # Architektur und Datenmodell
 
-**Stand:** 12.08.2026
+**Stand:** 13.08.2026
 
 ## 1. Schichten
 
@@ -268,7 +268,7 @@ Verwendete Bezeichnungen sind insbesondere `aussenwand`, `ogd`, `dach`, `kellerd
 Beim Laden älterer Projekte wird eine manuelle Standortpass-Eingabe unter `building.geometry.exteriorWallGrossArea` einmalig als opake Außenwand interpretiert und nach `building.geometry.opaqueExteriorWallArea` verschoben. Dadurch werden bereits fensterbereinigte Energieausweisflächen nicht erneut um die Fensterfläche reduziert. Die technische Brutto-Fassade bleibt als abgeleitete Referenz erhalten.
 
 
-## 11. Gemeinsame Beratungs- und Wirtschaftlichkeitsfelder · ab V0.1
+## 11. Gemeinsame Beratungs- und Wirtschaftlichkeitsfelder · ab V0.2
 
 Zentrale, toolübergreifende Entscheidungsfelder:
 
@@ -290,4 +290,8 @@ economics.latestCalculation
 
 Toolbezogene, noch nicht kanonische Bedienzustände (z. B. temporäre Maßnahmenselektion oder manuell bestätigte Förderbeträge) bleiben unter `modules.wirtschaftlichkeit`. Rechenannahmen dürfen nicht parallel in Bauteil- und Wirtschaftlichkeitstool gepflegt werden; beide lesen `shared/data/economics/financial-defaults.json` bzw. projektspezifische Overrides.
 
+V0.2 ergänzt `shared/data/costs/system-costs.json` als vorläufige zentrale Kostenbasis für Systemvorschläge wie Luft/Wasser-Wärmepumpe und PV. Diese Datei ist ausdrücklich ein Prototyp-Datensatz und wird vor V1.0 mit der final freigegebenen EAT-Kostenkennwertbasis zusammengeführt.
+
 Der Wirtschaftlichkeitskern bleibt fachneutral: Fachmodule liefern Investitions-/Referenzkomponenten, jährliche Kosten und kostenmindernde Positionen; der Kern berechnet Barwerte, Annuitäten, kumulierte Kostenverläufe und Schnittpunkte.
+
+**Fördersemantik V0.2:** nominale Kostenstruktur, Förderbasis und Förderbetrag sind getrennte Ebenen. Ein Bauteil kann beispielsweise Referenzarbeiten wie Gerüst/Putz enthalten, die ohne thermische Verbesserung nicht förderfähig wären, im Rahmen einer förderfähigen thermischen Maßnahme aber in die Förderbasis einfließen. Deshalb darf die Förderlogik nicht auf `energetische Mehrkosten` beschränkt werden. Der wirtschaftliche Vergleich setzt die tatsächliche Förderung ausschließlich in der Sanierungsvariante als kostenmindernde Position an, sofern nicht für die Referenz explizit eine eigene Förderung modelliert wird.

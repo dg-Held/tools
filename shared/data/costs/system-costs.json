@@ -1,0 +1,31 @@
+{
+  "schema": "energy-tools-system-costs",
+  "version": "2026-08-13-v0.2-prototype",
+  "data_date": "2026-08",
+  "status": "prototype-orientation",
+  "notice": "Orientierende EAT-Kostenansätze für den Wirtschaftlichkeits-Prototyp. Projektspezifische Angebote haben Vorrang. Vor finaler V1.0 mit der zentralen Kostenkennwertbasis abgleichen.",
+  "items": [
+    {
+      "id": "heat_pump_air",
+      "label": "Luft/Wasser-Wärmepumpe",
+      "unit": "€/Anlage",
+      "range": { "low": 20000, "middle": 27500, "high": 35000 },
+      "lifetime_years": 18,
+      "target_carrier_id": "electricity",
+      "target_efficiency": 3.2,
+      "reference_lifetime_years": 20,
+      "source_id": "EAT_COST_WORKING_2026_08",
+      "active": true
+    },
+    {
+      "id": "pv_standard",
+      "label": "PV-Anlage",
+      "unit": "€/kWp",
+      "range": { "low": 1200, "middle": 1500, "high": 1800 },
+      "default_size_kwp": 10,
+      "lifetime_years": 25,
+      "source_id": "EAT_COST_WORKING_2026_08",
+      "active": true
+    }
+  ]
+}
