@@ -221,3 +221,22 @@ Zusätzlich prüfen:
 - Förderangaben der Einzelmaßnahmen werden direkt in den Maßnahmen-Details dargestellt; die gemeinsame Förderprüfung bleibt nur einmal im Kostenblock.
 - Haupt- und Vergleichsgrafik zeigen eine beschriftete vertikale €-Achse und die Ausgangsdifferenz.
 
+
+
+### Wirtschaftlichkeit V0.4 · 13.08.2026
+
+Zusätzlich zu den V0.3-Fachtests ist vor Freigabe zu prüfen:
+
+- `Zukunftsfit 2050` zeigt **Bestand** und **Sanierungsziel** getrennt; die Auswahl von Hülle/Heizung/PV verändert nur die Zielgrafik.
+- ein vollständig schlechter, aber bekannter Hüllzustand wird nicht als positiver Teilfortschritt ausgewiesen.
+- Hintergrund des Zielbilds läuft visuell von Berry (Bestand) nach Türkis (Ziel).
+- Referenzsegment in der Kostenstruktur ist neutral/grau; Fördersegmente mit 0 € werden weiterhin nicht gezeichnet.
+- Förderhinweis zeigt sowohl Anteil an der Gesamtinvestition als auch Anteil an der nominalen energetischen Investition; Werte >100 % sind zulässig und werden durch die getrennte Förderbasis erklärt.
+- geöffnete Maßnahmen-Accordions bleiben beim Ändern von Zahlenfeldern geöffnet.
+- manuell überschriebene Vollkosten, Referenzkosten, Referenzzeitpunkte und Energieeinsparungen können über `↺ automatisch` auf die aktuelle Ableitung zurückgesetzt werden.
+- `Aussagequalität & Unsicherheiten` ist standardmäßig geöffnet.
+- Diagrammtexte überlagern sich bei großen Anfangsdifferenzen bzw. nah beieinanderliegenden Startkosten nicht; Referenz- und Sanierungslinie verwenden die Hauptfarben Berry/Türkis.
+- `Mehr als Wirtschaftlichkeit` steht als kompakte Wirkungsmatrix über der Einordnung; die Einordnung nutzt anschließend die volle Breite.
+- `Methode und Datenbasis` enthält die implementierten Kernformeln für reale Ausgangswärme, verbrauchsverankerte Hüllwirkung, Zielsystem-Endenergie, Barwert und Annuität.
+
+Der Druck ist in V0.4 **noch nicht freigegeben**. Die finale Druckrunde folgt erst nach abgeschlossenem Web-Praxistest und vollständiger Referenzkosten-/Förderdatenrunde.

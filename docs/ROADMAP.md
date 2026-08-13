@@ -51,7 +51,7 @@ Keine komplexe Randbedingungsmatrix. Später sauber festlegen:
 - Klima/Standort: Windrose, sobald geeignete amtliche Windrichtungs-/Windgeschwindigkeitsdaten in die Datenpipeline aufgenommen sind.
 - Standortpass: DKM-/Orthofoto-Prüfung weiter verfeinern; später ggf. angrenzende Gebäude einfacher erfassen.
 
-### Wirtschaftlichkeit · V0.3 verbrauchsverankerter Beratungsprototyp
+### Wirtschaftlichkeit · V0.4 Web-Abschlussrunde
 
 Der zweite direkt im Projekt integrierte Prototyp setzt den vollständigen Beratungsablauf auf derselben Projektbasis um:
 
@@ -64,9 +64,10 @@ Der zweite direkt im Projekt integrierte Prototyp setzt den vollständigen Berat
 - Kostenstruktur, Förderbasis und Finanzierung fachlich getrennt erklären,
 - Verbrauch als reale Größenordnung mit der relativen Hüllwirkung des unabhängigen U-Wert-Modells verschneiden und Abweichungen `Verbrauch ↔ Hüllmodell` sichtbar plausibilisieren,
 - Energiekosten vorher/nachher, Budgetabgleich und Kundenprioritäten im Ergebnis zeigen,
-- Hauptgrafik mit expliziter Referenzlinie plus optionaler Lebenszykluskosten-Zweilinienansicht und beschrifteten €-Achsen.
+- Hauptgrafik mit expliziter Referenzlinie plus optionaler Lebenszykluskosten-Zweilinienansicht und beschrifteten €-Achsen,
+- Zukunftsfit-2050-Vergleich `Bestand heute ↔ mit gewählter Sanierung`, stabile Accordions und rücksetzbare manuelle Overrides.
 
-Nächste Schritte: freigegebene EAT-Kostenkennwerte vollständig einspielen, regelbasierte Förderengine, echte automatische Sensitivitätsläufe, PV-Ertrags-/Eigenverbrauchsadapter und Druckfeinschliff.
+Nächste Schritte nach V0.4-Praxistest: Referenzkosten-/EAT-Kostenkennwerte vollständig einspielen und gegen BKI/EAT prüfen, regelbasierte Förderengine, echte automatische Sensitivitätsläufe, PV-Ertrags-/Eigenverbrauchsadapter und anschließend Druckfeinschliff.
 
 ### Sanierungsfahrplan
 

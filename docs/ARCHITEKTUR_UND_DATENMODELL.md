@@ -290,7 +290,7 @@ economics.latestCalculation
 
 Toolbezogene, noch nicht kanonische Bedienzustände (z. B. temporäre Maßnahmenselektion oder manuell bestätigte Förderbeträge) bleiben unter `modules.wirtschaftlichkeit`. Rechenannahmen dürfen nicht parallel in Bauteil- und Wirtschaftlichkeitstool gepflegt werden; beide lesen `shared/data/economics/financial-defaults.json` bzw. projektspezifische Overrides.
 
-V0.3 verwendet `shared/data/costs/system-costs.json` als vorläufige zentrale Kostenbasis für Systemvorschläge wie Luft/Wasser-Wärmepumpe und PV. Diese Datei ist ausdrücklich ein Prototyp-Datensatz und wird vor V1.0 mit der final freigegebenen EAT-Kostenkennwertbasis zusammengeführt.
+Ab V0.3 verwendet `shared/data/costs/system-costs.json` als vorläufige zentrale Kostenbasis für Systemvorschläge wie Luft/Wasser-Wärmepumpe und PV. Diese Datei ist ausdrücklich ein Prototyp-Datensatz und wird vor V1.0 mit der final freigegebenen EAT-Kostenkennwertbasis zusammengeführt.
 
 Der Wirtschaftlichkeitskern bleibt fachneutral: Fachmodule liefern Investitions-/Referenzkomponenten, jährliche Kosten und kostenmindernde Positionen; der Kern berechnet Barwerte, Annuitäten, kumulierte Kostenverläufe und Schnittpunkte.
 
@@ -314,3 +314,16 @@ Nur dieser relative Hülleffekt wird auf den verbrauchsbasierten realen Raumwär
 Automatisch abgeleitete Maßnahmeneinsparungen sind **ephemere/laufend neu berechnete Werte** und werden nicht als verbindlicher Projektwert persistiert. Unter `modules.wirtschaftlichkeit.measureDrafts.*` wird ein Energieeinsparungswert nur dann dauerhaft geführt, wenn `energySavingsManual = true` gesetzt wurde. Dadurch verbessern nachträglich geladene Klima-, Geometrie- oder Hülldaten automatisch die Wirtschaftlichkeitsrechnung.
 
 `economics.latestCalculation` speichert zusätzlich die verwendete Energiebrücken-Version sowie HWB-Plausibilitätswerte, damit ein früheres Beratungsergebnis nachvollziehbar bleibt.
+
+### Bedien- und Override-Semantik V0.4
+
+`modules.wirtschaftlichkeit.measureDrafts.*` unterscheidet ab V0.4 automatische Werte und bewusste manuelle Überschreibungen. Für Kosten werden `fullInvestmentManual` und `referenceCostManual`, für den Referenzzeitpunkt `referenceYearConfirmed` und für die Energieeinsparung `energySavingsManual` verwendet. Fehlt das jeweilige Manual-Flag, wird der Wert aus dem aktuell besten Projekt-/Standardwert neu abgeleitet. Die Bedienoberfläche bietet dafür `↺ automatisch`.
+
+Der aufklappbare Maßnahmendetailbereich darf bei einer Werteänderung nicht seinen offenen Zustand verlieren. Der UI-Zustand des Accordions ist bewusst **kein Fachdatenwert** und wird nur während des Renderings erhalten.
+
+Das Zielbild `Zukunftsfit 2050` wird in V0.4 doppelt dargestellt:
+
+- **Bestand heute** aus dem aktuellen Gebäude-/Anlagenzustand,
+- **mit gewählter Sanierung** aus demselben Bestand plus aktuell ausgewählten Maßnahmen.
+
+Die vier sichtbaren Dimensionen sind `Hülle`, `Technik`, `fossilfrei` und `PV`. Datenbekanntheit und fachlicher Zielerreichungsgrad werden nicht mehr vermischt; ein lediglich bekannter schlechter Hüllzustand darf nicht als positiver Teilfortschritt erscheinen.

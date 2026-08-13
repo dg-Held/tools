@@ -607,7 +607,7 @@ Bauteil-Quickcheck: Relevante Eigeninvestition = max(energetische Mehrkosten −
 Instandhaltung_a = Vollkosten × Instandhaltungssatz / 100
 ```
 
-Hinweis: Diese Bauteil-Quickcheck-Kennzahl ist **nicht** identisch mit der wirtschaftlich zusätzlichen Investition des Wirtschaftlichkeitstools V0.3. Dort werden vollständige Referenz- und Sanierungsvarianten samt Erneuerungszeitpunkten verglichen und Förderungen können programmabhängig auch Begleitarbeiten umfassen.
+Hinweis: Diese Bauteil-Quickcheck-Kennzahl ist **nicht** identisch mit der wirtschaftlich zusätzlichen Investition des Wirtschaftlichkeitstools V0.4. Dort werden vollständige Referenz- und Sanierungsvarianten samt Erneuerungszeitpunkten verglichen und Förderungen können programmabhängig auch Begleitarbeiten umfassen.
 
 ### Dynamische Wirtschaftlichkeit
 
@@ -618,7 +618,7 @@ Der gemeinsame Kern kann Anfangsinvestition, Wiederbeschaffung, Restwert, Entsor
 Die Standarddatei unterscheidet informative Normwerte und transparent gekennzeichnete Projekt-Fallbacks. Jeder Wert bleibt überschreibbar und benötigt Quelle, Status und Datenstand.
 
 
-## Wirtschaftlichkeit V0.3
+## Wirtschaftlichkeit V0.4
 
 ### Grundprinzip
 
@@ -649,7 +649,7 @@ Der gemeinsame Kern berücksichtigt Anfangsinvestitionen, zeitlich verschobene R
 - die wirtschaftlich zusätzliche Investition wird als `Gesamtinvestition − Förderung − Barwert der Referenzerneuerungen` berechnet und **nicht auf 0 begrenzt**. Ein negativer Wert wird als wirtschaftlicher Startvorteil ausgewiesen.
 - ist eine Referenz-Erneuerung kostenmäßig bekannt, ihr Zeitpunkt aber noch `offen`, bleibt der Kostenwert sichtbar, wird bis zur zeitlichen Klärung aber **nicht** als heutige Sowieso-Investition vom Vergleich abgezogen.
 
-### Eigenständiger Schnellstart V0.3
+### Eigenständiger Schnellstart V0.4
 
 Fehlen gespeicherte Maßnahmen aus `Bauteil & Sanierung`, kann Wirtschaftlichkeit selbst Vorschläge vorbereiten. Priorität der Datengrundlage:
 
@@ -660,7 +660,7 @@ Fehlen gespeicherte Maßnahmen aus `Bauteil & Sanierung`, kann Wirtschaftlichkei
 
 Der thermische Hüllstatus entscheidet, ob beispielsweise Dach oder oberste Geschoßdecke betrachtet wird. Automatisch abgeleitete Maßnahmeneinsparungen werden **nicht als statischer Projektwert eingefroren**, sondern bei besseren Projekt-, Klima- oder Hülldaten live neu berechnet. In sichtbaren Maßnahmenfeldern werden kWh-Werte auf 10 kWh/a gerundet; der Paketvergleich arbeitet mit den ungerundeten Rechenwerten. Nur ein bewusst gesetzter manueller Einsparungswert bleibt als Override gespeichert.
 
-### Verbrauchsverankerte Einsparung V0.3
+### Verbrauchsverankerte Einsparung V0.4
 
 Die absolute Einsparung einer Hüllmaßnahme wird nicht mehr aus der Differenz einzelner `U × A × HGT`-Werte direkt vom realen Verbrauch abgezogen. Stattdessen werden Verbrauch und unabhängiges Hüllmodell bewusst verschränkt:
 
@@ -681,12 +681,29 @@ Ein anschließender Heizungstausch wird erst auf den nach der Hüllsanierung ver
 
 Als Plausibilitätscheck werden der verbrauchsbasierte korrigierte HWB und der unabhängige HWB aus U-Werten gegenübergestellt. Große Abweichungen stoppen die Berechnung nicht, sondern erzeugen den Hinweis **„Hüllzustand prüfen“**. Mögliche Ursachen sind bereits sanierte Bauteile, von Bauperiodenwerten abweichende tatsächliche U-Werte, abweichende Beheizung/Nutzung, Warmwasserannahmen oder Klimadaten. Die aktuellen Hinweisstufen sind transparente EAT-Plausibilitätsregeln und keine normativen Grenzwerte.
 
-### Kundenergebnis V0.3
+### Zielbild Zukunftsfit 2050 · V0.4
+
+Das Zielbild ist keine zusätzliche Kundeneingabe, sondern ein fachlicher Orientierungsrahmen. Es wird zweimal mit derselben Grafik gezeigt:
+
+1. **Bestand heute**,
+2. **mit gewählter Sanierung**.
+
+Die Hülle wird aus den tatsächlich relevanten thermischen Hüllbauteilen und ihrem Verhältnis zu den zentralen Ziel-U-Werten abgeleitet. Ein komplett schlechter, aber bekannter Hüllzustand wird als `Sanierung nötig` und nicht als `teilweise` gewertet. Zwischenstufen sind `teilweise`, `weitgehend` und `zukunftsfit`. Technik bewertet grob Erneuerungsnähe/Zukunftsfähigkeit; `fossilfrei` und `PV` werden separat geführt. Ausgewählte Heizungs- bzw. PV-Maßnahmen verändern nur die **Sanierungsziel-Grafik**, nicht den Bestandsstatus.
+
+### Förderdarstellung V0.4
+
+Zusätzlich zum Anteil an der Gesamtinvestition wird der angenommene Förderbetrag orientierend auch ins Verhältnis zur **nominalen energetischen Investition** gesetzt. Dieser Prozentwert kann über 100 % liegen und ist dann kein Rechenfehler: Förderprogramme können Begleitarbeiten aus dem nominalen Referenzanteil als förderfähige Kosten anerkennen. Die Förderbasis bleibt daher weiterhin eine dritte, regelabhängige Ebene neben Kostenstruktur und Finanzierung.
+
+### Manuelle Overrides V0.4
+
+Vollkosten, Referenz-Erneuerung, Referenzzeitpunkt und Energieeinsparung können im Beratungsgespräch manuell überschrieben werden. Solche Eingriffe werden sichtbar als `manuell überschrieben` bzw. `manueller Override` gekennzeichnet. `↺ automatisch` entfernt nur den Override und stellt die aktuell beste automatische Ableitung wieder her; dadurch gehen neuere Projekt-, Klima- oder Kostendaten nicht verloren.
+
+### Kundenergebnis V0.4
 
 Der Hauptbereich zeigt Restinvestition, wirtschaftlich zusätzliche Investition bzw. Startvorteil, Energiekosten vorher/nachher samt jährlicher Einsparung und den dauerhaften wirtschaftlichen Schnittpunkt. Kundenbudget und gewählte Prioritäten werden im Ergebnis wieder aufgegriffen. Die Hauptgrafik zeigt den kumulierten Vorteil **gegenüber der Referenz**; die Nulllinie ist ausdrücklich „Referenz · beide Varianten gleich teuer“. Optional werden die kumulierten Lebenszykluskosten von Referenz und Sanierung als zwei Linien dargestellt.
 
 `Barwertvorteil` wird in der Kundenoberfläche nicht als isolierter Fachbegriff verwendet, sondern als „über den Betrachtungszeitraum x € günstiger/teurer als die Referenz“.
 
-### V0.3-Grenze
+### V0.4-Grenze
 
-Die Oberfläche und der dynamische Rechenkern sind testbar. Die Förderengine ist noch nicht regelbasiert. Heizungsmaßnahmen erhalten einen ersten zentralen System-/Kostenansatz; PV-Kosten können berücksichtigt werden, das objektspezifische Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.3 noch nicht Teil des Lebenszyklusvergleichs.
+Die Oberfläche und der dynamische Rechenkern sind testbar. Die Förderengine ist noch nicht regelbasiert. Heizungsmaßnahmen erhalten einen ersten zentralen System-/Kostenansatz; PV-Kosten können berücksichtigt werden, das objektspezifische Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.4 noch nicht Teil des Lebenszyklusvergleichs.

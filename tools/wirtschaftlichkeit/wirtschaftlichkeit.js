@@ -139,7 +139,7 @@
     return `${ORIGIN_LABEL[info.origin] ?? 'Projektwert'}${info.source ? ` · ${info.source}` : ''}`;
   }
 
-  function writeManualField(path, value, unit = null, source = 'Nutzereingabe Wirtschaftlichkeit V0.3') {
+  function writeManualField(path, value, unit = null, source = 'Nutzereingabe Wirtschaftlichkeit V0.4') {
     if (value === null || value === '') store.clearFieldCandidate(path, model.ORIGIN.MANUAL);
     else store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit, source });
   }
@@ -431,14 +431,19 @@
     const energy = newU && u.value ? measureCore.energyEffect({ ...energyInputs, newUValue: newU }) : { available: false };
     const prepared = Boolean(draft.prepared || project.modules?.wirtschaftlichkeit?.autoPreparedAt);
     const referenceYear = draft.referenceYearConfirmed ? finite(draft.referenceYear, referenceYearAuto) : referenceYearAuto;
+    const fullInvestmentManual = Boolean(draft.fullInvestmentManual);
+    const referenceCostManual = Boolean(draft.referenceCostManual);
     const energySavingsManual = Boolean(draft.energySavingsManual);
     const dataQuality = area && u.value && energy.available ? (u.fallback || existingLoss === null ? 'gute Abschätzung' : 'objektspezifisch') : 'orientierend';
     return {
       id: definition.id, label: definition.label, componentId: definition.componentId, source: prepared ? 'Wirtschaftlichkeit · automatisch vorbereitet' : 'Vorschlag aus Projektbasis',
       selected: prepared ? Boolean(draft.selected) : false, prepared,
-      fullInvestmentEur: finite(draft.fullInvestmentEur, fullInvestment),
-      referenceCostEur: finite(draft.referenceCostEur, referenceCost),
-      referenceYear, referenceYearAuto, deliveredSavingsKwh: energySavingsManual ? roundTo(finite(draft.deliveredSavingsKwh, 0), 10) : 0,
+      fullInvestmentEur: fullInvestmentManual ? finite(draft.fullInvestmentEur, fullInvestment) : fullInvestment,
+      fullInvestmentAutoEur: fullInvestment, fullInvestmentManual,
+      referenceCostEur: referenceCostManual ? finite(draft.referenceCostEur, referenceCost) : referenceCost,
+      referenceCostAutoEur: referenceCost, referenceCostManual,
+      referenceYear, referenceYearAuto, referenceYearManual: Boolean(draft.referenceYearConfirmed),
+      deliveredSavingsKwh: energySavingsManual ? roundTo(finite(draft.deliveredSavingsKwh, 0), 10) : 0,
       energySavingsManual,
       lifetimeYears, manualOnly: false, informational: false, dataQuality, areaM2: area,
       existingUValue: u.value, targetUValue: newU, costRange: cost?.range_eur_m2 ?? null,
@@ -471,11 +476,18 @@
       note = 'Kosten werden berücksichtigt; ein objektspezifisches PV-Ertragsmodell folgt in einer späteren Fachrunde.';
     }
     const fullInvestment = definition.id === 'pv' ? middle * finite(config?.default_size_kwp, 10) : middle;
+    const fullInvestmentManual = Boolean(draft.fullInvestmentManual);
+    const referenceCostManual = Boolean(draft.referenceCostManual);
     return {
       id: definition.id, label: definition.label, componentId: definition.componentId, source: prepared ? 'Wirtschaftlichkeit · Systemvorschlag' : 'Systemvorschlag',
       selected: prepared ? Boolean(draft.selected) : false, prepared,
-      fullInvestmentEur: finite(draft.fullInvestmentEur, fullInvestment), referenceCostEur: finite(draft.referenceCostEur, referenceCost),
-      referenceYear: draft.referenceYearConfirmed ? finite(draft.referenceYear, referenceYear) : referenceYear, deliveredSavingsKwh: finite(draft.deliveredSavingsKwh, deliveredSavingsKwh),
+      fullInvestmentEur: fullInvestmentManual ? finite(draft.fullInvestmentEur, fullInvestment) : fullInvestment,
+      fullInvestmentAutoEur: fullInvestment, fullInvestmentManual,
+      referenceCostEur: referenceCostManual ? finite(draft.referenceCostEur, referenceCost) : referenceCost,
+      referenceCostAutoEur: referenceCost, referenceCostManual,
+      referenceYear: draft.referenceYearConfirmed ? finite(draft.referenceYear, referenceYear) : referenceYear,
+      referenceYearAuto: referenceYear, referenceYearManual: Boolean(draft.referenceYearConfirmed),
+      deliveredSavingsKwh: finite(draft.deliveredSavingsKwh, deliveredSavingsKwh),
       lifetimeYears, manualOnly: true, informational: Boolean(definition.informational), dataQuality: 'orientierend', fundingEntries: [], fundingEur: 0,
       targetCarrierId: config?.target_carrier_id ?? null, targetEfficiency: finite(draft.targetEfficiency, finite(config?.target_efficiency, null)),
       systemLabel: config?.label ?? definition.label, note,
@@ -497,12 +509,17 @@
     const referenceCostAuto = storedReference > 0 ? storedReference : fallbackReference;
     const referenceYear = draft.referenceYearConfirmed ? finite(draft.referenceYear, referenceYearAuto) : referenceYearAuto;
     const energySavingsManual = Boolean(draft.energySavingsManual);
+    const fullInvestmentAuto = finite(stored.costModel?.fullInvestmentEur, 0);
+    const fullInvestmentManual = Boolean(draft.fullInvestmentManual);
+    const referenceCostManual = Boolean(draft.referenceCostManual);
     return {
       id: definition.id, label: stored.title ?? definition.label, componentId: stored.componentId ?? definition.componentId,
       source: 'Bauteil & Sanierung', selected: draft.selected !== undefined ? Boolean(draft.selected) : true, prepared: true,
-      fullInvestmentEur: finite(draft.fullInvestmentEur, finite(stored.costModel?.fullInvestmentEur, 0)),
-      referenceCostEur: finite(draft.referenceCostEur, referenceCostAuto),
-      referenceYear, referenceYearAuto,
+      fullInvestmentEur: fullInvestmentManual ? finite(draft.fullInvestmentEur, fullInvestmentAuto) : fullInvestmentAuto,
+      fullInvestmentAutoEur: fullInvestmentAuto, fullInvestmentManual,
+      referenceCostEur: referenceCostManual ? finite(draft.referenceCostEur, referenceCostAuto) : referenceCostAuto,
+      referenceCostAutoEur: referenceCostAuto, referenceCostManual,
+      referenceYear, referenceYearAuto, referenceYearManual: Boolean(draft.referenceYearConfirmed),
       deliveredSavingsKwh: energySavingsManual ? roundTo(finite(draft.deliveredSavingsKwh, 0), 10) : 0,
       energySavingsManual,
       lifetimeYears,
@@ -528,7 +545,8 @@
     measures.forEach((item) => {
       if (item.manualOnly || item.energySavingsManual) return;
       const impact = anchoredImpact(project, [item]);
-      item.deliveredSavingsKwh = impact.available ? roundTo(Math.max(0, impact.deliveredSavingsKwh), 10) : 0;
+      item.deliveredSavingsAutoKwh = impact.available ? roundTo(Math.max(0, impact.deliveredSavingsKwh), 10) : 0;
+      if (!item.energySavingsManual) item.deliveredSavingsKwh = item.deliveredSavingsAutoKwh;
       item.energyMethod = impact.available ? 'verbrauchsverankert · relative Hüllwirkung' : 'Einsparung noch nicht berechenbar';
     });
   }
@@ -559,6 +577,7 @@
   }
 
   function renderMeasures(project) {
+    const openMeasureIds = new Set([...document.querySelectorAll('.measure-item details[open]')].map((details) => details.closest('.measure-item')?.dataset.measureId).filter(Boolean));
     buildMeasures(project);
     const storedCount = measures.filter((item) => item.source === 'Bauteil & Sanierung').length;
     $('measureSourceNote').textContent = storedCount ? `${storedCount} Maßnahme${storedCount === 1 ? '' : 'n'} aus Bauteil & Sanierung übernommen.` : 'Noch keine gespeicherten Maßnahmen; aus Gebäude, Baujahr und zentralen Zielwerten können Vorschläge vorbereitet werden.';
@@ -572,32 +591,42 @@
       const referenceValue = item.referenceYear === null || item.referenceYear === undefined ? '' : item.referenceYear;
       const energyValue = item.deliveredSavingsKwh > 0 ? roundTo(item.deliveredSavingsKwh, 10) : '';
       const energyNote = item.energySavingsManual ? 'manueller Override' : 'automatisch · realer Verbrauch × relative Hüllwirkung';
+      const fullCostNote = item.fullInvestmentManual ? 'manuell überschrieben' : 'automatisch / Projektdaten bzw. Richtwert';
+      const referenceCostNote = item.referenceCostEur > 0 ? (item.referenceCostManual ? 'manuell überschrieben' : 'automatisch / Referenzkostenmodell') : 'Referenzkosten noch offen';
+      const referenceTimingNote = item.referenceYearManual ? `${referenceTimingText(item.referenceYear)} · manuell` : `${referenceTimingText(item.referenceYear)} · automatisch`;
       const fundingText = item.fundingEur > 0 ? `bis zu ${formatMoney(item.fundingEur)}` : (item.source === 'Bauteil & Sanierung' ? 'keine Förderung hinterlegt' : 'noch keine Förderung hinterlegt');
       const fundingSource = item.source === 'Bauteil & Sanierung' ? 'aus Bauteil & Sanierung' : 'kann unter Kosten & Förderung ergänzt werden';
-      return `<div class="measure-item ${disabled ? 'is-unprepared' : ''}" data-measure-id="${escapeHtml(item.id)}"><div class="measure-item-header"><input type="checkbox" ${item.selected ? 'checked' : ''} ${disabled ? 'disabled' : ''} aria-label="${escapeHtml(item.label)} auswählen"><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.source)} · ${escapeHtml(item.dataQuality)}</small>${item.note ? `<small class="measure-note">${escapeHtml(item.note)}</small>` : ''}</div><div class="measure-item-values"><strong>${cost}</strong><small>${escapeHtml(saving)}</small></div></div><details><summary>Werte prüfen</summary><div class="measure-detail-grid"><label><span>Vollkosten</span><div class="input-with-unit"><input data-field="fullInvestmentEur" type="number" min="0" step="500" value="${item.fullInvestmentEur || ''}"><em>€</em></div></label><label><span>Referenz-Erneuerung</span><div class="input-with-unit"><input data-field="referenceCostEur" type="number" min="0" step="500" value="${item.referenceCostEur || ''}"><em>€</em></div></label><label><span>Referenz in</span><div class="input-with-unit"><input data-field="referenceYear" type="number" min="0" max="60" step="1" value="${referenceValue}"><em>J.</em></div><small class="measure-field-note">${escapeHtml(referenceTimingText(item.referenceYear))}</small></label><label><span>Energieeinsparung</span><div class="input-with-unit"><input data-field="deliveredSavingsKwh" type="number" min="0" step="10" value="${energyValue}"><em>kWh/a</em></div><small class="measure-field-note">${escapeHtml(energyNote)}</small></label></div><div class="measure-funding-line"><span>Förderung aus Maßnahme</span><span><b>${escapeHtml(fundingText)}</b> · ${escapeHtml(fundingSource)}</span></div></details></div>`;
+      const reset = (field, visible) => visible ? `<button class="measure-reset" data-reset-field="${field}" type="button">↺ automatisch</button>` : '';
+      return `<div class="measure-item ${disabled ? 'is-unprepared' : ''}" data-measure-id="${escapeHtml(item.id)}"><div class="measure-item-header"><input type="checkbox" ${item.selected ? 'checked' : ''} ${disabled ? 'disabled' : ''} aria-label="${escapeHtml(item.label)} auswählen"><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.source)} · ${escapeHtml(item.dataQuality)}</small>${item.note ? `<small class="measure-note">${escapeHtml(item.note)}</small>` : ''}</div><div class="measure-item-values"><strong>${cost}</strong><small>${escapeHtml(saving)}</small></div></div><details ${openMeasureIds.has(item.id) ? 'open' : ''}><summary>Werte prüfen</summary><div class="measure-detail-grid"><label><span>Vollkosten</span><div class="input-with-unit"><input data-field="fullInvestmentEur" type="number" min="0" step="500" value="${item.fullInvestmentEur || ''}"><em>€</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(fullCostNote)}</small>${reset('fullInvestmentEur', item.fullInvestmentManual)}</div></label><label><span>Referenz-Erneuerung</span><div class="input-with-unit"><input data-field="referenceCostEur" type="number" min="0" step="500" value="${item.referenceCostEur || ''}" placeholder="offen"><em>€</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(referenceCostNote)}</small>${reset('referenceCostEur', item.referenceCostManual)}</div></label><label><span>Referenz in</span><div class="input-with-unit"><input data-field="referenceYear" type="number" min="0" max="60" step="1" value="${referenceValue}" placeholder="offen"><em>J.</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(referenceTimingNote)}</small>${reset('referenceYear', item.referenceYearManual)}</div></label><label><span>Energieeinsparung</span><div class="input-with-unit"><input data-field="deliveredSavingsKwh" type="number" min="0" step="10" value="${energyValue}" placeholder="offen"><em>kWh/a</em></div><div class="measure-field-meta"><small class="measure-field-note">${escapeHtml(energyNote)}</small>${reset('deliveredSavingsKwh', item.energySavingsManual)}</div></label></div><div class="measure-funding-line"><span>Förderung aus Maßnahme</span><span><b>${escapeHtml(fundingText)}</b> · ${escapeHtml(fundingSource)}</span></div></details></div>`;
     }).join('');
-
     $('measureList').querySelectorAll('.measure-item').forEach((row) => {
       const id = row.dataset.measureId;
       row.querySelector('input[type="checkbox"]').addEventListener('change', (event) => saveMeasureDraft(id, { selected: event.target.checked, prepared: true }));
-      row.querySelectorAll('[data-field]').forEach((input) => {
-        input.addEventListener('change', () => {
-          if (input.dataset.field === 'referenceYear') {
-            if (input.value === '') saveMeasureDraft(id, { referenceYear: null, referenceYearConfirmed: false, prepared: true });
-            else saveMeasureDraft(id, { referenceYear: Math.max(0, finite(input.value, 0)), referenceYearConfirmed: true, prepared: true });
-            return;
-          }
-          if (input.dataset.field === 'deliveredSavingsKwh') {
-            if (input.value === '') saveMeasureDraft(id, { deliveredSavingsKwh: null, energySavingsManual: false, prepared: true });
-            else saveMeasureDraft(id, { deliveredSavingsKwh: Math.max(0, roundTo(finite(input.value, 0), 10)), energySavingsManual: true, prepared: true });
-            return;
-          }
-          saveMeasureDraft(id, { [input.dataset.field]: Math.max(0, finite(input.value, 0)), prepared: true });
-        });
-      });
+      row.querySelectorAll('[data-field]').forEach((input) => input.addEventListener('change', () => {
+        const field = input.dataset.field;
+        if (field === 'referenceYear') {
+          if (input.value === '') saveMeasureDraft(id, { referenceYear: null, referenceYearConfirmed: false, prepared: true });
+          else saveMeasureDraft(id, { referenceYear: Math.max(0, finite(input.value, 0)), referenceYearConfirmed: true, prepared: true });
+        } else if (field === 'deliveredSavingsKwh') {
+          if (input.value === '') saveMeasureDraft(id, { deliveredSavingsKwh: null, energySavingsManual: false, prepared: true });
+          else saveMeasureDraft(id, { deliveredSavingsKwh: Math.max(0, roundTo(finite(input.value, 0), 10)), energySavingsManual: true, prepared: true });
+        } else if (field === 'fullInvestmentEur') {
+          if (input.value === '') saveMeasureDraft(id, { fullInvestmentEur: null, fullInvestmentManual: false, prepared: true });
+          else saveMeasureDraft(id, { fullInvestmentEur: Math.max(0, finite(input.value, 0)), fullInvestmentManual: true, prepared: true });
+        } else if (field === 'referenceCostEur') {
+          if (input.value === '') saveMeasureDraft(id, { referenceCostEur: null, referenceCostManual: false, prepared: true });
+          else saveMeasureDraft(id, { referenceCostEur: Math.max(0, finite(input.value, 0)), referenceCostManual: true, prepared: true });
+        }
+      }));
+      row.querySelectorAll('[data-reset-field]').forEach((button) => button.addEventListener('click', () => {
+        const field = button.dataset.resetField;
+        if (field === 'deliveredSavingsKwh') saveMeasureDraft(id, { deliveredSavingsKwh: null, energySavingsManual: false, prepared: true });
+        else if (field === 'referenceYear') saveMeasureDraft(id, { referenceYear: null, referenceYearConfirmed: false, prepared: true });
+        else if (field === 'fullInvestmentEur') saveMeasureDraft(id, { fullInvestmentEur: null, fullInvestmentManual: false, prepared: true });
+        else if (field === 'referenceCostEur') saveMeasureDraft(id, { referenceCostEur: null, referenceCostManual: false, prepared: true });
+      }));
     });
   }
-
   function prepareMeasures(selectFutureFit = false) {
     const project = store.get();
     buildMeasures(project);
@@ -609,9 +638,12 @@
         store.setPath(`modules.wirtschaftlichkeit.measureDrafts.${item.id}`, {
           ...current,
           prepared: true,
-          fullInvestmentEur: finite(current.fullInvestmentEur, item.fullInvestmentEur),
-          referenceCostEur: finite(current.referenceCostEur, item.referenceCostEur),
-          referenceYear: current.referenceYearConfirmed ? finite(current.referenceYear, item.referenceYear) : item.referenceYear,
+          fullInvestmentEur: current.fullInvestmentManual ? finite(current.fullInvestmentEur, item.fullInvestmentEur) : null,
+          fullInvestmentManual: Boolean(current.fullInvestmentManual),
+          referenceCostEur: current.referenceCostManual ? finite(current.referenceCostEur, item.referenceCostEur) : null,
+          referenceCostManual: Boolean(current.referenceCostManual),
+          referenceYear: current.referenceYearConfirmed ? finite(current.referenceYear, item.referenceYear) : null,
+          referenceYearConfirmed: Boolean(current.referenceYearConfirmed),
           deliveredSavingsKwh: current.energySavingsManual ? roundTo(finite(current.deliveredSavingsKwh, 0), 10) : null,
           energySavingsManual: Boolean(current.energySavingsManual),
           lifetimeYears: finite(current.lifetimeYears, item.lifetimeYears),
@@ -623,23 +655,76 @@
     suppressRender = false;
     render(store.get());
   }
-
-  function renderFutureFit(project) {
-    const visibleEnvelope = measures.filter((item) => !item.manualOnly);
-    const envelopeKnown = visibleEnvelope.some((item) => item.existingUValue > 0);
-    const envelopeGood = visibleEnvelope.length > 0 && visibleEnvelope.every((item) => !(item.targetUValue > 0) || !(item.existingUValue > item.targetUValue * 1.05));
-    const carrier = currentCarrier(project);
-    const fossilFree = ['electricity','district_heat','wood','pellets'].includes(carrier);
-    const pv = Boolean(project.systems?.pv?.installed || project.modules?.pv?.resultSummary);
-    const steps = [
-      ['Hülle', envelopeGood ? 'done' : envelopeKnown ? 'partial' : 'open', envelopeGood ? 'gut' : envelopeKnown ? 'teilweise' : 'offen'],
-      ['Technik', valueAt(project, 'systems.heating.usefulHeatFactor', null) ? 'partial' : 'open', valueAt(project, 'systems.heating.usefulHeatFactor', null) ? 'bekannt' : 'offen'],
-      ['fossilfrei', fossilFree ? 'done' : 'open', fossilFree ? 'erfüllt' : 'offen'],
-      ['PV', pv ? 'done' : 'open', pv ? 'vorhanden' : 'offen'],
-    ];
-    $('futureFitTrack').innerHTML = steps.map(([label,state,note], i) => `<div class="future-step ${state === 'done' ? 'is-done' : state === 'partial' ? 'is-partial' : ''}"><i>${i+1}</i><span>${label}</span><small>${note}</small></div>`).join('');
+  function envelopeFutureFitState(candidate = false) {
+    const selectedIds = new Set(candidate ? selectedMeasures().map((item) => item.id) : []);
+    const relevant = measures.filter((item) => !item.manualOnly && finite(item.areaM2, 0) > 0 && finite(item.targetUValue, null) > 0);
+    const known = relevant.filter((item) => finite(item.existingUValue, null) > 0);
+    if (!known.length) return { state: 'open', note: 'offen' };
+    let good = 0;
+    known.forEach((item) => {
+      const value = candidate && selectedIds.has(item.id) && finite(item.targetUValue, null) > 0 ? item.targetUValue : item.existingUValue;
+      if (value <= item.targetUValue * 1.05) good += 1;
+    });
+    if (good === 0) return { state: 'needs', note: 'Sanierung nötig' };
+    if (known.length === relevant.length && good === known.length) return { state: 'done', note: 'zukunftsfit' };
+    const share = good / Math.max(1, known.length);
+    if (share >= 0.75) return { state: 'advanced', note: 'weitgehend' };
+    return { state: 'partial', note: 'teilweise' };
   }
 
+  function techniqueFutureFitState(project, candidate = false) {
+    const selectedHeating = candidate ? selectedMeasures().find((item) => item.id === 'heating') : null;
+    if (selectedHeating) return { state: 'done', note: 'zukunftsfähig' };
+    const carrier = valueAt(project, 'systems.heating.energyCarrier', null);
+    const efficiency = finite(valueAt(project, 'systems.heating.usefulHeatFactor', null), null);
+    const installYear = finite(valueAt(project, 'systems.heating.installationYear', null), null);
+    if (!carrier && efficiency === null && !installYear) return { state: 'open', note: 'offen' };
+    const age = installYear ? Math.max(0, CURRENT_YEAR - installYear) : null;
+    if (age !== null && age >= 20) return { state: 'needs', note: 'erneuerungsnah' };
+    if (carrier === 'electricity' && efficiency !== null && efficiency >= 2.5) return { state: 'done', note: 'zukunftsfähig' };
+    if (carrier === 'district_heat' && (age === null || age < 20)) return { state: 'advanced', note: 'gut' };
+    return { state: 'partial', note: 'prüfen' };
+  }
+
+  function fossilFutureFitState(project, candidate = false) {
+    const selectedHeating = candidate ? selectedMeasures().find((item) => item.id === 'heating') : null;
+    const carrier = selectedHeating?.targetCarrierId ?? valueAt(project, 'systems.heating.energyCarrier', null);
+    if (!carrier) return { state: 'open', note: 'offen' };
+    const fossilFree = ['electricity','district_heat','wood','pellets'].includes(carrier);
+    return fossilFree ? { state: 'done', note: selectedHeating ? 'vorgesehen' : 'erfüllt' } : { state: 'needs', note: 'fossil' };
+  }
+
+  function pvFutureFitState(project, candidate = false) {
+    const selectedPv = candidate ? selectedMeasures().some((item) => item.id === 'pv') : false;
+    if (selectedPv) return { state: 'done', note: 'vorgesehen' };
+    const installed = Boolean(project.systems?.pv?.installed || project.modules?.pv?.resultSummary);
+    if (installed) return { state: 'done', note: 'vorhanden' };
+    if (hasOwn(project.systems?.pv, 'installed')) return { state: 'needs', note: 'nicht vorhanden' };
+    return { state: 'open', note: 'offen' };
+  }
+
+  function futureFitSteps(project, candidate = false) {
+    return [
+      ['Hülle', envelopeFutureFitState(candidate)],
+      ['Technik', techniqueFutureFitState(project, candidate)],
+      ['fossilfrei', fossilFutureFitState(project, candidate)],
+      ['PV', pvFutureFitState(project, candidate)],
+    ];
+  }
+
+  function renderFutureFitTrack(id, steps) {
+    const host = $(id);
+    if (!host) return;
+    host.innerHTML = steps.map(([label, info], i) => {
+      const cls = info.state === 'done' ? 'is-done' : info.state === 'advanced' ? 'is-advanced' : info.state === 'partial' ? 'is-partial' : info.state === 'needs' ? 'is-needs' : '';
+      return `<div class="future-step ${cls}"><i>${i+1}</i><span>${escapeHtml(label)}</span><small>${escapeHtml(info.note)}</small></div>`;
+    }).join('');
+  }
+
+  function renderFutureFit(project) {
+    renderFutureFitTrack('futureFitTrack', futureFitSteps(project, false));
+    renderFutureFitTrack('futureFitResultTrack', futureFitSteps(project, true));
+  }
   function needsFutureFitMeasure(project, item) {
     if (item.id === 'heating') return !['electricity','district_heat','wood','pellets'].includes(currentCarrier(project));
     if (item.id === 'pv') return !(project.systems?.pv?.installed || project.modules?.pv?.resultSummary);
@@ -808,16 +893,18 @@
     for(let i=0;i<=4;i++){const value=min+(span*i/4);const yy=y(value);add('line',{x1:ml,y1:yy,x2:width-mr,y2:yy,class:'chart-grid'});const t=add('text',{x:ml-8,y:yy+4,'text-anchor':'end',class:'chart-label'});t.textContent=formatAxisMoney(value);}
     add('line',{x1:ml,y1:y0,x2:width-mr,y2:y0,class:'chart-zero'}); add('line',{x1:ml,y1:mt,x2:ml,y2:height-mb,class:'chart-axis'});
     const axisTitle=add('text',{x:18,y:mt+plotH/2,'text-anchor':'middle',class:'chart-axis-title',transform:`rotate(-90 18 ${mt+plotH/2})`});axisTitle.textContent='€ Vorteil gegenüber Referenz';
-    const zeroLabel=add('text',{x:width-mr-4,y:Math.max(mt+14,y0-7),'text-anchor':'end',class:'chart-label-strong'});zeroLabel.textContent='Referenz · beide Varianten gleich teuer';
-    const top=add('text',{x:ml+8,y:mt+16,class:'chart-label-strong'});top.textContent='Sanierung günstiger'; const bottom=add('text',{x:ml+8,y:height-mb-10,class:'chart-label-strong'});bottom.textContent='Sanierung noch teurer';
+    const zeroLabel=add('text',{x:width-mr-4,y:Math.max(mt+14,Math.min(height-mb-8,y0-7)),'text-anchor':'end',class:'chart-label-strong'});zeroLabel.textContent='Referenz · beide Varianten gleich teuer';
+    const top=add('text',{x:width-mr-6,y:mt+16,'text-anchor':'end',class:'chart-label-strong'});top.textContent='Sanierung günstiger';
+    const bottom=add('text',{x:width-mr-6,y:height-mb-10,'text-anchor':'end',class:'chart-label-strong'});bottom.textContent='Sanierung noch teurer';
     const pts=series.map((p)=>`${x(p.year)},${y(p.advantage)}`).join(' '); add('polyline',{points:pts,class:'chart-line'});
-    const start=series[0]; if(start){add('circle',{cx:x(start.year),cy:y(start.advantage),r:4,class:'chart-point'});const st=add('text',{x:x(start.year)+7,y:Math.min(height-mb-8,Math.max(mt+14,y(start.advantage)+16)),class:'chart-label-strong'});st.textContent=`heute ${formatSignedMoney(start.advantage)}`;}
+    const start=series[0];
+    if(start){const sy=y(start.advantage);add('circle',{cx:x(start.year),cy:sy,r:4,class:'chart-point'});const labelY=start.advantage<=0?Math.max(mt+14,sy-10):Math.min(height-mb-8,sy+18);const st=add('text',{x:x(start.year)+8,y:labelY,class:'chart-label-strong'});st.textContent=`heute ${formatSignedMoney(start.advantage)}`;}
     if(result.comparison.durableAdvantageYear!==null){const xx=x(result.comparison.durableAdvantageYear);add('line',{x1:xx,y1:mt,x2:xx,y2:height-mb,class:'chart-crossing'});const t=add('text',{x:Math.min(width-mr-5,xx+6),y:mt+34,class:'chart-label'});t.textContent=`dauerhaft ab ca. ${number1.format(result.comparison.durableAdvantageYear)} J.`;}
-    const end=series.at(-1); if(end){add('circle',{cx:x(end.year),cy:y(end.advantage),r:4,class:'chart-point'});const t=add('text',{x:x(end.year)-6,y:y(end.advantage)-9,'text-anchor':'end',class:'chart-label-strong'});t.textContent=`kumuliert ${formatSignedMoney(end.advantage)}`;}
+    const end=series.at(-1);
+    if(end){const ey=y(end.advantage);add('circle',{cx:x(end.year),cy:ey,r:4,class:'chart-point'});const endY=ey<mt+28?ey+18:ey-9;const t=add('text',{x:x(end.year)-6,y:endY,'text-anchor':'end',class:'chart-label-strong'});t.textContent=`kumuliert ${formatSignedMoney(end.advantage)}`;}
     const advantage = result.comparison.advantagePresentValue;
     $('chartStatus').textContent = advantage >= 0 ? `Über ${result.assumptions.periodYears} Jahre ca. ${formatMoney(advantage)} günstiger` : `Über ${result.assumptions.periodYears} Jahre ca. ${formatMoney(-advantage)} teurer`;
   }
-
   function renderComparisonChart(result) {
     const svg=$('comparisonChart'); svg.innerHTML='';
     const series=result.comparison?.series??[];
@@ -829,11 +916,10 @@
     add('line',{x1:ml,y1:height-mb,x2:width-mr,y2:height-mb,class:'chart-axis'}); add('line',{x1:ml,y1:mt,x2:ml,y2:height-mb,class:'chart-axis'});
     const axisTitle=add('text',{x:18,y:mt+plotH/2,'text-anchor':'middle',class:'chart-axis-title',transform:`rotate(-90 18 ${mt+plotH/2})`});axisTitle.textContent='€ kumulierte Lebenszykluskosten';
     add('polyline',{points:series.map((p)=>`${x(p.year)},${y(p.referenceCost)}`).join(' '),class:'chart-line-reference'}); add('polyline',{points:series.map((p)=>`${x(p.year)},${y(p.candidateCost)}`).join(' '),class:'chart-line-candidate'});
-    const start=series[0]; if(start){const r=add('text',{x:x(0)+7,y:Math.max(mt+14,y(start.referenceCost)-8),class:'chart-label'});r.textContent=`Referenz Start ${formatMoney(start.referenceCost)}`;const c=add('text',{x:x(0)+7,y:Math.min(height-mb-6,y(start.candidateCost)+16),class:'chart-label'});c.textContent=`Sanierung Start ${formatMoney(start.candidateCost)}`;}
-    const lr=add('text',{x:width-mr-4,y:y(series.at(-1).referenceCost)-8,'text-anchor':'end',class:'chart-label-strong'});lr.textContent='Referenz';
-    const lc=add('text',{x:width-mr-4,y:y(series.at(-1).candidateCost)+16,'text-anchor':'end',class:'chart-label-strong'});lc.textContent='Sanierung';
+    const start=series[0];
+    if(start){const ry=y(start.referenceCost),cy=y(start.candidateCost);let rLabelY=ry-9,cLabelY=cy+17;if(Math.abs(ry-cy)<28){const middle=(ry+cy)/2;rLabelY=Math.max(mt+14,middle-14);cLabelY=Math.min(height-mb-7,middle+20);}else{rLabelY=Math.max(mt+14,rLabelY);cLabelY=Math.min(height-mb-7,cLabelY);}const r=add('text',{x:x(0)+8,y:rLabelY,class:'chart-label-reference'});r.textContent=`Referenz Start ${formatMoney(start.referenceCost)}`;const c=add('text',{x:x(0)+8,y:cLabelY,class:'chart-label-candidate'});c.textContent=`Sanierung Start ${formatMoney(start.candidateCost)}`;}
+    const last=series.at(-1);const rEndY=y(last.referenceCost),cEndY=y(last.candidateCost);let rEndLabel=rEndY-8,cEndLabel=cEndY+16;if(Math.abs(rEndY-cEndY)<24){const middle=(rEndY+cEndY)/2;rEndLabel=Math.max(mt+14,middle-12);cEndLabel=Math.min(height-mb-6,middle+18);}const lr=add('text',{x:width-mr-4,y:rEndLabel,'text-anchor':'end',class:'chart-label-reference'});lr.textContent='Referenz';const lc=add('text',{x:width-mr-4,y:cEndLabel,'text-anchor':'end',class:'chart-label-candidate'});lc.textContent='Sanierung';
   }
-
   function effectRows(result, project) {
     const priorities = project.advice?.priorities ?? [];
     const benefitTexts = { costs:['Kosten','wirtschaftlich betrachtet'], comfort:['Komfort','positiv'], climate:['Klimaschutz','positiv'], independence:['Unabhängigkeit','positiv'], value:['Werterhalt','positiv'], effort:['Baustellenaufwand','projektabhängig'] };
@@ -864,7 +950,7 @@
     else text += `Die Energie- und Lebenszykluswirkung deckt die wirtschaftlich zusätzliche Investition im betrachteten Zeitraum nicht vollständig. `;
     if (priorities.length) text += `Für das Kundengespräch besonders relevant: ${priorities.slice(0,3).join(', ')}. `;
     if (Math.abs(finite(result.energy.hwbDeviationPercent,0)) > 60) text += 'Verbrauch und U-Wert-Hüllmodell weichen deutlich voneinander ab; die Energieeinsparung wurde deshalb verbrauchsverankert gerechnet und der Bestandszustand sollte geprüft werden. ';
-    if (result.selected.some((m)=>m.informational)) text += 'PV-Kosten sind bereits in der Investition enthalten; ein objektspezifisches PV-Ertragsmodell ist in V0.3 noch nicht Bestandteil der Zeitrechnung.';
+    if (result.selected.some((m)=>m.informational)) text += 'PV-Kosten sind bereits in der Investition enthalten; ein objektspezifisches PV-Ertragsmodell ist in V0.4 noch nicht Bestandteil der Zeitrechnung.';
     return text.trim();
   }
 
@@ -889,7 +975,9 @@
     $('totalInvestment').textContent = formatMoney(result.totalInvestment);
     $('fundingEditorTotal').textContent = `bis zu ${formatMoney(result.funding.total)}`;
     $('fundingTotal').textContent = `bis zu ${formatMoney(result.funding.total)}`;
-    $('fundingPercent').textContent = result.totalInvestment > 0 ? `ca. ${number0.format(result.funding.total/result.totalInvestment*100)} % der Gesamtinvestition` : '–';
+    const fundingTotalPercent = result.totalInvestment > 0 ? result.funding.total / result.totalInvestment * 100 : null;
+    const fundingEnergeticPercent = result.energeticNominal > 0 ? result.funding.total / result.energeticNominal * 100 : null;
+    $('fundingPercent').textContent = fundingTotalPercent === null ? '–' : `ca. ${number0.format(fundingTotalPercent)} % der Gesamtinvestition${fundingEnergeticPercent !== null ? ` / ca. ${number0.format(fundingEnergeticPercent)} % der energetischen Investition` : ''}`;
     $('netInvestment').textContent = formatMoney(result.netInvestment);
     const relevantIsAdvantage=result.relevantInvestment<0;
     $('relevantInvestment').textContent = formatMoney(Math.abs(result.relevantInvestment));
@@ -930,22 +1018,26 @@
 
   function buildMethodology(result, project) {
     const a=result.assumptions;
-    $('methodDataStrip').innerHTML = `<span><strong>Rechenkern</strong> ${economics.MODEL_VERSION}</span><span><strong>Energiebrücke</strong> ${anchorCore.MODEL_VERSION}</span><span><strong>Zeitraum</strong> ${a.periodYears} Jahre</span><span><strong>Zins</strong> ${number1.format(a.interestRatePercent)} %</span><span><strong>Energiepreis</strong> ${number1.format(a.energyEscalationPercent)} %/a</span><span><strong>Kostenstand</strong> ${costConfig?.data_date ?? '–'}</span>`;
+    const energyAssumptions=energyFlowAssumptions();
+    $('methodDataStrip').innerHTML = `<span><strong>Rechenkern</strong> ${economics.MODEL_VERSION}</span><span><strong>Energiebrücke</strong> ${anchorCore.MODEL_VERSION}</span><span><strong>Zeitraum</strong> ${a.periodYears} Jahre</span><span><strong>Zins</strong> ${number1.format(a.interestRatePercent)} %</span><span><strong>Energiepreis</strong> ${number1.format(a.energyEscalationPercent)} %/a</span><span><strong>Warmwasseransatz</strong> ${number0.format(energyAssumptions.hotWaterKwhPerPerson)} kWh/Person·a</span><span><strong>Kostenstand</strong> ${costConfig?.data_date ?? '–'}</span>`;
     $('methodologyGrid').innerHTML = [
       ['1 · Vergleichslogik','Verglichen werden eine Referenzvariante („Was passiert ohne vorgezogene energetische Verbesserung?“) und die gewählte Sanierungsvariante. Ohnehin notwendige Erneuerungen werden zu ihrem erwarteten Zeitpunkt und nicht pauschal heute abgezogen.'],
-      ['2 · Barwert','Für eine Zahlung K im Jahr t gilt intern BW = K × (P / Q)^t. P ist der Preisentwicklungsfaktor der Kostenposition, Q der gemeinsame Zinsfaktor. Anfangsinvestitionen liegen in Jahr 0.'],
-      ['3 · Lebenszyklus','Komponenten können Wiederbeschaffungen und Restwerte über ihre Nutzungsdauer erzeugen. Projektspezifische Werte haben Vorrang vor zentralen Standardwerten.'],
-      ['4 · Verbrauchsverankerte Energieeinsparung','Der reale Verbrauch bestimmt die tatsächliche Größenordnung des Raumwärmebedarfs. Das unabhängige Hüllmodell wird einmal im Bestand und einmal mit allen ausgewählten Hüllmaßnahmen gerechnet. Aus Q_U,nach / Q_U,vor entsteht ein relativer Maßnahmenfaktor. Dieser Faktor wird auf den realen Raumwärmebedarf übertragen. Dadurch können Standard-U-Werte die reale Einsparung nicht mehr auf null Restverbrauch drücken. Manuelle Einsparungen bleiben ausdrücklich als Override möglich.'],
-      ['5 · Förderung','Förderung ist nicht auf die energetische Mehrinvestition begrenzt. Förderfähige Kosten werden durch das jeweilige Programm definiert und können auch Gerüst, Putz oder andere Begleitarbeiten umfassen. Förderungen wirken als kostenmindernde Position der Sanierungsvariante; Referenzarbeiten ohne förderauslösende energetische Maßnahme erhalten nicht automatisch dieselbe Förderung.'],
-      ['6 · Kostenstruktur','Die Grafik „Woraus besteht die Investition?“ trennt nominale Referenzarbeiten und energetische Verbesserung. Diese Aufteilung ist nicht identisch mit der Förderbasis. Die wirtschaftlich zusätzliche Investition berücksichtigt zusätzlich den Zeitpunkt der Referenzerneuerungen.'],
-      ['7 · Amortisation','Die Zeitgrafik folgt der Kumulationsmethode: Zahlungsströme werden in dem Jahr berücksichtigt, in dem sie anfallen. Dadurch sind mehrere Amortisations- und Deamortisationspunkte möglich. Die Nulllinie bedeutet: Referenz und Sanierung sind kumuliert gleich teuer.'],
-      ['8 · Datenpriorität','Projektspezifische bzw. manuell bestätigte Werte haben Vorrang vor zentralen EAT-Richtwerten; abgeleitete Werte und Fallbacks werden als solche gekennzeichnet.'],
-      ['9 · PV in V0.3','PV-Kosten können für Finanzierung und Zukunftsfit-Paket berücksichtigt werden. Ein objektspezifisches PV-Ertrags-/Eigenverbrauchsmodell ist in V0.3 noch nicht Teil der wirtschaftlichen Zeitrechnung; das Ergebnis ist bei ausgewählter PV daher konservativ.'],
-      ['10 · Hüllplausibilität','Verbrauchsbasierter korrigierter HWB und unabhängiger U-Wert-HWB werden als Plausibilitätscheck gegenübergestellt. Deutliche Abweichungen sind keine automatische Fehlerdiagnose, sondern ein Beratungsanlass: bereits erfolgte Sanierungen, tatsächliche U-Werte, Warmwasseranteil, Nutzung und Klimadaten prüfen. Die derzeitigen Hinweisstufen sind EAT-Plausibilitätsregeln und keine normativen Grenzwerte.'],
-      ['11 · Grenzen','Beratungshilfe, keine Finanzierungs- oder Förderzusage. Richtkosten, Lebensdauern, Energiepreise, Förderfähigkeit und Förderhöhe sind vor Umsetzung projektspezifisch zu prüfen.'],
+      ['2 · Reale Ausgangswärme',`Wenn Warmwasser im Verbrauch enthalten ist, gilt: <code>Q_Raum,real = E_Verbrauch × η − Q_WW</code>. Dabei wird <code>Q_WW = Personen × ${number0.format(energyAssumptions.hotWaterKwhPerPerson)} kWh/a</code> angesetzt, sofern kein besserer Projektwert vorliegt.`],
+      ['3 · Verbrauchsverankerte Hüllwirkung','Das unabhängige Hüllmodell wird mit Geometrie, U-Werten, Klima, Lüftung und Gewinnen einmal im Bestand und einmal nach allen ausgewählten Hüllmaßnahmen gerechnet. <code>r_Hülle = Q_U,nach / Q_U,vor</code>. Danach gilt <code>Q_Raum,nach = Q_Raum,real × r_Hülle</code>.'],
+      ['4 · Heizsystem nach Sanierung','Nach Hüllmaßnahmen wird der Endenergiebedarf des Zielsystems aus der verbleibenden Nutzwärme bestimmt: <code>E_nach = (Q_Raum,nach + Q_WW) / η_neu</code>. Bei Wärmepumpen steht <code>η_neu</code> für die verwendete JAZ.'],
+      ['5 · Barwert','Für eine Zahlung <code>K</code> im Jahr <code>t</code> gilt <code>BW_t = K × (P / Q)^t</code>. <code>P</code> ist der Preisentwicklungsfaktor der jeweiligen Kostenart, <code>Q</code> der Zinsfaktor.'],
+      ['6 · Jährliche Kosten','Energie- und Betriebskosten werden als jährlich nachschüssige Zahlungsreihe über den Betrachtungszeitraum abgezinst. Unterschiedliche Kostenarten dürfen unterschiedliche Preisentwicklungen verwenden.'],
+      ['7 · Lebenszyklus','Komponenten können Wiederbeschaffungen, Entsorgung und Restwerte über ihre Nutzungsdauer erzeugen. Eine Referenzkomponente startet erst im erwarteten Erneuerungsjahr.'],
+      ['8 · Annuität','Aus dem Gesamtbarwert wird intern die äquivalente Jahresannuität bestimmt: <code>A = BW × (Q − 1) / (1 − Q^−T)</code>. Sie wird in der normalen Beratung nicht als Hauptkennzahl gezeigt.'],
+      ['9 · Förderung','Förderung ist nicht auf die energetische Mehrinvestition begrenzt. Förderfähige Kosten werden durch das jeweilige Programm definiert und können auch Gerüst, Putz oder andere Begleitarbeiten umfassen.'],
+      ['10 · Kostenstruktur','Die Grafik „Woraus besteht die Investition?“ trennt nominale Referenzarbeiten und energetische Verbesserung. Diese Aufteilung ist nicht identisch mit der Förderbasis.'],
+      ['11 · Amortisation / Gesamtkostenverlauf','Die Zeitgrafik folgt der Kumulationsmethode. Zahlungsströme werden in dem Jahr berücksichtigt, in dem sie anfallen; dadurch sind mehrere Amortisations- und Deamortisationspunkte möglich.'],
+      ['12 · Hüllplausibilität','Verbrauchsbasierter korrigierter HWB und unabhängiger U-Wert-HWB werden als Plausibilitätscheck gegenübergestellt. Deutliche Abweichungen sind ein Beratungsanlass, keine automatische Fehlerdiagnose.'],
+      ['13 · Datenpriorität / Overrides','Projektspezifische bzw. manuell bestätigte Werte haben Vorrang vor zentralen EAT-Richtwerten. Automatisch abgeleitete Werte werden bei besseren Projektdaten neu berechnet. Ein manueller Override kann über „↺ automatisch“ wiederhergestellt werden.'],
+      ['14 · PV in V0.4','PV-Kosten können für Finanzierung und Zukunftsfit-Paket berücksichtigt werden. Ein objektspezifisches PV-Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.4 noch nicht Teil der wirtschaftlichen Zeitrechnung.'],
+      ['15 · Regelwerke und Grenzen','Methodische Grundlage: ÖNORM B 8110-4:2024-04-15, ÖNORM M 7140:2021-01 und ÖNORM EN 15459-1:2017. Beratungshilfe, keine Finanzierungs- oder Förderzusage. Richtkosten, Lebensdauern, Energiepreise, Förderfähigkeit und Förderhöhe sind vor Umsetzung projektspezifisch zu prüfen.'],
     ].map(([h,p])=>`<div><h3>${h}</h3><p>${p}</p></div>`).join('');
   }
-
   function buildPrintReport(result, project) {
     const host=$('economicsPrintReport'); if(!host)return;
     const selected=result.selected.map((m)=>m.label).join(' · ') || 'keine Maßnahme';

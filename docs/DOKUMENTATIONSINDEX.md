@@ -1,7 +1,8 @@
 # Dokumentationsindex – Tools für Energieberatung
 
 **Stand:** 13.08.2026  
-**Projektmodell:** Schema 2.0
+**Projektmodell:** Schema 2.0  
+**Aktueller Entwicklungsstand:** Wirtschaftlichkeit V0.4 · Web-Abschlussrunde
 
 Die Projektdokumentation wird bewusst zentral gepflegt. Frühere toolbezogene Änderungs-, Installations- und Methodik-Einzeldateien sind nicht mehr Bestandteil des verbindlichen Websitepakets.
 
