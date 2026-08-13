@@ -194,7 +194,7 @@ Zusätzlich prüfen:
 - Standortpass-Druck: Wärmeversorgung sowie normale Karten unter Standort/Risiken verwenden `--color-primary-soft`; ein tatsächlicher WLV-Flächentreffer verwendet `--color-secondary-soft` mit `--color-secondary-light`; Warn-/Prüfzustände bleiben semantisch getrennt.
 
 
-### Wirtschaftlichkeit V0.2 · 13.08.2026
+### Wirtschaftlichkeit V0.3 · 13.08.2026
 
 Zusätzlich prüfen:
 
@@ -203,8 +203,8 @@ Zusätzlich prüfen:
 - Wirtschaftlichkeit startet aus leerem Projekt, Adresse/TIRIS können innerhalb des Tools gewählt werden.
 - `Maßnahmen aus Gebäude vorbereiten` erzeugt ohne vorherigen Toolwechsel orientierende Hüll-/Systemvorschläge; gespeicherte Bauteilmaßnahmen haben Vorrang.
 - thermischer Hüllstatus wird respektiert: gespeichertes/relevantes Dach darf nicht durch eine pauschale OGD-Auswahl verdrängt werden.
-- Maßnahmen-Energieeinsparungen werden in der Übersicht auf 10 kWh/a gerundet, intern ungerundet verarbeitet.
-- Förderungen aus `Bauteil & Sanierung` werden übernommen; manuelle V0.2-Overrides bleiben als `bis zu` gekennzeichnet.
+- sichtbare Maßnahmen-Energieeinsparungen werden auch in den ausklappbaren Eingabefeldern auf 10 kWh/a gerundet; der automatische Paketvergleich verwendet weiterhin ungerundete Rechenwerte.
+- Förderungen aus `Bauteil & Sanierung` werden übernommen; manuelle V0.3-Overrides bleiben als `bis zu` gekennzeichnet.
 - Förderung darf die nominalen energetischen Mehrkosten übersteigen, wenn förderfähige Begleitarbeiten enthalten sind; sie wird nur auf die Gesamtinvestition begrenzt.
 - wirtschaftlich zusätzliche Investition wird nicht auf 0 begrenzt; negative Werte werden als Startvorteil dargestellt.
 - `advice.*` bleibt nach Toolwechsel erhalten; Budget und Prioritäten erscheinen erneut im Ergebnis.
@@ -212,3 +212,12 @@ Zusätzlich prüfen:
 - Zeitgrafik beschriftet die Referenz-Nulllinie explizit; optionaler Zweilinienchart zeigt kumulierte Lebenszykluskosten von Referenz und Sanierung.
 - Förderangaben werden immer als orientierend/`bis zu` gekennzeichnet; Förderbasis und nominale Kostenstruktur werden nicht gleichgesetzt.
 - Druckansicht enthält Förderhinweis, Energiekosten vorher/nachher und die wesentlichen Ergebnisgrößen.
+- `tests/validate-consumption-anchor-core.js` besteht: Hüllzustand vorher/nachher liefert einen plausiblen relativen Faktor; die auf den realen Verbrauch übertragene Einsparung bleibt positiv und kleiner als der verfügbare reale Wärmebedarf.
+- Bei einem absichtlich niedrigen Verbrauch und deutlich höherem U-Wert-HWB bleibt nach der Sanierung ein positiver Restwärmebedarf; die Rechnung wird nicht mehr durch die Summe absoluter U-Wert-Einsparungen auf 0 gedrückt.
+- Automatisch abgeleitete Einsparungen werden nach besseren Klima-/Hülldaten neu berechnet; ein manuell gesetzter Einsparungswert bleibt als Override bestehen.
+- Referenzzeitpunkt: unbekannt → `offen`, abgelaufene Restlebensdauer → `jetzt / kurzfristig`, sonst `ca. x J.`; übernommene Bauteilmaßnahmen dürfen nicht pauschal auf 0 Jahre gesetzt werden.
+- bekannte Referenzkosten mit noch offenem Zeitpunkt bleiben sichtbar, werden aber bis zur Klärung nicht als Kapitalereignis in Jahr 0 gerechnet.
+- 0-€-Förderkategorien erzeugen kein sichtbares Segment; Paketbonus verwendet den zentralen `turquoise-soft`-Token.
+- Förderangaben der Einzelmaßnahmen werden direkt in den Maßnahmen-Details dargestellt; die gemeinsame Förderprüfung bleibt nur einmal im Kostenblock.
+- Haupt- und Vergleichsgrafik zeigen eine beschriftete vertikale €-Achse und die Ausgangsdifferenz.
+

@@ -411,17 +411,23 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Fachliche Werte, Rechenwege, Datenpflege und Releaseabläufe werden künftig ausschließlich in den passenden zentralen Dokumenten nachgezogen.
 
 
-## Wirtschaftlichkeit V0.2 · Beratungsprototyp 13.08.2026
+## Wirtschaftlichkeit V0.3 · verbrauchsverankerte Einsparung · 13.08.2026
 
 - Das Tool bleibt eigenständig nutzbar und verwendet denselben Projekt-/Adresskopf wie die bestehenden Werkzeuge.
 - Sichtbare Struktur: **Projektbasis → Rahmen festlegen → Kosten & Förderung → Ergebnis → Methode & Datenbasis**.
 - Neue Projekte können über **„Maßnahmen aus Gebäude vorbereiten“** orientierende Hüllmaßnahmen direkt aus gemeinsamer Geometrie, Baujahr/Bestands-U-Werten, Ziel-U-Werten und Energiefluss bzw. HGT-Fallback erzeugen. Das Bauteiltool muss dafür nicht vorher geöffnet werden.
 - Dach/OGD, Kellerdecke/Boden und weitere Hüllbauteile folgen dem zentral gespeicherten thermischen Hüllstatus; vorhandene gespeicherte Bauteilmaßnahmen haben Vorrang.
-- Heizung und PV erhalten erste zentrale System-Kostenvorschläge aus `shared/data/costs/system-costs.json`. Die PV-Kosten können bereits berücksichtigt werden; das objektspezifische PV-Ertrags-/Eigenverbrauchsmodell ist noch nicht Bestandteil von V0.2.
-- Förderungen aus gespeicherten Bauteilmaßnahmen werden übernommen. Ergänzende Landes-/Bundes-/sonstige Förderungen und Paketboni bleiben in V0.2 orientierende Eingaben; eine regelbasierte Förderengine folgt.
+- Heizung und PV erhalten erste zentrale System-Kostenvorschläge aus `shared/data/costs/system-costs.json`. Die PV-Kosten können bereits berücksichtigt werden; das objektspezifische PV-Ertrags-/Eigenverbrauchsmodell ist noch nicht Bestandteil von V0.3.
+- Förderungen aus gespeicherten Bauteilmaßnahmen werden übernommen. Ergänzende Landes-/Bundes-/sonstige Förderungen und Paketboni bleiben in V0.3 orientierende Eingaben; eine regelbasierte Förderengine folgt.
 - **Förderbasis und Kostenstruktur sind bewusst getrennt:** Förderfähige Kosten sind programmabhängig und können auch Gerüst, Putz oder andere Begleitarbeiten umfassen, die nominal zugleich Referenz-/Instandsetzungsarbeiten darstellen. Förderung wird daher nicht auf die nominalen energetischen Mehrkosten begrenzt; sie wird nur auf die Gesamtinvestition begrenzt.
 - Die wirtschaftlich zusätzliche Investition ist `Gesamtinvestition − Förderung − Barwert der erwarteten Referenzerneuerungen` und kann negativ werden; in diesem Fall wird ein **wirtschaftlicher Startvorteil** ausgewiesen.
 - Ergebnisdarstellung ergänzt Budgetabgleich, gewählte Kundenprioritäten, Energiekosten vorher/nachher und eine explizit beschriftete Referenzlinie. Optional können die kumulierten Lebenszykluskosten von Referenz und Sanierung als zwei Kurven angezeigt werden.
-- Die frühere Bezeichnung „Sensitivität“ wird in V0.2 solange als **Aussagequalität & Unsicherheiten** geführt, bis echte automatische Sensitivitätsläufe implementiert sind.
+- Die frühere Bezeichnung „Sensitivität“ wird in V0.3 solange als **Aussagequalität & Unsicherheiten** geführt, bis echte automatische Sensitivitätsläufe implementiert sind.
+- Hüllmaßnahmen verwenden ab V0.3 eine **verbrauchsverankerte Gebäudephysik**: Das unabhängige Hüllmodell bestimmt den relativen Effekt `Q_U,nach / Q_U,vor`; dieser Effekt wird auf den realen Raumwärmebedarf übertragen. Dadurch können grobe Bauperioden-U-Werte den realen Verbrauch nicht mehr vollständig „weg-sanieren“.
+- Hüllpakete werden als kompletter Gebäudezustand vor/nach Maßnahmen gerechnet; automatisch abgeleitete Einsparungen werden live neu bestimmt. Nur manuelle Overrides bleiben gespeichert.
+- Ein Plausibilitätsvergleich `HWB korrigiert aus Verbrauch ↔ HWB aus U-Werten` erzeugt bei deutlicher Abweichung einen Beratungs-Hinweis, ohne die Rechnung zu blockieren.
+- Maßnahmen-Details wurden platzsparend auf 2×2 Felder umgestellt; sichtbare kWh-Werte werden überall auf 10 kWh/a gerundet. Referenzzeitpunkte werden als `jetzt / kurzfristig`, `ca. x J.` oder `offen` dargestellt. Ein offener Zeitpunkt wird nicht automatisch als Jahr 0 in die Referenzrechnung übernommen.
+- Förderinformationen aus Einzelmaßnahmen stehen direkt bei der Maßnahme; der Kostenblock enthält nur noch die gemeinsame Förderprüfung/-ergänzung. 0-€-Fördersegmente werden nicht mehr gezeichnet.
+- Beide Zeitgrafiken besitzen eine beschriftete €-Achse und machen Anfangsdifferenz bzw. Startkosten sichtbar.
 - BKI dient weiterhin ausschließlich der internen Plausibilisierung der EAT-Kostenkennwerte. Regionalfaktor Tirol: **1,019**.
 

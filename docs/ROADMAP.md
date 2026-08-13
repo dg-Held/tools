@@ -51,19 +51,20 @@ Keine komplexe Randbedingungsmatrix. Später sauber festlegen:
 - Klima/Standort: Windrose, sobald geeignete amtliche Windrichtungs-/Windgeschwindigkeitsdaten in die Datenpipeline aufgenommen sind.
 - Standortpass: DKM-/Orthofoto-Prüfung weiter verfeinern; später ggf. angrenzende Gebäude einfacher erfassen.
 
-### Wirtschaftlichkeit · V0.2 Beratungsprototyp
+### Wirtschaftlichkeit · V0.3 verbrauchsverankerter Beratungsprototyp
 
 Der zweite direkt im Projekt integrierte Prototyp setzt den vollständigen Beratungsablauf auf derselben Projektbasis um:
 
 - Projektbasis prüfen; NFL als zentrale Geometriegröße hervorgehoben,
 - Rahmen, Budget und Kundenprioritäten in wenigen Klicks festlegen,
-- Maßnahmen eigenständig aus Gebäude/Baujahr/U-Werten vorbereiten oder aus `Bauteil & Sanierung` übernehmen,
+- Maßnahmen eigenständig aus Gebäude/Baujahr/U-Werten vorbereiten oder aus `Bauteil & Sanierung` übernehmen; automatisch abgeleitete Einsparungen werden live aktualisiert,
 - thermischen Hüllstatus (u. a. Dach ↔ OGD) respektieren,
 - erste Heizung-/PV-Kostenvorschläge,
 - bestehende Bauteilförderungen übernehmen und Paketförderungen ergänzen,
 - Kostenstruktur, Förderbasis und Finanzierung fachlich getrennt erklären,
+- Verbrauch als reale Größenordnung mit der relativen Hüllwirkung des unabhängigen U-Wert-Modells verschneiden und Abweichungen `Verbrauch ↔ Hüllmodell` sichtbar plausibilisieren,
 - Energiekosten vorher/nachher, Budgetabgleich und Kundenprioritäten im Ergebnis zeigen,
-- Hauptgrafik mit expliziter Referenzlinie plus optionaler Lebenszykluskosten-Zweilinienansicht.
+- Hauptgrafik mit expliziter Referenzlinie plus optionaler Lebenszykluskosten-Zweilinienansicht und beschrifteten €-Achsen.
 
 Nächste Schritte: freigegebene EAT-Kostenkennwerte vollständig einspielen, regelbasierte Förderengine, echte automatische Sensitivitätsläufe, PV-Ertrags-/Eigenverbrauchsadapter und Druckfeinschliff.
 

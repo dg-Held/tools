@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <link href="../../assets/svg/favicon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
-<title>Wirtschaftlichkeit V0.2 | Tools für Energieberatung</title>
+<title>Wirtschaftlichkeit V0.3 | Tools für Energieberatung</title>
 <meta content="Kosten, Förderung und langfristige Wirkung von Sanierungsmaßnahmen verständlich vergleichen." name="description"/>
 <link href="../../styles.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
@@ -55,6 +55,7 @@
 <div><span>Heutige Energiekosten</span><strong id="basisAnnualCost">–</strong><small id="basisAnnualCostSource">–</small></div>
 </div>
 <div class="econ-hint is-info" id="basisHint">Projektbasis wird geprüft.</div>
+<div class="econ-hint is-warning energy-consistency-hint" id="energyConsistencyHint" hidden></div>
 <details class="econ-details" id="basisDetails"><summary>Ausgangsdaten ergänzen</summary>
 <div class="econ-input-grid econ-input-grid--four">
 <label><span>Nutzfläche (NFL)</span><div class="input-with-unit"><input id="inputArea" min="0" step="1" type="number"/><em>m²</em></div></label>
@@ -63,6 +64,8 @@
 <label><span>Energiepreis</span><div class="input-with-unit"><input id="inputEnergyPrice" min="0" step="0.001" type="number"/><em>€/kWh</em></div><small id="energyPriceSource">zentraler Richtwert</small></label>
 <label><span>Baujahr Gebäude</span><input id="inputConstructionYear" min="1500" max="2100" step="1" type="number"/></label>
 <label><span>Baujahr Heizung</span><input id="inputHeatingYear" min="1900" max="2100" step="1" type="number"/></label>
+<label><span>Warmwasser im Verbrauch?</span><select id="inputHotWaterIncluded"><option value="true">ja</option><option value="false">nein</option></select></label>
+<label><span>Personen</span><input id="inputPersons" min="0" max="30" step="1" type="number"/></label>
 <label><span>Nutzwärmefaktor / JNG</span><input id="inputEfficiency" min="0.1" max="5" step="0.01" type="number"/></label>
 <label><span>Betrachtungszeitraum</span><div class="input-with-unit"><input id="inputPeriod" min="5" max="60" step="1" type="number"/><em>Jahre</em></div></label>
 </div></details>
@@ -90,17 +93,17 @@
 <article class="econ-card" id="costCard">
 <div class="section-heading"><div><p class="eyebrow">3 · Kosten &amp; Förderung</p><h2>Investition und Förderung gemeinsam prüfen</h2></div><span class="status-chip" id="costStatus">Berechnung offen</span></div>
 <div class="cost-headline"><span>Gesamtinvestition</span><strong id="totalInvestment">–</strong><small id="costBasisText">zentrale Richtwerte</small></div>
-<div class="funding-editor"><div><span class="funding-editor-label">Mögliche Förderung</span><strong id="fundingEditorTotal">bis zu –</strong><small id="fundingOriginNote">Noch keine Förderung übernommen oder ergänzt.</small></div><button class="secondary-button" id="openFundingDetails" type="button">Förderung prüfen</button></div>
+<div class="funding-editor"><div><span class="funding-editor-label">Mögliche Förderung</span><strong id="fundingEditorTotal">bis zu –</strong><small id="fundingOriginNote">Noch keine Förderung übernommen oder ergänzt.</small></div></div>
+<details class="econ-details funding-details-compact" id="costFundingDetails"><summary>Förderung prüfen / ergänzen</summary>
+<div class="funding-inputs"><label><span>Landesförderung</span><div class="input-with-unit"><input id="fundState" min="0" step="500" type="number"/><em>€</em></div><small id="fundStateSource">–</small></label><label><span>Bundesförderung</span><div class="input-with-unit"><input id="fundFederal" min="0" step="500" type="number"/><em>€</em></div><small id="fundFederalSource">–</small></label><label><span>Sonstige Förderung</span><div class="input-with-unit"><input id="fundOther" min="0" step="500" type="number"/><em>€</em></div><small id="fundOtherSource">–</small></label><label><span>Paket-/Sanierungsbonus</span><div class="input-with-unit"><input id="fundBonus" min="0" step="500" type="number"/><em>€</em></div><small>im Wirtschaftlichkeitstool ergänzen</small></label></div>
+<p class="funding-caution">Förderfähige Kosten und Förderhöhen hängen von Programm, Maßnahme und Kombination ab. V0.3 übernimmt vorhandene Bauteilförderungen und erlaubt ergänzende/abweichende Beträge; die regelbasierte Förderengine folgt später.</p>
+</details>
 <div class="bar-block"><h3>Woraus besteht die Investition?</h3><div class="stacked-bar" id="costCompositionBar"></div><div class="bar-legend" id="costCompositionLegend"></div></div>
 <div class="bar-block"><h3>Wie wird sie finanziert?</h3><div class="stacked-bar" id="fundingBar"></div><div class="bar-legend" id="fundingLegend"></div><p class="bar-explainer" id="fundingBasisNote">Förderfähige Kosten sind programmabhängig und können auch Gerüst, Putz und andere notwendige Begleitarbeiten umfassen.</p></div>
 <div class="funding-summary"><div><span>Mögliche Förderung</span><strong id="fundingTotal">–</strong><small id="fundingPercent">–</small></div><div><span>Restinvestition</span><strong id="netInvestment">–</strong><small>Gesamtinvestition minus angenommene Förderung</small></div></div>
 <div class="relevant-investment"><span id="relevantInvestmentLabel">Wirtschaftlich zusätzliche Investition</span><strong id="relevantInvestment">–</strong><p id="relevantInvestmentNote">Förderung sowie Referenzkosten und deren Zeitpunkt werden berücksichtigt.</p></div>
 <div class="econ-hint is-info funding-overlap-note" id="fundingOverlapNote" hidden></div>
-<details class="econ-details" id="costFundingDetails"><summary>Kosten &amp; Förderung prüfen</summary>
-<div class="funding-inputs"><label><span>Landesförderung</span><div class="input-with-unit"><input id="fundState" min="0" step="500" type="number"/><em>€</em></div><small id="fundStateSource">–</small></label><label><span>Bundesförderung</span><div class="input-with-unit"><input id="fundFederal" min="0" step="500" type="number"/><em>€</em></div><small id="fundFederalSource">–</small></label><label><span>Sonstige Förderung</span><div class="input-with-unit"><input id="fundOther" min="0" step="500" type="number"/><em>€</em></div><small id="fundOtherSource">–</small></label><label><span>Paket-/Sanierungsbonus</span><div class="input-with-unit"><input id="fundBonus" min="0" step="500" type="number"/><em>€</em></div><small>im Wirtschaftlichkeitstool ergänzen</small></label></div>
-<div id="measureCostDetails" class="measure-cost-details"></div>
-<p class="funding-caution">Förderfähige Kosten und Förderhöhen hängen von Programm, Maßnahme und Kombination ab. V0.2 übernimmt vorhandene Bauteilförderungen und erlaubt ergänzende/abweichende Beträge; die regelbasierte Förderengine folgt später.</p>
-</details>
+
 </article>
 
 <article class="econ-card econ-card--result" id="resultCard">
@@ -123,7 +126,7 @@
 <section class="container economics-print-report print-only" id="economicsPrintReport"></section>
 <section class="container bottom-report-actions no-print energy-next-actions"><a class="primary-button button-link" href="../energiefluss-v4/index.html">Energiefluss</a><a class="primary-button button-link" href="../bauteil-sanierung/index.html">Bauteil &amp; Sanierung</a><button class="secondary-button" id="printEconomicsButton" type="button">Drucken / PDF</button></section>
 </main>
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Wirtschaftlichkeit V0.2 · gemeinsamer Projekt- und Rechenkern</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Wirtschaftlichkeit V0.3 · verbrauchsverankerte Einsparung</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
 <script src="../../shared/js/data-model.js?v=3"></script>
@@ -138,7 +141,9 @@
 <script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
 <script src="../../shared/js/services/building-geometry-service.js?v=2"></script>
 <script src="../../shared/js/domain/measures/envelope-renovation-core.js?v=5"></script>
+<script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=4"></script>
+<script src="../../shared/js/domain/economics/energy-anchor-core.js?v=1"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=2"></script>
-<script src="wirtschaftlichkeit.js?v=2"></script>
+<script src="wirtschaftlichkeit.js?v=3"></script>
 </body>
 </html>
