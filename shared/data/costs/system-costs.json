@@ -1,6 +1,6 @@
 {
   "schema": "energy-tools-system-costs",
-  "version": "2026-08-13-v1.0-eat-reviewed",
+  "version": "2026-08-13-v1.1-eat-reviewable",
   "data_date": "2026-08",
   "status": "eat-advisory-costs-internally-plausibilized",
   "notice": "EAT-Richtwerte Stand August 2026; projektspezifische Angebote haben Vorrang. BKI 2025 dient nur der internen Plausibilisierung. Die Werte sind keine Angebots- oder Förderzusage.",
@@ -256,5 +256,13 @@
       "source_id": "EAT_COSTS_2026_08",
       "active": true
     }
-  ]
+  ],
+  "reference_strategy": {
+    "heat_generator": {
+      "typical_lifetime_years": 20,
+      "replacement_cost_basis": "selected_future_fit_system_middle_cost",
+      "status": "eat-working-rule-for-review",
+      "note": "Der automatische Referenzzeitpunkt ergibt sich aus Heizungsbaujahr und typischer Nutzungsdauer. Beobachteter Zustand bzw. ein konkret geplanter Ersatzzeitpunkt haben Vorrang und können im Wirtschaftlichkeitstool manuell bestätigt werden. Eine technisch noch laufende Altanlage wird nicht zwangsweise ausgetauscht; der Referenzzeitpunkt ist eine Beratungsannahme."
+    }
+  }
 }

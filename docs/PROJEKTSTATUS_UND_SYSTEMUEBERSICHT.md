@@ -24,9 +24,8 @@ Leitgedanke: Der Berater spricht mit dem Kunden; das Tool stellt bekannte Daten 
 ## 2. Gestaltung und Bedienung
 
 - Schrift: Nunito.
-- Primärfarbe: Türkis `#3CA9A7`, mit `#244242` als dunklem Kontrastton.
-- Sekundärfarbe: gedecktes Berry/Violett `#93538F`, mit `#41253F` als dunklem Kontrastton.
-- Seitenhintergrund: sehr helles kühles Grau `#EDF1F2`; Karten bleiben überwiegend weiß bzw. sehr hell abgestuft.
+- Markenfarben werden ausschließlich in `shared/css/tokens.css` gepflegt. Primär bleibt semantisch Türkis, Sekundär Berry/Violett; konkrete Hexwerte sind bewusst **nicht** Teil der fachlichen Dokumentation, damit spätere Farbfeinschliffe keine veralteten Parallelwerte erzeugen.
+- Seitenhintergrund und Kartenflächen bleiben hell und freundlich; alle Tools verwenden dieselben semantischen Tokens statt eigener Farbcodes.
 - Statusfarben sind bewusst gedeckt; Warnung, Gefahr und Information sollen die Markenfarben nicht überstrahlen.
 - Schatten sind neutral auf Graphitbasis statt grünstichig.
 - ruhige helle Karten, Inhaltsbreite etwa 820 px.
@@ -411,7 +410,7 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Fachliche Werte, Rechenwege, Datenpflege und Releaseabläufe werden künftig ausschließlich in den passenden zentralen Dokumenten nachgezogen.
 
 
-## Wirtschaftlichkeit V0.5 · Datenrunde & Vorabnahme · 13.08.2026
+## Wirtschaftlichkeit V0.6 · Abnahmevorbereitung · 13.08.2026
 
 - Das Tool bleibt eigenständig nutzbar und verwendet denselben Projekt-/Adresskopf wie die bestehenden Werkzeuge.
 - Sichtbare Struktur: **Projektbasis → Rahmen festlegen → Kosten & Förderung → Ergebnis → Methode & Datenbasis**.
@@ -443,3 +442,13 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Hauptdiagramm reserviert die rechte Kante für den kumulierten Endwert; die Zonenbezeichnung `Sanierung günstiger` liegt mittig und kollidiert nicht mehr mit dem Endlabel.
 - Erster konkreter 2-seitiger Beratungsausdruck ist integriert: Seite 1 mit Kundenergebnis, Zukunftsfit Bestand/Sanierung, Kosten-/Finanzierungsbalken und Hauptgrafik; Seite 2 mit Maßnahmentabelle, Lebenszykluskosten, Kundenrahmen, Zusatzwirkungen, Einordnung und Aussagequalität. Finale Druckabnahme folgt nach V0.5-Gesamttest.
 
+
+### Abnahmevorbereitung V0.6
+
+- Web: zusätzlicher Abstand nach `Zielbild · Sanierung`; Druckdiagramme nutzen mehr Seitenbreite und Höhe.
+- Standortpass-Druck: normale Karten unter `Standort & Risiken` verwenden helles Türkis; ein tatsächlicher Flächentreffer helles Berry.
+- Klima: die einzelnen Jahreslinien der Dauer-/Häufigkeitsdarstellung verwenden im Web und Druck die zentrale Primärfarbe statt der Light-Variante.
+- `Bauteil & Sanierung` hält die aktuell bearbeitete manuelle Maßnahme nach Eingaben automatisch mit dem gemeinsamen Projekt synchron. Automatische Vorschläge/Pakete werden verzögert neu berechnet, sobald relevante Eingaben den gespeicherten Fingerprint verändern. Die explizite Schaltfläche bestätigt nur noch den fachlichen Prüfstatus; sie ist nicht mehr Voraussetzung für die Datenübernahme.
+- Sichtbarer Begriff in `Bauteil & Sanierung` wird mit Wirtschaftlichkeit vereinheitlicht: **Referenz-Erneuerung / Referenz-Erneuerungskosten** statt `Sowiesokosten`. Interne Feldnamen bleiben aus Rückwärtskompatibilität unverändert.
+- Systemkosten besitzen eine explizite prüfbare Referenzstrategie für Wärmeerzeuger: derzeit 20 Jahre typische Referenz-Nutzungsdauer; konkreter Plan/Zustand hat Vorrang und kann im Tool bestätigt werden.
+- Separate Prüffassung der Richtpreis-Worddatei und der Kosten-Exceldatei macht Referenzkosten, Lebensdauern und Regionalfaktoren für die fachliche Abnahme sichtbar.

@@ -2881,12 +2881,12 @@
   .print-risk-card--clear,
   .print-risk-card--info {
     border-color: var(--color-primary-light);
-    background: var(--color-info-soft);
+    background: var(--color-primary-soft);
   }
 
   .print-risk-card--hit {
-    border-color: var(--color-primary-light);
-    background: var(--color-primary-soft);
+    border-color: var(--color-secondary);
+    background: var(--color-secondary-soft);
   }
 
   .print-risk-card--warning {

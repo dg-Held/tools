@@ -148,8 +148,8 @@ tr:last-child td { border-bottom: 0; }
 /* Stundenhäufigkeit – einzelne Jahre und Median */
 .chart-year {
   fill: none;
-  stroke: rgb(var(--color-primary-rgb) / 0.27);
-  stroke-width: 1.1;
+  stroke: var(--color-primary);
+  stroke-width: 1;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
@@ -172,7 +172,7 @@ tr:last-child td { border-bottom: 0; }
   display: inline-block;
   width: 28px;
   height: 0;
-  border-top: 1px solid rgb(var(--color-primary-rgb) / 0.45);
+  border-top: 1px solid var(--color-primary);
 }
 
 
@@ -836,7 +836,7 @@ button.info-tip:focus-visible::after {
 }
 
 .chart-coverage-90 {
-  stroke: var(--turquoise);
+  stroke: var(--color-primary);
   stroke-width: 1.5;
   stroke-dasharray: 5 5;
 }
@@ -981,7 +981,7 @@ button.info-tip:focus-visible::after {
 
 /* 90-%-Linie etwas markanter */
 .chart-coverage-90 {
-  stroke: var(--turquoise);
+  stroke: var(--color-primary);
   stroke-width: 1.7;
   stroke-dasharray: 6 4;
 }

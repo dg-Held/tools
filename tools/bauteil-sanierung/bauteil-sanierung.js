@@ -124,6 +124,8 @@
   let addressSearchSequence = 0;
   let pendingAddress = null;
   let automaticPackageGenerationRunning = false;
+  let automaticPackageRefreshTimer = null;
+  let automaticMeasureSyncTimer = null;
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -731,14 +733,14 @@
     $('generateAutoPackages').disabled = preparedCount === 0 || automaticPackageGenerationRunning;
     $('generateAutoPackages').textContent = automaticPackageGenerationRunning
       ? 'Vorschläge werden erstellt …'
-      : summary ? 'Vorschläge aktualisieren' : 'Vorschläge erstellen';
+      : 'Vorschläge neu berechnen';
     $('autoPackageActionNote').textContent = relevantCount === 0
       ? 'Zuerst mindestens ein Bauteil als für die thermische Hülle relevant markieren.'
       : preparedCount === 0
         ? 'Für die relevanten Bauteile zuerst Fläche und mindestens einen Bestands-U-Wert bereitstellen.'
         : relevantRows.some((row) => row.readiness.technicalReady && !row.readiness.economicsReady)
           ? 'Technische Pakete sind möglich; wirtschaftliche Vorschläge fehlen bei relevanten Bauteilen ohne Energie- oder Kostenbasis.'
-          : 'Alle vorbereiteten relevanten Bauteile können technisch und wirtschaftlich ausgewertet werden.';
+          : 'Automatische Vorschläge und Pakete werden bei Änderungen selbstständig aktuell gehalten; die Schaltfläche erzwingt nur eine sofortige Neuberechnung.';
 
     const storedRows = summary?.components ?? [];
     $('autoPackageDetailsBody').innerHTML = readinessRows.map((row) => {
@@ -755,7 +757,7 @@
     }).join('');
   }
 
-  function createAutomaticPackages() {
+  function createAutomaticPackages(options = {}) {
     if (automaticPackageGenerationRunning) return;
     automaticPackageGenerationRunning = true;
     renderAutomaticPackageSummary(store.get());
@@ -865,12 +867,41 @@
         store.setPath('modules.bauteilSanierung.autoPackages', summary);
       });
       suppressProjectRender = false;
-      $('saveMeasureStatus').textContent = `${summary.proposalCount} automatische Vorschläge in ${summary.packageCount} Paketen gespeichert.`;
-      global.setTimeout(() => { $('saveMeasureStatus').textContent = ''; }, 5000);
+      if (!options.silent) {
+        $('saveMeasureStatus').textContent = `${summary.proposalCount} automatische Vorschläge in ${summary.packageCount} Paketen neu berechnet.`;
+        global.setTimeout(() => { $('saveMeasureStatus').textContent = 'Änderungen werden automatisch im Projekt gehalten.'; }, 5000);
+      }
     } finally {
       automaticPackageGenerationRunning = false;
       renderAutomaticPackageSummary(store.get());
     }
+  }
+
+  function scheduleSelectedMeasureSync(delay = 320) {
+    global.clearTimeout(automaticMeasureSyncTimer);
+    automaticMeasureSyncTimer = global.setTimeout(() => {
+      if (suppressProjectRender) return;
+      persistVisibleInputs();
+    }, delay);
+  }
+
+  function scheduleAutomaticPackageRefresh(delay = 450) {
+    global.clearTimeout(automaticPackageRefreshTimer);
+    automaticPackageRefreshTimer = global.setTimeout(() => {
+      if (automaticPackageGenerationRunning || suppressProjectRender) return;
+      const project = store.get();
+      const relevant = COMPONENTS.filter((component) => component.supported)
+        .map((component) => automaticComponentReadiness(automaticInputsForComponent(project, component)))
+        .filter((readiness) => readiness.considered !== false);
+      if (!relevant.some((readiness) => readiness.technicalReady)) {
+        renderAutomaticPackageSummary(project);
+        return;
+      }
+      const summary = project.modules?.bauteilSanierung?.autoPackages ?? null;
+      const fingerprint = automaticProposalFingerprint(project);
+      if (!summary || summary.fingerprint !== fingerprint) createAutomaticPackages({ silent: true, automatic: true });
+      else renderAutomaticPackageSummary(project);
+    }, delay);
   }
 
   function updateRequiredInputState() {
@@ -1358,8 +1389,8 @@
     }
     if ($('costSummarySunkInfo')) {
       const text = inputs.renewalContext === 'renewal_due'
-        ? 'Die ohnehin erforderlichen Erneuerungskosten werden als Sowiesokosten abgezogen; wirtschaftlich bewertet wird die energetische Mehrinvestition.'
-        : 'Bei einer rein energetischen Maßnahme werden keine Sowiesokosten abgezogen.';
+        ? 'Die ohnehin erforderlichen Erneuerungskosten werden als Referenz-Erneuerungskosten berücksichtigt; wirtschaftlich bewertet wird die energetische Mehrinvestition.'
+        : 'Bei einer rein energetischen Maßnahme werden keine Referenz-Erneuerungskosten angesetzt.';
       $('costSummarySunkInfo').dataset.tooltip = text;
       $('costSummarySunkInfo').title = text;
     }
@@ -1963,25 +1994,44 @@
     ensureConstructionUValueCandidates(store.get());
     suppressProjectRender = false;
     updateRequiredInputState();
+    syncSelectedMeasureToProject({ reviewed: false, announce: false });
+    scheduleAutomaticPackageRefresh();
   }
 
-  function saveMeasure() {
+  function syncSelectedMeasureToProject({ reviewed = false, announce = false } = {}) {
     const inputs = currentInputs();
     const selected = currentSelectedVariant();
-    if (!selected) return;
-    persistVisibleInputs();
+    if (!selected) return null;
     const measureId = `envelope-${inputs.component.id}`;
+    const existing = store.get().measures?.[measureId] ?? null;
+    const reviewStatus = reviewed
+      ? 'reviewed-in-tool'
+      : existing?.reviewStatus === 'reviewed-in-tool'
+        ? 'edited-after-review'
+        : 'auto-synced';
     const measure = buildMeasureRecord(inputs, selected, {
       id: measureId,
       title: `${inputs.component.label} sanieren`,
       status: 'draft-selected',
-      reviewStatus: 'reviewed-in-tool',
+      reviewStatus,
       autoGenerated: false,
     });
-    if (!measure) return;
+    if (!measure) return null;
+    suppressProjectRender = true;
     store.setPath(`measures.${measureId}`, measure);
-    $('saveMeasureStatus').textContent = 'Maßnahme wurde im gemeinsamen Projekt gespeichert.';
-    global.setTimeout(() => { $('saveMeasureStatus').textContent = ''; }, 4000);
+    suppressProjectRender = false;
+    if (announce) {
+      $('saveMeasureStatus').textContent = reviewed
+        ? 'Aktuelle Maßnahme wurde geprüft und im Projekt bestätigt.'
+        : 'Aktuelle Maßnahme wurde automatisch im Projekt aktualisiert.';
+      global.setTimeout(() => { $('saveMeasureStatus').textContent = 'Änderungen werden automatisch im Projekt gehalten.'; }, 4000);
+    }
+    return measure;
+  }
+
+  function saveMeasure() {
+    persistVisibleInputs();
+    syncSelectedMeasureToProject({ reviewed: true, announce: true });
   }
 
 
@@ -2337,7 +2387,7 @@
         <h2>Kostenbrücke</h2>
         <div class="print-cost-bridge">
           <div><span>Gesamtkosten</span><strong>${formatMoney(selected.investment.fullInvestmentEur)}</strong></div>
-          <div><span>− Sowiesokosten</span><strong>${formatMoney(selected.investment.sunkCostEur)}</strong></div>
+          <div><span>− Referenz-Erneuerung</span><strong>${formatMoney(selected.investment.sunkCostEur)}</strong></div>
           <div class="is-total"><span>= energetische Mehrkosten</span><strong>${formatMoney(selected.investment.energeticAdditionalEur)}</strong></div>
           <div><span>− bestätigte Förderung</span><strong>${formatMoney(selected.subsidyEur)}</strong></div>
           <div class="is-highlight"><span>= relevante Eigeninvestition</span><strong>${formatMoney(selected.relevantOwnInvestmentEur)}</strong></div>
@@ -2366,7 +2416,7 @@
   }
 
   function bindEvents() {
-    $('componentSelect').addEventListener('change', () => selectComponent($('componentSelect').value));
+    $('componentSelect').addEventListener('change', () => { persistVisibleInputs(); selectComponent($('componentSelect').value); });
     $('thermalEnvelopeRelevant')?.addEventListener('change', () => {
       const component = activeComponent();
       if (!component.enabledPath) return;
@@ -2375,12 +2425,14 @@
         note: 'gleicher Status wie „Aktiv“ im Energiefluss',
       });
       renderComponentSelector(store.get());
+      persistVisibleInputs();
     });
     $('lambdaSelect').addEventListener('change', () => {
       const custom = $('lambdaSelect').value === 'custom';
       $('lambdaCustomWrap').hidden = !custom;
       if (!custom) setInput('lambdaCustom', Number($('lambdaSelect').value), 3);
       calculateAndRender();
+      persistVisibleInputs();
     });
     $('windowFrameMaterial').addEventListener('change', () => {
       if (!isWindowComponent()) return;
@@ -2402,6 +2454,7 @@
       renderSelectedVariant(inputs);
       renderVariantsTable(inputs, specialVariants.recommendation);
       buildPrintReport(inputs);
+      persistVisibleInputs();
     });
     document.querySelectorAll('[data-select-special]').forEach((button) => button.addEventListener('click', () => {
       const item = specialVariants[button.dataset.selectSpecial];
@@ -2412,10 +2465,11 @@
       renderSelectedVariant(inputs);
       renderVariantsTable(inputs, specialVariants.recommendation);
       buildPrintReport(inputs);
+      persistVisibleInputs();
     }));
     $('calculateClimate').addEventListener('click', calculateClimate);
     $('saveMeasure').addEventListener('click', saveMeasure);
-    $('generateAutoPackages').addEventListener('click', createAutomaticPackages);
+    $('generateAutoPackages').addEventListener('click', () => createAutomaticPackages({ manual: true }));
     $('energyCarrierSelect').addEventListener('change', () => {
       const defaults = carrierDefaults($('energyCarrierSelect').value);
       if (defaults.price !== null) setInput('energyPriceEurKwh', defaults.price, 3);
@@ -2448,7 +2502,10 @@
     const calculationInputs = document.querySelectorAll('.renovation-workspace input, .renovation-workspace select');
     calculationInputs.forEach((input) => {
       if (['componentSelect', 'selectedVariantSelect', 'lambdaSelect', 'energyCarrierSelect', 'stateFundingMode', 'federalFundingMode', 'otherFundingMode', 'windowFrameMaterial'].includes(input.id)) return;
-      input.addEventListener('input', calculateAndRender);
+      input.addEventListener('input', () => {
+        calculateAndRender();
+        scheduleSelectedMeasureSync();
+      });
       input.addEventListener('change', persistVisibleInputs);
     });
 
@@ -2466,7 +2523,7 @@
       global.requestAnimationFrame(() => global.print());
     });
     global.addEventListener('energy-tools:prepare-print', () => buildPrintReport());
-    store.subscribe((project) => renderFromProject(project));
+    store.subscribe((project) => { if (suppressProjectRender) return; renderFromProject(project); scheduleAutomaticPackageRefresh(); });
   }
 
   async function loadJson(relativePath, fallback) {
@@ -2512,6 +2569,7 @@
     bindEvents();
     await initAddressSearch();
     renderFromProject(store.get());
+    scheduleAutomaticPackageRefresh(80);
   }
 
   init().catch((error) => {

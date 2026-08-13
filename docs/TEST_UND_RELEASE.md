@@ -46,12 +46,12 @@ Erwartung:
 - Haustür: Anzahl × Fläche je Tür für Energie, Anzahl × Stückpreis für Kosten,
 - fehlender U-Wert blockiert Berechnung und wird Berry markiert,
 - eigene SVGs ersetzen Fallback vollständig,
-- Förderung und Sowiesokosten,
-- Speichern der manuell gewählten Maßnahme,
+- Förderung und Referenz-Erneuerungskosten,
+- manuell gewählte Maßnahme wird bei Änderungen automatisch ins Projekt synchronisiert; explizite Bestätigung ändert nur den Prüfstatus,
 - thermische Hülle im Energiefluss ändern und prüfen, dass derselbe Status im Bauteiltool erscheint,
 - Hüllstatus im Bauteiltool ändern und prüfen, dass Energiefluss denselben `enabled`-Wert übernimmt,
 - relevante Bauteile erscheinen türkis schraffiert, nicht betrachtete beerenfarben,
-- automatische Maßnahmenpakete erzeugen: Mindeststandard, wirtschaftlich, ambitioniert; nicht relevante Bauteile dürfen in keinem automatischen Paket enthalten sein,
+- automatische Maßnahmenpakete werden nach relevanten Änderungen selbstständig aktuell gehalten: Mindeststandard, wirtschaftlich, ambitioniert; nicht relevante Bauteile dürfen in keinem automatischen Paket enthalten sein,
 - automatisch erzeugte Einträge tragen `automatic-proposal / not-reviewed` und speichern den Hüllstatus,
 - manuell gespeicherte Maßnahmen bleiben beim Aktualisieren der Pakete erhalten,
 - Änderung an Fläche, U-Wert oder Finanzannahme markiert vorhandene Pakete als veraltet,
@@ -102,7 +102,7 @@ Vor einer Freigabe jedes Tool mindestens einmal aus einem **neuen/leeren Projekt
 - **Klima:** Adresse → Standort analysieren → Klimakarten, Jahreswerte, Beratungsimpuls, Export und Druck funktionieren eigenständig.
 - **Heizlast:** Adresse → Standort analysieren → Klimagrundlage und Heizlast ohne vorherigen Klima-/Energieflussbesuch berechenbar; gemeinsame Eingaben werden anschließend von anderen Tools übernommen.
 - **Energiefluss:** Adresse → Standort analysieren für Geometrie; Verbrauchsbilanz reagiert direkt; „Klimawerte berechnen“ ergänzt den unabhängigen Hüllvergleich. Kein zusätzlicher allgemeiner Berechnen-Knopf nötig.
-- **Bauteil & Sanierung:** Adresse → Standort analysieren → Baujahr/NFL prüfen → Bauteil rechnen. Energiegrundlage: kalibrierter Energiefluss → vorhandenes INCA-Klima → HGT-Fallback. Automatische Maßnahmenpakete werden bewusst erst über „Vorschläge erstellen“ gespeichert.
+- **Bauteil & Sanierung:** Adresse → Standort analysieren → Baujahr/NFL prüfen → Bauteil rechnen. Energiegrundlage: kalibrierter Energiefluss → vorhandenes INCA-Klima → HGT-Fallback. Aktuelle Maßnahme sowie automatische Vorschläge/Pakete werden ohne zusätzlichen Speicherschritt synchron gehalten; die explizite Bestätigung setzt nur den Prüfstatus.
 
 Dabei kontrollieren, dass identische Werte nicht als neue toolinterne Speicherfelder entstehen. Insbesondere Baujahr, NFL/BGF, beheizter Anteil, Personen, Heizenergieverbrauch, Nutzwärmefaktor, Warmwasserstatus, Gebäudezustand, Fensterflächenanteil und thermischer Hüllstatus müssen in allen Tools dieselben Projektpfade verwenden.
 
@@ -255,3 +255,18 @@ Zusätzlich zu V0.4 prüfen:
 - Förderhinweis und Methoden-/Datenstand sind im Ausdruck vorhanden; Rohwerte aus lizenzierter BKI-Datenbasis werden nicht ausgegeben.
 
 Vor V1.0: vollständiger V0.5-Praxistest und visuelle Druckabnahme; danach ggf. eine gezielte Korrekturschleife.
+
+
+### V0.6 · Abnahmevorbereitung · 13.08.2026
+
+Zusätzlich prüfen:
+
+- `Bauteil & Sanierung`: Zahleneingabe ändern und Tool direkt wechseln, ohne Bestätigungsbutton. Wirtschaftlichkeit muss den neuen Arbeitsstand verwenden.
+- bereits `reviewed-in-tool` bestätigte Maßnahme ändern → Status `edited-after-review`; erneute Bestätigung → `reviewed-in-tool`.
+- Änderung an Fläche/U-Wert/Kosten/Finanzannahmen führt nach kurzer Verzögerung zu neuem Paket-Fingerprint und aktualisierten automatischen Paketen; keine Store-/Render-Endlosschleife.
+- sichtbare Fachbezeichnung lautet in Bauteil und Wirtschaftlichkeit konsistent `Referenz-Erneuerung` / `Referenz-Erneuerungskosten`; historische interne `sunkCost`-Felder bleiben funktionsfähig.
+- Standortpass-Druck: `kein Treffer` helltürkis/hell; echter Flächentreffer helles Berry.
+- Klima: Jahreslinien verwenden `--color-primary` in Web und Druck.
+- Wirtschaftlichkeit: Abstand nach Sanierungs-Zielbild vorhanden; Druck-Hauptdiagramm füllt Seite 1 breiter/höher, Vergleichsdiagramm auf Seite 2 ist vergrößert.
+- Prüfdaten: `validate-economics-cost-data.js` bestätigt explizite Hüll-Referenzmodi sowie die Referenzstrategie des Wärmeerzeugers.
+- volle JS-Syntaxprüfung und alle Regressionstests einschließlich Release-Integrität müssen bestehen.

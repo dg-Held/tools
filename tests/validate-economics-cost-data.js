@@ -31,6 +31,11 @@ for (const id of requiredSystems) {
   if (!(range && Number.isFinite(range.low) && Number.isFinite(range.middle) && Number.isFinite(range.high) && range.low <= range.middle && range.middle <= range.high)) throw new Error(`Systemkostenband unplausibel: ${id}`);
 }
 
+
+const heatingReferenceLife = Number(systems.reference_strategy?.heat_generator?.typical_lifetime_years);
+if (!(heatingReferenceLife > 0)) throw new Error('Referenz-Nutzungsdauer Wärmeerzeuger fehlt.');
+if (systems.reference_strategy?.heat_generator?.replacement_cost_basis !== 'selected_future_fit_system_middle_cost') throw new Error('Referenz-Kostenbasis Wärmeerzeuger ist nicht transparent hinterlegt.');
+
 if (!String(renovation.internal_plausibility || '').includes('intern')) throw new Error('Interne BKI-Plausibilisierung ist nicht transparent dokumentiert.');
 if (models.get('roof')?.reference?.default_cost <= 0) throw new Error('Dach-Referenzkosten fehlen.');
 if (models.get('top_ceiling')?.reference?.mode !== 'none') throw new Error('OGD soll keine automatische Referenz-Erneuerung erhalten.');

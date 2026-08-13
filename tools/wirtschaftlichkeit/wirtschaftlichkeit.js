@@ -148,7 +148,7 @@
     return `${ORIGIN_LABEL[info.origin] ?? 'Projektwert'}${info.source ? ` · ${info.source}` : ''}`;
   }
 
-  function writeManualField(path, value, unit = null, source = 'Nutzereingabe Wirtschaftlichkeit V0.5') {
+  function writeManualField(path, value, unit = null, source = 'Nutzereingabe Wirtschaftlichkeit V0.6') {
     if (value === null || value === '') store.clearFieldCandidate(path, model.ORIGIN.MANUAL);
     else store.setFieldCandidate(path, model.ORIGIN.MANUAL, value, { unit, source });
   }
@@ -476,7 +476,7 @@
     let note = null;
     if (definition.id === 'heating') {
       const installYear = finite(valueAt(project, 'systems.heating.installationYear', null), null);
-      const baseLife = finite(config?.reference_lifetime_years, 20);
+      const baseLife = finite(systemCostConfig?.reference_strategy?.heat_generator?.typical_lifetime_years, finite(config?.reference_lifetime_years, 20));
       referenceYear = installYear ? Math.max(0, baseLife - Math.max(0, CURRENT_YEAR - installYear)) : null;
       referenceCost = installYear ? middle : 0;
       const annualEnergy = finite(valueAt(project, 'consumption.heating.annualEnergy', null), 0);
@@ -906,7 +906,7 @@
       $('chartStatus').textContent = 'noch nicht berechenbar'; return;
     }
     const series = result.comparison.series;
-    const width=760, height=320, ml=96, mr=30, mt=26, mb=48, plotW=width-ml-mr, plotH=height-mt-mb;
+    const width=760, height=320, ml=76, mr=10, mt=26, mb=48, plotW=width-ml-mr, plotH=height-mt-mb;
     const values = series.map((p) => p.advantage); const min = Math.min(0,...values), max = Math.max(0,...values); const span=Math.max(1,max-min);
     const x=(year)=>ml+year/result.assumptions.periodYears*plotW; const y=(v)=>mt+(max-v)/span*plotH; const y0=y(0); const add=svgHelpers(svg);
     add('rect',{x:ml,y:mt,width:plotW,height:Math.max(0,y0-mt),class:'chart-zone-positive'}); add('rect',{x:ml,y:y0,width:plotW,height:Math.max(0,height-mb-y0),class:'chart-zone-negative'});
@@ -930,7 +930,7 @@
     const svg=$('comparisonChart'); svg.innerHTML='';
     const series=result.comparison?.series??[];
     if(!series.length){svg.innerHTML='<text x="380" y="145" text-anchor="middle" class="chart-label">Noch keine vollständige Vergleichsrechnung.</text>';return;}
-    const width=760,height=300,ml=96,mr=32,mt=26,mb=48,plotW=width-ml-mr,plotH=height-mt-mb;
+    const width=760,height=300,ml=76,mr=12,mt=26,mb=48,plotW=width-ml-mr,plotH=height-mt-mb;
     const max=Math.max(1,...series.flatMap((p)=>[p.referenceCost,p.candidateCost])); const x=(year)=>ml+year/result.assumptions.periodYears*plotW; const y=(v)=>mt+(1-v/max)*plotH; const add=svgHelpers(svg);
     for(let yr=0;yr<=result.assumptions.periodYears;yr+=5){const xx=x(yr);add('line',{x1:xx,y1:mt,x2:xx,y2:height-mb,class:'chart-grid'});const t=add('text',{x:xx,y:height-18,'text-anchor':'middle',class:'chart-label'});t.textContent=`${yr} J.`;}
     for(let i=0;i<=4;i++){const value=max*i/4;const yy=y(value);add('line',{x1:ml,y1:yy,x2:width-mr,y2:yy,class:'chart-grid'});const t=add('text',{x:ml-8,y:yy+4,'text-anchor':'end',class:'chart-label'});t.textContent=formatAxisMoney(value);}
@@ -971,7 +971,7 @@
     else text += `Die Energie- und Lebenszykluswirkung deckt die wirtschaftlich zusätzliche Investition im betrachteten Zeitraum nicht vollständig. `;
     if (priorities.length) text += `Für das Kundengespräch besonders relevant: ${priorities.slice(0,3).join(', ')}. `;
     if (Math.abs(finite(result.energy.hwbDeviationPercent,0)) > 60) text += 'Verbrauch und U-Wert-Hüllmodell weichen deutlich voneinander ab; die Energieeinsparung wurde deshalb verbrauchsverankert gerechnet und der Bestandszustand sollte geprüft werden. ';
-    if (result.selected.some((m)=>m.informational)) text += 'PV-Kosten sind bereits in der Investition enthalten; ein objektspezifisches PV-Ertragsmodell ist in V0.5 noch nicht Bestandteil der Zeitrechnung.';
+    if (result.selected.some((m)=>m.informational)) text += 'PV-Kosten sind bereits in der Investition enthalten; ein objektspezifisches PV-Ertragsmodell ist in V0.6 noch nicht Bestandteil der Zeitrechnung.';
     return text.trim();
   }
 
@@ -1056,7 +1056,7 @@
       ['11 · Amortisation / Gesamtkostenverlauf','Die Zeitgrafik folgt der Kumulationsmethode. Zahlungsströme werden in dem Jahr berücksichtigt, in dem sie anfallen; dadurch sind mehrere Amortisations- und Deamortisationspunkte möglich.'],
       ['12 · Hüllplausibilität','Verbrauchsbasierter korrigierter HWB und unabhängiger U-Wert-HWB werden als Plausibilitätscheck gegenübergestellt. Deutliche Abweichungen sind ein Beratungsanlass, keine automatische Fehlerdiagnose.'],
       ['13 · Datenpriorität / Overrides','Projektspezifische bzw. manuell bestätigte Werte haben Vorrang vor zentralen EAT-Richtwerten. Automatisch abgeleitete Werte werden bei besseren Projektdaten neu berechnet. Ein manueller Override kann über „↺ automatisch“ wiederhergestellt werden.'],
-      ['14 · PV in V0.5','PV-Kosten können für Finanzierung und Zukunftsfit-Paket berücksichtigt werden. Ein objektspezifisches PV-Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.5 noch nicht Teil der wirtschaftlichen Zeitrechnung.'],
+      ['14 · PV in V0.6','PV-Kosten können für Finanzierung und Zukunftsfit-Paket berücksichtigt werden. Ein objektspezifisches PV-Ertrags-, Eigenverbrauchs- und Einspeisemodell ist in V0.6 noch nicht Teil der wirtschaftlichen Zeitrechnung.'],
       ['15 · Regelwerke und Grenzen','Methodische Grundlage: ÖNORM B 8110-4:2024-04-15, ÖNORM M 7140:2021-01 und ÖNORM EN 15459-1:2017. Beratungshilfe, keine Finanzierungs- oder Förderzusage. Richtkosten, Lebensdauern, Energiepreise, Förderfähigkeit und Förderhöhe sind vor Umsetzung projektspezifisch zu prüfen.'],
     ].map(([h,p])=>`<div><h3>${h}</h3><p>${p}</p></div>`).join('');
   }

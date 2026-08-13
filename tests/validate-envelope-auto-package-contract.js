@@ -27,7 +27,11 @@ for (const id of [
 }
 
 for (const token of [
-  'function createAutomaticPackages()',
+  'function createAutomaticPackages(options = {})',
+  'function scheduleSelectedMeasureSync(delay = 320)',
+  'function syncSelectedMeasureToProject({ reviewed = false, announce = false } = {})',
+  "'reviewed-in-tool'",
+  "'edited-after-review'",
   'function automaticProposalFingerprint(project)',
   "status: 'automatic-proposal'",
   "reviewStatus: 'not-reviewed'",

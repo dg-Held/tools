@@ -119,7 +119,7 @@ Die vereinfachte Optimierung benötigt Heizgradtage `HGT22/14`. Das spätere Too
 
 ### 6.5 Vergleichbarkeit
 
-Zu vergleichende Bauteile müssen denselben Zweck erfüllen und in ihrem Leistungsumfang vergleichbar sein. Für Sowiesokosten sind daher zwei nachvollziehbare Vergleiche zu unterscheiden:
+Zu vergleichende Bauteile müssen denselben Zweck erfüllen und in ihrem Leistungsumfang vergleichbar sein. Für **Referenz-Erneuerungskosten** (älterer Projektbegriff: Sowiesokosten) sind daher zwei nachvollziehbare Vergleiche zu unterscheiden:
 
 - Bestand gegen vollständige Sanierungsmaßnahme
 - ohnehin erforderliche Erneuerung gegen energetisch verbesserte Erneuerung
@@ -157,4 +157,4 @@ Für den neuen Stand sind folgende Punkte zu korrigieren beziehungsweise zu erwe
 7. Sensitivitätsanalyse, Quellenangaben und Bericht sind Teil der vollständigen Umsetzung.
 8. Die vereinfachte analytische Dämmdicke darf nicht für erdberührte Bauteile verwendet werden.
 
-Die Datei `Wirtschaftlichkeitstool MP V2.xlsx` bleibt eine wertvolle Vorlage für die kundenfreundliche Darstellung von Sowiesokosten, Förderung, CO₂ und Varianten. Ihre Formeln werden jedoch nicht ungeprüft als normativer Rechenkern übernommen.
+Die Datei `Wirtschaftlichkeitstool MP V2.xlsx` bleibt eine wertvolle Vorlage für die kundenfreundliche Darstellung von Referenz-Erneuerungskosten (damals als Sowiesokosten bezeichnet), Förderung, CO₂ und Varianten. Ihre Formeln werden jedoch nicht ungeprüft als normativer Rechenkern übernommen.

@@ -38,7 +38,8 @@ tools/
 ├── klima/
 ├── heizlast/
 ├── energiefluss-v4/
-└── bauteil-sanierung/
+├── bauteil-sanierung/
+└── wirtschaftlichkeit/
 docs/
 tests/
 ```
@@ -198,7 +199,7 @@ Eine Maßnahme enthält mindestens:
 - Bestand und Zielvariante,
 - technische Wirkung,
 - Energie-/CO₂-Wirkung,
-- Kosten, Sowiesokosten und Förderung,
+- Kosten, Referenz-Erneuerungskosten und Förderung,
 - Wirtschaftlichkeit,
 - Komfortwirkung,
 - Quellen- und Modellversionen,
@@ -327,3 +328,18 @@ Das Zielbild `Zukunftsfit 2050` wird doppelt dargestellt:
 - **mit gewählter Sanierung** aus demselben Bestand plus aktuell ausgewählten Maßnahmen.
 
 Die vier sichtbaren Dimensionen sind `Hülle`, `Technik`, `fossilfrei` und `PV`. Datenbekanntheit und fachlicher Zielerreichungsgrad werden nicht mehr vermischt; ein lediglich bekannter schlechter Hüllzustand darf nicht als positiver Teilfortschritt erscheinen.
+
+
+### Automatische Maßnahmen-Synchronisierung · V0.6
+
+`Bauteil & Sanierung` trennt Arbeitsstand und fachliche Bestätigung:
+
+- jede relevante Eingabe synchronisiert die aktuell gewählte manuelle Maßnahme automatisch nach `measures.envelope-*`,
+- `reviewStatus = auto-synced` kennzeichnet einen noch nicht explizit geprüften Arbeitsstand,
+- nach einer Bestätigung gilt `reviewed-in-tool`,
+- wird ein bestätigter Wert danach geändert, wechselt der Status auf `edited-after-review`,
+- automatische Vorschläge/Pakete bleiben `automatic-proposal / not-reviewed` und werden über einen Fingerprint nur dann neu berechnet, wenn ihre Eingangsgrundlage geändert wurde.
+
+Damit verwenden nachgelagerte Werkzeuge wie Wirtschaftlichkeit niemals nur deshalb alte Werte, weil die Beraterin eine zusätzliche Speichern-Schaltfläche vergessen hat. Die explizite Bestätigung bleibt trotzdem als fachlicher Prüfmarker erhalten.
+
+Die sichtbare Bezeichnung **Referenz-Erneuerungskosten** ist toolübergreifend vereinheitlicht. Interne historische Feldnamen wie `sunkCost...` bleiben zur Abwärtskompatibilität erhalten und werden nicht als neue Fachbegriffe weiterverwendet.
