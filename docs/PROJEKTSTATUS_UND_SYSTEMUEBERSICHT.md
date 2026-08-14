@@ -410,14 +410,14 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Fachliche Werte, Rechenwege, Datenpflege und Releaseabläufe werden künftig ausschließlich in den passenden zentralen Dokumenten nachgezogen.
 
 
-## Wirtschaftlichkeit V0.6 · Abnahmevorbereitung · 13.08.2026
+## Wirtschaftlichkeit V1.0 · Freigabestand · 14.08.2026
 
 - Das Tool bleibt eigenständig nutzbar und verwendet denselben Projekt-/Adresskopf wie die bestehenden Werkzeuge.
 - Sichtbare Struktur: **Projektbasis → Rahmen festlegen → Kosten & Förderung → Ergebnis → Methode & Datenbasis**.
 - Neue Projekte können über **„Maßnahmen aus Gebäude vorbereiten“** orientierende Hüllmaßnahmen direkt aus gemeinsamer Geometrie, Baujahr/Bestands-U-Werten, Ziel-U-Werten und Energiefluss bzw. HGT-Fallback erzeugen. Das Bauteiltool muss dafür nicht vorher geöffnet werden.
 - Dach/OGD, Kellerdecke/Boden und weitere Hüllbauteile folgen dem zentral gespeicherten thermischen Hüllstatus; vorhandene gespeicherte Bauteilmaßnahmen haben Vorrang.
-- Heizung und PV erhalten erste zentrale System-Kostenvorschläge aus `shared/data/costs/system-costs.json`. Die PV-Kosten können bereits berücksichtigt werden; das objektspezifische PV-Ertrags-/Eigenverbrauchsmodell ist noch nicht Bestandteil von V0.5.
-- Förderungen aus gespeicherten Bauteilmaßnahmen werden übernommen. Ergänzende Landes-/Bundes-/sonstige Förderungen und Paketboni bleiben in V0.5 orientierende Eingaben; eine regelbasierte Förderengine folgt.
+- Heizung und PV erhalten erste zentrale System-Kostenvorschläge aus `shared/data/costs/system-costs.json`. PV-Kosten bleiben in Gesamt-/Restinvestition, Finanzierung und Zukunftsfit-Zielbild enthalten. Ohne objektspezifisches Ertrags-/Eigenverbrauchsmodell wird PV in V1.0 bewusst nicht in Lebenszykluskurve oder wirtschaftlich zusätzliche Investition einbezogen, damit die Wirtschaftlichkeit nicht systematisch zu ungünstig dargestellt wird.
+- Förderungen aus gespeicherten Bauteilmaßnahmen werden übernommen. Ergänzende Landes-/Bundes-/sonstige Förderungen und Paketboni bleiben in V1.0 orientierende Eingaben; eine regelbasierte Förderengine folgt als spätere Fachausbaustufe.
 - **Förderbasis und Kostenstruktur sind bewusst getrennt:** Förderfähige Kosten sind programmabhängig und können auch Gerüst, Putz oder andere Begleitarbeiten umfassen, die nominal zugleich Referenz-/Instandsetzungsarbeiten darstellen. Förderung wird daher nicht auf die nominalen energetischen Mehrkosten begrenzt; sie wird nur auf die Gesamtinvestition begrenzt.
 - Die wirtschaftlich zusätzliche Investition ist `Gesamtinvestition − Förderung − Barwert der erwarteten Referenzerneuerungen` und kann negativ werden; in diesem Fall wird ein **wirtschaftlicher Startvorteil** ausgewiesen.
 - Ergebnisdarstellung ergänzt Budgetabgleich, gewählte Kundenprioritäten, Energiekosten vorher/nachher und eine explizit beschriftete Referenzlinie. Optional können die kumulierten Lebenszykluskosten von Referenz und Sanierung als zwei Kurven angezeigt werden.
@@ -440,7 +440,7 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Datenrunde V0.5: zentrale EAT-Richtkosten Hülle/Haustechnik Stand 08/2026 geprüft und vereinheitlicht; alle direkt verwendeten Hüllmaßnahmen besitzen explizite Referenzsemantik. Dachreferenz ist ergänzt; OGD/Kellerdecke sind bewusst `none`, Boden gegen Erdreich `project_specific`. BKI bleibt interne Plausibilisierung; lizenzierte Rohwerte/Regionalfaktoren werden nicht veröffentlicht und EAT-Werte werden nicht doppelt regionalisiert.
 - Maßnahmenkarten zeigen Förderhöhen kompakt rechts; der frühere Fördertext im aufgeklappten Teil entfällt. Zahl und Einheit stehen dort platzsparend in einer Zeile.
 - Hauptdiagramm reserviert die rechte Kante für den kumulierten Endwert; die Zonenbezeichnung `Sanierung günstiger` liegt mittig und kollidiert nicht mehr mit dem Endlabel.
-- Erster konkreter 2-seitiger Beratungsausdruck ist integriert: Seite 1 mit Kundenergebnis, Zukunftsfit Bestand/Sanierung, Kosten-/Finanzierungsbalken und Hauptgrafik; Seite 2 mit Maßnahmentabelle, Lebenszykluskosten, Kundenrahmen, Zusatzwirkungen, Einordnung und Aussagequalität. Finale Druckabnahme folgt nach V0.5-Gesamttest.
+- Erster konkreter 2-seitiger Beratungsausdruck ist integriert: Seite 1 mit Kundenergebnis, Zukunftsfit Bestand/Sanierung, Kosten-/Finanzierungsbalken und Hauptgrafik; Seite 2 mit Maßnahmentabelle, Lebenszykluskosten, Kundenrahmen, Zusatzwirkungen, Einordnung und Aussagequalität. Die zweitseitige Druckausgabe wurde in der Abnahmerunde visuell geprüft und für V1.0 freigegeben.
 
 
 ### Abnahmevorbereitung V0.6
@@ -452,3 +452,12 @@ Die V1.0-Basis wurde mit mehreren realen beziehungsweise einem theoretischen Ber
 - Sichtbarer Begriff in `Bauteil & Sanierung` wird mit Wirtschaftlichkeit vereinheitlicht: **Referenz-Erneuerung / Referenz-Erneuerungskosten** statt `Sowiesokosten`. Interne Feldnamen bleiben aus Rückwärtskompatibilität unverändert.
 - Systemkosten besitzen eine explizite prüfbare Referenzstrategie für Wärmeerzeuger: derzeit 20 Jahre typische Referenz-Nutzungsdauer; konkreter Plan/Zustand hat Vorrang und kann im Tool bestätigt werden.
 - Separate Prüffassung der Richtpreis-Worddatei und der Kosten-Exceldatei macht Referenzkosten, Lebensdauern und Regionalfaktoren für die fachliche Abnahme sichtbar.
+
+
+## Wirtschaftlichkeit V1.0 · Freigabe 14.08.2026
+
+- Kosten- und Lebensdauerbasis nach fachlicher Prüfrunde freigegeben; lokale EAT-/Angebotswerte haben Vorrang, BKI bleibt interne Plausibilisierung.
+- Regelmäßige Wartung nur bei plausiblen/belegten Defaults; passive Dämmbauteile standardmäßig 0 %.
+- Schlanke Zustandskorrektur `gepflegt / altersgerecht / schadhaft` für automatisch abgeleitete Erneuerungshorizonte. Bei zustandsgeeigneten Referenzmodellen wird zugleich der Referenzumfang `leicht / Standard / größer` gewählt; konkrete Termine, projektspezifische Kosten und manuelle Overrides haben Vorrang.
+- PV bleibt in Finanzierung, Gesamt-/Restinvestition und Zukunftsfit-Zielbild enthalten, ist ohne Ertrags-/Eigenverbrauchsadapter aber aus Lebenszykluskurve und wirtschaftlicher Zusatzinvestition ausgeschlossen. Eine allfällige Gesamtförderung wird für den Lebenszyklusvergleich transparent nur anteilig den tatsächlich wirtschaftlich bewerteten Investitionen zugeordnet.
+- Bauteil & Sanierung sowie Wirtschaftlichkeit bleiben für den Pilotbetrieb direkt erreichbar, sind auf der öffentlichen Toolübersicht jedoch nicht verlinkt und per `noindex,nofollow` gekennzeichnet.

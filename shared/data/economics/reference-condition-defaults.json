@@ -1,0 +1,37 @@
+{
+  "schema": "energy-tools-reference-condition-defaults",
+  "version": "2026-08-14-v1.0",
+  "data_date": "2026-08-14",
+  "status": "eat-advisory-rule",
+  "notice": "Schlanke EAT-Beratungsregel zur Korrektur des automatisch abgeleiteten Erneuerungshorizonts. Bei dafür freigegebenen Referenzmodellen wird zusätzlich der passende niedrige/mittlere/hohe Referenzumfang verwendet. Kein normativer Grenzwert und kein technisches Ablaufdatum. Konkrete Termine und manuelle Kosten haben Vorrang.",
+  "default": "age_appropriate",
+  "states": [
+    {
+      "id": "maintained",
+      "label": "gepflegt",
+      "short": "gepflegt",
+      "horizon_factor": 1.15,
+      "scope_hint": "leichte Instandsetzung",
+      "description": "Guter Pflegezustand; der automatische Erneuerungshorizont wird moderat nach hinten verschoben.",
+      "reference_cost_key": "low"
+    },
+    {
+      "id": "age_appropriate",
+      "label": "altersgerecht",
+      "short": "altersgerecht",
+      "horizon_factor": 1.0,
+      "scope_hint": "Standardreferenz",
+      "description": "Altersgerechter Zustand; typische Nutzungsdauer bleibt unverändert.",
+      "reference_cost_key": "middle"
+    },
+    {
+      "id": "damaged",
+      "label": "schadhaft",
+      "short": "schadhaft",
+      "horizon_factor": 0.85,
+      "scope_hint": "größere Instandsetzung",
+      "description": "Sichtbare Schäden oder deutlicher Instandsetzungsbedarf; der automatische Erneuerungshorizont wird moderat vorgezogen.",
+      "reference_cost_key": "high"
+    }
+  ]
+}

@@ -5,7 +5,7 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.EnergyEconomicsCore = Object.freeze(api);
 })(typeof window !== 'undefined' ? window : globalThis, function economicsFactory() {
-  const MODEL_VERSION = '1.1.0';
+  const MODEL_VERSION = '1.2.0';
   const NORM_REFERENCE = 'ÖNORM B 8110-4:2024-04-15 · ÖNORM M 7140:2021-01 · ÖNORM EN 15459-1:2017';
   const EPSILON = 1e-12;
 
@@ -151,15 +151,25 @@
     return { initial, replacements, disposal, residual, total: initial + replacements + disposal - residual };
   }
 
+  function recurringPresentValueRange(annualCost, priceFactor, interestFactor, startYear, endYear) {
+    const start = Math.max(0, nonNegative(startYear, 0));
+    const end = Math.max(start, nonNegative(endYear, 0));
+    return recurringPresentValueThrough(annualCost, priceFactor, interestFactor, end)
+      - recurringPresentValueThrough(annualCost, priceFactor, interestFactor, start);
+  }
+
   function annualGroupPresentValue(items, periodYears, interestFactor) {
     const details = (items ?? []).map((item) => {
-      const present = recurringPresentValueThrough(
+      const startYear = Math.min(nonNegative(item.startYear, 0), periodYears);
+      const endYear = Math.min(nonNegative(item.endYear ?? periodYears, periodYears), periodYears);
+      const present = recurringPresentValueRange(
         item.annualCost,
         item.priceFactor ?? 1,
         interestFactor,
-        periodYears
+        startYear,
+        endYear
       );
-      return { ...item, presentValue: present };
+      return { ...item, startYear, endYear, presentValue: present };
     });
     return { details, total: details.reduce((sum, item) => sum + item.presentValue, 0) };
   }
@@ -251,13 +261,14 @@
 
   function annualPresentValueThroughVariant(variant, assumptions, timeYears) {
     const q = assumptions.interestFactor ?? factorFromPercent(assumptions.interestRatePercent ?? 0);
+    const t = nonNegative(timeYears, 0);
     const items = [...(variant.consumptionCosts ?? []), ...(variant.operationCosts ?? [])];
-    return items.reduce((sum, item) => sum + recurringPresentValueThrough(
-      item.annualCost,
-      item.priceFactor ?? 1,
-      q,
-      timeYears
-    ), 0);
+    return items.reduce((sum, item) => {
+      const startYear = Math.min(nonNegative(item.startYear, 0), t);
+      const endYear = Math.min(nonNegative(item.endYear ?? t, t), t);
+      if (endYear <= startYear + EPSILON) return sum;
+      return sum + recurringPresentValueRange(item.annualCost, item.priceFactor ?? 1, q, startYear, endYear);
+    }, 0);
   }
 
   function costAtTimeAverage(variant, assumptions, timeYears) {
@@ -401,6 +412,7 @@
     presentValue,
     presentValueInitial,
     recurringPresentValueThrough,
+    recurringPresentValueRange,
     presentValueReplacements,
     presentValueDisposal,
     presentValueResidual,

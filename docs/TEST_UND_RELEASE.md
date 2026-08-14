@@ -254,7 +254,7 @@ Zusätzlich zu V0.4 prüfen:
 - Beratungsausdruck: zwei Seiten, keine abgeschnittenen Texte/Grafiken; Zielbild Bestand und Sanierungsziel, beide Kostenbalken, Hauptdiagramm, Detailtabelle, Lebenszyklusdiagramm und `Aussagequalität & Unsicherheiten` sind enthalten.
 - Förderhinweis und Methoden-/Datenstand sind im Ausdruck vorhanden; Rohwerte aus lizenzierter BKI-Datenbasis werden nicht ausgegeben.
 
-Vor V1.0: vollständiger V0.5-Praxistest und visuelle Druckabnahme; danach ggf. eine gezielte Korrekturschleife.
+V1.0: Praxistest und visuelle Druckabnahme abgeschlossen; verbleibende Fachausbaustufen (regelbasierte Förderengine, echte Sensitivitätsläufe, PV-Ertragsadapter) sind bewusst vom Release abgegrenzt.
 
 
 ### V0.6 · Abnahmevorbereitung · 13.08.2026
@@ -270,3 +270,21 @@ Zusätzlich prüfen:
 - Wirtschaftlichkeit: Abstand nach Sanierungs-Zielbild vorhanden; Druck-Hauptdiagramm füllt Seite 1 breiter/höher, Vergleichsdiagramm auf Seite 2 ist vergrößert.
 - Prüfdaten: `validate-economics-cost-data.js` bestätigt explizite Hüll-Referenzmodi sowie die Referenzstrategie des Wärmeerzeugers.
 - volle JS-Syntaxprüfung und alle Regressionstests einschließlich Release-Integrität müssen bestehen.
+
+
+### Wirtschaftlichkeit V1.0 · Release 14.08.2026
+
+Zusätzlich zur V0.6-Abnahme: Wartungsdefaults nur für belegte/relevante Komponenten; passive Hülle 0 %, Zustandskorrektur des Erneuerungshorizonts, PV-Abgrenzung aus der Lebenszykluskurve, rahmenmaterialspezifische Fensterkosten und final kommentierte EAT-Kostenbänder. Tests: `validate-economics-v1-release.js`, `validate-economics-core.js`, `validate-economics-cost-data.js`, `validate-cross-tool-compatibility.js` sowie vollständiger Syntax-/Releasecheck.
+
+
+### Wirtschaftlichkeit V1.0 · finale Freigabe · 14.08.2026
+
+Zusätzlich zur V0.6-Abnahme müssen für den eingefrorenen Release bestehen:
+
+- Wartungsdefaults nur dort, wo eine regelmäßige Wartung fachlich plausibel und als Default hinterlegt ist; passive Dämmbauteile standardmäßig `0 %/a`.
+- Zustandsregel `gepflegt / altersgerecht / schadhaft`: automatische Erneuerungshorizonte werden moderat verschoben; bei dafür vorgesehenen Referenzmodellen wird zusätzlich `leicht / Standard / größer` als Referenzumfang verwendet. Projektspezifische Termine und manuelle Kosten bleiben vorrangig.
+- PV: Investition, Förderung/Finanzierung und Zukunftsfit werden angezeigt; ohne Ertrags-/Eigenverbrauchsadapter bleibt PV vollständig außerhalb der Lebenszykluskurve und der wirtschaftlich zusätzlichen Investition.
+- `node tests/validate-economics-v1-release.js`, `validate-economics-core.js`, `validate-economics-cost-data.js`, `validate-cross-tool-compatibility.js`, alle bestehenden Fachregressionen und der vollständige Syntaxcheck müssen bestehen.
+- Öffentliche Toolübersicht: `Bauteil & Sanierung` und `Wirtschaftlichkeit` sind als `Geplant` sichtbar, aber nicht verlinkt; direkte Pilotseiten sind `noindex,nofollow`.
+- Druck: zwei Seiten ohne Überlagerungen/Abschnitte; Haupt- und Lebenszyklusdiagramm, Zukunftsfit Bestand/Sanierungsziel und `Aussagequalität & Unsicherheiten` sind enthalten.
+- Lizenzierte BKI-/Normrohdaten werden nicht in öffentliche Runtime-Tabellen oder Druckausgaben übernommen.

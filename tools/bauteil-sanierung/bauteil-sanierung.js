@@ -1101,15 +1101,17 @@
   function defaultCostValues(component = activeComponent(), frameMaterial = null) {
     const modelValue = costModelFor(component);
     const lifetimeValue = lifetimeFor(component, frameMaterial);
+    const frameRange = frameMaterial ? modelValue?.frame_costs_eur_m2?.[frameMaterial] : null;
+    const exchangeRange = frameRange ?? modelValue?.range_eur_m2 ?? null;
     return {
       model: modelValue,
       lifetime: lifetimeValue,
       baseCostEurM2: finite(modelValue?.base_cost_eur_m2, null),
       variableCostEurM2Cm: finite(modelValue?.variable_cost_eur_m2_cm, null),
       sunkCostEurM2: finite(modelValue?.sunk_cost_eur_m2, 0),
-      windowBasicCostEurM2: finite(modelValue?.range_eur_m2?.low, null),
-      windowRecommendedCostEurM2: finite(modelValue?.range_eur_m2?.middle, finite(modelValue?.base_cost_eur_m2, null)),
-      windowAmbitiousCostEurM2: finite(modelValue?.range_eur_m2?.high, null),
+      windowBasicCostEurM2: finite(exchangeRange?.low, null),
+      windowRecommendedCostEurM2: finite(exchangeRange?.middle, finite(modelValue?.base_cost_eur_m2, null)),
+      windowAmbitiousCostEurM2: finite(exchangeRange?.high, null),
       lifetimeYears: finite(lifetimeValue?.years, null),
       maintenancePercent: finite(lifetimeValue?.maintenance_percent_initial_per_year, 0),
     };

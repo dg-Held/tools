@@ -125,7 +125,12 @@ const toolCard = text('pages/tools.html');
 const renovationHtml = text('tools/bauteil-sanierung/index.html');
 const renovationJs = text('tools/bauteil-sanierung/bauteil-sanierung.js');
 assert(!/V0\.8/.test(toolCard + renovationHtml + renovationJs), 'Bauteil & Sanierung enthält noch öffentliche V0.8-Bezeichnungen.');
-assert(/<span class="tool-status">Verfügbar · V1\.0<\/span><h2>Bauteil &amp; Sanierung<\/h2>/i.test(toolCard), 'Tools-Seite weist Bauteil & Sanierung nicht als V1.0 aus.');
+assert(/<article class="tool-card tool-card--planned">[\s\S]*?<span class="tool-status tool-status--planned">Geplant<\/span><h2>Bauteil &amp; Sanierung<\/h2>/i.test(toolCard), 'Tools-Seite weist Bauteil & Sanierung nicht als geplanten Pilot ohne Direktlink aus.');
+assert(/<article class="tool-card tool-card--planned">[\s\S]*?<span class="tool-status tool-status--planned">Geplant<\/span><h2>Wirtschaftlichkeit<\/h2>/i.test(toolCard), 'Tools-Seite weist Wirtschaftlichkeit nicht als geplanten Pilot ohne Direktlink aus.');
+assert(renovationHtml.includes('noindex,nofollow'), 'Bauteil-Pilotseite ist nicht mit noindex/nofollow gekennzeichnet.');
+const economicsHtmlRelease = text('tools/wirtschaftlichkeit/index.html');
+assert(economicsHtmlRelease.includes('noindex,nofollow'), 'Wirtschaftlichkeits-Pilotseite ist nicht mit noindex/nofollow gekennzeichnet.');
+assert(economicsHtmlRelease.includes('V1.0'), 'Wirtschaftlichkeit weist intern nicht V1.0 aus.');
 
 const energyHtml = text('tools/energiefluss-v4/index.html');
 assert(energyHtml.includes('Fensterflächenanteil'), 'Energiefluss: Fensterflächenanteil fehlt.');

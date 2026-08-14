@@ -1,8 +1,8 @@
 {
   "schema": "energy-tools-system-costs",
-  "version": "2026-08-13-v1.1-eat-reviewable",
-  "data_date": "2026-08",
-  "status": "eat-advisory-costs-internally-plausibilized",
+  "version": "2026-08-14-v1.0-eat-released",
+  "data_date": "2026-08-14",
+  "status": "eat-advisory-costs-released-v1",
   "notice": "EAT-Richtwerte Stand August 2026; projektspezifische Angebote haben Vorrang. BKI 2025 dient nur der internen Plausibilisierung. Die Werte sind keine Angebots- oder Förderzusage.",
   "items": [
     {
@@ -20,7 +20,8 @@
       "target_efficiency": 3.2,
       "reference_lifetime_years": 20,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_status": "norm-informed-eat-default"
     },
     {
       "id": "heat_pump_ground",
@@ -37,7 +38,8 @@
       "target_efficiency": 4.0,
       "source_id": "EAT_COSTS_2026_08",
       "active": true,
-      "note": "Erschließung der Wärmequelle projektspezifisch prüfen."
+      "note": "Erschließung der Wärmequelle projektspezifisch prüfen.",
+      "maintenance_status": "norm-informed-eat-default"
     },
     {
       "id": "heat_pump_water",
@@ -53,7 +55,8 @@
       "target_carrier_id": "electricity",
       "target_efficiency": 4.5,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_status": "norm-informed-eat-default"
     },
     {
       "id": "pellet_heating",
@@ -68,7 +71,9 @@
       "target_carrier_id": "pellets",
       "target_efficiency": 0.9,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "district_heat_connection",
@@ -83,7 +88,9 @@
       "target_carrier_id": "district_heat",
       "target_efficiency": 0.98,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "radiator_replace",
@@ -96,7 +103,9 @@
       },
       "lifetime_years": 35,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "floor_heating",
@@ -109,7 +118,9 @@
       },
       "lifetime_years": 50,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "hot_water_boiler",
@@ -122,7 +133,9 @@
       },
       "lifetime_years": 20,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "buffer_freshwater",
@@ -135,7 +148,9 @@
       },
       "lifetime_years": 20,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "solar_thermal",
@@ -148,7 +163,9 @@
       },
       "lifetime_years": 20,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "system_adjustment",
@@ -160,20 +177,24 @@
         "high": 10000
       },
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "ventilation_single_room",
       "label": "Einzelraumlüftung mit WRG",
       "unit": "€/Stk.",
       "range": {
-        "low": 3000,
+        "low": 2750,
         "middle": 3750,
         "high": 4500
       },
       "lifetime_years": 15,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "ventilation_decentral",
@@ -186,7 +207,9 @@
       },
       "lifetime_years": 15,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "ventilation_central",
@@ -199,7 +222,9 @@
       },
       "lifetime_years": 20,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "gas_boiler_info",
@@ -213,7 +238,9 @@
       "lifetime_years": 20,
       "source_id": "EAT_COSTS_2026_08",
       "active": true,
-      "future_fit": false
+      "future_fit": false,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "oil_boiler_info",
@@ -227,7 +254,9 @@
       "lifetime_years": 20,
       "source_id": "EAT_COSTS_2026_08",
       "active": true,
-      "future_fit": false
+      "future_fit": false,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "pv_standard",
@@ -241,7 +270,9 @@
       "default_size_kwp": 10,
       "lifetime_years": 25,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     },
     {
       "id": "battery_storage",
@@ -254,7 +285,9 @@
       },
       "lifetime_years": 15,
       "source_id": "EAT_COSTS_2026_08",
-      "active": true
+      "active": true,
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "no-standard-default-v1"
     }
   ],
   "reference_strategy": {
@@ -263,6 +296,13 @@
       "replacement_cost_basis": "selected_future_fit_system_middle_cost",
       "status": "eat-working-rule-for-review",
       "note": "Der automatische Referenzzeitpunkt ergibt sich aus Heizungsbaujahr und typischer Nutzungsdauer. Beobachteter Zustand bzw. ein konkret geplanter Ersatzzeitpunkt haben Vorrang und können im Wirtschaftlichkeitstool manuell bestätigt werden. Eine technisch noch laufende Altanlage wird nicht zwangsweise ausgetauscht; der Referenzzeitpunkt ist eine Beratungsannahme."
-    }
+    },
+    "condition_rule_id": "reference-condition-defaults-v1"
+  },
+  "maintenance_strategy": {
+    "rule": "Nur regelmäßige, plausible und ausreichend belegte Wartungskosten werden als Default angesetzt. Passive Dämmbauteile erhalten standardmäßig 0 %. Projektspezifische Wartungs- und Schadenskosten können später ergänzt werden.",
+    "passive_envelope_default_percent": 0,
+    "heat_pump_default_percent": 3.0,
+    "status": "EAT-Freigabeentscheidung 2026-08-14"
   }
 }

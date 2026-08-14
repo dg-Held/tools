@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stand:** 13.08.2026
+**Stand:** 14.08.2026
 
 ## V1.0-Basis abgeschlossen · 11.08.2026
 
@@ -51,9 +51,9 @@ Keine komplexe Randbedingungsmatrix. Später sauber festlegen:
 - Klima/Standort: Windrose, sobald geeignete amtliche Windrichtungs-/Windgeschwindigkeitsdaten in die Datenpipeline aufgenommen sind.
 - Standortpass: DKM-/Orthofoto-Prüfung weiter verfeinern; später ggf. angrenzende Gebäude einfacher erfassen.
 
-### Wirtschaftlichkeit · V0.6 Abnahmevorbereitung
+### Wirtschaftlichkeit · V1.0
 
-Der zweite direkt im Projekt integrierte Prototyp setzt den vollständigen Beratungsablauf auf derselben Projektbasis um:
+Das freigegebene Wirtschaftlichkeitstool setzt den vollständigen Beratungsablauf auf derselben Projektbasis um:
 
 - Projektbasis prüfen; NFL als zentrale Geometriegröße hervorgehoben,
 - Rahmen, Budget und Kundenprioritäten in wenigen Klicks festlegen,
@@ -67,15 +67,20 @@ Der zweite direkt im Projekt integrierte Prototyp setzt den vollständigen Berat
 - Hauptgrafik mit expliziter Referenzlinie plus optionaler Lebenszykluskosten-Zweilinienansicht und beschrifteten €-Achsen,
 - Zukunftsfit-2050-Vergleich `Bestand heute ↔ mit gewählter Sanierung`, stabile Accordions und rücksetzbare manuelle Overrides.
 
-V0.6 schließt die Abnahmevorbereitung: Referenzkosten/Lebensdauern sind als Prüfdaten sichtbar, Bauteilmaßnahmen und automatische Pakete werden ohne vergessenen Speicherschritt aktuell gehalten, kleine Web-/Druckkorrekturen sind integriert. Nächster Schritt ist die strukturierte Gesamtprüfung und fachliche Abnahme; danach nur noch eine gezielte Korrekturschleife, falls die Prüffassung konkrete Abweichungen zeigt. Regelbasierte Förderengine, echte automatische Sensitivitätsläufe und PV-Ertrags-/Eigenverbrauchsadapter bleiben klar abgegrenzte Fachausbaustufen.
+V1.0 ist fachlich und technisch freigegeben: Kosten-/Referenzbasis und Erneuerungshorizonte sind zentralisiert, Zustände `gepflegt / altersgerecht / schadhaft` korrigieren die Automatik transparent, Wartung wird nur bei sinnvollen Defaults angesetzt, und PV bleibt ohne Ertragsadapter bewusst außerhalb der Lebenszykluskurve. Regelbasierte Förderengine, echte automatische Sensitivitätsläufe und PV-Ertrags-/Eigenverbrauchsadapter bleiben klar abgegrenzte Fachausbaustufen.
 
 ### Sanierungsfahrplan
+
+Leitgedanke für die Beratung: **„Ein Gebäude verursacht auch unabhängig vom Energieverbrauch langfristig Erhaltungsaufwand.“** Der Fahrplan soll diesen Erhaltungsaufwand sichtbar machen, ohne typische Nutzungsdauern als technisches Ablaufdatum darzustellen.
 
 - Maßnahmenkacheln,
 - jetzt / kurzfristig / mittelfristig / später,
 - Abhängigkeiten und Reihenfolgehinweise,
 - Kommentare,
-- kompakter Beratungsbericht.
+- kompakter Beratungsbericht,
+- Zustandslogik `gepflegt → leichte Instandsetzung`, `altersgerecht → Standardreferenz`, `schadhaft → größere Instandsetzung` als einfacher Beraterinnen-Override für Erneuerungshorizonte,
+- Werterhalt qualitativ als `positiv / deutlich positiv`, keine scheinpräzise Marktwertsteigerung,
+- Referenz-Erneuerungen, laufender Erhaltungsaufwand und energetische Verbesserungen auf einer gemeinsamen Zeitachse sichtbar machen.
 
 ## Grundsatz
 

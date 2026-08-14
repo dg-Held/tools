@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('fs');const path=require('path');const assert=require('assert');const root=path.resolve(__dirname,'..');const read=(r)=>fs.readFileSync(path.join(root,r),'utf8');
+const html=read('tools/wirtschaftlichkeit/index.html');const js=read('tools/wirtschaftlichkeit/wirtschaftlichkeit.js');const tools=read('pages/tools.html');
+assert(html.includes('Wirtschaftlichkeit V1.0'),'Wirtschaftlichkeit nicht V1.0');
+assert(html.includes('noindex,nofollow'),'Pilot-Seite nicht noindex');
+assert(js.includes('evaluatedSelected = selected.filter((item) => !item.informational)'),'PV-Abgrenzung fehlt');
+assert(js.includes('maintenancePercent'),'Wartungsstrategie fehlt');
+assert(js.includes('referenceCondition'),'Zustandskorrektur fehlt');
+assert(!tools.includes('href="../tools/wirtschaftlichkeit/index.html"'),'Wirtschaftlichkeit auf Übersicht noch klickbar');
+assert(!tools.includes('href="../tools/bauteil-sanierung/index.html"'),'Bauteil auf Übersicht noch klickbar');
+console.log('Wirtschaftlichkeit V1.0 Release-Semantik bestanden.');

@@ -1,9 +1,9 @@
 {
   "schema": "energy-tools-renovation-costs",
-  "version": "2026-08-13-v1.3-eat-reviewed",
-  "data_date": "2026-08",
-  "status": "eat-advisory-costs-internally-plausibilized",
-  "notice": "EAT-Beratungskennwerte Stand August 2026. Lokale EAT-Richtwerte und Angebote haben Vorrang; BKI 2025 wurde intern zur Plausibilisierung herangezogen und nicht als öffentliche Rohkostentabelle übernommen. Intern exakt rechnen; Beratungsausgabe gerundet. Referenzkosten sind ausdrücklich als eigene Vergleichskosten hinterlegt.",
+  "version": "2026-08-14-v1.0-eat-released",
+  "data_date": "2026-08-14",
+  "status": "eat-advisory-costs-released-v1",
+  "notice": "EAT-Beratungsrichtwerte Stand 08/2026. Projektspezifische Angebote haben Vorrang. BKI wird ausschließlich intern zur Plausibilisierung verwendet; lizenzierte Rohwerte werden nicht veröffentlicht.",
   "models": [
     {
       "id": "wall_wdvs",
@@ -25,27 +25,29 @@
         "label": "Putz-/Fassadeninstandsetzung ohne Dämmung",
         "unit": "€/m²",
         "range": {
-          "low": 50,
+          "low": 25,
           "middle": 85,
-          "high": 120
+          "high": 100
         },
         "default_cost": 85,
-        "status": "eat-reviewed-internal-bki-plausibility"
+        "status": "eat-reviewed-user-adjusted",
+        "condition_cost_mode": "range",
+        "condition_cost_note": "gepflegt → niedriger Referenzumfang; altersgerecht → mittel; schadhaft → höherer Referenzumfang. Manuelle/project-specific Kosten haben Vorrang."
       }
     },
     {
       "id": "wall_ventilated",
       "component_id": "wall_external",
       "label": "Außenwand – hinterlüftete Fassade",
-      "base_cost_eur_m2": 280,
+      "base_cost_eur_m2": 255,
       "variable_cost_eur_m2_cm": 2.5,
       "sunk_cost_eur_m2": 85,
       "range_eur_m2": {
-        "low": 250,
-        "middle": 330,
-        "high": 450
+        "low": 200,
+        "middle": 300,
+        "high": 400
       },
-      "status": "eat-reviewed",
+      "status": "eat-reviewed-user-adjusted",
       "active": true,
       "source_id": "EAT_COSTS_2026_08",
       "reference": {
@@ -53,12 +55,14 @@
         "label": "Fassadeninstandsetzung ohne energetische Verbesserung",
         "unit": "€/m²",
         "range": {
-          "low": 50,
+          "low": 25,
           "middle": 85,
-          "high": 120
+          "high": 100
         },
         "default_cost": 85,
-        "status": "eat-reviewed-internal-bki-plausibility"
+        "status": "eat-reviewed-user-adjusted",
+        "condition_cost_mode": "range",
+        "condition_cost_note": "gepflegt → niedriger Referenzumfang; altersgerecht → mittel; schadhaft → höherer Referenzumfang. Manuelle/project-specific Kosten haben Vorrang."
       }
     },
     {
@@ -109,7 +113,9 @@
         },
         "default_cost": 150,
         "status": "eat-reviewed-internal-bki-plausibility",
-        "note": "Dachstuhl, Spengler, Gerüst und Sonderdetails projektspezifisch prüfen."
+        "note": "Dachstuhl, Spengler, Gerüst und Sonderdetails projektspezifisch prüfen.",
+        "condition_cost_mode": "range",
+        "condition_cost_note": "gepflegt → niedriger Referenzumfang; altersgerecht → mittel; schadhaft → höherer Referenzumfang. Manuelle/project-specific Kosten haben Vorrang."
       }
     },
     {
@@ -162,15 +168,15 @@
       "id": "window_replace",
       "component_id": "window_external",
       "label": "Fenster austauschen",
-      "base_cost_eur_m2": 850,
+      "base_cost_eur_m2": 800,
       "variable_cost_eur_m2_cm": 0,
       "sunk_cost_eur_m2": 700,
       "range_eur_m2": {
         "low": 700,
-        "middle": 850,
-        "high": 1000
+        "middle": 800,
+        "high": 900
       },
-      "status": "eat-reviewed",
+      "status": "eat-reviewed-user-adjusted",
       "active": true,
       "source_id": "EAT_COSTS_2026_08",
       "reference": {
@@ -179,12 +185,38 @@
         "unit": "€/m² Fensterfläche",
         "range": {
           "low": 700,
-          "middle": 700,
+          "middle": 800,
           "high": 900
         },
-        "default_cost": 700,
+        "default_cost": 800,
         "status": "eat-orientation",
         "note": "Konkretes Angebot und tatsächlich notwendiger Ersatzstandard haben Vorrang."
+      },
+      "frame_costs_eur_m2": {
+        "plastic": {
+          "low": 700,
+          "middle": 800,
+          "high": 900,
+          "status": "eat-reviewed-local-offers"
+        },
+        "wood_aluminium": {
+          "low": 1100,
+          "middle": 1200,
+          "high": 1300,
+          "status": "eat-reviewed-local-offers"
+        },
+        "wood": {
+          "low": 700,
+          "middle": 850,
+          "high": 1000,
+          "status": "eat-orientation-no-separate-reviewed-band"
+        },
+        "aluminium": {
+          "low": 900,
+          "middle": 1050,
+          "high": 1200,
+          "status": "eat-orientation-no-separate-reviewed-band"
+        }
       }
     },
     {

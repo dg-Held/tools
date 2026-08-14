@@ -1,9 +1,9 @@
 {
   "schema": "energy-tools-component-lifetimes",
-  "version": "2026-08-13-v0.7-eat-reviewed",
-  "data_date": "2026-08",
-  "status": "mixed-norm-informative-and-eat-reviewed-fallback",
-  "notice": "Fensterwerte Holz und Aluminium stammen aus dem informativen Anhang D der ÖNORM EN 15459-1:2017. Opake Dämmmaßnahmen, Kunststoff-/Holz-Alu-Fenster und Außentüren sind transparente EAT-Beratungsdefaults; sie wurden mit den intern bereitgestellten BKI-Lebensdauerangaben plausibilisiert, ohne BKI-Rohtabellen öffentlich zu reproduzieren. Projektspezifische Angaben haben Vorrang.",
+  "version": "2026-08-14-v1.0-eat-released",
+  "data_date": "2026-08-14",
+  "status": "mixed-norm-informative-and-eat-released-fallback",
+  "notice": "Typische wirtschaftliche Nutzungsdauern dienen als Beratungsorientierung für Erneuerungshorizonte, nicht als technisches Ablaufdatum. Projektspezifischer Zustand und konkrete Ersatzplanung haben Vorrang. Regelmäßige Wartung wird nur bei plausiblen und ausreichend belegten Komponenten als Default angesetzt; passive Dämmbauteile standardmäßig 0 %.",
   "source": {
     "title": "ÖNORM EN 15459-1:2017, Anhang D – Daten für Komponenten",
     "source_id": "SRC_EN15459_D",
@@ -17,7 +17,9 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "passive-or-no-regular-default"
     },
     {
       "id": "wall_ventilated",
@@ -26,7 +28,9 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "passive-or-no-regular-default"
     },
     {
       "id": "top_ceiling",
@@ -35,7 +39,9 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "passive-or-no-regular-default"
     },
     {
       "id": "roof",
@@ -44,7 +50,9 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "passive-or-no-regular-default"
     },
     {
       "id": "basement_ceiling",
@@ -53,7 +61,9 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "passive-or-no-regular-default"
     },
     {
       "id": "ground_floor",
@@ -62,7 +72,9 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "passive-or-no-regular-default"
     },
     {
       "id": "window_wood",
@@ -74,7 +86,8 @@
       "disposal_percent_initial": null,
       "active": true,
       "status": "norm-informative",
-      "source_id": "SRC_EN15459_D"
+      "source_id": "SRC_EN15459_D",
+      "maintenance_status": "norm-informative-or-eat-fallback"
     },
     {
       "id": "window_aluminium",
@@ -86,7 +99,8 @@
       "disposal_percent_initial": null,
       "active": true,
       "status": "norm-informative",
-      "source_id": "SRC_EN15459_D"
+      "source_id": "SRC_EN15459_D",
+      "maintenance_status": "norm-informative-or-eat-fallback"
     },
     {
       "id": "window_plastic",
@@ -99,7 +113,8 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit den bereitgestellten BKI-Lebensdauerangaben plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit den bereitgestellten BKI-Lebensdauerangaben plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_status": "norm-informative-or-eat-fallback"
     },
     {
       "id": "window_wood_aluminium",
@@ -112,7 +127,8 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit den bereitgestellten BKI-Lebensdauerangaben plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit den bereitgestellten BKI-Lebensdauerangaben plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_status": "norm-informative-or-eat-fallback"
     },
     {
       "id": "door_replace",
@@ -121,7 +137,9 @@
       "active": true,
       "status": "eat-reviewed-fallback",
       "source_id": "EAT_INTERNAL_PLAUSIBILITY_2026",
-      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar."
+      "note": "EAT-Beratungsdefault; intern mit BKI 2025 plausibilisiert, projektspezifisch überschreibbar.",
+      "maintenance_percent_initial_per_year": 0,
+      "maintenance_status": "passive-or-no-regular-default"
     }
   ]
 }

@@ -40,4 +40,7 @@ const calculated = core.calculateVariant(candidate, assumptions);
 assert.equal(calculated.capital.timedEvents.length, 2);
 near(calculated.capital.total, 25000, 1e-9, 'year-zero funding event');
 
-console.log('Economics Core V1.1: Basis-, Ereignis- und Vergleichstests bestanden.');
+const delayed = core.calculateVariant({capitalComponents:[],capitalEvents:[],consumptionCosts:[],operationCosts:[{annualCost:100,priceFactor:1,startYear:5}]},{periodYears:10,interestRatePercent:0});
+near(delayed.operation.total, 500, 1e-9, 'delayed annual operation costs');
+
+console.log('Economics Core V1.2: Basis-, Ereignis-, zeitversetzte Betriebs- und Vergleichstests bestanden.');

@@ -7,6 +7,7 @@ const read = (rel) => JSON.parse(fs.readFileSync(path.join(__dirname, '..', rel)
 const renovation = read('shared/data/costs/renovation-costs.json');
 const systems = read('shared/data/costs/system-costs.json');
 const lifetimes = read('shared/data/standards/economics/component-lifetimes.json');
+const conditions = read('shared/data/economics/reference-condition-defaults.json');
 
 const requiredEnvelope = ['wall_wdvs','wall_ventilated','top_ceiling','roof','basement_ceiling','ground_floor','window_replace','door_replace'];
 const requiredSystems = ['heat_pump_air','heat_pump_ground','heat_pump_water','pellet_heating','district_heat_connection','radiator_replace','floor_heating','hot_water_boiler','buffer_freshwater','solar_thermal','system_adjustment','ventilation_single_room','ventilation_decentral','ventilation_central','pv_standard','battery_storage'];
@@ -40,6 +41,19 @@ if (!String(renovation.internal_plausibility || '').includes('intern')) throw ne
 if (models.get('roof')?.reference?.default_cost <= 0) throw new Error('Dach-Referenzkosten fehlen.');
 if (models.get('top_ceiling')?.reference?.mode !== 'none') throw new Error('OGD soll keine automatische Referenz-Erneuerung erhalten.');
 if (models.get('basement_ceiling')?.reference?.mode !== 'none') throw new Error('Kellerdecke soll keine automatische Referenz-Erneuerung erhalten.');
+if (models.get('wall_ventilated')?.range_eur_m2?.low !== 200 || models.get('wall_ventilated')?.range_eur_m2?.high !== 400) throw new Error('Freigegebenes VHF-Kostenband fehlt.');
+if (models.get('window_replace')?.frame_costs_eur_m2?.wood_aluminium?.middle !== 1200) throw new Error('Rahmenmaterialspezifische Fensterkosten fehlen.');
+if (systemItems.get('ventilation_single_room')?.range?.low !== 2750) throw new Error('Freigegebene Untergrenze Einzelraumlüftung fehlt.');
+if (systemItems.get('heat_pump_air')?.maintenance_percent_initial_per_year !== 3) throw new Error('Wartungsdefault Wärmepumpe fehlt.');
+for (const id of ['wall_wdvs','top_ceiling','roof','basement_ceiling']) { const life = lifetimeItems.find((x)=>x.cost_model_id===id); if (Number(life?.maintenance_percent_initial_per_year ?? 0) !== 0) throw new Error(`Passive Wartung muss 0 % sein: ${id}`); }
+if ((conditions.states||[]).map((x)=>x.id).join(',') !== 'maintained,age_appropriate,damaged') throw new Error('Zustandslogik Erneuerungshorizont unvollständig.');
+if (models.get('wall_wdvs')?.reference?.condition_cost_mode !== 'range') throw new Error('Fassaden-Referenzumfang reagiert nicht auf Zustand.');
+if (models.get('roof')?.reference?.condition_cost_mode !== 'range') throw new Error('Dach-Referenzumfang reagiert nicht auf Zustand.');
+for (const [id,key] of [['maintained','low'],['age_appropriate','middle'],['damaged','high']]) {
+  const state=(conditions.states||[]).find((x)=>x.id===id);
+  if (state?.reference_cost_key !== key) throw new Error(`Zustands-Referenzkostenstufe fehlt: ${id}`);
+}
+
 
 console.log('OK economics-cost-data', {
   renovationVersion: renovation.version,
