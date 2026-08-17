@@ -1,6 +1,6 @@
 # Architektur und Datenmodell
 
-**Stand:** 13.08.2026
+**Stand:** 17.08.2026
 
 ## 1. Schichten
 
@@ -39,7 +39,8 @@ tools/
 ├── heizlast/
 ├── energiefluss-v4/
 ├── bauteil-sanierung/
-└── wirtschaftlichkeit/
+├── wirtschaftlichkeit/
+└── sanierungsfahrplan/
 docs/
 tests/
 ```
@@ -224,6 +225,43 @@ envelope-package-ambitious
 ```
 
 Manuell im Bauteiltool bestätigte Maßnahmen behalten ihre bisherige ID `envelope-<componentId>` und werden von der automatischen Aktualisierung nicht überschrieben. Das Paketmodul speichert einen Fingerprint der relevanten Geometrie-, U-Wert-, Energie-, Kosten- und Finanzgrundlagen.
+
+### Sanierungsfahrplan: Karten, Kontext und Etappen
+
+Der Sanierungsfahrplan ist eine Orchestrierungs- und Beratungsschicht über den vorhandenen Fachkernen. Er erzeugt **keine zweite Kopie** von Maßnahmen-, Energie- oder Wirtschaftlichkeitswerten. Verbindliche Begriffe:
+
+- **Maßnahme** = einzelne technische Verbesserung.
+- **Maßnahmenpaket** = mehrere Maßnahmen gemeinsam.
+- **Variante** = alternative Gesamtstrategie zum Vergleich.
+- **Etappe** = Maßnahmenpaket zu einem bestimmten Zeitpunkt innerhalb des Sanierungsfahrplans.
+- **Planungspunkt** = Prüfung, Entscheidung, Koordination oder Vorbereitung ohne notwendige eigene Energie-/Kostenwirkung.
+- **Zukunftsthema** = langfristige Nutzung oder Qualität, die im Sanierungsprozess mitgedacht werden soll.
+
+`jetzt vorbereiten – später umsetzen` ist kein vierter Kartentyp, sondern eine Beziehung zwischen Karte und Etappen.
+
+Zentral gespeichert wird:
+
+```text
+roadmap.version
+roadmap.context.upcomingWorks[]
+roadmap.stages{}
+roadmap.items{}
+roadmap.updatedAt
+```
+
+`roadmap.context.upcomingWorks[]` beschreibt **ohnehin anstehende Arbeiten oder Zeitfenster** wie Dach, Bad oder Elektro und ist ausdrücklich keine Maßnahme. Daraus können fachliche Vorschläge entstehen, ohne das Projekt künstlich um technische Maßnahmen zu erweitern.
+
+Ein Roadmap-Item referenziert `cardId` und – bei technischen Maßnahmen – vorhandene gemeinsame `linkedMeasureIds`. Kosten, Einsparungen, CO₂, Förderung und Referenz-Erneuerungen werden nicht als unabhängige Kopie im Fahrplan gespeichert, sondern aus den gemeinsamen Fachservices neu abgeleitet. Reine Oberflächenzustände liegen unter `modules.sanierungsfahrplan`.
+
+Zentrale Fahrplandaten:
+
+```text
+shared/data/roadmap/cards.json
+shared/data/roadmap/relations.json
+shared/data/measures/measure-effects.json
+```
+
+`cards.json` enthält den fachlichen Kartenkatalog. `relations.json` beschreibt nachvollziehbare Beziehungen `before`, `together`, `prepare`, `check`, `avoid_lock_in` und `suggest`; sie sind Hinweise und keine versteckte Optimierungszahl. `measure-effects.json` ist die einzige zentrale Quelle qualitativer Zusatzwirkungen: `components` enthält bauteilspezifische Detailtexte, `items` die qualitativen Kartenprofile. Kundenprioritäten dürfen die Reihenfolge sichtbarer Hinweise beeinflussen, aber niemals technische oder wirtschaftliche Rechenergebnisse.
 
 ## 8. Ergebnisse und Cache
 

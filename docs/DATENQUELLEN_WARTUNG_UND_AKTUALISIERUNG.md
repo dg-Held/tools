@@ -1,6 +1,6 @@
 # Datenquellen, Wartung und Aktualisierung
 
-**Stand:** 10.08.2026
+**Stand:** 17.08.2026
 
 ## 1. Quellenklassen
 
@@ -141,7 +141,7 @@ Bei Datenupdate prüfen:
 shared/data/measures/envelope-targets.json
 shared/data/measures/exchange-variants.json
 shared/data/measures/lambda-values.json
-shared/data/measures/co-benefits.json
+shared/data/measures/measure-effects.json
 shared/data/costs/renovation-costs.json
 shared/data/standards/economics/component-lifetimes.json
 shared/data/standards/oib/envelope-u-values.json
@@ -150,6 +150,8 @@ shared/data/economics/energy-prices.json
 shared/data/emissions/emission-factors.json
 shared/data/building/existing-u-values.json
 ```
+
+`measure-effects.json` ist die **einzige zentrale Quelle für qualitative Zusatzwirkungen**. Sie enthält zwei getrennte Namensräume: `components` für bauteilspezifische Detailtexte (z. B. Winterkomfort/Feuchte) und `items` für qualitative Wirkungsprofile der Sanierungsfahrplan-Karten. Die Excel→JSON-Pipeline aktualisiert nur `components` und bewahrt `items`; dadurch entstehen keine parallelen Wirkungsdatensätze. Die Angaben verändern weder technische noch wirtschaftliche Berechnungen und werden nicht zu einem Kundenscore summiert.
 
 Prüfungen nach Datenupdate:
 

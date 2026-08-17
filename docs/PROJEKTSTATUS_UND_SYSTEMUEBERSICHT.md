@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 13.08.2026  
+**Stand:** 17.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -261,11 +261,42 @@ Haustür:
 - Energiewirkung = Anzahl × Fläche je Tür.
 - Kosten = Anzahl × Stückpreis.
 
+### Sanierungsfahrplan V0.1 · geplanter Direktlink-Pilot
+
+Status: erster funktionaler Pilotprototyp; auf der öffentlichen Toolübersicht als **Geplant** sichtbar, aber nicht verlinkt. Die direkte Pilotseite ist `noindex,nofollow`.
+
+Grundsätze:
+
+- vollständig stand-alone nutzbar; vorherige Berechnungen sind keine Voraussetzung, vorhandene Projektwerte erhöhen nur Aussagequalität und ergänzen später Energie/CO₂/Wirtschaftlichkeit,
+- gleicher Projekt-/Adresskopf und dieselbe Adress-/TIRIS-Logik wie die bestehenden Werkzeuge,
+- minimaler Einstieg aus Projektbasis, `project.advice` und der neuen Kontextfrage **„Was steht ohnehin an?“**,
+- drei Kartentypen: **Maßnahme**, **Planungspunkt**, **Zukunftsthema**; Vorbereitungen sind Beziehungen und kein vierter Typ,
+- zentraler Kartenkatalog mit Themen zu Hülle, Technik, Heizungstausch, Warmwasser, PV/Strom, Förderung/Energieausweis, zukünftiger Wohnsituation, Barrierefreiheit/Lift, Wohngesundheit/Schadstoffen, ökologischem Sanieren, Sommerkomfort/Klimaanpassung, Sicherheit und Dokumentation,
+- automatische Vorschläge dienen als fachliche Erinnerungsstütze; die Beraterin kann den vollständigen eingeklappten Katalog jederzeit öffnen und weitere Karten hinzufügen,
+- Informationshierarchie gegen Überforderung: **Route = Zeitraum + Kartentitel**, Etappendetail = Gründe/Abhängigkeiten/Vorbereitung, Fachdetail = Energie/CO₂/Kosten/Referenz/Förderung/Methodik,
+- Hauptansicht zeigt eine starke Route **HEUTE → Etappen → ZUKUNFTSFIT 2050**; das Zielbild bleibt `Hülle → Technik → fossilfrei → PV`,
+- Kosten- und Wirkungsansicht sind im V0.1-Rohbau bewusst noch nicht aktiv; es wird kein paralleler Wirtschafts- oder Energierechner aufgebaut,
+- qualitative Zusatzwirkungen werden aus einer zentralen `measure-effects.json` gelesen und niemals zu einem Kundenscore summiert.
+
+Technischer Stand:
+
+```text
+shared/js/domain/roadmap/roadmap-core.js
+shared/data/roadmap/cards.json
+shared/data/roadmap/relations.json
+shared/data/measures/measure-effects.json
+tools/sanierungsfahrplan/
+tests/validate-roadmap-core.js
+```
+
+Der Roadmap-Core enthält Karten-/Etappenverwaltung, Vorschlagslogik und transparente Relationen. Die spätere Etappenrechnung muss kumulativ auf dem bereits sanierten Gebäudezustand erfolgen; unabhängige Prozentwerte dürfen nicht addiert werden.
+
 ## 6. Gemeinsame Fachkerne
 
 ```text
 shared/js/domain/economics/economics-core.js
 shared/js/domain/measures/envelope-renovation-core.js
+shared/js/domain/roadmap/roadmap-core.js
 ```
 
 Der Wirtschaftlichkeitskern bildet die dynamische Betrachtung der ÖNORM B 8110-4:2024 ab und wurde gegen das normative Validierungsbeispiel geprüft. Für eine vollständig normgemäße Toolausgabe müssen auch Eingaben, Quellen, Sensitivitäten und Bericht vollständig nachvollziehbar sein.
@@ -285,6 +316,7 @@ shared/data/
 ├── economics/
 ├── emissions/
 ├── measures/
+├── roadmap/
 └── standards/
 ```
 

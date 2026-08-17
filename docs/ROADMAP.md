@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stand:** 14.08.2026
+**Stand:** 17.08.2026
 
 ## V1.0-Basis abgeschlossen · 11.08.2026
 
@@ -19,6 +19,22 @@ Die Praxisprüfung ist in den abgeschlossenen V1.0-Methodenstand eingeflossen. D
 - interne und solare Gewinne mit einem transparenten pauschalen Gewinnnutzungsfaktor von 0,55.
 
 Der Wert bleibt ausdrücklich ein Beratungs-Plausibilitätsmodell und keine Energieausweis- oder Norm-HWB-Berechnung. Zusätzliche reale Energieausweise können den Regressionssatz später erweitern. Eine methodische Änderung erfolgt erst in einer dokumentierten V1.x-Version und nur bei erkennbarem fachlichem Mehrwert.
+
+## Sanierungsfahrplan · V0.1 Pilotprototyp · 17.08.2026
+
+Der erste Rohbau ist umgesetzt: gemeinsamer Projekt-/Adresseinstieg, minimale Projektbasis, `project.advice`, Kontext `Was steht ohnehin an?`, zentraler Kartenkatalog, Vorschlagsregeln, Etappenverwaltung, reduzierte Sanierungsroute, eingeklappter Gesamtkatalog sowie qualitative Zusatzwirkungen. Das Tool bleibt vorerst **Geplant**, nur per Direktlink erreichbar und `noindex,nofollow`.
+
+### Nächste Fach- und Integrationsschritte
+
+1. **Zukunftsfit 2050 zentralisieren:** bestehende Logik aus Wirtschaftlichkeit in einen gemeinsamen Future-Fit-Core überführen; Sanierungsfahrplan und Wirtschaftlichkeit dürfen keine getrennte Zielbildlogik pflegen.
+2. **Erneuerungshorizont zentralisieren:** konkrete Termine, Zustand, letztes Erneuerungsjahr + typische Nutzungsdauer und Gebäudealter-Fallback in einen gemeinsamen Service überführen.
+3. **Sequenzielle Energieintegration:** jede Etappe als Maßnahmenpaket auf dem Zustand nach der vorigen Etappe neu rechnen; keine Addition unabhängiger Prozentwerte.
+4. **Economics anbinden:** Vollkosten, zeitlich korrekte Referenz-Erneuerungen, Förderung, Restinvestition, wirtschaftlich zusätzliche Investition und Lebenszykluskosten aus dem bestehenden Economics-Core verwenden.
+5. **Zeit-/Investitionsgrafik:** Referenz-Erneuerungen neutral grau, energetische Verbesserung Türkis, Förderung Berry; Erklärung, warum eine Maßnahme in einer bestimmten Etappe sinnvoll ist.
+6. **Druck V0.x:** Seite 1 als stark reduzierte Kundenseite mit Route/Kernaussage; Seite 2 mit Etappen, Abhängigkeiten, Wirkungen, Unsicherheiten und Datenbasis.
+7. **Praxistest:** zuerst Beratungsablauf und Informationsdichte prüfen; erst danach Variantenvergleich mehrerer Gesamtstrategien und Freigabe V1.0.
+
+Nicht vorgesehen ist ein versteckter Optimierungsscore oder die Empfehlung `alles sofort`. Der Fahrplan soll nachvollziehbar zeigen, was jetzt nötig ist, was sinnvoll kombiniert wird, was warten kann, was vorbereitet werden sollte und welche heutige Entscheidung eine spätere Maßnahme nicht verbauen darf.
 
 ## Für die nächste V1.x-Version vorgemerkt
 

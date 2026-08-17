@@ -1,6 +1,6 @@
 # Test und Release
 
-**Stand:** 13.08.2026
+**Stand:** 17.08.2026
 
 ## Installation kleiner Austauschpakete
 
@@ -19,6 +19,18 @@
 - JSON exportieren, neues Projekt, JSON importieren.
 - Adresse korrigieren und neues Projekt starten.
 - manuelle Werte bleiben vorrangig; Zurücksetzen stellt Automatik wieder her.
+
+### Sanierungsfahrplan V0.1
+
+- direkte Seite `tools/sanierungsfahrplan/` ist `noindex,nofollow`; öffentliche Toolkarte bleibt `Geplant` ohne Link,
+- gemeinsamer Projektkopf, Adresse und bekannte Projektwerte werden übernommen,
+- ohne vorherige Toolberechnung kann aus wenigen Basiswerten + `Was steht ohnehin an?` ein Fahrplan vorbereitet werden,
+- automatische Erstansicht bleibt kompakt; Route zeigt nur Zeitraum und Kartentitel,
+- vollständiger Kartenkatalog ist eingeklappt und Karten können ergänzt/entfernt/zwischen Etappen verschoben werden,
+- `Maßnahme`, `Planungspunkt`, `Zukunftsthema` bleiben semantisch getrennt; Vorbereitungen sind Relationen,
+- Kundenprioritäten verändern nur Vorschlagsreihenfolge/Darstellung, nicht Fachwerte,
+- `measure-effects.json` wird von Bauteil & Sanierung und Sanierungsfahrplan als eine gemeinsame Zusatzwirkungsquelle verwendet,
+- `node tests/validate-roadmap-core.js` muss ohne Fehler bestehen.
 
 ### Geometrie
 

@@ -1,6 +1,6 @@
 # Methodik aller Tools
 
-**Stand:** 13.08.2026
+**Stand:** 17.08.2026
 
 ## Standortpass
 
@@ -617,6 +617,59 @@ Der gemeinsame Kern kann Anfangsinvestition, Wiederbeschaffung, Restwert, Entsor
 
 Die Standarddatei unterscheidet informative Normwerte und transparent gekennzeichnete Projekt-Fallbacks. Jeder Wert bleibt überschreibbar und benötigt Quelle, Status und Datenstand.
 
+
+## Sanierungsfahrplan V0.1 · Beratungs- und Orchestrierungslogik
+
+### Stand-alone-Einstieg
+
+Der Sanierungsfahrplan benötigt keine vorherige Berechnung. Vorhandene Projektdaten erhöhen die Aussagequalität und ergänzen in späteren Ausbaustufen Energie-, CO₂- und Wirtschaftlichkeitswerte, sind aber keine Voraussetzung für eine fachlich sinnvolle Sanierungsroute. Der Einstieg verwendet den gemeinsamen Projekt-/Adresskopf und übernimmt bekannte Werte. Offen sichtbar bleiben nur wenige Basisangaben; fehlende Details liegen eingeklappt.
+
+Die zusätzliche Frage **„Was steht ohnehin an?“** wird unter `roadmap.context.upcomingWorks[]` als Zeitfenster gespeichert. Sie ist keine Maßnahme. Beispiel: `Bad steht an` kann `barrierearmes Bad` und `Wohngesundheit` als Gesprächsthemen vorschlagen.
+
+### Karten und Vorschläge
+
+Neben technischen **Maßnahmen** berücksichtigt der Fahrplan **Planungspunkte** und **Zukunftsthemen**. Damit werden Entscheidungen sichtbar, die heute wenig oder keine direkte Energieeinsparung bewirken, aber spätere Sanierungsschritte erleichtern oder Lock-in vermeiden können.
+
+Vorschlagsregeln dürfen aus bekannten Projektwerten, ohnehin anstehenden Arbeiten, Anlass und Kundenprioritäten relevante Karten hervorheben. Kundenprioritäten beeinflussen ausschließlich Reihenfolge, Hinweise und Darstellung. Technische und wirtschaftliche Berechnungen bleiben unverändert. Es gibt keinen aufsummierten Punkte- oder Kundenscore.
+
+Beziehungen sind transparent typisiert:
+
+- `before`: vorher berücksichtigen,
+- `together`: sinnvoll gemeinsam,
+- `prepare`: jetzt für später vorbereiten,
+- `check`: gemeinsam prüfen,
+- `avoid_lock_in`: spätere Lösung nicht verbauen,
+- `suggest`: zusätzliches Beratungsthema ansprechen.
+
+### Etappen und Informationsdichte
+
+Die Kundensicht ist bewusst mehrstufig:
+
+1. **Sanierungsroute:** nur Zeitraum und Kartentitel,
+2. **Etappendetail:** wichtigste Begründung, Abhängigkeit/Vorbereitung und 1–2 qualitative Zusatzwirkungen,
+3. **Fachdetail:** Energie, CO₂, Kosten, Referenz-Erneuerung, Förderung, Aussagequalität und Methode.
+
+Der vollständige Kartenkatalog bleibt eingeklappt. Automatisch sichtbar werden nur wenige besonders relevante Themen; weitere Karten können durch die Beraterin ergänzt werden.
+
+### Energie- und Wirtschaftlichkeitslogik
+
+V0.1 ordnet Maßnahmen und Beratungsthemen zeitlich, ohne einen zweiten Energie- oder Wirtschaftlichkeitsrechner zu erstellen. Die Ansichten `Wirkung` und `Kosten` bleiben bis zur gemeinsamen Integration bewusst deaktiviert.
+
+Für die nächste Fachstufe gilt verbindlich:
+
+```text
+Bestand
+→ Etappe 1 als Maßnahmenpaket neu rechnen
+→ Gebäudezustand nach Etappe 1
+→ Etappe 2 auf diesem Zustand neu rechnen
+→ ...
+```
+
+Einzelersparnisse werden **nicht addiert**. Wirtschaftlichkeit verwendet den gemeinsamen Economics-Core einschließlich zeitlich korrekter Referenz-Erneuerungen. Typische Nutzungsdauern sind nur Orientierung; kundenseitig wird `voraussichtlicher Erneuerungshorizont` verwendet. Priorität: konkreter Termin > beobachteter Zustand > letztes Erneuerungsjahr + typische Nutzungsdauer > Gebäudealter-Fallback.
+
+### Zusatzwirkungen
+
+`shared/data/measures/measure-effects.json` ist die einzige zentrale qualitative Wirkungsquelle. `components` enthält detaillierte Bauteiltexte, `items` Kartenprofile entlang Komfort, Gesundheit, Klimaschutz, Unabhängigkeit, Werterhalt, Aufwand, Sommerkomfort, Ökologie und Resilienz. Die Profile dienen Gespräch und Darstellung, nicht der Veränderung von Energie-/Kostenrechnungen und nicht einem künstlichen Gesamtscore.
 
 ## Wirtschaftlichkeit V1.0 · Freigabestand
 
