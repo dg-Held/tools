@@ -95,7 +95,7 @@
       fetchJson('costs/system-costs.json'),
       fetchJson('standards/economics/component-lifetimes.json'),
       fetchJson('measures/envelope-targets.json'),
-      fetchJson('measures/co-benefits.json'),
+      fetchJson('measures/measure-effects.json'),
       fetchJson('building/existing-u-values.json'),
       fetchJson('measures/exchange-variants.json'),
       fetchJson('standards/energy-flow-v4-defaults.json'),

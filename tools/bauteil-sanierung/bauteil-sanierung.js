@@ -2550,7 +2550,7 @@
     [targetsConfig, lambdaConfig, coBenefitsConfig, exchangeVariantsConfig, costConfig, lifetimeConfig, financeConfig, energyPricesConfig, emissionFactorsConfig, existingUValuesConfig] = await Promise.all([
       loadJson('measures/envelope-targets.json', { components: {} }),
       loadJson('measures/lambda-values.json', { values: [{ value: 0.035, label: '0,035 W/mK', active: true }] }),
-      loadJson('measures/co-benefits.json', { components: {} }),
+      loadJson('measures/measure-effects.json', { components: {} }),
       loadJson('measures/exchange-variants.json', { components: {} }),
       loadJson('costs/renovation-costs.json', { models: [] }),
       loadJson('standards/economics/component-lifetimes.json', { items: [] }),
