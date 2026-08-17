@@ -8,11 +8,13 @@
   const energyFlowCore = global.EnergyFlowCore;
   const anchorCore = global.EnergyConsumptionAnchorCore;
   const measureCore = global.EnvelopeRenovationCore;
+  const projectEnergyAdapter = global.EnergyProjectEnergyAdapter;
+  const renewalHorizonCore = global.EnergyRenewalHorizonCore;
   const paths = global.EnergyToolsPaths;
   const addressManager = global.EnergyToolsAddressManager;
   const geometryService = global.EnergyToolsBuildingGeometryService;
 
-  if (!store || !model || !resolver || !economics || !energyFlowCore || !anchorCore || !measureCore || !paths || !addressManager || !geometryService) {
+  if (!store || !model || !resolver || !economics || !energyFlowCore || !anchorCore || !measureCore || !projectEnergyAdapter || !renewalHorizonCore || !paths || !addressManager || !geometryService) {
     console.error('Wirtschaftlichkeit: gemeinsame Projektbasis oder Rechenkern fehlt.');
     return;
   }
@@ -38,13 +40,7 @@
   };
 
   const QUICK_DEFINITIONS = [
-    { id: 'wall', componentId: 'exteriorWall', dataId: 'wall_external', costModelId: 'wall_wdvs', label: 'Außenwand', areaPath: 'building.geometry.opaqueExteriorWallArea', uPath: 'building.thermal.envelope.exteriorWall.uValue', enabledPath: 'building.thermal.envelope.exteriorWall.enabled', defaultEnabled: true, flowId: 'exteriorWall', boundaryFactor: 1.0, kind: 'insulation' },
-    { id: 'top-ceiling', componentId: 'topFloorCeiling', dataId: 'roof_top_ceiling', costModelId: 'top_ceiling', label: 'Oberste Geschoßdecke', areaPath: 'building.geometry.topFloorArea', uPath: 'building.thermal.envelope.topFloorCeiling.uValue', enabledPath: 'building.thermal.envelope.topFloorCeiling.enabled', defaultEnabled: true, flowId: 'topFloorCeiling', boundaryFactor: 0.8, kind: 'insulation' },
-    { id: 'roof', componentId: 'roof', dataId: 'roof_top_ceiling', costModelId: 'roof', label: 'Dach / Dachschräge', areaPath: 'building.geometry.roofSlopeArea', uPath: 'building.thermal.envelope.roof.uValue', enabledPath: 'building.thermal.envelope.roof.enabled', defaultEnabled: false, flowId: 'roof', boundaryFactor: 1.0, kind: 'insulation' },
-    { id: 'basement', componentId: 'basementCeiling', dataId: 'ceiling_unheated', costModelId: 'basement_ceiling', label: 'Kellerdecke / UG-Decke', areaPath: 'building.geometry.basementCeilingArea', uPath: 'building.thermal.envelope.basementCeiling.uValue', enabledPath: 'building.thermal.envelope.basementCeiling.enabled', defaultEnabled: true, flowId: 'basementCeiling', boundaryFactor: 0.5, kind: 'insulation' },
-    { id: 'ground-floor', componentId: 'groundFloor', dataId: 'floor_ground', costModelId: 'ground_floor', label: 'Boden gegen Erdreich', areaPath: 'building.geometry.groundFloorArea', uPath: 'building.thermal.envelope.groundFloor.uValue', enabledPath: 'building.thermal.envelope.groundFloor.enabled', defaultEnabled: false, flowId: 'groundFloor', boundaryFactor: 0.5, kind: 'insulation' },
-    { id: 'windows', componentId: 'windows', dataId: 'window_external', costModelId: 'window_replace', label: 'Fenster', areaPath: 'building.geometry.windowArea', uPath: 'building.thermal.envelope.windows.uValue', enabledPath: 'building.thermal.envelope.windows.enabled', defaultEnabled: true, flowId: 'windows', boundaryFactor: 1.0, kind: 'exchange' },
-    { id: 'doors', componentId: 'doors', dataId: 'door_external', costModelId: 'door_replace', label: 'Haustür / Außentür', areaPath: 'building.geometry.doorArea', uPath: 'building.thermal.envelope.doors.uValue', enabledPath: 'building.thermal.envelope.doors.enabled', defaultEnabled: true, flowId: 'doors', boundaryFactor: 1.0, kind: 'door' },
+    ...projectEnergyAdapter.DEFAULT_ENVELOPE_DEFINITIONS,
     { id: 'heating', componentId: 'heating', label: 'Heizung fossilfrei', systemCostId: 'heat_pump_air', manualOnly: true },
     { id: 'pv', componentId: 'pv', label: 'PV-Anlage', systemCostId: 'pv_standard', manualOnly: true, informational: true },
   ];
@@ -265,102 +261,33 @@
   }
 
   function periodIdForYear(year) {
-    const y = finite(year, null);
-    if (y === null) return null;
-    return (existingUValuesConfig?.periods ?? []).find((period) => (period.year_min === undefined || y >= period.year_min) && (period.year_max === undefined || y <= period.year_max))?.id ?? null;
+    return projectEnergyAdapter.periodIdForYear(year, existingUValuesConfig);
   }
 
   function constructionUValue(project, definition) {
-    const direct = finite(valueAt(project, definition.uPath, null), null);
-    if (direct !== null && direct > 0) return { value: direct, source: 'Projekt-U-Wert', fallback: false };
-    const year = finite(valueAt(project, 'building.profile.constructionYear', null), null);
-    const periodId = periodIdForYear(year);
-    const key = definition.componentId === 'doors' ? 'exteriorDoor' : definition.componentId;
-    const fallback = finite(existingUValuesConfig?.components?.[key]?.values?.[periodId], null);
-    return fallback !== null ? { value: fallback, source: `Bauperiodenvorschlag ${year ?? ''}`.trim(), fallback: true } : { value: null, source: 'U-Wert fehlt', fallback: true };
+    return projectEnergyAdapter.constructionUValue(project, definition, existingUValuesConfig);
   }
 
   function componentEnvelopeRelevant(project, definition) {
-    if (!definition.enabledPath) return true;
-    return Boolean(valueAt(project, definition.enabledPath, definition.defaultEnabled !== false));
+    return projectEnergyAdapter.componentEnvelopeRelevant(project, definition);
   }
 
   function energyFlowAssumptions() {
-    const a = energyFlowDefaults?.assumptions ?? {};
-    return {
-      hotWaterKwhPerPerson: finite(a.hot_water_kwh_person_a, 1000),
-      internalGainsWM2: finite(a.internal_gains_w_m2, 2.7),
-      solarRadiationFactor: finite(a.solar_radiation_factor_kwh_m2a, 175),
-      glazingShare: finite(a.glazing_share, 0.7),
-      solarUtilizationFactor: finite(a.solar_utilization_factor, 1),
-      comparisonGainUtilizationFactor: finite(a.comparison_gain_utilization_factor, 0.55),
-      ventilationLossKwhM3a: finite(a.ventilation_loss_kwh_m3a, 10),
-      thermalBridgeShare: finite(a.thermal_bridge_share, 0.075),
-    };
+    return projectEnergyAdapter.energyFlowAssumptions(energyFlowDefaults);
   }
 
   function climateForEnergyModel(project) {
-    const summary = project.modules?.klima?.climateSummary;
-    const natC = finite(summary?.natC, null);
-    const averageFullLoadHours = finite(summary?.metrics?.average_full_load_hours, null);
-    if (natC !== null && averageFullLoadHours > 0) {
-      return {
-        natC,
-        averageFullLoadHours,
-        balanceTemperatureC: 15,
-        period: summary?.period ?? null,
-        source: summary?.source ?? 'Projektklima',
-        fallback: false,
-      };
-    }
-    const indoorTemperatureC = finite(valueAt(project, 'building.thermal.indoorTemperature', energyFlowDefaults?.assumptions?.indoor_temperature_c ?? 22), 22);
-    const fallbackNatC = -12;
-    const heatingDegreeHoursKh = HGT_FALLBACK_TIROL * 24;
-    const averageFallbackHours = heatingDegreeHoursKh / Math.max(1, indoorTemperatureC - fallbackNatC);
-    return {
-      natC: fallbackNatC,
-      averageFullLoadHours: averageFallbackHours,
-      balanceTemperatureC: 15,
-      period: 'Tirol-Fallback',
-      source: 'Tirol-Fallback 3.500 Kd/a',
-      fallback: true,
-    };
+    return projectEnergyAdapter.climateForEnergyModel(project, energyFlowDefaults, { hgtFallbackKd: HGT_FALLBACK_TIROL });
   }
 
   function energyModelInputs(project, selected = [], candidate = false) {
-    const a = energyFlowDefaults?.assumptions ?? {};
-    const heatedFloorAreaM2 = Math.max(0, finite(valueAt(project, 'building.geometry.heatedFloorArea', null), finite(valueAt(project, 'building.geometry.usableFloorArea', a.heated_floor_area_m2 ?? 120), 120)));
-    const grossFloorAreaM2 = Math.max(0, finite(valueAt(project, 'building.geometry.grossFloorArea', null), heatedFloorAreaM2 > 0 ? heatedFloorAreaM2 / Math.max(0.1, finite(a.usable_floor_area_factor_percent, 75) / 100) : 0));
-    const grossVolumeM3 = Math.max(0, finite(valueAt(project, 'building.geometry.grossVolume', null), grossFloorAreaM2 * finite(a.storey_height_m, 3.2)));
-    const selectedById = new Map(selected.map((item) => [item.id, item]));
-    const components = QUICK_DEFINITIONS.filter((definition) => !definition.manualOnly && componentEnvelopeRelevant(project, definition)).map((definition) => {
-      const item = selectedById.get(definition.id);
-      const existing = finite(item?.existingUValue, constructionUValue(project, definition).value);
-      const candidateU = candidate && item && !item.energySavingsManual && finite(item.targetUValue, null) > 0
-        ? finite(item.targetUValue, existing)
-        : existing;
-      return {
-        id: definition.componentId,
-        label: definition.label,
-        enabled: true,
-        areaM2: Math.max(0, finite(valueAt(project, definition.areaPath, 0), 0)),
-        uValue: Math.max(0, finite(candidateU, 0)),
-      };
-    });
-    return {
-      annualEnergyKwh: Math.max(0, finite(valueAt(project, 'consumption.heating.annualEnergy', 0), 0)),
-      usefulHeatFactor: Math.max(0.01, finite(valueAt(project, 'systems.heating.usefulHeatFactor', a.useful_heat_factor ?? 0.85), 0.85)),
-      hotWaterIncluded: Boolean(valueAt(project, 'systems.heating.hotWaterIncluded', a.hot_water_included ?? true)),
-      persons: Math.max(0, finite(valueAt(project, 'usage.household.persons', a.persons ?? 4), a.persons ?? 4)),
-      heatedFloorAreaM2,
-      grossFloorAreaM2,
-      grossVolumeM3,
-      indoorTemperatureC: finite(valueAt(project, 'building.thermal.indoorTemperature', a.indoor_temperature_c ?? 22), a.indoor_temperature_c ?? 22),
-      heatedSharePercent: finite(valueAt(project, 'building.thermal.heatedSharePercent', a.heated_share_percent ?? 100), a.heated_share_percent ?? 100),
-      climate: climateForEnergyModel(project),
-      components,
-      assumptions: energyFlowAssumptions(),
-    };
+    return projectEnergyAdapter.energyModelInputs(
+      project,
+      QUICK_DEFINITIONS.filter((definition) => !definition.manualOnly),
+      selected,
+      candidate,
+      { energyFlowDefaults, existingUValuesConfig, hgtFallbackKd: HGT_FALLBACK_TIROL }
+    );
   }
 
   function anchoredImpact(project, selected = []) {
@@ -387,15 +314,16 @@
 
   function referenceTiming(project, definition, lifetimeYears, conditionId = null) {
     const draft = project.modules?.wirtschaftlichkeit?.measureDrafts?.[definition.id] ?? {};
-    const explicit = finite(draft.referenceYear, null);
-    if (explicit !== null && draft.referenceYearConfirmed) return Math.max(0, explicit);
-    const lastRenewal = finite(draft.lastRenewalYear, null);
-    const construction = finite(valueAt(project, 'building.profile.constructionYear', null), null);
-    const baseYear = lastRenewal ?? construction;
-    if (!(baseYear > 0) || !(lifetimeYears > 0)) return null;
-    const condition = referenceConditionState(conditionId ?? referenceConditionId(project, definition));
-    const horizonLifetime = lifetimeYears * Math.max(0.5, finite(condition?.horizon_factor, 1));
-    return Math.max(0, horizonLifetime - Math.max(0, CURRENT_YEAR - baseYear));
+    const result = renewalHorizonCore.calculate({
+      currentYear: CURRENT_YEAR,
+      explicitOffsetYears: draft.referenceYear,
+      explicitConfirmed: Boolean(draft.referenceYearConfirmed),
+      lastRenewalYear: draft.lastRenewalYear,
+      constructionYear: valueAt(project, 'building.profile.constructionYear', null),
+      lifetimeYears,
+      condition: referenceConditionState(conditionId ?? referenceConditionId(project, definition)),
+    });
+    return result.years;
   }
 
   function exchangeRecommended(definition) {
@@ -1196,7 +1124,7 @@
 
   function persistSnapshot(result, project) {
     if (suppressRender) return;
-    const snapshot={calculatedAt:new Date().toISOString(),modelVersion:economics.MODEL_VERSION,costDataVersion:costConfig?.version??null,systemCostDataVersion:systemCostConfig?.version??null,energyPriceVersion:energyPrices?.version??null,financialDefaultsVersion:financeConfig?.version??null,selectedMeasureIds:result.selected.map((m)=>m.id),totalInvestmentEur:result.totalInvestment,fundingEur:result.funding.total,netInvestmentEur:result.netInvestment,relevantInvestmentEur:result.relevantInvestment,annualEnergyCostBeforeEur:result.energy.annualBaseCost,annualEnergyCostAfterEur:result.energy.annualCandidateCost,annualSavingsEur:result.energy.annualSavingsEur,energyAnchorVersion:anchorCore.MODEL_VERSION,hwbCorrectedKwhM2a:result.energy.correctedHwbKwhM2a,hwbPhysicalKwhM2a:result.energy.physicalHwbKwhM2a,hwbDeviationPercent:result.energy.hwbDeviationPercent,durableAdvantageYear:result.comparison?.durableAdvantageYear??null,advantagePresentValueEur:result.comparison?.advantagePresentValue??null,pvEconomicsExcludedEur:result.excludedInvestment,evaluatedInvestmentEur:result.evaluatedInvestment,evaluatedFundingEur:result.evaluatedFunding,referenceConditions:Object.fromEntries(result.selected.filter((m)=>m.referenceMode!=='none').map((m)=>[m.id,m.referenceCondition??'age_appropriate'])),assumptions:result.assumptions};
+    const snapshot={calculatedAt:new Date().toISOString(),modelVersion:economics.MODEL_VERSION,costDataVersion:costConfig?.version??null,systemCostDataVersion:systemCostConfig?.version??null,energyPriceVersion:energyPrices?.version??null,financialDefaultsVersion:financeConfig?.version??null,selectedMeasureIds:result.selected.map((m)=>m.id),measureResults:Object.fromEntries(result.selected.map((m)=>[m.id,{id:m.id,label:m.label,componentId:m.componentId??null,source:m.source??null,dataQuality:m.dataQuality??null,fullInvestmentEur:finite(m.fullInvestmentEur,0),referenceCostEur:finite(m.referenceCostEur,0),referenceYear:finite(m.referenceYear,null),referenceMode:m.referenceMode??null,referenceCondition:m.referenceCondition??null,fundingEur:finite(m.fundingEur,0),deliveredSavingsKwh:finite(m.deliveredSavingsKwh,0),lifetimeYears:finite(m.lifetimeYears,null),targetCarrierId:m.targetCarrierId??null,targetEfficiency:finite(m.targetEfficiency,null),systemLabel:m.systemLabel??null,informational:Boolean(m.informational)}])),totalInvestmentEur:result.totalInvestment,fundingEur:result.funding.total,netInvestmentEur:result.netInvestment,relevantInvestmentEur:result.relevantInvestment,annualEnergyCostBeforeEur:result.energy.annualBaseCost,annualEnergyCostAfterEur:result.energy.annualCandidateCost,annualSavingsEur:result.energy.annualSavingsEur,energyAnchorVersion:anchorCore.MODEL_VERSION,hwbCorrectedKwhM2a:result.energy.correctedHwbKwhM2a,hwbPhysicalKwhM2a:result.energy.physicalHwbKwhM2a,hwbDeviationPercent:result.energy.hwbDeviationPercent,durableAdvantageYear:result.comparison?.durableAdvantageYear??null,advantagePresentValueEur:result.comparison?.advantagePresentValue??null,pvEconomicsExcludedEur:result.excludedInvestment,evaluatedInvestmentEur:result.evaluatedInvestment,evaluatedFundingEur:result.evaluatedFunding,referenceConditions:Object.fromEntries(result.selected.filter((m)=>m.referenceMode!=='none').map((m)=>[m.id,m.referenceCondition??'age_appropriate'])),assumptions:result.assumptions};
     const old=project.economics?.latestCalculation; const sig=JSON.stringify({...snapshot,calculatedAt:null}); const oldSig=old?JSON.stringify({...old,calculatedAt:null}):null;
     if(sig!==oldSig){suppressRender=true;store.setPath('economics.latestCalculation',snapshot);suppressRender=false;}
   }

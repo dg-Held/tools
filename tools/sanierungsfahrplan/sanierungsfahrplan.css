@@ -239,3 +239,146 @@
 .segmented-control button { border: 0; background: transparent; padding: .45rem .7rem; }
 @media (max-width: 900px) { .priority-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 600px) { .priority-grid { grid-template-columns: 1fr; } .choice-row button { flex: 1 1 calc(50% - .45rem); } }
+
+/* V0.3 · quantitative Etappenansichten */
+.route-stage-metric {
+  margin-top: .45rem;
+  padding: .42rem .48rem;
+  border-radius: 10px;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary);
+  line-height: 1.18;
+}
+.route-stage-metric strong,
+.route-stage-metric span { display: block; }
+.route-stage-metric strong { font-size: .75rem; color: var(--color-primary-dark); }
+.route-stage-metric span { margin-top: .08rem; font-size: .66rem; color: var(--text-muted); }
+.route-stage-metric.is-open { background: var(--surface-muted); border-color: var(--line); color: var(--text-muted); font-size: .68rem; }
+
+.stage-quant-panel {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: .55rem;
+  margin: 0 0 .85rem;
+  padding: .7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-medium);
+  background: linear-gradient(90deg, var(--surface-muted), var(--color-primary-soft));
+}
+.stage-quant-panel > div { min-width: 0; }
+.stage-quant-panel span { display: block; color: var(--text-muted); font-size: .72rem; }
+.stage-quant-panel strong { display: block; margin-top: .12rem; color: var(--color-primary-dark); font-size: .91rem; }
+.stage-quant-panel p { grid-column: 1 / -1; margin: .05rem 0 0; color: var(--text-muted); font-size: .72rem; }
+.stage-quant-panel.is-open { display: block; background: var(--surface-muted); }
+.stage-quant-panel.is-open strong { font-size: .82rem; }
+.stage-quant-panel.is-open p { margin: .2rem 0 0; }
+
+.investment-stage-list { display: grid; gap: .65rem; margin-top: .85rem; }
+.investment-stage { border: 1px solid var(--line); border-radius: var(--radius-medium); padding: .8rem; background: var(--surface-card); }
+.investment-stage > p { margin: .25rem 0 0; color: var(--text-muted); }
+.investment-stage-head { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.investment-stage-head strong,
+.investment-stage-head small { display: block; }
+.investment-stage-head small { color: var(--text-muted); font-size: .72rem; }
+.investment-stage-head > div:last-child { text-align: right; }
+.investment-cost-strip { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .4rem; margin-top: .65rem; }
+.investment-cost-strip span { border-radius: var(--radius-small); background: var(--surface-muted); padding: .48rem .55rem; font-size: .75rem; }
+.investment-cost-strip span:nth-child(2) { background: var(--color-primary-soft); }
+.investment-cost-strip span:nth-child(3) { background: var(--color-secondary-soft); }
+.investment-cost-strip b { display: block; margin-bottom: .1rem; font-size: .66rem; color: var(--text-muted); }
+.reference-horizons { display: grid; gap: .32rem; margin-top: .65rem; padding-top: .55rem; border-top: 1px solid var(--line); }
+.reference-horizons > div { display: grid; grid-template-columns: minmax(9rem,.7fr) minmax(0,1.3fr); gap: .6rem; font-size: .76rem; }
+.reference-horizons span { color: var(--text-muted); }
+.investment-note { margin: .7rem 0 0; color: var(--text-muted); font-size: .76rem; }
+
+@media (max-width: 760px) {
+  .stage-quant-panel { grid-template-columns: 1fr; }
+  .stage-quant-panel p { grid-column: 1; }
+  .investment-cost-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .reference-horizons > div { grid-template-columns: 1fr; gap: .1rem; }
+}
+
+/* V0.3 · zweitseitiger Kundenausdruck */
+@media print {
+  @page { size: A4 portrait; margin: 9mm 8mm 10mm; }
+  .roadmap-print-report {
+    display: block !important;
+    width: 194mm !important;
+    max-width: 194mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 8.3pt;
+    color: var(--text-dark);
+  }
+  .print-roadmap-page { width: 194mm; max-width: 194mm; margin: 0; padding: 0; }
+  .print-roadmap-page--details { break-before: page; page-break-before: always; }
+  .print-roadmap-title { margin: 0 0 2.5mm; }
+  .print-roadmap-title .eyebrow,
+  .print-section-head .eyebrow,
+  .print-details-title .eyebrow,
+  .print-future-fit-panel .eyebrow { margin: 0; font-size: 6.2pt; }
+  .print-roadmap-title h1 { margin: .4mm 0 .6mm; color: var(--color-primary-dark); font-size: 13pt; }
+  .print-roadmap-title > p:not(.eyebrow) { margin: 0; color: var(--text-muted); font-size: 8pt; }
+  .print-context-strip { display: grid; grid-template-columns: .8fr .8fr .75fr 1.65fr; gap: 1.7mm; margin-bottom: 3mm; }
+  .print-context-strip > div { min-width: 0; padding: 1.8mm 2mm; border: 1px solid var(--line); border-radius: 2mm; background: var(--surface-muted); }
+  .print-context-strip span { display: block; color: var(--text-muted); font-size: 6.1pt; }
+  .print-context-strip strong { display: block; margin-top: .4mm; font-size: 7.3pt; line-height: 1.2; }
+  .print-section-head h2,
+  .print-details-title h2 { margin: .5mm 0 1.7mm; color: var(--color-primary-dark); font-size: 10.2pt; }
+  .print-route-line { display: grid; grid-template-columns: auto 1fr auto; gap: 2mm; align-items: center; margin: 1mm 1mm 1.8mm; color: var(--text-muted); font-size: 6.5pt; }
+  .print-route-line i { height: .8mm; border-radius: 999px; background: linear-gradient(90deg,var(--color-primary-dark),var(--color-primary),var(--color-primary-light),var(--color-secondary)); }
+  .print-route-line b { color: var(--color-secondary-dark); }
+  .print-route { display: grid; grid-template-columns: repeat(3,1fr); gap: 2.2mm; margin: 0 0 2.4mm; }
+  .print-stage { min-height: 40mm; border: 1px solid var(--line-strong); border-radius: 2.6mm; padding: 2.4mm; background: var(--white); break-inside: avoid; }
+  .print-stage:nth-child(2) { background: var(--surface-muted); }
+  .print-stage-head { display: flex; justify-content: space-between; gap: 1mm; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 1.2mm; }
+  .print-stage h3 { margin: 0; font-size: 8.5pt; color: var(--color-primary-dark); }
+  .print-stage small { color: var(--text-muted); font-size: 6.1pt; }
+  .print-stage ul { margin: 1.6mm 0 0; padding-left: 3.5mm; }
+  .print-stage li { margin-bottom: .8mm; font-size: 6.9pt; line-height: 1.22; }
+  .print-stage li.print-more { color: var(--text-muted); list-style: none; margin-left: -3.5mm; }
+  .print-stage-metrics { margin-top: 1.6mm; padding-top: 1.2mm; border-top: 1px solid var(--line); }
+  .print-stage-metrics span { display: block; font-size: 6.2pt; color: var(--text-muted); margin-top: .6mm; }
+  .print-stage-metrics b { color: var(--text-dark); margin-right: 1mm; }
+  .print-future-fit-panel { display: grid; grid-template-columns: .85fr 1.6fr; gap: 3mm; align-items: center; margin: 0 0 2.5mm; padding: 2.2mm 2.5mm; border: 1px solid var(--line); border-radius: 2.6mm; background: linear-gradient(90deg,rgb(var(--color-secondary-soft-rgb)/.72),var(--color-primary-soft)); }
+  .print-future-fit-panel h3 { margin: .3mm 0 .4mm; font-size: 8.5pt; }
+  .print-future-fit-panel small { color: var(--text-muted); font-size: 6.2pt; }
+  .print-future-fit-track { display: grid; grid-template-columns: repeat(4,1fr); gap: 1mm; position: relative; }
+  .print-future-fit-track::before { content: ''; position: absolute; left: 8%; right: 8%; top: 4.1mm; border-top: .35mm solid var(--line-strong); }
+  .print-future-step { position: relative; z-index: 1; text-align: center; }
+  .print-future-step i { width: 8mm; height: 8mm; border-radius: 50%; display: grid; place-items: center; margin: 0 auto .6mm; background: var(--white); border: .45mm solid var(--line-strong); font-style: normal; font-weight: 700; font-size: 7pt; }
+  .print-future-step.is-done i { background: var(--color-primary-soft); border-color: var(--color-primary); }
+  .print-future-step.is-open i { background: var(--color-secondary-soft); border-color: var(--color-secondary); }
+  .print-future-step span { display: block; font-size: 6.4pt; font-weight: 700; }
+  .print-future-step small { display: block; font-size: 5.8pt; color: var(--text-muted); }
+  .print-roadmap-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.7mm; margin-bottom: 2.5mm; }
+  .print-roadmap-kpis > div { min-width: 0; border: 1px solid var(--line); border-radius: 2.2mm; padding: 2mm; }
+  .print-roadmap-kpis span { display: block; color: var(--text-muted); font-size: 5.9pt; }
+  .print-roadmap-kpis strong { display: block; margin-top: .4mm; color: var(--color-primary-dark); font-size: 9.2pt; }
+  .print-roadmap-kpis small { display: block; margin-top: .5mm; color: var(--text-muted); font-size: 5.7pt; line-height: 1.2; }
+  .print-key-message { margin: 0 0 2mm; padding: 2.5mm 3mm; border-left: 1.2mm solid var(--color-primary); border-radius: 2mm; background: var(--color-primary-soft); }
+  .print-key-message span { display: block; font-size: 6.2pt; font-weight: 800; color: var(--color-primary-dark); }
+  .print-key-message p { margin: .8mm 0 0; font-size: 7.2pt; line-height: 1.35; }
+  .print-page-note { border-top: 1px solid var(--line); padding-top: 1.2mm; color: var(--text-muted); font-size: 5.8pt; line-height: 1.3; }
+
+  .print-details-title { margin-bottom: 2mm; }
+  .print-stage-table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 3mm; font-size: 6.4pt; }
+  .print-stage-table th { padding: 1.4mm; text-align: left; color: var(--text-muted); background: var(--surface-muted); border-bottom: 1px solid var(--line-strong); }
+  .print-stage-table td { padding: 1.5mm; vertical-align: top; border-bottom: 1px solid var(--line); line-height: 1.25; }
+  .print-stage-table th:nth-child(1),.print-stage-table td:nth-child(1){width:12%}
+  .print-stage-table th:nth-child(2),.print-stage-table td:nth-child(2){width:31%}
+  .print-stage-table th:nth-child(3),.print-stage-table td:nth-child(3){width:17%}
+  .print-stage-table th:nth-child(4),.print-stage-table td:nth-child(4){width:16%}
+  .print-stage-table th:nth-child(5),.print-stage-table td:nth-child(5){width:24%}
+  .print-stage-table small { display: block; margin-top: .4mm; color: var(--text-muted); font-size: 5.6pt; }
+  .print-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin-bottom: 2.5mm; }
+  .print-detail-grid > section,.print-quality,.print-data-basis { border: 1px solid var(--line); border-radius: 2.3mm; padding: 2.3mm 2.7mm; break-inside: avoid; }
+  .print-detail-grid h3,.print-quality h3,.print-data-basis h3 { margin: 0 0 1.2mm; color: var(--color-primary-dark); font-size: 8pt; }
+  .print-detail-grid ul,.print-quality ul { margin: 0; padding-left: 4mm; }
+  .print-detail-grid li,.print-quality li { margin-bottom: 1mm; font-size: 6.5pt; line-height: 1.3; }
+  .print-priority { margin-top: 1.3mm; }
+  .print-priority strong { font-size: 6.6pt; }
+  .print-priority p { margin: .3mm 0 0; color: var(--text-muted); font-size: 6.2pt; line-height: 1.28; }
+  .print-quality { background: var(--surface-muted); margin-bottom: 2.5mm; }
+  .print-data-basis p { margin: .8mm 0 0; color: var(--text-muted); font-size: 6pt; line-height: 1.3; }
+}

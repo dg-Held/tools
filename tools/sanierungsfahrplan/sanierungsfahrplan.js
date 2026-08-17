@@ -6,16 +6,23 @@
   const resolver = global.EnergyToolsValueResolver;
   const paths = global.EnergyToolsPaths;
   const roadmapCore = global.EnergyRoadmapCore;
+  const evaluationCore = global.EnergyRoadmapEvaluationCore;
+  const projectEnergyAdapter = global.EnergyProjectEnergyAdapter;
+  const anchorCore = global.EnergyConsumptionAnchorCore;
+  const measureCore = global.EnvelopeRenovationCore;
+  const renewalHorizonCore = global.EnergyRenewalHorizonCore;
   const addressManager = global.EnergyToolsAddressManager;
   const geometryService = global.EnergyToolsBuildingGeometryService;
 
-  if (!store || !model || !resolver || !paths || !roadmapCore || !addressManager || !geometryService) {
+  if (!store || !model || !resolver || !paths || !roadmapCore || !evaluationCore || !projectEnergyAdapter || !anchorCore || !measureCore || !renewalHorizonCore || !addressManager || !geometryService) {
     console.error('Sanierungsfahrplan: gemeinsame Projektbasis oder Roadmap-Core fehlt.');
     return;
   }
 
   const $ = (id) => document.getElementById(id);
   const number0 = new Intl.NumberFormat('de-AT', { maximumFractionDigits: 0 });
+  const number1 = new Intl.NumberFormat('de-AT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const money0 = new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
   const TYPE_LABEL = { measure: 'Maßnahme', planning: 'Planungspunkt', future: 'Zukunftsthema' };
   const PRIORITY_LABEL = {
     costs: '€ Kosten', comfort: '♡ Komfort & Gesundheit', climate: '♻ Klimaschutz',
@@ -30,6 +37,8 @@
 
   let data = null;
   let energyPrices = null;
+  let evaluationConfigs = {};
+  let currentEvaluation = null;
   let hybridAddressProvider = null;
   let pendingAddress = null;
   let addressTimer = null;
@@ -67,6 +76,55 @@
   function itemById(roadmap, itemId) { return roadmap?.items?.[itemId] ?? null; }
   function cardById(cardId) { return data?.cardMap?.get(cardId) ?? null; }
 
+  function evaluationFor(project, roadmap = normalizedRoadmap(project)) {
+    try {
+      return evaluationCore.evaluate(project, roadmap, data, evaluationConfigs, { projectEnergyAdapter, anchorCore, measureCore, renewalHorizonCore });
+    } catch (error) {
+      console.warn('Sanierungsfahrplan: quantitative Auswertung derzeit nicht verfügbar.', error);
+      return { energy: { available: false, rows: [] }, costs: { available: false, rows: [], fullInvestmentEur: 0, fundingEur: 0, netInvestmentEur: 0, partial: true } };
+    }
+  }
+
+  function selectedViewMode(project) {
+    const value = project?.modules?.sanierungsfahrplan?.ui?.viewMode;
+    return ['consulting', 'effect', 'cost'].includes(value) ? value : 'consulting';
+  }
+
+  function formatMoney(value, step = 500) {
+    const number = finite(value, null);
+    if (number === null) return '–';
+    const rounded = Math.round(number / step) * step;
+    return money0.format(rounded);
+  }
+
+  function formatEnergy(value, step = 100) {
+    const number = finite(value, null);
+    if (number === null) return '–';
+    return `${number0.format(Math.round(number / step) * step)} kWh/a`;
+  }
+
+  function formatCo2(valueKg) {
+    const value = finite(valueKg, null);
+    if (value === null) return '–';
+    return value >= 1000 ? `${number1.format(value / 1000)} t CO₂e/a` : `${number0.format(Math.round(value / 10) * 10)} kg CO₂e/a`;
+  }
+
+  function formatReduction(value, formatter) {
+    const number = finite(value, null);
+    if (number === null) return '–';
+    return `${number >= 0 ? '−' : '+'} ${formatter(Math.abs(number))}`;
+  }
+
+  function formatPercentReduction(value) {
+    const number = finite(value, null);
+    if (number === null) return '–';
+    return `${number >= 0 ? '−' : '+'}${number0.format(Math.abs(number))} %`;
+  }
+
+  function evaluationStage(evaluation, kind, stageId) {
+    return evaluation?.[kind]?.rows?.find((row) => row.stageId === stageId) ?? null;
+  }
+
   async function loadJson(url) {
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Daten konnten nicht geladen werden (${response.status}).`);
@@ -74,8 +132,21 @@
   }
 
   async function loadConfigs() {
-    data = await roadmapCore.load();
-    energyPrices = await loadJson(`${paths.sharedData}economics/energy-prices.json`);
+    const [roadmapData, prices, energyFlowDefaults, existingUValuesConfig, envelopeTargets, renovationCosts, systemCosts, componentLifetimes, referenceConditions, emissionFactors] = await Promise.all([
+      roadmapCore.load(),
+      loadJson(`${paths.sharedData}economics/energy-prices.json`),
+      loadJson(`${paths.sharedData}standards/energy-flow-v4-defaults.json`),
+      loadJson(`${paths.sharedData}building/existing-u-values.json`),
+      loadJson(`${paths.sharedData}measures/envelope-targets.json`),
+      loadJson(`${paths.sharedData}costs/renovation-costs.json`),
+      loadJson(`${paths.sharedData}costs/system-costs.json`),
+      loadJson(`${paths.sharedData}standards/economics/component-lifetimes.json`),
+      loadJson(`${paths.sharedData}economics/reference-condition-defaults.json`),
+      loadJson(`${paths.sharedData}emissions/emission-factors.json`),
+    ]);
+    data = roadmapData;
+    energyPrices = prices;
+    evaluationConfigs = { energyFlowDefaults, existingUValuesConfig, envelopeTargets, renovationCosts, systemCosts, componentLifetimes, referenceConditions, emissionFactors };
   }
 
   function writeManualField(path, value, unit = null) {
@@ -221,11 +292,38 @@
     });
   }
 
+  function routeMetricMarkup(viewMode, evaluation, stageId) {
+    if (viewMode === 'effect') {
+      const row = evaluationStage(evaluation, 'energy', stageId);
+      if (!row) return '';
+      if (!row.available) {
+        const note = row.unmodeledCards?.length ? 'Wirkung noch nicht quantifiziert' : 'keine quantifizierte Energieänderung';
+        return `<div class="route-stage-metric is-open">${escapeHtml(note)}</div>`;
+      }
+      const percent = row.savingsPercent !== null ? formatPercentReduction(row.savingsPercent) : '';
+      return `<div class="route-stage-metric"><strong>${escapeHtml(percent || formatReduction(row.savingsKwh, formatEnergy))}</strong><span>${escapeHtml(formatReduction(row.savingsKwh, formatEnergy))}${row.partial ? ' · teilweise' : ''}</span></div>`;
+    }
+    if (viewMode === 'cost') {
+      const row = evaluationStage(evaluation, 'costs', stageId);
+      if (!row?.available) return '<div class="route-stage-metric is-open">Kosten noch offen</div>';
+      const rest = row.fundingEur > 0 ? `Rest ${formatMoney(row.netInvestmentEur)}` : null;
+      return `<div class="route-stage-metric"><strong>${escapeHtml(formatMoney(row.fullInvestmentEur))}</strong><span>${escapeHtml([rest, row.partial ? 'teilweise offen' : null].filter(Boolean).join(' · ') || 'bekannte Vollkosten')}</span></div>`;
+    }
+    return '';
+  }
+
   function renderRoute(project) {
     const roadmap = normalizedRoadmap(project);
     const stages = orderedStages(roadmap);
     const items = Object.values(roadmap.items ?? {});
     const host = $('renovationRoute');
+    const viewMode = selectedViewMode(project);
+    const evaluation = evaluationFor(project, roadmap);
+    currentEvaluation = evaluation;
+
+    $('viewMode')?.querySelectorAll('button[data-value]').forEach((button) => {
+      button.classList.toggle('is-selected', button.dataset.value === viewMode);
+    });
 
     if (!items.length) {
       host.innerHTML = '<p class="empty-route">Rahmen prüfen und anschließend den Fahrplan vorbereiten.</p>';
@@ -243,10 +341,16 @@
             const card = cardById(item.cardId);
             return `<button class="route-item ${selectedItemId === item.id ? 'is-selected' : ''}" draggable="true" data-route-item="${escapeHtml(item.id)}" title="Ziehen zum Verschieben oder anklicken für Details" type="button">${escapeHtml(card?.title ?? item.cardId)}</button>`;
           }).join('')}${stageItems.length > shown.length ? `<span class="route-more">+ ${stageItems.length - shown.length} weitere</span>` : ''}</div>
+          ${routeMetricMarkup(viewMode, evaluation, stage.id)}
         </div>`;
       }).join('');
       host.innerHTML = `<svg class="route-curve" aria-hidden="true" viewBox="0 0 1000 110" preserveAspectRatio="none"><defs><linearGradient id="roadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="M55 55 C155 32 245 78 335 55 S520 32 615 55 S800 78 945 55" fill="none" stroke="url(#roadmapRouteGradient)" stroke-width="5" stroke-linecap="round"/></svg><div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
-      $('routeStatus').textContent = `${stages.length} Etappen · ${items.length} Karten`;
+      const quantitative = viewMode === 'effect'
+        ? (evaluation.energy.available ? ' · Wirkung aktiv' : ' · Wirkung teilweise offen')
+        : viewMode === 'cost'
+          ? (evaluation.costs.available ? ' · Kosten aktiv' : ' · Kosten offen')
+          : '';
+      $('routeStatus').textContent = `${stages.length} Etappen · ${items.length} Karten${quantitative}`;
       $('routeStatus').className = 'status-chip is-success';
       host.querySelectorAll('[data-route-item]').forEach((button) => button.addEventListener('click', () => selectItem(button.dataset.routeItem)));
       bindRouteDragAndDrop(host);
@@ -290,6 +394,28 @@
     </div>`;
   }
 
+  function stageMetricPanel(project, stageId) {
+    const viewMode = selectedViewMode(project);
+    const evaluation = currentEvaluation ?? evaluationFor(project);
+    if (viewMode === 'effect') {
+      const row = evaluationStage(evaluation, 'energy', stageId);
+      if (!row) return '';
+      if (!row.available) {
+        const text = row.unmodeledCards?.length
+          ? `Für ${row.unmodeledCards.join(', ')} ist noch kein projektspezifischer quantitativer Adapter hinterlegt.`
+          : 'In dieser Etappe entsteht keine separat quantifizierte Heizenergieänderung.';
+        return `<div class="stage-quant-panel is-open"><strong>Wirkung dieser Etappe</strong><p>${escapeHtml(text)}</p></div>`;
+      }
+      return `<div class="stage-quant-panel"><div><span>Heizenergie</span><strong>${escapeHtml(formatReduction(row.savingsKwh, formatEnergy))}</strong></div><div><span>CO₂-Wirkung</span><strong>${escapeHtml(formatReduction(row.co2SavingsKg, formatCo2))}</strong></div><div><span>Stand danach</span><strong>${escapeHtml(formatEnergy(row.cumulativeEnergyAfterKwh))}</strong></div>${row.partial ? `<p>Teilweise quantifiziert: ${escapeHtml(row.unmodeledCards.join(', '))} bleiben in dieser Ansicht qualitativ.</p>` : ''}</div>`;
+    }
+    if (viewMode === 'cost') {
+      const row = evaluationStage(evaluation, 'costs', stageId);
+      if (!row?.available) return '<div class="stage-quant-panel is-open"><strong>Kosten dieser Etappe</strong><p>Noch keine belastbare Kostenbasis für die zugeordneten Maßnahmen.</p></div>';
+      return `<div class="stage-quant-panel"><div><span>Vollkosten</span><strong>${escapeHtml(formatMoney(row.fullInvestmentEur))}</strong></div><div><span>Förderung</span><strong>${row.fundingKnown ? escapeHtml(formatMoney(row.fundingEur)) : 'offen'}</strong></div><div><span>Restinvestition</span><strong>${escapeHtml(formatMoney(row.netInvestmentEur))}</strong></div>${row.partial ? `<p>Teilweise offen: ${escapeHtml(row.unknownCards.join(', ') || 'einzelne Kostenpositionen')}. Bekannte Werte werden nicht künstlich hochgerechnet.</p>` : ''}</div>`;
+    }
+    return '';
+  }
+
   function bindStageDetailActions(project, roadmap) {
     $('stageDetails').querySelectorAll('[data-stage-item]').forEach((button) => {
       button.addEventListener('click', () => selectItem(button.dataset.stageItem));
@@ -331,6 +457,7 @@
     const roadmap = normalizedRoadmap(project);
     const stages = orderedStages(roadmap);
     const allItems = Object.values(roadmap.items ?? {});
+    currentEvaluation = currentEvaluation ?? evaluationFor(project, roadmap);
     if (!allItems.length) {
       $('stageDetails').innerHTML = '<p class="roadmap-empty-note">Noch keine Etappen vorbereitet.</p>';
       $('unassignedBlock').hidden = true;
@@ -348,7 +475,7 @@
       const detail = selected?.stageId === stage.id ? renderCardDetail(project, roadmap, selected) : (stageItems.length ? '<p class="roadmap-empty-note">Eine Karte auswählen, um nur die aktuell benötigten Details zu öffnen.</p>' : '<p class="roadmap-empty-note">Noch keine Karte in dieser Etappe.</p>');
       return `<details class="stage-accordion" data-stage-id="${escapeHtml(stage.id)}" ${stage.id === openStageId ? 'open' : ''}>
         <summary><div><strong>${escapeHtml(stage.title)}</strong><span>${escapeHtml(stage.timing?.horizon ?? '')}</span></div><b>${stageItems.length} ${stageItems.length === 1 ? 'Karte' : 'Karten'}</b></summary>
-        <div class="stage-body"><div class="stage-item-list">${stageItems.map((item) => `<button class="stage-item-button ${selectedItemId === item.id ? 'is-selected' : ''}" draggable="true" data-stage-item="${escapeHtml(item.id)}" type="button">${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</button>`).join('')}</div>${detail}</div>
+        <div class="stage-body">${stageMetricPanel(project, stage.id)}<div class="stage-item-list">${stageItems.map((item) => `<button class="stage-item-button ${selectedItemId === item.id ? 'is-selected' : ''}" draggable="true" data-stage-item="${escapeHtml(item.id)}" type="button">${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</button>`).join('')}</div>${detail}</div>
       </details>`;
     }).join('');
 
@@ -441,6 +568,31 @@
     store.setPath('roadmap', next);
   }
 
+  function referenceHorizonText(years) {
+    const value = finite(years, null);
+    if (value === null) return 'offen';
+    if (value <= 0.5) return 'jetzt / kurzfristig';
+    return `ca. ${number0.format(Math.round(value))} Jahre`;
+  }
+
+  function renderInvestmentTimeline(project) {
+    const roadmap = normalizedRoadmap(project);
+    const evaluation = currentEvaluation ?? evaluationFor(project, roadmap);
+    const stages = orderedStages(roadmap);
+    const host = $('investmentTimeline');
+    if (!host) return;
+    if (!evaluation.costs?.available) {
+      host.innerHTML = '<p class="roadmap-empty-note">Noch keine belastbaren Kostenwerte. Der Fahrplan bleibt ohne Kosten vollständig nutzbar.</p>';
+      return;
+    }
+    host.innerHTML = `<div class="investment-stage-list">${stages.map((stage) => {
+      const row = evaluationStage(evaluation, 'costs', stage.id);
+      if (!row?.available) return `<section class="investment-stage"><div><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.timing?.horizon ?? '')}</small></div><p>Kosten noch offen.</p></section>`;
+      const references = row.cardRows.flatMap((cardRow) => (cardRow.parts ?? []).filter((part) => part.known && (part.referenceKnown || part.referenceHorizonYears !== null)).map((part) => ({ card: cardRow.title, ...part })));
+      return `<section class="investment-stage"><div class="investment-stage-head"><div><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.timing?.horizon ?? '')}</small></div><div><b>${escapeHtml(formatMoney(row.fullInvestmentEur))}</b><small>${row.partial ? 'bekannte Kosten · teilweise offen' : 'bekannte Vollkosten'}</small></div></div><div class="investment-cost-strip"><span><b>Referenz-Erneuerung</b>${escapeHtml(row.referenceKnown ? formatMoney(row.referenceCostEur) : 'offen')}</span><span><b>Umsetzung</b>${escapeHtml(stage.timing?.horizon ?? 'offen')}</span><span><b>Förderung</b>${row.fundingKnown ? escapeHtml(formatMoney(row.fundingEur)) : 'offen'}</span><span><b>Restinvestition</b>${escapeHtml(formatMoney(row.netInvestmentEur))}</span></div>${references.length ? `<div class="reference-horizons">${references.map((entry) => `<div><strong>${escapeHtml(entry.label || entry.card)}</strong><span>voraussichtlicher Erneuerungshorizont: ${escapeHtml(referenceHorizonText(entry.referenceHorizonYears))}${entry.referenceKnown ? ` · Referenz ca. ${escapeHtml(formatMoney(entry.referenceCostEur))}` : ''}</span></div>`).join('')}</div>` : '<p class="investment-note">Für diese Etappe ist noch kein belastbarer Referenz-Erneuerungshorizont hinterlegt.</p>'}</section>`;
+    }).join('')}</div><p class="investment-note">Referenz-Erneuerungen werden zeitlich ausgewiesen und nicht pauschal sofort als „Sowiesokosten“ abgezogen. Die farbliche Lebenszyklus-Zeitgrafik folgt erst, sobald konkrete Etappenjahre bzw. belastbare Zeitfenster vorliegen.</p>`;
+  }
+
   function renderReasons(project) {
     const roadmap = normalizedRoadmap(project);
     const checks = roadmapCore.planChecks(roadmap, data, { max: 4 });
@@ -466,12 +618,17 @@
 
   function renderEffects(project) {
     const priorities = project?.advice?.priorities ?? [];
+    const evaluation = currentEvaluation ?? evaluationFor(project);
     if (!priorities.length) {
       $('priorityImpactList').innerHTML = '<p class="roadmap-empty-note">Kundenprioritäten sind noch offen. Zusatzwirkungen bleiben im Katalog erhalten und werden nicht zu einem Gesamtscore verrechnet.</p>';
     } else {
       const rows = priorities.slice(0, 3).map((priority) => {
         let text = '';
-        if (priority === 'costs') text = 'Kosten und Förderung werden ergänzt, sobald gemeinsame Economics-Daten vorhanden sind; die technische Reihenfolge bleibt davon unabhängig.';
+        if (priority === 'costs') {
+          if (evaluation.costs?.available) {
+            text = `Im aktuellen Fahrplan sind rund ${formatMoney(evaluation.costs.fullInvestmentEur)} bekannte Vollkosten abgebildet${evaluation.costs.partial ? '; einzelne Maßnahmen sind noch nicht finanziell bewertet' : ''}. Förderung wird nur übernommen, wo sie konkret zugeordnet ist.`;
+          } else text = 'Der Fahrplan bleibt ohne Kostenrechnung nutzbar; wirtschaftliche Werte können später aus den gemeinsamen Projektdaten ergänzt werden.';
+        }
         if (priority === 'effort') text = 'Arbeiten werden nach Möglichkeit gebündelt, damit Bauteile, Gerüste und Leitungswege nicht mehrfach angegriffen werden müssen.';
         const dims = priority === 'comfort' ? ['comfort', 'health', 'summer'] : priority === 'climate' ? ['climate', 'ecology'] : priority === 'independence' ? ['independence'] : priority === 'value' ? ['value', 'resilience'] : [];
         if (!text && dims.length) {
@@ -504,6 +661,7 @@
     renderAdditionalSuggestions(project);
     renderCatalog(project);
     renderReasons(project);
+    renderInvestmentTimeline(project);
     renderEffects(project);
     updateAddressAnalysisState(project);
     renderGeometryStatus(project);
@@ -528,6 +686,9 @@
         next = clean.includes(value) ? clean.filter((item) => item !== value) : [...clean, value];
       }
       store.setPath('roadmap.context.upcomingWorks', next);
+    }));
+    $('viewMode')?.querySelectorAll('button[data-value]').forEach((button) => button.addEventListener('click', () => {
+      store.setPath('modules.sanierungsfahrplan.ui.viewMode', button.dataset.value);
     }));
   }
 
@@ -696,17 +857,84 @@
     $('roadmapAnalyzeLocation').addEventListener('click', async () => { const address = pendingAddress ?? store.get().location?.addressRecord; if (address) await loadGeometry(address); });
   }
 
+  function printFutureFitMarkup(roadmap) {
+    const coverage = roadmapCore.futureFitPlan(roadmap, data);
+    const stageMap = new Map(orderedStages(roadmap).map((stage) => [stage.id, stage]));
+    return `<div class="print-future-fit-track">${['envelope', 'technique', 'fossilfree', 'pv'].map((dimension, index) => {
+      const stage = stageMap.get(coverage[dimension]);
+      return `<div class="print-future-step ${stage ? 'is-done' : 'is-open'}"><i>${stage ? index + 1 : '!'}</i><span>${escapeHtml(futureFitLabel(dimension))}</span><small>${stage ? escapeHtml(stage.timing?.horizon ?? stage.title) : 'offen'}</small></div>`;
+    }).join('')}</div>`;
+  }
+
+  function printStageEffect(evaluation, stageId) {
+    const energy = evaluationStage(evaluation, 'energy', stageId);
+    const cost = evaluationStage(evaluation, 'costs', stageId);
+    const rows = [];
+    if (energy?.available) rows.push(`<span><b>Wirkung</b>${escapeHtml(formatReduction(energy.savingsKwh, formatEnergy))}${energy.co2SavingsKg !== null ? ` · ${escapeHtml(formatReduction(energy.co2SavingsKg, formatCo2))}` : ''}</span>`);
+    else if (energy?.unmodeledCards?.length) rows.push('<span><b>Wirkung</b>teilweise qualitativ</span>');
+    if (cost?.available) rows.push(`<span><b>Investition</b>${escapeHtml(formatMoney(cost.fullInvestmentEur))}${cost.fundingEur > 0 ? ` · Rest ${escapeHtml(formatMoney(cost.netInvestmentEur))}` : ''}${cost.partial ? ' · teilweise offen' : ''}</span>`);
+    return rows.length ? `<div class="print-stage-metrics">${rows.join('')}</div>` : '';
+  }
+
+  function printReferenceSummary(costRow) {
+    const parts = (costRow?.cardRows ?? []).flatMap((cardRow) => (cardRow.parts ?? []).filter((part) => part.known && (part.referenceKnown || part.referenceHorizonYears !== null)).map((part) => ({ title: cardRow.title, ...part })));
+    if (!parts.length) return '–';
+    return parts.slice(0, 3).map((part) => `${part.label || part.title}: ${referenceHorizonText(part.referenceHorizonYears)}${part.referenceKnown ? ` / ${formatMoney(part.referenceCostEur)}` : ''}`).join('; ');
+  }
+
   function buildPrintReport(project = store.get()) {
     const roadmap = normalizedRoadmap(project);
     const stages = orderedStages(roadmap);
+    const evaluation = evaluationFor(project, roadmap);
     const priorities = (project.advice?.priorities ?? []).map((id) => PRIORITY_LABEL[id] ?? id).join(' · ') || 'offen';
-    const reasons = [...$('reasonList').querySelectorAll('.reason-item')].slice(0, 3).map((node) => node.textContent.trim());
-    $('roadmapPrintReport').innerHTML = `<div class="print-roadmap-title"><p class="eyebrow">Sanierungsfahrplan · V0.2</p><h1>${escapeHtml(project.project?.title || 'Sanierungsfahrplan')}</h1><p>${escapeHtml(project.project?.addressLabel || 'Standort noch offen')}</p><small>Anlass: ${escapeHtml(REASON_LABEL[project.advice?.reason] ?? 'offen')} · Zeitraum: ${escapeHtml(TIME_LABEL[project.advice?.timeHorizon] ?? 'offen')} · Budget: ${escapeHtml(BUDGET_LABEL[project.advice?.budgetBand] ?? 'offen')}</small><p><strong>Schwerpunkte:</strong> ${escapeHtml(priorities)}</p></div>
-      <h2>Bestand → gewählte Etappen → Zukunftsfit 2050</h2>
-      <div class="print-route">${stages.map((stage) => `<section class="print-stage"><h3>${escapeHtml(stage.title)}</h3><small>${escapeHtml(stage.timing?.horizon ?? '')}</small><ul>${itemsForStage(roadmap, stage.id).map((item) => `<li>${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</li>`).join('')}</ul></section>`).join('')}</div>
-      <p><strong>Zielbild:</strong> zukunftsfähige Gebäudehülle → effiziente Gebäudetechnik → fossilfreie / erneuerbare Wärmeversorgung → PV</p>
-      <div class="print-key-message"><h2>Planungscheck</h2>${reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>` : '<p>Reihenfolge im Beratungsgespräch weiter konkretisieren.</p>'}</div>
-      <p><small>V0.2: Kosten-, Energie- und Referenz-Erneuerungsdarstellung wird aus den gemeinsamen Fachservices ergänzt. Der Fahrplan ist bereits ohne diese Berechnungen nutzbar.</small></p>`;
+    const checks = roadmapCore.planChecks(roadmap, data, { max: 4 });
+    const priorityRows = [...$('priorityImpactList')?.querySelectorAll('.priority-impact') ?? []].slice(0, 3).map((node) => ({ title: node.querySelector('strong')?.textContent?.trim() ?? '', text: node.querySelector('p')?.textContent?.trim() ?? '' }));
+    const totalEnergyPercent = evaluation.energy?.annualEnergyKwh > 0 ? evaluation.energy.cumulativeSavingsKwh / evaluation.energy.annualEnergyKwh * 100 : null;
+    const qualityNotes = [];
+    if (evaluation.energy?.available && evaluation.energy.rows.some((row) => row.partial)) qualityNotes.push('Energiewirkung einzelner Technik-/Zukunftskarten ist noch qualitativ; die Hüllwirkung wird sequenziell verbrauchsverankert neu gerechnet.');
+    if (!evaluation.energy?.available) qualityNotes.push('Keine belastbare quantitative Energiewirkung verfügbar; Reihenfolge und Abhängigkeiten bleiben davon unabhängig.');
+    if (evaluation.costs?.partial) qualityNotes.push('Einzelne Maßnahmen haben noch keine belastbare Kostenbasis; bekannte Werte werden nicht auf offene Karten hochgerechnet.');
+    if (evaluation.costs?.available && !evaluation.costs.rows.some((row) => row.fundingKnown)) qualityNotes.push('Förderung ist im Fahrplan noch nicht maßnahmenbezogen bestätigt.');
+    const recommendation = checks.length
+      ? `Besonders zu beachten: ${checks.slice(0, 2).map((entry) => entry.text).join(' ')} `
+      : 'Die gewählten Etappen zeigen derzeit keine wesentlichen Reihenfolgekonflikte. Synergien innerhalb derselben Etappe sollten bei der Detailplanung gemeinsam ausgeschrieben und umgesetzt werden.';
+
+    const kpis = [];
+    if (evaluation.costs?.available) {
+      kpis.push(`<div><span>Bekannte Vollkosten</span><strong>${escapeHtml(formatMoney(evaluation.costs.fullInvestmentEur))}</strong><small>${evaluation.costs.partial ? 'Teil des Fahrplans noch offen' : 'aktuell zugeordnete Maßnahmen'}</small></div>`);
+      kpis.push(`<div><span>Restinvestition</span><strong>${escapeHtml(formatMoney(evaluation.costs.netInvestmentEur))}</strong><small>${evaluation.costs.fundingEur > 0 ? `inkl. ${escapeHtml(formatMoney(evaluation.costs.fundingEur))} zugeordneter Förderung` : 'Förderung ggf. noch offen'}</small></div>`);
+    }
+    if (evaluation.energy?.available) {
+      kpis.push(`<div><span>Heizenergie-Wirkung</span><strong>${totalEnergyPercent !== null ? escapeHtml(formatPercentReduction(totalEnergyPercent)) : '–'}</strong><small>${escapeHtml(formatReduction(evaluation.energy.cumulativeSavingsKwh, formatEnergy))} kumulativ</small></div>`);
+      if (evaluation.energy.cumulativeCo2SavingsKg !== null) kpis.push(`<div><span>CO₂-Wirkung</span><strong>${escapeHtml(formatReduction(evaluation.energy.cumulativeCo2SavingsKg, formatCo2))}</strong><small>aus quantifizierter Heizenergiewirkung</small></div>`);
+    }
+
+    $('roadmapPrintReport').innerHTML = `
+      <section class="print-roadmap-page print-roadmap-page--customer">
+        <header class="print-roadmap-title"><p class="eyebrow">Sanierungsfahrplan · Beratung</p><h1>${escapeHtml(project.project?.title || 'Sanierungsfahrplan')}</h1><p>${escapeHtml(project.project?.addressLabel || 'Standort noch offen')}</p></header>
+        <div class="print-context-strip"><div><span>Anlass</span><strong>${escapeHtml(REASON_LABEL[project.advice?.reason] ?? 'offen')}</strong></div><div><span>Zeitraum</span><strong>${escapeHtml(TIME_LABEL[project.advice?.timeHorizon] ?? 'offen')}</strong></div><div><span>Budget</span><strong>${escapeHtml(BUDGET_LABEL[project.advice?.budgetBand] ?? 'offen')}</strong></div><div><span>Schwerpunkte</span><strong>${escapeHtml(priorities)}</strong></div></div>
+        <div class="print-section-head"><p class="eyebrow">Bestand → Etappen → Ziel</p><h2>Schritt für Schritt zu Zukunftsfit 2050</h2></div>
+        <div class="print-route-line"><span>HEUTE</span><i></i><b>ZUKUNFTSFIT 2050</b></div>
+        <div class="print-route">${stages.map((stage) => `<section class="print-stage"><div class="print-stage-head"><h3>${escapeHtml(stage.title)}</h3><small>${escapeHtml(stage.timing?.horizon ?? '')}</small></div><ul>${itemsForStage(roadmap, stage.id).slice(0, 5).map((item) => `<li>${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</li>`).join('')}${itemsForStage(roadmap, stage.id).length > 5 ? `<li class="print-more">+ ${itemsForStage(roadmap, stage.id).length - 5} weitere</li>` : ''}</ul>${printStageEffect(evaluation, stage.id)}</section>`).join('')}</div>
+        <div class="print-future-fit-panel"><div><p class="eyebrow">Zielbild · Sanierung</p><h3>Zukunftsfit 2050</h3><small>Hülle → Technik → fossilfrei → PV</small></div>${printFutureFitMarkup(roadmap)}</div>
+        ${kpis.length ? `<div class="print-roadmap-kpis">${kpis.join('')}</div>` : ''}
+        <div class="print-key-message"><span>Wichtigste Beratungsaussage</span><p>${escapeHtml(recommendation)}</p></div>
+        <footer class="print-page-note">Kosten, Förderung und Energiewirkung werden nur dort numerisch dargestellt, wo eine belastbare gemeinsame Datenbasis vorhanden ist. Offene Themen bleiben bewusst qualitativ.</footer>
+      </section>
+      <section class="print-roadmap-page print-roadmap-page--details">
+        <header class="print-details-title"><p class="eyebrow">Details zum Sanierungsfahrplan</p><h2>Etappen, Abhängigkeiten und Datenbasis</h2></header>
+        <table class="print-stage-table"><thead><tr><th>Etappe</th><th>Inhalt</th><th>Wirkung</th><th>Investition</th><th>Referenz-Erneuerung</th></tr></thead><tbody>${stages.map((stage) => {
+          const energy = evaluationStage(evaluation, 'energy', stage.id);
+          const cost = evaluationStage(evaluation, 'costs', stage.id);
+          const content = itemsForStage(roadmap, stage.id).map((item) => cardById(item.cardId)?.title ?? item.cardId).join(' · ') || '–';
+          const effect = energy?.available ? `${formatReduction(energy.savingsKwh, formatEnergy)}${energy.co2SavingsKg !== null ? ` / ${formatReduction(energy.co2SavingsKg, formatCo2)}` : ''}${energy.partial ? ' · teilweise' : ''}` : (energy?.unmodeledCards?.length ? 'qualitativ / noch offen' : '–');
+          const investment = cost?.available ? `${formatMoney(cost.fullInvestmentEur)}${cost.fundingEur > 0 ? ` / Rest ${formatMoney(cost.netInvestmentEur)}` : ''}${cost.partial ? ' · teilweise offen' : ''}` : '–';
+          return `<tr><td><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.timing?.horizon ?? '')}</small></td><td>${escapeHtml(content)}</td><td>${escapeHtml(effect)}</td><td>${escapeHtml(investment)}</td><td>${escapeHtml(printReferenceSummary(cost))}</td></tr>`;
+        }).join('')}</tbody></table>
+        <div class="print-detail-grid"><section><h3>Planungscheck</h3>${checks.length ? `<ul>${checks.map((entry) => `<li><strong>${entry.kind === 'warning' ? 'Wichtig prüfen:' : 'Synergie prüfen:'}</strong> ${escapeHtml(entry.text)}</li>`).join('')}</ul>` : '<p>Keine wesentlichen Reihenfolgekonflikte erkannt.</p>'}</section><section><h3>Mehr als Energie</h3>${priorityRows.length ? priorityRows.map((row) => `<div class="print-priority"><strong>${escapeHtml(row.title)}</strong><p>${escapeHtml(row.text)}</p></div>`).join('') : '<p>Kundenprioritäten noch offen.</p>'}</section></div>
+        <section class="print-quality"><h3>Aussagequalität &amp; Unsicherheiten</h3><ul>${(qualityNotes.length ? qualityNotes : ['Die wesentlichen quantitativen Angaben sind aus dem gemeinsamen Projektstand ableitbar; konkrete Angebote, Förderbedingungen und Bauteilzustände vor Umsetzung bestätigen.']).map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul></section>
+        <section class="print-data-basis"><h3>Datenbasis</h3><p>Energie: verbrauchsverankerte Hüllwirkung mit Energy-Flow-Core ${escapeHtml(global.EnergyFlowCore?.MODEL_VERSION ?? '–')} / Anchor ${escapeHtml(anchorCore?.MODEL_VERSION ?? '–')}. Kosten: zentrale EAT-Richtkosten ${escapeHtml(evaluationConfigs.renovationCosts?.data_date ?? '–')}. Referenz-Erneuerung: Zustand, letztes Erneuerungsjahr bzw. Gebäudealter und typische Nutzungsdauer; konkrete Termine haben Vorrang.</p><p>${escapeHtml(evaluation.energy?.note ?? '')} ${escapeHtml(evaluation.costs?.note ?? '')}</p></section>
+      </section>`;
   }
 
   async function init() {
