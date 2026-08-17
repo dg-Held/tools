@@ -163,6 +163,13 @@
         energyPriceOverrides: {},
         latestCalculation: null,
       },
+      roadmap: {
+        version: 1,
+        context: { upcomingWorks: [] },
+        stages: {},
+        items: {},
+        updatedAt: null,
+      },
       measures: {},
       scenarios: {
         activeId: 'existing',
@@ -180,6 +187,7 @@
         heizlast: {},
         energiefluss: {},
         wirtschaftlichkeit: {},
+        sanierungsfahrplan: {},
       },
       cache: {},
       metadata: {
