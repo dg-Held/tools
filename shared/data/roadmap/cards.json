@@ -1,0 +1,1027 @@
+{
+  "schema": "energy-tools-roadmap-cards",
+  "version": "0.1",
+  "data_date": "2026-08-17",
+  "notice": "Beratungskatalog für den Sanierungsfahrplan. Technische Detailwerte, Kosten und Energieeffekte werden nicht hier gepflegt, sondern aus gemeinsamen Fachservices bezogen.",
+  "types": {
+    "measure": {
+      "label": "Maßnahme",
+      "description": "einzelne technische Verbesserung"
+    },
+    "planning": {
+      "label": "Planungspunkt",
+      "description": "Prüfung, Entscheidung, Koordination oder Vorbereitung"
+    },
+    "future": {
+      "label": "Zukunftsthema",
+      "description": "langfristige Nutzung oder Qualität, die bei heutigen Entscheidungen berücksichtigt werden soll"
+    }
+  },
+  "categories": [
+    {
+      "id": "foundation",
+      "label": "Grundlagen & Ermöglicher",
+      "order": 0
+    },
+    {
+      "id": "envelope",
+      "label": "Gebäudehülle & Gebäudeerhalt",
+      "order": 1
+    },
+    {
+      "id": "heating",
+      "label": "Wärme, Warmwasser & Technik",
+      "order": 2
+    },
+    {
+      "id": "electricity",
+      "label": "PV, Strom & Infrastruktur",
+      "order": 3
+    },
+    {
+      "id": "planning",
+      "label": "Planung, Energieausweis & Förderung",
+      "order": 4
+    },
+    {
+      "id": "living",
+      "label": "Wohnen & zukünftige Nutzung",
+      "order": 5
+    },
+    {
+      "id": "accessibility",
+      "label": "Barrierefreiheit",
+      "order": 6
+    },
+    {
+      "id": "health_ecology",
+      "label": "Wohngesundheit & Ökologie",
+      "order": 7
+    },
+    {
+      "id": "resilience",
+      "label": "Sommerkomfort & Klimaanpassung",
+      "order": 8
+    },
+    {
+      "id": "safety",
+      "label": "Sicherheit & Vorsorge",
+      "order": 9
+    }
+  ],
+  "items": [
+    {
+      "id": "building-check",
+      "title": "Gebäudecheck / Ausgangslage klären",
+      "type": "planning",
+      "category": "foundation",
+      "summary": "Bestand, Nutzung und anstehende Erneuerungen so weit klären, dass die nächsten Entscheidungen belastbar werden.",
+      "details": [
+        "Verbrauch und Gebäudestatus prüfen",
+        "unklare Bauteilzustände gezielt nachschärfen"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "heating-load-check",
+      "title": "Heizlast / Dimensionierung prüfen",
+      "type": "planning",
+      "category": "foundation",
+      "summary": "Die neue Wärmeversorgung auf den tatsächlichen Bedarf nach den geplanten Hüllmaßnahmen abstimmen.",
+      "details": [
+        "Hüllzustand berücksichtigen",
+        "Überdimensionierung vermeiden"
+      ],
+      "futureFit": [
+        "technique"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "operation-optimization",
+      "title": "Betrieb & Regelung optimieren",
+      "type": "measure",
+      "category": "foundation",
+      "summary": "Bestehende Technik mit überschaubarem Eingriff besser einstellen und den Betrieb nachvollziehbar machen.",
+      "details": [
+        "Heizkurve und Regelung",
+        "Verbrauchstransparenz / Monitoring"
+      ],
+      "futureFit": [
+        "technique"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "envelope-wall",
+      "title": "Außenwand / Fassade verbessern",
+      "type": "measure",
+      "category": "envelope",
+      "summary": "Fassade und energetische Verbesserung gemeinsam planen, wenn die Außenwand ohnehin angegriffen wird.",
+      "details": [
+        "Feuchte und Wärmebrücken",
+        "Fensteranschlüsse und Verschattung mitdenken"
+      ],
+      "futureFit": [
+        "envelope"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [
+        "exteriorWall",
+        "wall",
+        "wall_external"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "envelope-roof",
+      "title": "Dach / oberste Geschoßdecke verbessern",
+      "type": "measure",
+      "category": "envelope",
+      "summary": "Dachzustand, Dämmung und spätere Dachnutzungen in einem Zeitfenster zusammenführen.",
+      "details": [
+        "Dachzustand und Statik",
+        "PV und sommerlichen Wärmeschutz mitdenken"
+      ],
+      "futureFit": [
+        "envelope"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [
+        "roof",
+        "topFloorCeiling",
+        "roof_top_ceiling"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "envelope-basement",
+      "title": "Kellerdecke / erdberührte Bauteile verbessern",
+      "type": "measure",
+      "category": "envelope",
+      "summary": "Wärmeverluste nach unten reduzieren und den Komfort im Erdgeschoß verbessern.",
+      "details": [
+        "Leitungen und Kellerhöhe berücksichtigen",
+        "Feuchte bei erdberührten Bauteilen prüfen"
+      ],
+      "futureFit": [
+        "envelope"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [
+        "basementCeiling",
+        "groundFloor"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "envelope-windows",
+      "title": "Fenster & Außentüren verbessern",
+      "type": "measure",
+      "category": "envelope",
+      "summary": "Fenster, Anschlüsse, Verschattung sowie Lüftungs- und Feuchteschutz gemeinsam betrachten.",
+      "details": [
+        "Laibungen und Wärmebrücken",
+        "Schallschutz und Lüftung"
+      ],
+      "futureFit": [
+        "envelope"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [
+        "windows",
+        "doors"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "thermal-bridges",
+      "title": "Wärmebrücken reduzieren",
+      "type": "measure",
+      "category": "envelope",
+      "summary": "Kritische Anschlüsse bei ohnehin geplanten Bauteilarbeiten verbessern.",
+      "details": [
+        "Sockel, Balkon, Attika, Laibung",
+        "Schimmel- und Bauschadenrisiko beachten"
+      ],
+      "futureFit": [
+        "envelope"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "airtightness",
+      "title": "Luftdichtheit verbessern",
+      "type": "measure",
+      "category": "envelope",
+      "summary": "Unkontrollierte Luftverluste reduzieren und gleichzeitig das Lüftungskonzept mitdenken.",
+      "details": [
+        "Feuchteschutz",
+        "Nutzerverhalten und Lüftung"
+      ],
+      "futureFit": [
+        "envelope",
+        "technique"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "moisture-protection",
+      "title": "Feuchte / Abdichtung verbessern",
+      "type": "measure",
+      "category": "envelope",
+      "summary": "Feuchteursachen und Abdichtungsfragen vor oder gemeinsam mit der Sanierung lösen.",
+      "details": [
+        "Ursache vor Oberfläche",
+        "Sockel, Keller, Dach und Anschlüsse prüfen"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "component-horizon",
+      "title": "Bauteilzustand & Erneuerungshorizont prüfen",
+      "type": "planning",
+      "category": "envelope",
+      "summary": "Erneuerungen nicht nach starren Lebensdauern, sondern nach tatsächlichem Zustand und konkretem Anlass einordnen.",
+      "details": [
+        "gepflegt / altersgerecht / schadhaft",
+        "konkrete Termine vor typischen Nutzungsdauern"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "heating-replacement",
+      "title": "Heizungstausch",
+      "type": "measure",
+      "category": "heating",
+      "summary": "Die fossile oder erneuerungsbedürftige Wärmeversorgung durch ein zukunftsfähiges System ersetzen.",
+      "details": [
+        "konkrete Lösung im Gespräch festlegen",
+        "z. B. Wärmepumpe, Fernwärme oder Biomasse je nach Objekt"
+      ],
+      "futureFit": [
+        "technique",
+        "fossilfree"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [
+        "heating"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "heat-distribution",
+      "title": "Heizflächen & Wärmeverteilung optimieren",
+      "type": "measure",
+      "category": "heating",
+      "summary": "Wärmeabgabe und Verteilung an das spätere Temperaturniveau und Heizsystem anpassen.",
+      "details": [
+        "Vorlauftemperatur",
+        "Radiatoren, Flächenheizung und Hydraulik"
+      ],
+      "futureFit": [
+        "technique"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "hot-water",
+      "title": "Warmwasserbereitung optimieren",
+      "type": "measure",
+      "category": "heating",
+      "summary": "Warmwasser, Speicher, Zirkulation und Leitungsverluste als Teil des Gesamtsystems betrachten.",
+      "details": [
+        "Hygiene und Komfort",
+        "mit Heizung und PV abstimmen"
+      ],
+      "futureFit": [
+        "technique"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "ventilation",
+      "title": "Lüftung verbessern",
+      "type": "measure",
+      "category": "heating",
+      "summary": "Luftqualität und Feuchteschutz zur dichteren Gebäudehülle passend weiterentwickeln.",
+      "details": [
+        "Fensterlüftung bis Lüftung mit Wärmerückgewinnung",
+        "Schall, Wartung und Leitungswege"
+      ],
+      "futureFit": [
+        "technique"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "ventilation-concept",
+      "title": "Lüftungs- & Feuchteschutzkonzept abstimmen",
+      "type": "planning",
+      "category": "heating",
+      "summary": "Nach Hüll- oder Fenstereingriffen sicherstellen, dass Feuchteabfuhr und Luftqualität dauerhaft funktionieren.",
+      "details": [
+        "Fenster und Luftdichtheit gemeinsam betrachten",
+        "Schimmelrisiko vermeiden"
+      ],
+      "futureFit": [
+        "technique"
+      ],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "low-temperature-check",
+      "title": "Niedertemperaturtauglichkeit prüfen",
+      "type": "planning",
+      "category": "heating",
+      "summary": "Prüfen, ob Heizflächen und Gebäude mit niedrigen Vorlauftemperaturen zuverlässig funktionieren.",
+      "details": [
+        "Heizflächen",
+        "Hydraulik und Heizlast"
+      ],
+      "futureFit": [
+        "technique"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "cooling",
+      "title": "Kühlung sinnvoll lösen",
+      "type": "measure",
+      "category": "heating",
+      "summary": "Aktive Kühlung erst nach passiven Maßnahmen und passend zur späteren Gebäudetechnik ergänzen.",
+      "details": [
+        "Verschattung zuerst prüfen",
+        "Kondensat, Schall und Strombedarf"
+      ],
+      "futureFit": [
+        "technique"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "pv-own-use",
+      "title": "PV & Eigenstrom nutzen",
+      "type": "measure",
+      "category": "electricity",
+      "summary": "Geeignete Flächen und den eigenen Strombedarf für eine zukunftsfähige Stromversorgung nutzen.",
+      "details": [
+        "Dachzustand und Netzanschluss",
+        "Batteriespeicher nur bei passendem Bedarf"
+      ],
+      "futureFit": [
+        "pv"
+      ],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [
+        "pv"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "electrical-infrastructure",
+      "title": "Elektroinfrastruktur zukunftsfähig machen",
+      "type": "measure",
+      "category": "electricity",
+      "summary": "Leistungsreserven, Verteilung und Leitungswege für zukünftige elektrische Anwendungen mitdenken.",
+      "details": [
+        "PV, Heizung, E-Mobilität und zusätzliche Wohneinheiten",
+        "Brandschutz und Anschlussleistung"
+      ],
+      "futureFit": [
+        "technique",
+        "pv"
+      ],
+      "energyRelevant": false,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "e-mobility",
+      "title": "E-Mobilität vorbereiten",
+      "type": "planning",
+      "category": "electricity",
+      "summary": "Leitungswege, Anschlussleistung und Lastmanagement bei ohnehin geplanten Elektroarbeiten berücksichtigen.",
+      "details": [
+        "Stellplätze und Eigentumsverhältnisse",
+        "PV und Lastmanagement"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "energy-sharing",
+      "title": "Gemeinschaftliche Energieversorgung prüfen",
+      "type": "planning",
+      "category": "electricity",
+      "summary": "Bei mehreren Einheiten prüfen, ob gemeinsame Erzeugung oder Energiegemeinschaften sinnvoll sind.",
+      "details": [
+        "Messung und Abrechnung",
+        "Betreiber- und Eigentumsmodell"
+      ],
+      "futureFit": [
+        "pv"
+      ],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "energy-certificate",
+      "title": "Energieausweis / energetische Nachweise",
+      "type": "planning",
+      "category": "planning",
+      "summary": "Den energetischen Bestand und geplante Zielzustände nachvollziehbar dokumentieren.",
+      "details": [
+        "Förder- und Nachweispflichten rechtzeitig klären",
+        "Variantenvergleich ermöglichen"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "funding-check",
+      "title": "Fördermöglichkeiten prüfen",
+      "type": "planning",
+      "category": "planning",
+      "summary": "Förderfähigkeit und formale Voraussetzungen vor Beauftragung und Baubeginn klären.",
+      "details": [
+        "Programmstand prüfen",
+        "keine Förderung als technisch sichere Größe behandeln"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "funding-strategy",
+      "title": "Förderstrategie & Zeitpunkt optimieren",
+      "type": "planning",
+      "category": "planning",
+      "summary": "Maßnahmenpakete und Zeitpunkte so abstimmen, dass Förderbedingungen nicht unbeabsichtigt verloren gehen.",
+      "details": [
+        "Etappen und Paketbedingungen",
+        "Antrag vor Auftrag/Baubeginn prüfen"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "renovation-concept",
+      "title": "Gesamtkonzept / Fachplanung erstellen",
+      "type": "planning",
+      "category": "planning",
+      "summary": "Ein Gesamtbild des Gebäudes festlegen, bevor einzelne Gewerke Entscheidungen vorwegnehmen.",
+      "details": [
+        "Etappen und Schnittstellen",
+        "Planungstiefe passend zum Projekt"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "permits-legal",
+      "title": "Genehmigungen & rechtliche Anforderungen prüfen",
+      "type": "planning",
+      "category": "planning",
+      "summary": "Rechtliche und technische Rahmenbedingungen früh genug klären, damit spätere Schritte nicht blockieren.",
+      "details": [
+        "Bauordnung, Brandschutz und Eigentumsfragen",
+        "Nutzungsänderungen und Außenwirkung"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "financing",
+      "title": "Finanzierung / Rücklagen / Umsetzungsspielraum klären",
+      "type": "planning",
+      "category": "planning",
+      "summary": "Den langfristigen Fahrplan mit einem realistischen finanziellen Handlungsspielraum verbinden.",
+      "details": [
+        "Budget je Etappe",
+        "Referenz-Erneuerungen und Förderzeitpunkte"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "construction-coordination",
+      "title": "Angebote & Bauabschnitte koordinieren",
+      "type": "planning",
+      "category": "planning",
+      "summary": "Gewerke und Baustellen so bündeln, dass Bauteile möglichst nur einmal geöffnet oder eingerüstet werden.",
+      "details": [
+        "Schnittstellen zwischen Gewerken",
+        "Baustellenbelastung reduzieren"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "documentation",
+      "title": "Sanierung dokumentieren",
+      "type": "planning",
+      "category": "planning",
+      "summary": "Verdeckte Bauteile, Leitungswege und ausgeführte Aufbauten für spätere Arbeiten nachvollziehbar festhalten.",
+      "details": [
+        "Fotos vor dem Verschließen",
+        "Pläne, Produkte und Änderungen sichern"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "future-housing",
+      "title": "Zukunftsfähige Wohnsituation",
+      "type": "future",
+      "category": "living",
+      "summary": "Früh klären, wie das Gebäude in 10, 20 oder 30 Jahren genutzt werden soll.",
+      "details": [
+        "Haushaltsgröße und Lebensphasen",
+        "Pflege, Homeoffice, Vermietung oder Mehrgenerationenwohnen"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "separable-home",
+      "title": "Gebäude teilbar / zweite Wohneinheit vorbereiten",
+      "type": "future",
+      "category": "living",
+      "summary": "Zugang, Grundriss und Haustechnik so planen, dass eine spätere Teilung möglich bleibt.",
+      "details": [
+        "Leitungswege und Messkonzept",
+        "Brand- und Schallschutz"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "multigeneration",
+      "title": "Mehrgenerationenwohnen ermöglichen",
+      "type": "future",
+      "category": "living",
+      "summary": "Räumliche Nähe und gleichzeitig ausreichend eigenständige Bereiche langfristig ermöglichen.",
+      "details": [
+        "Zugänge und Rückzug",
+        "Teilbarkeit und Barrierefreiheit"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "flexible-layout",
+      "title": "Flexible Grundrisse / Nutzungsänderung berücksichtigen",
+      "type": "future",
+      "category": "living",
+      "summary": "Grundrissentscheidungen so treffen, dass spätere Lebensphasen nicht unnötig verbaut werden.",
+      "details": [
+        "nichttragende Strukturen und Leitungsführung",
+        "Tageslicht und Erschließung"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "outdoor-quality",
+      "title": "Außenraum & Aufenthaltsqualität verbessern",
+      "type": "future",
+      "category": "living",
+      "summary": "Sanierung auch nutzen, um gut erreichbare, angenehme Außenräume zu schaffen.",
+      "details": [
+        "Gartenzugang und Balkone",
+        "Verschattung, Begrünung und Barrierefreiheit"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "accessible-living",
+      "title": "Barrierearmes Wohnen",
+      "type": "future",
+      "category": "accessibility",
+      "summary": "Zugänge, Bewegungsflächen und die wichtigsten Wohnfunktionen langfristig gut nutzbar halten.",
+      "details": [
+        "Schwellen und Türbreiten als Detailpunkte",
+        "Wohnen, Schlafen und Bad möglichst gut erreichbar"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "accessible-bath",
+      "title": "Barrierearmes Bad",
+      "type": "future",
+      "category": "accessibility",
+      "summary": "Eine ohnehin anstehende Badsanierung nutzen, um spätere Umbauten möglichst zu vermeiden.",
+      "details": [
+        "bodengleiche Dusche und Bewegungsflächen",
+        "tragfähige Befestigungsmöglichkeiten und Zugänglichkeit"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "lift-preparation",
+      "title": "Lift / vertikale Erschließung vorbereiten",
+      "type": "future",
+      "category": "accessibility",
+      "summary": "Prüfen, ob ein späterer Lift oder eine andere barrierearme Geschossverbindung räumlich vorbereitet werden sollte.",
+      "details": [
+        "Platz und Statik",
+        "Brandschutz, Erschließung und Haustechnik"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "accessible-entry",
+      "title": "Barrierearmen Gebäudezugang berücksichtigen",
+      "type": "future",
+      "category": "accessibility",
+      "summary": "Außenanlagen, Eingang und Niveauunterschiede gemeinsam mit anderen Bauarbeiten betrachten.",
+      "details": [
+        "Rampen, Wege und Witterungsschutz",
+        "Entwässerung und Außenraum"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "healthy-living",
+      "title": "Wohngesundheit verbessern",
+      "type": "future",
+      "category": "health_ecology",
+      "summary": "Materialien, Luftqualität, Feuchte und Oberflächen so wählen, dass ein gesundes Innenraumklima unterstützt wird.",
+      "details": [
+        "emissionsarme Materialien",
+        "Feuchte, Lüftung und Reinigung"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "pollutants",
+      "title": "Schadstoffe vor Sanierung prüfen / reduzieren",
+      "type": "planning",
+      "category": "health_ecology",
+      "summary": "Bei passender Bauperiode oder Verdacht relevante Baustoffe vor Eingriffen erkennen und sicher behandeln.",
+      "details": [
+        "z. B. Asbest, alte Mineralfasern oder problematische Beschichtungen",
+        "Prüfung vor Rückbau"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "ecological-renovation",
+      "title": "Ökologisch bauen und sanieren",
+      "type": "future",
+      "category": "health_ecology",
+      "summary": "Ressourcen, Umweltwirkungen und Materialwahl bei jeder größeren Sanierungsentscheidung mitdenken.",
+      "details": [
+        "nachwachsende und ressourcenschonende Materialien",
+        "graue Energie und regionale Verfügbarkeit"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "circular-durable",
+      "title": "Langlebig, reparierbar & kreislauffähig planen",
+      "type": "future",
+      "category": "health_ecology",
+      "summary": "Konstruktionen und Produkte bevorzugen, die lange nutzbar, reparierbar und später trennbar sind.",
+      "details": [
+        "Rückbaubarkeit",
+        "Austauschbarkeit und Dokumentation"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "sound-protection",
+      "title": "Schallschutz verbessern",
+      "type": "future",
+      "category": "health_ecology",
+      "summary": "Lärmquellen und Ruhebedürfnis bei Fenster-, Fassaden- oder Nutzungsänderungen mitberücksichtigen.",
+      "details": [
+        "Verkehrslärm",
+        "Trennung mehrerer Wohneinheiten"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "radon",
+      "title": "Radonrisiko prüfen",
+      "type": "planning",
+      "category": "health_ecology",
+      "summary": "Bei standort- oder gebäudebedingtem Risiko Radonschutz bei Eingriffen in erdberührte Bauteile mitdenken.",
+      "details": [
+        "Messung bei Bedarf",
+        "Abdichtung und Lüftung"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "summer-protection",
+      "title": "Sommerlichen Wärmeschutz verbessern",
+      "type": "measure",
+      "category": "resilience",
+      "summary": "Überhitzung möglichst zuerst mit passiven Maßnahmen reduzieren.",
+      "details": [
+        "außenliegende Verschattung",
+        "Speichermasse, Nachtlüftung und Glasflächen"
+      ],
+      "futureFit": [],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "shading",
+      "title": "Verschattung sinnvoll planen",
+      "type": "measure",
+      "category": "resilience",
+      "summary": "Außenliegenden Sonnenschutz früh mit Fenster und Fassade koordinieren.",
+      "details": [
+        "Wind und Wartung",
+        "Tageslicht und Wintergewinne"
+      ],
+      "futureFit": [],
+      "energyRelevant": true,
+      "economicsRelevant": true,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "passive-cooling",
+      "title": "Passive Kühlung / Nachtlüftung nutzen",
+      "type": "planning",
+      "category": "resilience",
+      "summary": "Kosten- und energiearme Kühlmöglichkeiten vor aktiver Kühlung ausschöpfen.",
+      "details": [
+        "Sicherheit, Schall und Luftqualität",
+        "Gebäudemasse und Steuerung"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "heavy-rain",
+      "title": "Starkregen- & Überflutungsvorsorge",
+      "type": "future",
+      "category": "resilience",
+      "summary": "Wasserwege, gefährdete Öffnungen und Rückstau bei Außen- oder Sockelarbeiten mitprüfen.",
+      "details": [
+        "Gelände und Entwässerung",
+        "Keller und Haustechnik"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "rainwater",
+      "title": "Regenwasser sinnvoll bewirtschaften",
+      "type": "future",
+      "category": "resilience",
+      "summary": "Regenwasser, Versickerung und Nutzung als Teil von Außenraum und Klimaanpassung betrachten.",
+      "details": [
+        "Entsiegelung",
+        "Begrünung und Bewässerung"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "greening",
+      "title": "Begrünung / Entsiegelung berücksichtigen",
+      "type": "future",
+      "category": "resilience",
+      "summary": "Mikroklima und Aufenthaltsqualität durch geeignete Außenflächen verbessern.",
+      "details": [
+        "Pflege und Wasser",
+        "Barrierefreie Wege"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "fire-safety",
+      "title": "Brandschutz & Sicherheit prüfen",
+      "type": "planning",
+      "category": "safety",
+      "summary": "Brandschutz und sichere Erschließung bei großen Eingriffen oder geänderter Nutzung früh klären.",
+      "details": [
+        "Fluchtwege und Baustoffe",
+        "Lift, Lüftung und Elektro"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "use-change-check",
+      "title": "Geänderte Nutzung rechtlich / technisch prüfen",
+      "type": "planning",
+      "category": "safety",
+      "summary": "Bei Teilung oder Nutzungsänderung Anforderungen an Genehmigung, Erschließung und Haustechnik früh prüfen.",
+      "details": [
+        "Brandschutz und Schallschutz",
+        "Stellplätze oder Nebenräume je nach Projekt"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "metering-concept",
+      "title": "Mess- / Abrechnungskonzept bei Gebäudeteilung prüfen",
+      "type": "planning",
+      "category": "safety",
+      "summary": "Bei mehreren Einheiten Versorgung und Verbrauch so vorbereiten, dass spätere Nutzung praktikabel bleibt.",
+      "details": [
+        "Strom, Wärme und Wasser",
+        "Betreiber- und Abrechnungsmodell"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "service-reserves",
+      "title": "Leitungswege & Reserven vorbereiten",
+      "type": "planning",
+      "category": "safety",
+      "summary": "Bei offenen Bauteilen oder Schächten Reserven für spätere Technik mit geringem Zusatzaufwand vorsehen.",
+      "details": [
+        "Elektro, Daten, Wärme und Wasser",
+        "spätere Öffnungen vermeiden"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    },
+    {
+      "id": "building-automation",
+      "title": "Gebäudeautomation sinnvoll vorbereiten",
+      "type": "planning",
+      "category": "safety",
+      "summary": "Nur dort Messung, Steuerung oder Automatisierung vorbereiten, wo sie einen nachvollziehbaren Nutzen hat.",
+      "details": [
+        "offene Standards und Bedienbarkeit",
+        "kein Selbstzweck"
+      ],
+      "futureFit": [],
+      "energyRelevant": false,
+      "economicsRelevant": false,
+      "projectMeasureIds": [],
+      "aliases": []
+    }
+  ]
+}

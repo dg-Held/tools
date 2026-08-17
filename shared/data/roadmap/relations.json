@@ -1,0 +1,602 @@
+{
+  "schema": "energy-tools-roadmap-relations",
+  "version": "0.1",
+  "data_date": "2026-08-17",
+  "notice": "Transparente Beratungsregeln. Beziehungen sind Hinweise, keine verdeckte Optimierungs- oder Punktelogik.",
+  "relationTypes": {
+    "before": {
+      "label": "vorher berücksichtigen"
+    },
+    "together": {
+      "label": "sinnvoll gemeinsam"
+    },
+    "prepare": {
+      "label": "jetzt vorbereiten – später umsetzen"
+    },
+    "check": {
+      "label": "gemeinsam prüfen"
+    },
+    "avoid_lock_in": {
+      "label": "spätere Lösung nicht verbauen"
+    },
+    "suggest": {
+      "label": "zusätzlich ansprechen"
+    }
+  },
+  "strengths": {
+    "important": {
+      "label": "wichtig"
+    },
+    "recommended": {
+      "label": "empfohlen"
+    },
+    "hint": {
+      "label": "Hinweis"
+    }
+  },
+  "relations": [
+    {
+      "id": "roof-pv",
+      "source": "envelope-roof",
+      "relation": "together",
+      "target": "pv-own-use",
+      "strength": "recommended",
+      "reason": "Dacharbeiten und PV lassen sich häufig besonders gut in einem gemeinsamen Zeitfenster planen.",
+      "customerText": "Dach und PV möglichst gemeinsam denken."
+    },
+    {
+      "id": "roof-check",
+      "source": "envelope-roof",
+      "relation": "check",
+      "target": "component-horizon",
+      "strength": "important",
+      "reason": "Vor PV oder größerem Dachaufbau sollte Zustand und voraussichtlicher Erneuerungshorizont des Dachs geklärt sein.",
+      "customerText": "Erst Dachzustand klären, dann neue Aufbauten festlegen."
+    },
+    {
+      "id": "roof-summer",
+      "source": "envelope-roof",
+      "relation": "suggest",
+      "target": "summer-protection",
+      "strength": "recommended",
+      "reason": "Bei Dacharbeiten kann der sommerliche Wärmeschutz mit geringeren Schnittstellen mitgeplant werden.",
+      "customerText": "Beim Dach auch den Sommerkomfort mitdenken."
+    },
+    {
+      "id": "wall-windows",
+      "source": "envelope-wall",
+      "relation": "together",
+      "target": "envelope-windows",
+      "strength": "recommended",
+      "reason": "Laibungen, Anschlüsse und Wärmebrücken lassen sich bei gemeinsamer Planung sauberer lösen.",
+      "customerText": "Fassade und Fenster an den Anschlüssen gemeinsam planen."
+    },
+    {
+      "id": "wall-shading",
+      "source": "envelope-wall",
+      "relation": "together",
+      "target": "shading",
+      "strength": "recommended",
+      "reason": "Befestigungen und Leitungswege für außenliegenden Sonnenschutz lassen sich in die Fassade integrieren.",
+      "customerText": "Verschattung bei Fassadenarbeiten gleich mitdenken."
+    },
+    {
+      "id": "windows-vent",
+      "source": "envelope-windows",
+      "relation": "check",
+      "target": "ventilation-concept",
+      "strength": "important",
+      "reason": "Dichtere Fenster verändern den Luftwechsel; Feuchteschutz und Lüftung müssen mitbetrachtet werden.",
+      "customerText": "Fenster und Lüftungs-/Feuchteschutz zusammen betrachten."
+    },
+    {
+      "id": "windows-sound",
+      "source": "envelope-windows",
+      "relation": "suggest",
+      "target": "sound-protection",
+      "strength": "hint",
+      "reason": "Fenstertausch ist bei Lärmbelastung ein günstiges Zeitfenster für Schallschutzentscheidungen.",
+      "customerText": "Bei Bedarf den Schallschutz gleich mitprüfen."
+    },
+    {
+      "id": "envelope-heating",
+      "source": "envelope-wall",
+      "relation": "before",
+      "target": "heating-load-check",
+      "strength": "important",
+      "reason": "Größere Hüllmaßnahmen verändern Heizlast und Dimensionierung der späteren Wärmeversorgung.",
+      "customerText": "Die spätere Heizung auf den sanierten Gebäudezustand auslegen."
+    },
+    {
+      "id": "roof-heating",
+      "source": "envelope-roof",
+      "relation": "before",
+      "target": "heating-load-check",
+      "strength": "important",
+      "reason": "Größere Hüllmaßnahmen verändern Heizlast und Dimensionierung der späteren Wärmeversorgung.",
+      "customerText": "Die spätere Heizung auf den sanierten Gebäudezustand auslegen."
+    },
+    {
+      "id": "windows-heating",
+      "source": "envelope-windows",
+      "relation": "before",
+      "target": "heating-load-check",
+      "strength": "recommended",
+      "reason": "Fenstermaßnahmen können die Heizlast merklich verändern.",
+      "customerText": "Heizungsdimensionierung erst mit dem geplanten Hüllzustand festlegen."
+    },
+    {
+      "id": "heating-lowtemp",
+      "source": "heating-replacement",
+      "relation": "check",
+      "target": "low-temperature-check",
+      "strength": "important",
+      "reason": "Zukunftsfähige Wärmesysteme profitieren von niedrigen Systemtemperaturen.",
+      "customerText": "Vor dem Heizungstausch Heizflächen und Vorlauftemperatur prüfen."
+    },
+    {
+      "id": "heating-distribution",
+      "source": "heating-replacement",
+      "relation": "together",
+      "target": "heat-distribution",
+      "strength": "recommended",
+      "reason": "Wärmeerzeugung, Verteilung und Regelung bilden ein Gesamtsystem.",
+      "customerText": "Beim Heizungstausch die Wärmeverteilung mitoptimieren."
+    },
+    {
+      "id": "heating-hotwater",
+      "source": "heating-replacement",
+      "relation": "check",
+      "target": "hot-water",
+      "strength": "recommended",
+      "reason": "Warmwasser beeinflusst Systemwahl, Speicher und Betrieb.",
+      "customerText": "Heizung und Warmwasser gemeinsam entscheiden."
+    },
+    {
+      "id": "heating-pv",
+      "source": "heating-replacement",
+      "relation": "suggest",
+      "target": "pv-own-use",
+      "strength": "hint",
+      "reason": "Elektrische Wärmesysteme können von Eigenstrom profitieren; auch sonst ist PV ein eigener Zukunftsbaustein.",
+      "customerText": "PV als ergänzenden Zukunftsbaustein prüfen."
+    },
+    {
+      "id": "bath-access",
+      "source": "accessible-bath",
+      "relation": "avoid_lock_in",
+      "target": "accessible-living",
+      "strength": "important",
+      "reason": "Eine neue Badgestaltung sollte spätere Barrierearmut nicht verbauen.",
+      "customerText": "Beim Bad spätere Barrierearmut jetzt mitdenken."
+    },
+    {
+      "id": "layout-lift",
+      "source": "flexible-layout",
+      "relation": "prepare",
+      "target": "lift-preparation",
+      "strength": "recommended",
+      "reason": "Grundriss- und Deckenarbeiten können räumliche Optionen für eine spätere vertikale Erschließung sichern.",
+      "customerText": "Bei größeren Grundrissarbeiten eine spätere Liftmöglichkeit offenhalten."
+    },
+    {
+      "id": "split-fire",
+      "source": "separable-home",
+      "relation": "check",
+      "target": "fire-safety",
+      "strength": "important",
+      "reason": "Eine spätere Trennung in Wohneinheiten kann Brandschutzanforderungen verändern.",
+      "customerText": "Bei Gebäudeteilung Brandschutz früh prüfen."
+    },
+    {
+      "id": "split-sound",
+      "source": "separable-home",
+      "relation": "check",
+      "target": "sound-protection",
+      "strength": "recommended",
+      "reason": "Getrennte Wohneinheiten brauchen ausreichende akustische Trennung.",
+      "customerText": "Bei Gebäudeteilung den Schallschutz mitplanen."
+    },
+    {
+      "id": "split-meter",
+      "source": "separable-home",
+      "relation": "prepare",
+      "target": "metering-concept",
+      "strength": "recommended",
+      "reason": "Versorgungs- und Messkonzepte lassen sich bei offenen Leitungswegen leichter vorbereiten.",
+      "customerText": "Messung und Abrechnung für eine spätere Teilung vorbereiten."
+    },
+    {
+      "id": "split-electric",
+      "source": "separable-home",
+      "relation": "prepare",
+      "target": "electrical-infrastructure",
+      "strength": "recommended",
+      "reason": "Getrennte Versorgung oder zusätzliche Lasten beeinflussen die Elektroplanung.",
+      "customerText": "Elektro- und Haustechnik für spätere Teilbarkeit vorbereiten."
+    },
+    {
+      "id": "large-pollutants",
+      "source": "renovation-concept",
+      "relation": "suggest",
+      "target": "pollutants",
+      "strength": "recommended",
+      "reason": "Bei größeren Eingriffen können schadstoffhaltige Altbaustoffe relevant werden.",
+      "customerText": "Vor Rückbau mögliche Schadstoffe prüfen."
+    },
+    {
+      "id": "large-eco",
+      "source": "renovation-concept",
+      "relation": "suggest",
+      "target": "ecological-renovation",
+      "strength": "recommended",
+      "reason": "Materialentscheidungen fallen früh und wirken über Jahrzehnte.",
+      "customerText": "Ökologische Materialwahl schon in der Planung mitdenken."
+    },
+    {
+      "id": "large-health",
+      "source": "renovation-concept",
+      "relation": "suggest",
+      "target": "healthy-living",
+      "strength": "recommended",
+      "reason": "Materialwahl, Feuchte und Lüftung beeinflussen die Innenraumqualität.",
+      "customerText": "Wohngesundheit als eigenes Sanierungsziel mitdenken."
+    },
+    {
+      "id": "electrical-pv",
+      "source": "electrical-infrastructure",
+      "relation": "prepare",
+      "target": "pv-own-use",
+      "strength": "recommended",
+      "reason": "Offene Elektroarbeiten sind ein gutes Zeitfenster für spätere Erzeugung und Verbraucher.",
+      "customerText": "Bei Elektroarbeiten Reserven für PV und weitere elektrische Anwendungen vorsehen."
+    },
+    {
+      "id": "entry-rain",
+      "source": "accessible-entry",
+      "relation": "together",
+      "target": "heavy-rain",
+      "strength": "hint",
+      "reason": "Niveauplanung, Entwässerung und barrierearme Wege greifen ineinander.",
+      "customerText": "Zugang und Wasserführung gemeinsam planen."
+    },
+    {
+      "id": "outdoor-rain",
+      "source": "outdoor-quality",
+      "relation": "together",
+      "target": "rainwater",
+      "strength": "hint",
+      "reason": "Außenraumgestaltung kann Regenwasserbewirtschaftung und Aufenthaltsqualität verbinden.",
+      "customerText": "Außenraum und Regenwasser gemeinsam denken."
+    },
+    {
+      "id": "facade-summer",
+      "source": "envelope-wall",
+      "relation": "suggest",
+      "target": "summer-protection",
+      "strength": "recommended",
+      "reason": "Fassade und Fenster sind ein gutes Zeitfenster für sommerlichen Wärmeschutz.",
+      "customerText": "Bei Fassade und Fenstern den Sommerkomfort mitdenken."
+    },
+    {
+      "id": "documentation-general",
+      "source": "construction-coordination",
+      "relation": "suggest",
+      "target": "documentation",
+      "strength": "hint",
+      "reason": "Vor dem Verschließen können spätere Unsicherheiten mit wenig Aufwand vermieden werden.",
+      "customerText": "Verdeckte Bauteile und Leitungswege dokumentieren."
+    },
+    {
+      "id": "cooling-passive",
+      "source": "cooling",
+      "relation": "before",
+      "target": "summer-protection",
+      "strength": "important",
+      "reason": "Aktive Kühlung sollte erst nach passiven Überhitzungsschutzmaßnahmen dimensioniert werden.",
+      "customerText": "Erst passive Maßnahmen, dann aktive Kühlung."
+    },
+    {
+      "id": "radon-ground",
+      "source": "envelope-basement",
+      "relation": "check",
+      "target": "radon",
+      "strength": "hint",
+      "reason": "Bei Eingriffen an erdberührten Bauteilen kann Radonschutz günstig mitgedacht werden.",
+      "customerText": "Bei Bedarf Radon bei Keller- und Bodenarbeiten mitprüfen."
+    },
+    {
+      "id": "lift-fire",
+      "source": "lift-preparation",
+      "relation": "check",
+      "target": "fire-safety",
+      "strength": "important",
+      "reason": "Ein Lift berührt Erschließung, Schachtbildung und Brandschutz.",
+      "customerText": "Lift und Brandschutz gemeinsam planen."
+    }
+  ],
+  "suggestionRules": [
+    {
+      "id": "up-roof",
+      "trigger": {
+        "upcomingWork": "roof"
+      },
+      "targets": [
+        "envelope-roof",
+        "pv-own-use",
+        "summer-protection",
+        "component-horizon"
+      ],
+      "reason": "Dacharbeiten schaffen ein starkes gemeinsames Zeitfenster.",
+      "priority": "recommended"
+    },
+    {
+      "id": "up-facade",
+      "trigger": {
+        "upcomingWork": "facade"
+      },
+      "targets": [
+        "envelope-wall",
+        "envelope-windows",
+        "shading",
+        "thermal-bridges"
+      ],
+      "reason": "Fassadenarbeiten betreffen mehrere Anschlüsse und Komfortthemen.",
+      "priority": "recommended"
+    },
+    {
+      "id": "up-windows",
+      "trigger": {
+        "upcomingWork": "windows"
+      },
+      "targets": [
+        "envelope-windows",
+        "ventilation-concept",
+        "sound-protection",
+        "shading"
+      ],
+      "reason": "Fenster verändern Hülle, Lüftung und Komfort.",
+      "priority": "recommended"
+    },
+    {
+      "id": "up-heating",
+      "trigger": {
+        "upcomingWork": "heating"
+      },
+      "targets": [
+        "heating-replacement",
+        "low-temperature-check",
+        "heating-load-check",
+        "hot-water",
+        "heat-distribution"
+      ],
+      "reason": "Beim Heizungstausch muss das Gesamtsystem betrachtet werden.",
+      "priority": "recommended"
+    },
+    {
+      "id": "up-bathroom",
+      "trigger": {
+        "upcomingWork": "bathroom"
+      },
+      "targets": [
+        "accessible-bath",
+        "healthy-living",
+        "service-reserves"
+      ],
+      "reason": "Eine Badsanierung ist ein wichtiges Zukunftsfenster.",
+      "priority": "recommended"
+    },
+    {
+      "id": "up-layout",
+      "trigger": {
+        "upcomingWork": "layout"
+      },
+      "targets": [
+        "future-housing",
+        "separable-home",
+        "accessible-living",
+        "lift-preparation",
+        "fire-safety"
+      ],
+      "reason": "Grundrissänderungen prägen die spätere Nutzbarkeit.",
+      "priority": "recommended"
+    },
+    {
+      "id": "up-electrical",
+      "trigger": {
+        "upcomingWork": "electrical"
+      },
+      "targets": [
+        "electrical-infrastructure",
+        "pv-own-use",
+        "e-mobility",
+        "service-reserves"
+      ],
+      "reason": "Elektroarbeiten können viele spätere Lösungen vorbereiten.",
+      "priority": "recommended"
+    },
+    {
+      "id": "up-outdoor",
+      "trigger": {
+        "upcomingWork": "outdoor"
+      },
+      "targets": [
+        "accessible-entry",
+        "outdoor-quality",
+        "heavy-rain",
+        "rainwater",
+        "greening"
+      ],
+      "reason": "Außenarbeiten verbinden Zugang, Wasser und Aufenthaltsqualität.",
+      "priority": "recommended"
+    },
+    {
+      "id": "reason-full",
+      "trigger": {
+        "adviceReason": "full"
+      },
+      "targets": [
+        "renovation-concept",
+        "energy-certificate",
+        "funding-strategy",
+        "construction-coordination",
+        "ecological-renovation"
+      ],
+      "reason": "Bei einer Gesamtsanierung zuerst die Gesamtstrategie festlegen.",
+      "priority": "recommended"
+    },
+    {
+      "id": "reason-renewal",
+      "trigger": {
+        "adviceReason": "renewal"
+      },
+      "targets": [
+        "component-horizon",
+        "funding-check",
+        "construction-coordination"
+      ],
+      "reason": "Erneuerungsanlass und energetische Verbesserung zeitlich koppeln.",
+      "priority": "recommended"
+    },
+    {
+      "id": "reason-heating",
+      "trigger": {
+        "adviceReason": "heating"
+      },
+      "targets": [
+        "heating-replacement",
+        "heating-load-check",
+        "low-temperature-check",
+        "hot-water"
+      ],
+      "reason": "Heizungstausch braucht Heizlast, Systemtemperatur und Warmwasser.",
+      "priority": "recommended"
+    },
+    {
+      "id": "reason-costs",
+      "trigger": {
+        "adviceReason": "costs"
+      },
+      "targets": [
+        "funding-check",
+        "operation-optimization",
+        "component-horizon"
+      ],
+      "reason": "Kostenorientierung profitiert von guten Zeitfenstern und einfachen Betriebsmaßnahmen.",
+      "priority": "recommended"
+    },
+    {
+      "id": "reason-comfort",
+      "trigger": {
+        "adviceReason": "comfort"
+      },
+      "targets": [
+        "healthy-living",
+        "summer-protection",
+        "ventilation",
+        "sound-protection"
+      ],
+      "reason": "Komfort umfasst Winter, Sommer, Luftqualität und Schall.",
+      "priority": "recommended"
+    },
+    {
+      "id": "fossil-heating",
+      "trigger": {
+        "fossilHeating": true
+      },
+      "targets": [
+        "heating-replacement"
+      ],
+      "reason": "Das Zielbild benötigt eine fossilfreie Wärmeversorgung.",
+      "priority": "important"
+    },
+    {
+      "id": "no-pv",
+      "trigger": {
+        "pvState": "not-known-or-missing"
+      },
+      "targets": [
+        "pv-own-use"
+      ],
+      "reason": "PV ist ein eigener Baustein von Zukunftsfit 2050.",
+      "priority": "recommended"
+    },
+    {
+      "id": "old-building",
+      "trigger": {
+        "constructionYearBefore": 1995,
+        "requiresMajorWork": true
+      },
+      "targets": [
+        "pollutants"
+      ],
+      "reason": "Bei älteren Gebäuden können bei größeren Eingriffen Schadstoffe relevant sein.",
+      "priority": "recommended"
+    },
+    {
+      "id": "priority-comfort",
+      "trigger": {
+        "priority": "comfort"
+      },
+      "targets": [
+        "healthy-living",
+        "ventilation",
+        "summer-protection"
+      ],
+      "reason": "Kundenpriorität Komfort & Gesundheit.",
+      "priority": "recommended"
+    },
+    {
+      "id": "priority-climate",
+      "trigger": {
+        "priority": "climate"
+      },
+      "targets": [
+        "ecological-renovation",
+        "pv-own-use",
+        "heating-replacement"
+      ],
+      "reason": "Kundenpriorität Klimaschutz.",
+      "priority": "recommended"
+    },
+    {
+      "id": "priority-independence",
+      "trigger": {
+        "priority": "independence"
+      },
+      "targets": [
+        "pv-own-use",
+        "heating-replacement",
+        "electrical-infrastructure"
+      ],
+      "reason": "Kundenpriorität Unabhängigkeit.",
+      "priority": "recommended"
+    },
+    {
+      "id": "priority-value",
+      "trigger": {
+        "priority": "value"
+      },
+      "targets": [
+        "component-horizon",
+        "future-housing",
+        "circular-durable"
+      ],
+      "reason": "Kundenpriorität Werterhalt.",
+      "priority": "recommended"
+    },
+    {
+      "id": "priority-effort",
+      "trigger": {
+        "priority": "effort"
+      },
+      "targets": [
+        "operation-optimization",
+        "funding-check",
+        "documentation"
+      ],
+      "reason": "Kundenpriorität geringer Umsetzungsaufwand.",
+      "priority": "recommended"
+    }
+  ]
+}

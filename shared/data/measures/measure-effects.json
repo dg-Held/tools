@@ -1,0 +1,202 @@
+{
+  "schema": "energy-tools-measure-effects",
+  "version": "0.1",
+  "data_date": "2026-08-17",
+  "notice": "Qualitative Zusatzwirkungen für Beratung und Darstellung. Keine Punktesumme und keine Veränderung technischer oder wirtschaftlicher Berechnungen.",
+  "levels": [
+    "none",
+    "low",
+    "medium",
+    "high",
+    "variable"
+  ],
+  "dimensions": [
+    "comfort",
+    "health",
+    "climate",
+    "independence",
+    "value",
+    "effort",
+    "summer",
+    "ecology",
+    "resilience"
+  ],
+  "components": {
+    "wall_external": {
+      "winter_comfort": "deutlich positiv",
+      "summer_comfort": "meist positiv",
+      "surface_temperature": "deutlich wärmer",
+      "moisture": "Wärmebrücken und Anschlüsse prüfen",
+      "sound": "kann sich verbessern"
+    },
+    "roof_top_ceiling": {
+      "winter_comfort": "deutlich positiv",
+      "summer_comfort": "positiv",
+      "surface_temperature": "wärmer",
+      "moisture": "Luftdichtheit und Feuchteschutz prüfen",
+      "sound": "kann sich verbessern"
+    },
+    "ceiling_unheated": {
+      "winter_comfort": "positiv",
+      "summer_comfort": "neutral",
+      "surface_temperature": "wärmerer Fußboden",
+      "moisture": "Anschlüsse prüfen",
+      "sound": "gering"
+    },
+    "floor_ground": {
+      "winter_comfort": "positiv",
+      "summer_comfort": "neutral",
+      "surface_temperature": "wärmerer Fußboden",
+      "moisture": "erdberührte Details separat prüfen",
+      "sound": "gering"
+    },
+    "wall_ground": {
+      "winter_comfort": "positiv",
+      "summer_comfort": "neutral",
+      "surface_temperature": "wärmer",
+      "moisture": "Feuchteursache vor Dämmung klären",
+      "sound": "gering"
+    }
+  },
+  "items": {
+    "envelope-wall": {
+      "comfort": "high",
+      "climate": "high",
+      "value": "high",
+      "summer": "medium",
+      "effort": "high"
+    },
+    "envelope-roof": {
+      "comfort": "medium",
+      "climate": "high",
+      "value": "high",
+      "summer": "high",
+      "effort": "high"
+    },
+    "envelope-basement": {
+      "comfort": "medium",
+      "climate": "medium",
+      "value": "low",
+      "effort": "medium"
+    },
+    "envelope-windows": {
+      "comfort": "high",
+      "climate": "medium",
+      "value": "high",
+      "summer": "medium",
+      "effort": "medium"
+    },
+    "thermal-bridges": {
+      "comfort": "high",
+      "health": "high",
+      "value": "high"
+    },
+    "airtightness": {
+      "comfort": "medium",
+      "climate": "medium",
+      "health": "medium"
+    },
+    "heating-replacement": {
+      "climate": "high",
+      "independence": "high",
+      "value": "high",
+      "comfort": "medium",
+      "effort": "high"
+    },
+    "heat-distribution": {
+      "comfort": "medium",
+      "climate": "medium",
+      "value": "medium"
+    },
+    "hot-water": {
+      "comfort": "medium",
+      "climate": "medium",
+      "effort": "medium"
+    },
+    "ventilation": {
+      "comfort": "high",
+      "health": "high",
+      "climate": "medium",
+      "value": "medium"
+    },
+    "pv-own-use": {
+      "climate": "medium",
+      "independence": "high",
+      "value": "high",
+      "effort": "medium"
+    },
+    "electrical-infrastructure": {
+      "value": "high",
+      "independence": "medium",
+      "effort": "medium"
+    },
+    "future-housing": {
+      "comfort": "medium",
+      "value": "high"
+    },
+    "separable-home": {
+      "value": "high",
+      "comfort": "medium",
+      "effort": "variable"
+    },
+    "accessible-living": {
+      "comfort": "high",
+      "value": "high"
+    },
+    "accessible-bath": {
+      "comfort": "high",
+      "value": "high",
+      "effort": "medium"
+    },
+    "lift-preparation": {
+      "comfort": "high",
+      "value": "high",
+      "effort": "high"
+    },
+    "healthy-living": {
+      "health": "high",
+      "comfort": "high",
+      "value": "medium"
+    },
+    "ecological-renovation": {
+      "ecology": "high",
+      "climate": "medium",
+      "health": "medium"
+    },
+    "circular-durable": {
+      "ecology": "high",
+      "value": "high"
+    },
+    "sound-protection": {
+      "comfort": "high",
+      "health": "medium",
+      "value": "medium"
+    },
+    "summer-protection": {
+      "summer": "high",
+      "comfort": "high",
+      "climate": "low"
+    },
+    "shading": {
+      "summer": "high",
+      "comfort": "high"
+    },
+    "heavy-rain": {
+      "resilience": "high",
+      "value": "high"
+    },
+    "rainwater": {
+      "resilience": "medium",
+      "ecology": "medium"
+    },
+    "greening": {
+      "summer": "medium",
+      "comfort": "medium",
+      "ecology": "medium"
+    },
+    "fire-safety": {
+      "value": "high",
+      "resilience": "high"
+    }
+  }
+}
