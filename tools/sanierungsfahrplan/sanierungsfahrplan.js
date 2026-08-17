@@ -232,10 +232,10 @@
       $('routeStatus').textContent = 'noch nicht vorbereitet';
       $('routeStatus').className = 'status-chip';
     } else {
-      const stageMarkup = stages.map((stage) => {
+      const stageMarkup = stages.map((stage, index) => {
         const stageItems = itemsForStage(roadmap, stage.id);
         const shown = stageItems.slice(0, 5);
-        return `<div class="route-stage" data-stage-id="${escapeHtml(stage.id)}">
+        return `<div class="route-stage" data-stage-id="${escapeHtml(stage.id)}" data-stage-order="${index + 1}">
           <div class="route-node"></div>
           <strong>${escapeHtml(stage.title)}</strong>
           <small>${escapeHtml(stage.timing?.horizon ?? '')}</small>
@@ -245,7 +245,7 @@
           }).join('')}${stageItems.length > shown.length ? `<span class="route-more">+ ${stageItems.length - shown.length} weitere</span>` : ''}</div>
         </div>`;
       }).join('');
-      host.innerHTML = `<svg class="route-curve" aria-hidden="true" viewBox="0 0 1000 50" preserveAspectRatio="none"><defs><linearGradient id="roadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="M55 25 C220 16 330 34 470 25 S720 16 945 25" fill="none" stroke="url(#roadmapRouteGradient)" stroke-width="5" stroke-linecap="round"/></svg><div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
+      host.innerHTML = `<svg class="route-curve" aria-hidden="true" viewBox="0 0 1000 110" preserveAspectRatio="none"><defs><linearGradient id="roadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="M55 55 C155 32 245 78 335 55 S520 32 615 55 S800 78 945 55" fill="none" stroke="url(#roadmapRouteGradient)" stroke-width="5" stroke-linecap="round"/></svg><div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
       $('routeStatus').textContent = `${stages.length} Etappen · ${items.length} Karten`;
       $('routeStatus').className = 'status-chip is-success';
       host.querySelectorAll('[data-route-item]').forEach((button) => button.addEventListener('click', () => selectItem(button.dataset.routeItem)));
@@ -256,7 +256,8 @@
     const stageMap = new Map(stages.map((stage) => [stage.id, stage]));
     $('futureFitPlan').innerHTML = ['envelope', 'technique', 'fossilfree', 'pv'].map((dimension) => {
       const stage = stageMap.get(coverage[dimension]);
-      return `<span class="future-fit-chip ${stage ? 'is-planned' : ''}"><b>${escapeHtml(futureFitLabel(dimension))}</b><small>${stage ? escapeHtml(stage.timing?.horizon ?? stage.title) : 'noch offen'}</small></span>`;
+      const stateClass = stage ? 'is-done' : 'is-needs';
+      return `<div class="future-step ${stateClass}"><i>${stage ? (stage.order ?? '•') : '!'}</i><span>${escapeHtml(futureFitLabel(dimension))}</span><small>${stage ? escapeHtml(stage.timing?.horizon ?? stage.title) : 'offen'}</small></div>`;
     }).join('');
   }
 
