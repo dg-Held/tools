@@ -19,11 +19,11 @@
   const TYPE_LABEL = { measure: 'Maßnahme', planning: 'Planungspunkt', future: 'Zukunftsthema' };
   const PRIORITY_LABEL = {
     costs: '€ Kosten', comfort: '♡ Komfort & Gesundheit', climate: '♻ Klimaschutz',
-    independence: '⚡ Unabhängigkeit & Versorgungssicherheit', value: '⌂ Werterhalt', effort: '⚒ geringer Umsetzungsaufwand',
+    independence: '⚡ Autarkie & Sicherheit', value: '⌂ Werterhalt', effort: '⚒ geringer Aufwand',
   };
   const BUDGET_LABEL = { lt25: '< 25 T€', '25-50': '25–50 T€', '50-100': '50–100 T€', gt100: '> 100 T€', open: 'offen' };
   const REASON_LABEL = { costs: 'Kosten senken', renewal: 'Bauteil ohnehin sanieren', heating: 'Heizung erneuern', full: 'Gesamtsanierung', comfort: 'Komfort', open: 'noch offen' };
-  const TIME_LABEL = { now: 'jetzt', '1-3': '1–3 Jahre', '3-10': '3–10 Jahre', later: 'langfristig' };
+  const TIME_LABEL = { now: 'jetzt', '1-3': '1–3 Jahre', '3-7': '3–7 Jahre', '3-10': '3–7 Jahre', later: 'langfristig' };
   const RELATION_LABEL = { before: 'vorher berücksichtigen', together: 'sinnvoll gemeinsam', prepare: 'jetzt vorbereiten', check: 'gemeinsam prüfen', avoid_lock_in: 'nicht verbauen', suggest: 'mitdenken' };
   const EFFECT_LABEL = { comfort: 'Komfort', health: 'Wohngesundheit', climate: 'Klimaschutz', independence: 'Unabhängigkeit', value: 'Werterhalt', effort: 'Umsetzungsaufwand', summer: 'Sommerkomfort', ecology: 'Ökologie', resilience: 'Resilienz' };
   const LEVEL_LABEL = { low: 'eher gering', medium: 'positiv', high: 'deutlich positiv', variable: 'objektabhängig' };
@@ -57,6 +57,8 @@
   function itemsForStage(roadmap, stageId) {
     const typeOrder = { measure: 0, planning: 1, future: 2 };
     return Object.values(roadmap?.items ?? {}).filter((item) => item.stageId === stageId).sort((a, b) => {
+      const explicit = Number(a.order ?? Number.POSITIVE_INFINITY) - Number(b.order ?? Number.POSITIVE_INFINITY);
+      if (Number.isFinite(explicit) && explicit !== 0) return explicit;
       const cardA = cardById(a.cardId);
       const cardB = cardById(b.cardId);
       return (typeOrder[cardA?.type] ?? 9) - (typeOrder[cardB?.type] ?? 9) || String(cardA?.title ?? a.cardId).localeCompare(String(cardB?.title ?? b.cardId), 'de');
@@ -144,7 +146,7 @@
   function renderFramework(project) {
     const advice = project?.advice ?? {};
     renderChoiceGroup('reasonChoices', advice.reason ?? null);
-    renderChoiceGroup('timeChoices', advice.timeHorizon ?? null);
+    renderChoiceGroup('timeChoices', advice.timeHorizon === '3-10' ? '3-7' : (advice.timeHorizon ?? null));
     renderChoiceGroup('budgetChoices', advice.budgetBand ?? null);
     renderChoiceGroup('priorityChoices', Array.isArray(advice.priorities) ? advice.priorities : [], true);
     renderChoiceGroup('upcomingChoices', project?.roadmap?.context?.upcomingWorks ?? [], true);
@@ -156,6 +158,67 @@
 
   function futureFitLabel(dimension) {
     return { envelope: 'Hülle', technique: 'Technik', fossilfree: 'fossilfrei', pv: 'PV' }[dimension] ?? dimension;
+  }
+
+  function dragPayload(event) {
+    return event.dataTransfer?.getData('text/plain') || '';
+  }
+
+  function handleRouteDrop(payload, stageId, beforeItemId = null) {
+    if (!payload || !stageId) return;
+    if (payload.startsWith('roadmap-item:')) {
+      const itemId = payload.slice('roadmap-item:'.length);
+      if (beforeItemId && itemId === beforeItemId) return;
+      selectedItemId = itemId;
+      openStageId = stageId;
+      store.setPath('roadmap', roadmapCore.moveItem(store.get().roadmap, itemId, stageId, beforeItemId));
+      return;
+    }
+    if (payload.startsWith('roadmap-card:')) {
+      const cardId = payload.slice('roadmap-card:'.length);
+      addCardToStage(cardId, stageId, beforeItemId);
+    }
+  }
+
+  function bindRouteDragAndDrop(host) {
+    host.querySelectorAll('[data-route-item]').forEach((button) => {
+      button.addEventListener('dragstart', (event) => {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', `roadmap-item:${button.dataset.routeItem}`);
+        button.classList.add('is-dragging');
+      });
+      button.addEventListener('dragend', () => button.classList.remove('is-dragging'));
+      button.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = 'move';
+        button.classList.add('is-drop-before');
+      });
+      button.addEventListener('dragleave', () => button.classList.remove('is-drop-before'));
+      button.addEventListener('drop', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        button.classList.remove('is-drop-before');
+        const stage = button.closest('[data-stage-id]');
+        handleRouteDrop(dragPayload(event), stage?.dataset.stageId, button.dataset.routeItem);
+      });
+    });
+
+    host.querySelectorAll('[data-stage-id]').forEach((stage) => {
+      stage.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        stage.classList.add('is-drag-over');
+      });
+      stage.addEventListener('dragleave', (event) => {
+        if (!stage.contains(event.relatedTarget)) stage.classList.remove('is-drag-over');
+      });
+      stage.addEventListener('drop', (event) => {
+        event.preventDefault();
+        stage.classList.remove('is-drag-over');
+        handleRouteDrop(dragPayload(event), stage.dataset.stageId, null);
+      });
+    });
   }
 
   function renderRoute(project) {
@@ -171,21 +234,22 @@
     } else {
       const stageMarkup = stages.map((stage) => {
         const stageItems = itemsForStage(roadmap, stage.id);
-        const shown = stageItems.slice(0, 4);
+        const shown = stageItems.slice(0, 5);
         return `<div class="route-stage" data-stage-id="${escapeHtml(stage.id)}">
           <div class="route-node"></div>
           <strong>${escapeHtml(stage.title)}</strong>
           <small>${escapeHtml(stage.timing?.horizon ?? '')}</small>
           <div class="route-card-list">${shown.map((item) => {
             const card = cardById(item.cardId);
-            return `<button class="route-item ${selectedItemId === item.id ? 'is-selected' : ''}" data-route-item="${escapeHtml(item.id)}" type="button">${escapeHtml(card?.title ?? item.cardId)}</button>`;
+            return `<button class="route-item ${selectedItemId === item.id ? 'is-selected' : ''}" draggable="true" data-route-item="${escapeHtml(item.id)}" title="Ziehen zum Verschieben oder anklicken für Details" type="button">${escapeHtml(card?.title ?? item.cardId)}</button>`;
           }).join('')}${stageItems.length > shown.length ? `<span class="route-more">+ ${stageItems.length - shown.length} weitere</span>` : ''}</div>
         </div>`;
       }).join('');
-      host.innerHTML = `<div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
+      host.innerHTML = `<svg class="route-curve" aria-hidden="true" viewBox="0 0 1000 50" preserveAspectRatio="none"><defs><linearGradient id="roadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="M55 25 C220 16 330 34 470 25 S720 16 945 25" fill="none" stroke="url(#roadmapRouteGradient)" stroke-width="5" stroke-linecap="round"/></svg><div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
       $('routeStatus').textContent = `${stages.length} Etappen · ${items.length} Karten`;
       $('routeStatus').className = 'status-chip is-success';
       host.querySelectorAll('[data-route-item]').forEach((button) => button.addEventListener('click', () => selectItem(button.dataset.routeItem)));
+      bindRouteDragAndDrop(host);
     }
 
     const coverage = roadmapCore.futureFitPlan(roadmap, data);
@@ -226,7 +290,26 @@
   }
 
   function bindStageDetailActions(project, roadmap) {
-    $('stageDetails').querySelectorAll('[data-stage-item]').forEach((button) => button.addEventListener('click', () => selectItem(button.dataset.stageItem)));
+    $('stageDetails').querySelectorAll('[data-stage-item]').forEach((button) => {
+      button.addEventListener('click', () => selectItem(button.dataset.stageItem));
+      button.addEventListener('dragstart', (event) => {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', `roadmap-item:${button.dataset.stageItem}`);
+      });
+      button.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        button.classList.add('is-drop-before');
+      });
+      button.addEventListener('dragleave', () => button.classList.remove('is-drop-before'));
+      button.addEventListener('drop', (event) => {
+        event.preventDefault();
+        button.classList.remove('is-drop-before');
+        const payload = dragPayload(event);
+        const stageId = button.closest('[data-stage-id]')?.dataset.stageId;
+        handleRouteDrop(payload, stageId, button.dataset.stageItem);
+      });
+    });
     $('stageDetails').querySelectorAll('[data-stage-select]').forEach((select) => select.addEventListener('change', () => {
       store.setPath('roadmap', roadmapCore.moveItem(store.get().roadmap, select.dataset.stageSelect, select.value || null));
     }));
@@ -234,7 +317,7 @@
     $('stageDetails').querySelectorAll('[data-move-later]').forEach((button) => button.addEventListener('click', () => moveRelative(button.dataset.moveLater, 1)));
     $('stageDetails').querySelectorAll('[data-remove-item]').forEach((button) => button.addEventListener('click', () => {
       if (selectedItemId === button.dataset.removeItem) selectedItemId = null;
-      store.setPath('roadmap', roadmapCore.removeItem(store.get().roadmap, button.dataset.removeItem));
+      store.setPath('roadmap', roadmapCore.moveItem(store.get().roadmap, button.dataset.removeItem, null));
     }));
     $('stageDetails').querySelectorAll('.stage-accordion').forEach((details) => details.addEventListener('toggle', () => {
       if (!details.open) return;
@@ -264,16 +347,25 @@
       const detail = selected?.stageId === stage.id ? renderCardDetail(project, roadmap, selected) : (stageItems.length ? '<p class="roadmap-empty-note">Eine Karte auswählen, um nur die aktuell benötigten Details zu öffnen.</p>' : '<p class="roadmap-empty-note">Noch keine Karte in dieser Etappe.</p>');
       return `<details class="stage-accordion" data-stage-id="${escapeHtml(stage.id)}" ${stage.id === openStageId ? 'open' : ''}>
         <summary><div><strong>${escapeHtml(stage.title)}</strong><span>${escapeHtml(stage.timing?.horizon ?? '')}</span></div><b>${stageItems.length} ${stageItems.length === 1 ? 'Karte' : 'Karten'}</b></summary>
-        <div class="stage-body"><div class="stage-item-list">${stageItems.map((item) => `<button class="stage-item-button ${selectedItemId === item.id ? 'is-selected' : ''}" data-stage-item="${escapeHtml(item.id)}" type="button">${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</button>`).join('')}</div>${detail}</div>
+        <div class="stage-body"><div class="stage-item-list">${stageItems.map((item) => `<button class="stage-item-button ${selectedItemId === item.id ? 'is-selected' : ''}" draggable="true" data-stage-item="${escapeHtml(item.id)}" type="button">${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</button>`).join('')}</div>${detail}</div>
       </details>`;
     }).join('');
 
     bindStageDetailActions(project, roadmap);
 
-    const unassigned = allItems.filter((item) => !item.stageId);
+    const unassigned = allItems.filter((item) => !item.stageId).sort((a, b) => Number(a.order ?? 999999) - Number(b.order ?? 999999));
     $('unassignedBlock').hidden = !unassigned.length;
-    $('unassignedList').innerHTML = unassigned.map((item) => `<button data-unassigned-item="${escapeHtml(item.id)}" type="button">${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</button>`).join('');
-    $('unassignedList').querySelectorAll('[data-unassigned-item]').forEach((button) => button.addEventListener('click', () => selectItem(button.dataset.unassignedItem)));
+    $('unassignedList').innerHTML = unassigned.map((item) => `<div class="unassigned-item" draggable="true" data-unassigned-drag="${escapeHtml(item.id)}"><strong>${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</strong><select aria-label="${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)} einer Etappe zuordnen" data-unassigned-select="${escapeHtml(item.id)}"><option value="">Später zuordnen</option>${stages.map((stage) => `<option value="${escapeHtml(stage.id)}">${escapeHtml(stage.title)} · ${escapeHtml(stage.timing?.horizon ?? '')}</option>`).join('')}</select></div>`).join('');
+    $('unassignedList').querySelectorAll('[data-unassigned-select]').forEach((select) => select.addEventListener('change', () => {
+      if (!select.value) return;
+      selectedItemId = select.dataset.unassignedSelect;
+      openStageId = select.value;
+      store.setPath('roadmap', roadmapCore.moveItem(store.get().roadmap, select.dataset.unassignedSelect, select.value));
+    }));
+    $('unassignedList').querySelectorAll('[data-unassigned-drag]').forEach((item) => item.addEventListener('dragstart', (event) => {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `roadmap-item:${item.dataset.unassignedDrag}`);
+    }));
   }
 
   function selectItem(itemId) {
@@ -303,11 +395,17 @@
     const roadmap = normalizedRoadmap(project);
     const active = new Set(Object.values(roadmap.items ?? {}).map((item) => item.cardId));
     const context = { upcomingWorks: activeUpcoming(project) };
-    const suggestions = roadmapCore.suggest(project, context, data, { limit: 30 }).all.filter((entry) => !active.has(entry.card.id));
-    $('suggestionCount').textContent = suggestions.length ? `${suggestions.length} weitere Hinweise` : 'aktuell vollständig';
+    const suggestions = roadmapCore.suggest(project, context, data, { limit: 8 }).additional.filter((entry) => !active.has(entry.card.id));
+    $('suggestionCount').textContent = suggestions.length ? `+ ${suggestions.length}` : '–';
     const top = suggestions.slice(0, 3);
-    $('additionalSuggestions').innerHTML = top.length ? top.map((entry) => `<div class="suggestion-card"><strong>${escapeHtml(entry.card.title)}</strong><p>${escapeHtml(entry.reason || entry.card.summary)}</p><button data-add-card="${escapeHtml(entry.card.id)}" type="button">+ zum Fahrplan</button></div>`).join('') : '<p class="roadmap-empty-note">Aktuell ergeben sich keine zusätzlichen automatischen Hinweise. Der vollständige Katalog bleibt verfügbar.</p>';
-    $('additionalSuggestions').querySelectorAll('[data-add-card]').forEach((button) => button.addEventListener('click', () => addCard(button.dataset.addCard)));
+    $('additionalSuggestions').innerHTML = top.length ? top.map((entry) => `<button class="suggestion-chip" draggable="true" data-add-card="${escapeHtml(entry.card.id)}" title="Anklicken oder in eine Etappe ziehen" type="button">${escapeHtml(entry.card.title)}</button>`).join('') : '<span class="roadmap-empty-note">Aktuell keine weiteren automatischen Hinweise.</span>';
+    $('additionalSuggestions').querySelectorAll('[data-add-card]').forEach((button) => {
+      button.addEventListener('click', () => addCard(button.dataset.addCard));
+      button.addEventListener('dragstart', (event) => {
+        event.dataTransfer.effectAllowed = 'copyMove';
+        event.dataTransfer.setData('text/plain', `roadmap-card:${button.dataset.addCard}`);
+      });
+    });
   }
 
   function renderCatalog(project) {
@@ -330,28 +428,30 @@
     store.setPath('roadmap', next);
   }
 
-  function relationStrength(entry) { return ({ important: 0, recommended: 1, hint: 2 }[entry.strength] ?? 9); }
+  function addCardToStage(cardId, stageId, beforeItemId = null) {
+    const card = cardById(cardId);
+    if (!card || !stageId) return;
+    let next = roadmapCore.addCard(store.get().roadmap, cardId, card.type);
+    const added = Object.values(next.items).find((item) => item.cardId === cardId);
+    if (!added) return;
+    next = roadmapCore.moveItem(next, added.id, stageId, beforeItemId);
+    selectedItemId = added.id;
+    openStageId = stageId;
+    store.setPath('roadmap', next);
+  }
 
   function renderReasons(project) {
     const roadmap = normalizedRoadmap(project);
-    const active = new Set(Object.values(roadmap.items ?? {}).map((item) => item.cardId));
-    const relationRows = (data.relations.relations ?? []).filter((entry) => active.has(entry.source) && active.has(entry.target)).sort((a, b) => relationStrength(a) - relationStrength(b));
-    const seen = new Set();
-    const rows = [];
-    relationRows.forEach((entry) => {
-      const text = entry.customerText || entry.reason;
-      if (!text || seen.has(text) || rows.length >= 3) return;
-      seen.add(text);
-      rows.push({ label: RELATION_LABEL[entry.relation] ?? entry.relation, text });
-    });
-    if (rows.length < 3) {
-      Object.values(roadmap.items ?? {}).forEach((item) => {
-        if (!item.suggestionReason || seen.has(item.suggestionReason) || rows.length >= 3) return;
-        seen.add(item.suggestionReason);
-        rows.push({ label: 'mitdenken', text: item.suggestionReason });
-      });
+    const checks = roadmapCore.planChecks(roadmap, data, { max: 4 });
+    if (!checks.length) {
+      $('reasonList').innerHTML = '<div class="plan-check-ok"><strong>✓ Keine wesentlichen Reihenfolgekonflikte erkannt.</strong><p>Synergien innerhalb derselben Etappe bleiben in den Kartendetails sichtbar.</p></div>';
+      return;
     }
-    $('reasonList').innerHTML = rows.length ? rows.map((row) => `<div class="reason-item"><strong>${escapeHtml(row.label)}</strong><p>${escapeHtml(row.text)}</p></div>`).join('') : '<p class="roadmap-empty-note">Mit dem vorbereiteten Fahrplan werden hier die wichtigsten Zusammenhänge erklärt.</p>';
+    $('reasonList').innerHTML = checks.map((entry) => {
+      const label = entry.kind === 'warning' ? 'Wichtig prüfen' : 'Synergie prüfen';
+      const css = entry.kind === 'warning' ? 'is-warning' : 'is-opportunity';
+      return `<div class="reason-item ${css}"><strong>${escapeHtml(label)}</strong><p>${escapeHtml(entry.text)}</p></div>`;
+    }).join('');
   }
 
   function cardsForEffect(project, dimensions) {
@@ -452,7 +552,7 @@
       store.setPath('roadmap', next);
       store.setPath('modules.sanierungsfahrplan.lastPreparedAt', new Date().toISOString());
     });
-    $('prepareRoadmapHint').textContent = 'Erstvorschlag erstellt. Etappen und Karten können jetzt gemeinsam verschoben, ergänzt oder entfernt werden.';
+    $('prepareRoadmapHint').textContent = 'Erstvorschlag erstellt. Karten können per Drag & Drop oder über die Detailsteuerung verschoben und ergänzt werden.';
     $('routeCard')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }
 
@@ -600,12 +700,12 @@
     const stages = orderedStages(roadmap);
     const priorities = (project.advice?.priorities ?? []).map((id) => PRIORITY_LABEL[id] ?? id).join(' · ') || 'offen';
     const reasons = [...$('reasonList').querySelectorAll('.reason-item')].slice(0, 3).map((node) => node.textContent.trim());
-    $('roadmapPrintReport').innerHTML = `<div class="print-roadmap-title"><p class="eyebrow">Sanierungsfahrplan · V0.1</p><h1>${escapeHtml(project.project?.title || 'Sanierungsfahrplan')}</h1><p>${escapeHtml(project.project?.addressLabel || 'Standort noch offen')}</p><small>Anlass: ${escapeHtml(REASON_LABEL[project.advice?.reason] ?? 'offen')} · Zeitraum: ${escapeHtml(TIME_LABEL[project.advice?.timeHorizon] ?? 'offen')} · Budget: ${escapeHtml(BUDGET_LABEL[project.advice?.budgetBand] ?? 'offen')}</small><p><strong>Schwerpunkte:</strong> ${escapeHtml(priorities)}</p></div>
+    $('roadmapPrintReport').innerHTML = `<div class="print-roadmap-title"><p class="eyebrow">Sanierungsfahrplan · V0.2</p><h1>${escapeHtml(project.project?.title || 'Sanierungsfahrplan')}</h1><p>${escapeHtml(project.project?.addressLabel || 'Standort noch offen')}</p><small>Anlass: ${escapeHtml(REASON_LABEL[project.advice?.reason] ?? 'offen')} · Zeitraum: ${escapeHtml(TIME_LABEL[project.advice?.timeHorizon] ?? 'offen')} · Budget: ${escapeHtml(BUDGET_LABEL[project.advice?.budgetBand] ?? 'offen')}</small><p><strong>Schwerpunkte:</strong> ${escapeHtml(priorities)}</p></div>
       <h2>Bestand → gewählte Etappen → Zukunftsfit 2050</h2>
       <div class="print-route">${stages.map((stage) => `<section class="print-stage"><h3>${escapeHtml(stage.title)}</h3><small>${escapeHtml(stage.timing?.horizon ?? '')}</small><ul>${itemsForStage(roadmap, stage.id).map((item) => `<li>${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</li>`).join('')}</ul></section>`).join('')}</div>
       <p><strong>Zielbild:</strong> zukunftsfähige Gebäudehülle → effiziente Gebäudetechnik → fossilfreie / erneuerbare Wärmeversorgung → PV</p>
-      <div class="print-key-message"><h2>Warum diese Reihenfolge?</h2>${reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>` : '<p>Reihenfolge im Beratungsgespräch weiter konkretisieren.</p>'}</div>
-      <p><small>V0.1: Kosten-, Energie- und Referenz-Erneuerungsdarstellung wird aus den gemeinsamen Fachservices ergänzt. Der Fahrplan ist bereits ohne diese Berechnungen nutzbar.</small></p>`;
+      <div class="print-key-message"><h2>Planungscheck</h2>${reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>` : '<p>Reihenfolge im Beratungsgespräch weiter konkretisieren.</p>'}</div>
+      <p><small>V0.2: Kosten-, Energie- und Referenz-Erneuerungsdarstellung wird aus den gemeinsamen Fachservices ergänzt. Der Fahrplan ist bereits ohne diese Berechnungen nutzbar.</small></p>`;
   }
 
   async function init() {

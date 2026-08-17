@@ -4,14 +4,14 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <link href="../../assets/svg/favicon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
-<title>Sanierungsfahrplan V0.1 | Tools für Energieberatung</title>
+<title>Sanierungsfahrplan V0.2 | Tools für Energieberatung</title>
 <meta name="robots" content="noindex,nofollow"/>
 <meta content="Sanierungsmaßnahmen, Planungspunkte und Zukunftsthemen Schritt für Schritt zu Zukunftsfit 2050 ordnen." name="description"/>
 <link href="../../styles.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/components.css?v=3" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="sanierungsfahrplan.css?v=1" rel="stylesheet"/>
+<link href="sanierungsfahrplan.css?v=2" rel="stylesheet"/>
 </head>
 <body data-tool-mode="roadmap">
 <header class="site-header no-print">
@@ -75,11 +75,11 @@
 <fieldset><legend>Anlass</legend><div class="choice-row" id="reasonChoices">
 <button type="button" data-value="costs">Kosten senken</button><button type="button" data-value="renewal">Bauteil ohnehin sanieren</button><button type="button" data-value="heating">Heizung erneuern</button><button type="button" data-value="full">Gesamtsanierung</button><button type="button" data-value="comfort">Komfort</button><button type="button" data-value="open">noch offen</button>
 </div></fieldset>
-<fieldset><legend>Zeitraum</legend><div class="choice-row" id="timeChoices"><button type="button" data-value="now">jetzt</button><button type="button" data-value="1-3">1–3 Jahre</button><button type="button" data-value="3-10">3–10 Jahre</button><button type="button" data-value="later">langfristig</button></div></fieldset>
+<fieldset><legend>Zeitraum</legend><div class="choice-row" id="timeChoices"><button type="button" data-value="now">jetzt</button><button type="button" data-value="1-3">1–3 Jahre</button><button type="button" data-value="3-7">3–7 Jahre</button><button type="button" data-value="later">langfristig</button></div></fieldset>
 <fieldset><legend>Budget</legend><div class="choice-row" id="budgetChoices"><button type="button" data-value="lt25">&lt; 25 T€</button><button type="button" data-value="25-50">25–50 T€</button><button type="button" data-value="50-100">50–100 T€</button><button type="button" data-value="gt100">&gt; 100 T€</button><button type="button" data-value="open">offen</button></div></fieldset>
 </div>
 <div class="priorities-panel roadmap-priorities"><h3>Was ist Ihnen besonders wichtig?</h3><div class="priority-grid" id="priorityChoices">
-<button type="button" data-value="costs"><span>€</span>Kosten</button><button type="button" data-value="comfort"><span>♡</span>Komfort &amp; Gesundheit</button><button type="button" data-value="climate"><span>♻</span>Klimaschutz</button><button type="button" data-value="independence"><span>⚡</span>Unabhängigkeit &amp; Versorgungssicherheit</button><button type="button" data-value="value"><span>⌂</span>Werterhalt</button><button type="button" data-value="effort"><span>⚒</span>geringer Umsetzungsaufwand</button>
+<button type="button" data-value="costs"><span>€</span>Kosten</button><button type="button" data-value="comfort"><span>♡</span>Komfort &amp; Gesundheit</button><button type="button" data-value="climate"><span>♻</span>Klimaschutz</button><button type="button" data-value="independence"><span>⚡</span>Autarkie &amp; Sicherheit</button><button type="button" data-value="value"><span>⌂</span>Werterhalt</button><button type="button" data-value="effort"><span>⚒</span>geringer Aufwand</button>
 </div></div>
 <div class="upcoming-panel">
 <div class="upcoming-head"><div><p class="eyebrow">Wichtig für den Erstvorschlag</p><h3>Was steht ohnehin an?</h3><p>Nur auswählen, was bereits absehbar ist. Das sind Zeitfenster – noch keine fertigen Maßnahmen.</p></div></div>
@@ -92,11 +92,16 @@
 
 <article class="roadmap-card roadmap-card--route" id="routeCard">
 <div class="section-heading route-heading"><div><p class="eyebrow">3 · Sanierungsroute</p><h2>Schritt für Schritt zu Zukunftsfit 2050</h2></div><span class="status-chip" id="routeStatus">noch nicht vorbereitet</span></div>
-<div class="route-toolbar"><span>Ansicht</span><div class="segmented-control roadmap-view-mode" id="viewMode"><button class="is-selected" data-value="consulting" type="button">Beratung</button><button disabled title="Wird mit den gemeinsamen Energiedaten ergänzt" type="button">Wirkung</button><button disabled title="Wird mit dem Economics-Core ergänzt" type="button">Kosten</button></div></div>
+<div class="route-toolbar"><span class="route-edit-hint">Karten ziehen = Etappe / Reihenfolge ändern</span><span>Ansicht</span><div class="segmented-control roadmap-view-mode" id="viewMode"><button class="is-selected" data-value="consulting" type="button">Beratung</button><button disabled title="Wird mit den gemeinsamen Energiedaten ergänzt" type="button">Wirkung</button><button disabled title="Wird mit dem Economics-Core ergänzt" type="button">Kosten</button></div></div>
 <div class="renovation-route" id="renovationRoute"><p class="empty-route">Rahmen prüfen und anschließend den Fahrplan vorbereiten.</p></div>
 <div class="future-fit-summary">
 <div><span class="eyebrow">Zielbild</span><strong>Zukunftsfit 2050</strong><small>Hülle → Technik → fossilfrei → PV</small></div>
 <div class="future-fit-mini" id="futureFitPlan"></div>
+</div>
+<div class="route-suggestions no-print">
+<div class="route-suggestions-head"><strong>Weitere vorgeschlagene Themen</strong><span class="status-chip" id="suggestionCount">–</span></div>
+<div class="suggestion-strip" id="additionalSuggestions"></div>
+<details class="roadmap-details catalog-details"><summary>Alle weiteren Themen anzeigen</summary><div class="catalog-groups" id="catalogGroups"></div></details>
 </div>
 </article>
 
@@ -106,21 +111,16 @@
 <div class="unassigned-block" id="unassignedBlock" hidden><div><span class="eyebrow">Noch nicht eingeplant</span><h3>Später zuordnen</h3></div><div class="unassigned-list" id="unassignedList"></div></div>
 </article>
 
-<article class="roadmap-card" id="moreTopicsCard">
-<div class="section-heading"><div><p class="eyebrow">5 · Gesprächs- und Erinnerungsstütze</p><h2>Weitere Themen</h2></div><span class="status-chip" id="suggestionCount">–</span></div>
-<p class="section-note">Der Fahrplan zeigt zuerst nur besonders relevante Themen. Nicht vorgeschlagene Karten bleiben im vollständigen Katalog verfügbar.</p>
-<div class="suggestion-strip" id="additionalSuggestions"></div>
-<details class="roadmap-details catalog-details"><summary>Gesamten Kartenkatalog anzeigen</summary><div class="catalog-groups" id="catalogGroups"></div></details>
-</article>
+
 
 <article class="roadmap-card" id="reasonCard">
-<div class="section-heading"><div><p class="eyebrow">6 · Einordnung</p><h2>Warum diese Reihenfolge?</h2></div></div>
-<div class="reason-list" id="reasonList"><p class="roadmap-empty-note">Mit dem vorbereiteten Fahrplan werden hier die wichtigsten Zusammenhänge erklärt.</p></div>
+<div class="section-heading"><div><p class="eyebrow">5 · Planungscheck</p><h2>Reihenfolge &amp; Abhängigkeiten</h2></div></div>
+<div class="reason-list" id="reasonList"><p class="roadmap-empty-note">Hier werden nur auffällige Reihenfolgen oder verlorene Synergien angezeigt.</p></div>
 <details class="roadmap-details"><summary>Zeit, Erneuerung und Investition im Detail</summary><p class="method-placeholder">Die Zeit-/Investitionsgrafik wird im nächsten Fachintegrationsschritt aus Referenz-Erneuerungshorizonten, Economics-Core und Förderung aufgebaut. Die Reihenfolgelogik funktioniert bereits ohne diese Daten.</p></details>
 </article>
 
 <article class="roadmap-card" id="moreThanEnergyCard">
-<div class="section-heading"><div><p class="eyebrow">7 · Gesamtwirkung</p><h2>Mehr als Energie</h2></div></div>
+<div class="section-heading"><div><p class="eyebrow">6 · Gesamtwirkung</p><h2>Mehr als Energie</h2></div></div>
 <p class="section-note">Keine Punktesumme. Kundenprioritäten verändern keine technische oder wirtschaftliche Berechnung – sie bestimmen nur, welche Zusatzwirkungen zuerst besprochen werden.</p>
 <div class="priority-impact-list" id="priorityImpactList"></div>
 <details class="roadmap-details"><summary>Alle Zusatzwirkungen anzeigen</summary><div id="allEffects"></div></details>
@@ -145,7 +145,7 @@
 </section>
 </main>
 
-<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Sanierungsfahrplan V0.1 · Pilotbetrieb per Direktlink</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
+<footer class="site-footer no-print"><div class="container footer-inner"><div><p class="footer-name">Tools</p><p class="footer-note">Sanierungsfahrplan V0.2 · Pilotbetrieb per Direktlink</p></div><nav aria-label="Rechtliche Informationen" class="footer-links"><a href="../../pages/kontakt.html#impressum">Impressum</a><a href="../../pages/kontakt.html#datenschutz">Datenschutz</a></nav><p class="copyright">© <span id="year">2026</span></p></div></footer>
 
 <script src="../../script.js"></script>
 <script src="../../shared/js/paths.js?v=1"></script>
@@ -160,7 +160,7 @@
 <script src="../../shared/js/services/address-provider-tiris-live.js?v=2"></script>
 <script src="../../shared/js/services/address-provider-hybrid.js?v=2"></script>
 <script src="../../shared/js/services/building-geometry-service.js?v=2"></script>
-<script src="../../shared/js/domain/roadmap/roadmap-core.js?v=1"></script>
-<script src="sanierungsfahrplan.js?v=1"></script>
+<script src="../../shared/js/domain/roadmap/roadmap-core.js?v=2"></script>
+<script src="sanierungsfahrplan.js?v=2"></script>
 </body>
 </html>

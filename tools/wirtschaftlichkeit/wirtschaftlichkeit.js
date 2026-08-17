@@ -27,7 +27,7 @@
   const ORIGIN_LABEL = { manual: 'manuell', official: 'amtlich', derived: 'abgeleitet', fallback: 'Fallback' };
   const PRIORITY_LABEL = {
     costs: '€ Kosten', comfort: '♡ Komfort & Gesundheit', climate: '♻ Klimaschutz',
-    independence: '⚡ Unabhängigkeit', value: '⌂ Werterhalt', effort: '⚒ wenig Aufwand',
+    independence: '⚡ Autarkie & Sicherheit', value: '⌂ Werterhalt', effort: '⚒ geringer Aufwand',
   };
   const BUDGETS = {
     lt25: { label: '< 25 T€', min: 0, max: 25000 },
@@ -257,7 +257,7 @@
   function renderAdvice(project) {
     const advice = project.advice ?? {};
     renderChoiceGroup('reasonChoices', advice.reason ?? null);
-    renderChoiceGroup('timeChoices', advice.timeHorizon ?? null);
+    renderChoiceGroup('timeChoices', advice.timeHorizon === '3-10' ? '3-7' : (advice.timeHorizon ?? null));
     renderChoiceGroup('budgetChoices', advice.budgetBand ?? null);
     renderChoiceGroup('priorityChoices', Array.isArray(advice.priorities) ? advice.priorities : [], true);
     $('goalStatus').textContent = advice.reason || advice.timeHorizon || advice.priorities?.length ? 'Rahmen gesetzt' : 'offen';
@@ -995,7 +995,7 @@
   }
   function effectRows(result, project) {
     const priorities = project.advice?.priorities ?? [];
-    const benefitTexts = { costs:['Kosten','wirtschaftlich betrachtet'], comfort:['Komfort','positiv'], climate:['Klimaschutz','positiv'], independence:['Unabhängigkeit','positiv'], value:['Werterhalt','positiv'], effort:['Baustellenaufwand','projektabhängig'] };
+    const benefitTexts = { costs:['Kosten','wirtschaftlich betrachtet'], comfort:['Komfort','positiv'], climate:['Klimaschutz','positiv'], independence:['Autarkie & Sicherheit','positiv'], value:['Werterhalt','positiv'], effort:['geringer Aufwand','projektabhängig'] };
     const ordered = [...priorities, 'effort'].filter((v,i,a)=>a.indexOf(v)===i).slice(0,4);
     if (!ordered.length) ordered.push('comfort','climate','effort');
     return ordered.map((key)=>benefitTexts[key] ?? [key,'projektabhängig']);

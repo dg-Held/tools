@@ -4,7 +4,7 @@
   const paths = global.EnergyToolsPaths;
   if (!paths) return;
 
-  const MODEL_VERSION = 'roadmap-core-v0.1';
+  const MODEL_VERSION = 'roadmap-core-v0.2';
   const DATA_URLS = Object.freeze({
     cards: `${paths.sharedData}roadmap/cards.json`,
     relations: `${paths.sharedData}roadmap/relations.json`,
@@ -68,10 +68,16 @@
         ['stage-2', 'Etappe 2', '3–7 Jahre'],
         ['stage-3', 'Etappe 3', 'später'],
       ],
+      '3-7': [
+        ['stage-1', 'Etappe 1', '0–3 Jahre'],
+        ['stage-2', 'Etappe 2', '3–7 Jahre'],
+        ['stage-3', 'Etappe 3', 'später'],
+      ],
+      // Rückwärtskompatibilität für bestehende Projekte mit dem früheren Token 3-10.
       '3-10': [
         ['stage-1', 'Etappe 1', '0–3 Jahre'],
         ['stage-2', 'Etappe 2', '3–7 Jahre'],
-        ['stage-3', 'Etappe 3', '7–10 Jahre'],
+        ['stage-3', 'Etappe 3', 'später'],
       ],
       later: [
         ['stage-1', 'Etappe 1', 'bei nächster Erneuerung'],
@@ -165,47 +171,69 @@
   }
 
   function suggest(project, context, data, options = {}) {
-    const limit = Math.max(1, Number(options.limit ?? 10));
-    const scores = new Map();
-    const reasons = new Map();
-    const add = (cardId, weight, reason) => {
+    const limit = Math.max(1, Number(options.limit ?? 8));
+    const routeScores = new Map();
+    const additionalScores = new Map();
+    const routeReasons = new Map();
+    const additionalReasons = new Map();
+
+    const add = (bucket, reasons, cardId, weight, reason) => {
       if (!data.cardMap.has(cardId)) return;
-      scores.set(cardId, (scores.get(cardId) ?? 0) + weight);
+      bucket.set(cardId, (bucket.get(cardId) ?? 0) + weight);
       if (reason && !reasons.has(cardId)) reasons.set(cardId, reason);
     };
 
     (data.relations.suggestionRules ?? []).forEach((rule) => {
       if (!triggerMatches(rule.trigger ?? {}, project, context)) return;
       const base = suggestionWeight(rule.priority);
-      (rule.targets ?? []).forEach((cardId, index) => add(cardId, Math.max(1, base - index), rule.reason));
+      const routeTargets = rule.routeTargets ?? rule.targets ?? [];
+      const additionalTargets = rule.additionalTargets ?? [];
+      routeTargets.forEach((cardId, index) => add(routeScores, routeReasons, cardId, Math.max(1, base - index), rule.reason));
+      additionalTargets.forEach((cardId, index) => add(additionalScores, additionalReasons, cardId, Math.max(1, base - index), rule.reason));
     });
 
     const tokens = projectMeasureTokens(project);
     (data.cards.items ?? []).forEach((item) => {
       const linked = (item.projectMeasureIds ?? []).some((id) => tokens.has(String(id)));
-      if (linked) add(item.id, 80, 'Bereits aus dem gemeinsamen Projektstand vorbereitet.');
+      if (linked) add(routeScores, routeReasons, item.id, 90, 'Bereits aus dem gemeinsamen Projektstand vorbereitet.');
     });
 
     const upcoming = context?.upcomingWorks ?? [];
     if (!upcoming.length) {
       const year = Number(getPath(project, 'building.profile.constructionYear', NaN));
       if (Number.isFinite(year) && year < 2000) {
-        ['envelope-wall', 'envelope-roof', 'envelope-windows'].forEach((id, index) => add(id, 22 - index, 'Orientierender Erstvorschlag aus Bauperiode und Zielbild.'));
+        ['envelope-wall', 'envelope-roof', 'envelope-windows'].forEach((id, index) => add(routeScores, routeReasons, id, 22 - index, 'Orientierender Erstvorschlag aus Bauperiode und Zielbild.'));
       }
-      add('building-check', 24, 'Eigenständiger Einstieg ohne vorangehende Tools.');
-      add('energy-certificate', 17, 'Energetische Ausgangslage und Nachweise bei Bedarf klären.');
+      add(routeScores, routeReasons, 'building-check', 24, 'Eigenständiger Einstieg ohne vorangehende Tools.');
+      add(additionalScores, additionalReasons, 'energy-certificate', 17, 'Energetische Ausgangslage und Nachweise bei Bedarf klären.');
     }
 
-    if (upcoming.length >= 2) add('renovation-concept', 45, 'Mehrere anstehende Arbeiten sollten in einem Gesamtkonzept verbunden werden.');
+    // Mehrere ohnehin anstehende Arbeiten machen das Gesamtkonzept zur ersten Beratungsaufgabe.
+    if (upcoming.length >= 2) add(routeScores, routeReasons, 'renovation-concept', 95, 'Mehrere anstehende Arbeiten sollten in einem Gesamtkonzept verbunden werden.');
 
-    const sorted = [...scores.entries()]
+    const sortBucket = (bucket, reasons) => [...bucket.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([cardId]) => ({ card: data.cardMap.get(cardId), reason: reasons.get(cardId) ?? '' }));
+      .map(([cardId, score]) => ({ card: data.cardMap.get(cardId), reason: reasons.get(cardId) ?? '', score }));
+
+    const routeSorted = sortBucket(routeScores, routeReasons);
+    const primary = routeSorted.slice(0, limit);
+    const primaryIds = new Set(primary.map((entry) => entry.card.id));
+
+    // Nicht automatisch eingeplante Kernkarten bleiben als Gesprächsimpuls verfügbar.
+    const overflowRoute = routeSorted.slice(limit);
+    const additionalSorted = sortBucket(additionalScores, additionalReasons).filter((entry) => !primaryIds.has(entry.card.id));
+    const mergedAdditional = [];
+    const seenAdditional = new Set();
+    [...overflowRoute, ...additionalSorted].forEach((entry) => {
+      if (primaryIds.has(entry.card.id) || seenAdditional.has(entry.card.id)) return;
+      seenAdditional.add(entry.card.id);
+      mergedAdditional.push(entry);
+    });
 
     return {
-      primary: sorted.slice(0, limit),
-      additional: sorted.slice(limit),
-      all: sorted,
+      primary,
+      additional: mergedAdditional,
+      all: [...primary, ...mergedAdditional],
     };
   }
 
@@ -224,25 +252,39 @@
     return Object.values(stages ?? {}).sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)).map((item) => item.id);
   }
 
-  function chooseStage(card, context, stages, selectedIds) {
+  function chooseStage(card, project, context, stages, selectedIds) {
     const ids = stageIds(stages);
     const first = ids[0] ?? 'stage-1';
     const second = ids[1] ?? first;
     const third = ids[2] ?? second;
     const works = context?.upcomingWorks ?? [];
+    const reason = project?.advice?.reason ?? null;
+
+    // Der ausdrücklich genannte Beratungsanlass hat Vorrang. Technische Risiken werden
+    // anschließend im Planungscheck sichtbar gemacht, nicht durch heimliches Verschieben.
+    if (reason === 'heating' && ['heating-replacement', 'heating-load-check', 'low-temperature-check'].includes(card.id)) return first;
+    if (reason === 'full' && card.id === 'renovation-concept') return first;
+    if (reason === 'renewal' && card.id === 'component-horizon') return first;
+
+    if (card.id === 'renovation-concept') return first;
+    if (card.id === 'component-horizon') return second;
 
     const directWork = Object.entries(UPCOMING_PRIMARY).find(([, cardId]) => cardId === card.id)?.[0];
-    if (directWork && works.includes(directWork)) return first;
+    if (directWork && works.includes(directWork)) {
+      // Grundriss-/Nutzungsthemen sollen beim Erstaufschlag nicht die erste Etappe überladen.
+      if (['layout', 'outdoor'].includes(directWork)) return second;
+      return first;
+    }
 
     if (card.type === 'planning' || card.category === 'foundation') return first;
     if (card.category === 'envelope' || card.category === 'resilience') return works.some((w) => ['roof', 'facade', 'windows'].includes(w)) ? first : second;
     if (card.category === 'heating') {
-      if (works.includes('heating')) return first;
+      if (works.includes('heating') || reason === 'heating') return first;
       return [...selectedIds].some((id) => dataEnvelopeId(id)) ? third : second;
     }
     if (card.id === 'pv-own-use') return works.includes('roof') ? first : third;
     if (card.category === 'electricity') return works.includes('electrical') ? first : third;
-    if (['living', 'accessibility', 'health_ecology', 'safety'].includes(card.category)) return first;
+    if (['living', 'accessibility', 'health_ecology', 'safety'].includes(card.category)) return second;
     return second;
   }
 
@@ -253,7 +295,7 @@
   function buildRoadmap(project, context, data, options = {}) {
     const current = normalizeRoadmap(project?.roadmap, project?.advice?.timeHorizon);
     const stages = defaultStages(project?.advice?.timeHorizon);
-    const suggestions = suggest(project, context, data, { limit: options.limit ?? 10 });
+    const suggestions = suggest(project, context, data, { limit: options.limit ?? 8 });
     const items = {};
     const selectedIds = new Set(suggestions.primary.map((entry) => entry.card.id));
 
@@ -264,9 +306,10 @@
         id: itemId,
         cardId: card.id,
         type: card.type,
-        stageId: chooseStage(card, context, stages, selectedIds),
+        stageId: chooseStage(card, project, context, stages, selectedIds),
         linkedMeasureIds: [],
         preparations: [],
+        order: (index + 1) * 10,
         source: 'suggested',
         suggestionReason: entry.reason,
         note: '',
@@ -306,29 +349,135 @@
     return rows.slice(0, max);
   }
 
+  function stageItemIds(roadmap, stageId) {
+    return Object.values(roadmap?.items ?? {})
+      .filter((item) => item.stageId === stageId)
+      .sort((a, b) => Number(a.order ?? 999999) - Number(b.order ?? 999999) || String(a.id).localeCompare(String(b.id)))
+      .map((item) => item.id);
+  }
+
+  function resequenceStage(roadmap, stageId, orderedIds = null) {
+    if (!stageId) return;
+    const ids = orderedIds ?? stageItemIds(roadmap, stageId);
+    ids.forEach((id, index) => {
+      if (roadmap.items[id]) roadmap.items[id].order = (index + 1) * 10;
+    });
+  }
+
   function addCard(roadmap, cardId, type = null) {
     const next = normalizeRoadmap(roadmap);
     if (Object.values(next.items).some((item) => item.cardId === cardId)) return next;
     const number = Object.keys(next.items).length + 1;
     const id = `roadmap-item-${String(number).padStart(2, '0')}-${Date.now().toString(36)}`;
-    next.items[id] = { id, cardId, type, stageId: null, linkedMeasureIds: [], preparations: [], source: 'manual', note: '' };
+    next.items[id] = { id, cardId, type, stageId: null, linkedMeasureIds: [], preparations: [], order: number * 10, source: 'manual', note: '' };
     next.updatedAt = new Date().toISOString();
     return next;
   }
 
-  function moveItem(roadmap, itemId, stageId) {
+  function moveItem(roadmap, itemId, stageId, beforeItemId = null) {
     const next = normalizeRoadmap(roadmap);
-    if (!next.items[itemId]) return next;
-    next.items[itemId].stageId = stageId || null;
+    const item = next.items[itemId];
+    if (!item) return next;
+    const previousStage = item.stageId || null;
+    const targetStage = stageId || null;
+
+    if (previousStage) {
+      const remaining = stageItemIds(next, previousStage).filter((id) => id !== itemId);
+      resequenceStage(next, previousStage, remaining);
+    }
+
+    item.stageId = targetStage;
+    if (targetStage) {
+      const targetIds = stageItemIds(next, targetStage).filter((id) => id !== itemId);
+      const beforeIndex = beforeItemId ? targetIds.indexOf(beforeItemId) : -1;
+      if (beforeIndex >= 0) targetIds.splice(beforeIndex, 0, itemId);
+      else targetIds.push(itemId);
+      resequenceStage(next, targetStage, targetIds);
+    }
+
     next.updatedAt = new Date().toISOString();
     return next;
   }
 
   function removeItem(roadmap, itemId) {
     const next = normalizeRoadmap(roadmap);
+    const stageId = next.items[itemId]?.stageId ?? null;
     delete next.items[itemId];
+    if (stageId) resequenceStage(next, stageId);
     next.updatedAt = new Date().toISOString();
     return next;
+  }
+
+  function planChecks(roadmap, data, options = {}) {
+    const max = Math.max(1, Number(options.max ?? 5));
+    const stages = stageIds(roadmap?.stages ?? {});
+    const stageIndex = new Map(stages.map((id, index) => [id, index]));
+    const byCard = new Map();
+    Object.values(roadmap?.items ?? {}).forEach((item) => {
+      if (!byCard.has(item.cardId)) byCard.set(item.cardId, item);
+    });
+
+    const checks = [];
+    const add = (kind, entry, sourceItem, targetItem, text) => {
+      const sourceStage = sourceItem?.stageId ? stageIndex.get(sourceItem.stageId) : null;
+      const targetStage = targetItem?.stageId ? stageIndex.get(targetItem.stageId) : null;
+      const firstAffected = [sourceStage, targetStage].filter(Number.isFinite).sort((a, b) => a - b)[0] ?? 99;
+      checks.push({
+        kind,
+        strength: entry.strength ?? 'recommended',
+        relation: entry.relation,
+        relationId: entry.id,
+        sourceCard: data.cardMap.get(entry.source) ?? null,
+        targetCard: data.cardMap.get(entry.target) ?? null,
+        stageIndex: firstAffected,
+        text,
+      });
+    };
+
+    (data.relations.relations ?? []).forEach((entry) => {
+      const sourceItem = byCard.get(entry.source) ?? null;
+      const targetItem = byCard.get(entry.target) ?? null;
+      if (!sourceItem) return;
+
+      const sourceIndex = sourceItem.stageId ? stageIndex.get(sourceItem.stageId) : null;
+      const targetIndex = targetItem?.stageId ? stageIndex.get(targetItem.stageId) : null;
+      const baseText = entry.customerText || entry.reason;
+
+      if (entry.relation === 'check' && entry.strength === 'important' && !targetItem) {
+        add('warning', entry, sourceItem, targetItem, baseText);
+        return;
+      }
+      if (!targetItem || !Number.isFinite(sourceIndex) || !Number.isFinite(targetIndex)) return;
+
+      if (entry.relation === 'before' && entry.target === 'heating-load-check' && byCard.has('heating-replacement')) {
+        // Bei eingeplantem Heizungstausch liefert die direkte Lock-in-Regel die klarere Kundenbotschaft.
+        return;
+      }
+      if (entry.relation === 'before' && sourceIndex > targetIndex) {
+        add('warning', entry, sourceItem, targetItem, baseText);
+      } else if (entry.relation === 'check' && targetIndex > sourceIndex) {
+        add('warning', entry, sourceItem, targetItem, baseText);
+      } else if (entry.relation === 'prepare' && sourceIndex > targetIndex) {
+        add('warning', entry, sourceItem, targetItem, baseText);
+      } else if (entry.relation === 'avoid_lock_in' && sourceIndex < targetIndex) {
+        add('warning', entry, sourceItem, targetItem, baseText);
+      } else if (entry.relation === 'together' && sourceIndex !== targetIndex) {
+        add('opportunity', entry, sourceItem, targetItem, baseText);
+      }
+    });
+
+    const strengthWeight = { important: 0, recommended: 1, hint: 2 };
+    checks.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'warning' ? -1 : 1)
+      || (strengthWeight[a.strength] ?? 9) - (strengthWeight[b.strength] ?? 9)
+      || a.stageIndex - b.stageIndex
+      || a.relationId.localeCompare(b.relationId));
+
+    const seen = new Set();
+    return checks.filter((entry) => {
+      if (!entry.text || seen.has(entry.text)) return false;
+      seen.add(entry.text);
+      return true;
+    }).slice(0, max);
   }
 
   function futureFitPlan(roadmap, data) {
@@ -361,6 +510,7 @@
     addCard,
     moveItem,
     removeItem,
+    planChecks,
     futureFitPlan,
   });
 })(window);

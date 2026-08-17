@@ -1,8 +1,8 @@
 {
   "schema": "energy-tools-roadmap-relations",
-  "version": "0.1",
+  "version": "0.2",
   "data_date": "2026-08-17",
-  "notice": "Transparente Beratungsregeln. Beziehungen sind Hinweise, keine verdeckte Optimierungs- oder Punktelogik.",
+  "notice": "Transparente Beratungsregeln. Automatisch eingeplante Kernkarten und zusätzliche Gesprächsimpulse werden getrennt; Beziehungen dienen dem Planungscheck, nicht einer verdeckten Optimierungs- oder Punktelogik.",
   "relationTypes": {
     "before": {
       "label": "vorher berücksichtigen"
@@ -313,6 +313,33 @@
       "strength": "important",
       "reason": "Ein Lift berührt Erschließung, Schachtbildung und Brandschutz.",
       "customerText": "Lift und Brandschutz gemeinsam planen."
+    },
+    {
+      "id": "heating-wall-lockin",
+      "source": "heating-replacement",
+      "relation": "avoid_lock_in",
+      "target": "envelope-wall",
+      "strength": "important",
+      "reason": "Wird die Wärmeversorgung vor einer späteren Fassaden-/Hüllsanierung erneuert, darf sie nicht nur auf den heutigen Wärmebedarf dimensioniert werden.",
+      "customerText": "Heizung vor späterer Hüllsanierung nicht nur auf den heutigen Bedarf dimensionieren."
+    },
+    {
+      "id": "heating-roof-lockin",
+      "source": "heating-replacement",
+      "relation": "avoid_lock_in",
+      "target": "envelope-roof",
+      "strength": "important",
+      "reason": "Wird die Wärmeversorgung vor einer späteren Dach-/Deckensanierung erneuert, verändert diese spätere Maßnahme den langfristigen Wärmebedarf.",
+      "customerText": "Heizung vor späterer Dach-/Deckensanierung auf den künftigen Bedarf abstimmen."
+    },
+    {
+      "id": "heating-windows-lockin",
+      "source": "heating-replacement",
+      "relation": "avoid_lock_in",
+      "target": "envelope-windows",
+      "strength": "recommended",
+      "reason": "Spätere Fenstersanierungen können die Heizlast verändern und sollten bei einer heute erneuerten Wärmeversorgung mitgedacht werden.",
+      "customerText": "Bei Heizungstausch spätere Fenstermaßnahmen in der Dimensionierung berücksichtigen."
     }
   ],
   "suggestionRules": [
@@ -321,205 +348,233 @@
       "trigger": {
         "upcomingWork": "roof"
       },
-      "targets": [
+      "reason": "Dacharbeiten schaffen ein starkes gemeinsames Zeitfenster.",
+      "priority": "recommended",
+      "routeTargets": [
         "envelope-roof",
-        "pv-own-use",
+        "pv-own-use"
+      ],
+      "additionalTargets": [
         "summer-protection",
         "component-horizon"
-      ],
-      "reason": "Dacharbeiten schaffen ein starkes gemeinsames Zeitfenster.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "up-facade",
       "trigger": {
         "upcomingWork": "facade"
       },
-      "targets": [
-        "envelope-wall",
+      "reason": "Fassadenarbeiten betreffen mehrere Anschlüsse und Komfortthemen.",
+      "priority": "recommended",
+      "routeTargets": [
+        "envelope-wall"
+      ],
+      "additionalTargets": [
         "envelope-windows",
         "shading",
         "thermal-bridges"
-      ],
-      "reason": "Fassadenarbeiten betreffen mehrere Anschlüsse und Komfortthemen.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "up-windows",
       "trigger": {
         "upcomingWork": "windows"
       },
-      "targets": [
+      "reason": "Fenster verändern Hülle, Lüftung und Komfort.",
+      "priority": "recommended",
+      "routeTargets": [
         "envelope-windows",
-        "ventilation-concept",
+        "ventilation-concept"
+      ],
+      "additionalTargets": [
         "sound-protection",
         "shading"
-      ],
-      "reason": "Fenster verändern Hülle, Lüftung und Komfort.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "up-heating",
       "trigger": {
         "upcomingWork": "heating"
       },
-      "targets": [
+      "reason": "Beim Heizungstausch muss das Gesamtsystem betrachtet werden.",
+      "priority": "recommended",
+      "routeTargets": [
         "heating-replacement",
+        "heating-load-check"
+      ],
+      "additionalTargets": [
         "low-temperature-check",
-        "heating-load-check",
         "hot-water",
         "heat-distribution"
-      ],
-      "reason": "Beim Heizungstausch muss das Gesamtsystem betrachtet werden.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "up-bathroom",
       "trigger": {
         "upcomingWork": "bathroom"
       },
-      "targets": [
-        "accessible-bath",
+      "reason": "Eine Badsanierung ist ein wichtiges Zukunftsfenster.",
+      "priority": "recommended",
+      "routeTargets": [
+        "accessible-bath"
+      ],
+      "additionalTargets": [
         "healthy-living",
         "service-reserves"
-      ],
-      "reason": "Eine Badsanierung ist ein wichtiges Zukunftsfenster.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "up-layout",
       "trigger": {
         "upcomingWork": "layout"
       },
-      "targets": [
-        "future-housing",
+      "reason": "Grundrissänderungen prägen die spätere Nutzbarkeit.",
+      "priority": "recommended",
+      "routeTargets": [
+        "future-housing"
+      ],
+      "additionalTargets": [
         "separable-home",
         "accessible-living",
         "lift-preparation",
         "fire-safety"
-      ],
-      "reason": "Grundrissänderungen prägen die spätere Nutzbarkeit.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "up-electrical",
       "trigger": {
         "upcomingWork": "electrical"
       },
-      "targets": [
-        "electrical-infrastructure",
+      "reason": "Elektroarbeiten können viele spätere Lösungen vorbereiten.",
+      "priority": "recommended",
+      "routeTargets": [
+        "electrical-infrastructure"
+      ],
+      "additionalTargets": [
         "pv-own-use",
         "e-mobility",
         "service-reserves"
-      ],
-      "reason": "Elektroarbeiten können viele spätere Lösungen vorbereiten.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "up-outdoor",
       "trigger": {
         "upcomingWork": "outdoor"
       },
-      "targets": [
+      "reason": "Außenarbeiten verbinden Zugang, Wasser und Aufenthaltsqualität.",
+      "priority": "recommended",
+      "routeTargets": [
+        "outdoor-quality"
+      ],
+      "additionalTargets": [
         "accessible-entry",
-        "outdoor-quality",
         "heavy-rain",
         "rainwater",
         "greening"
-      ],
-      "reason": "Außenarbeiten verbinden Zugang, Wasser und Aufenthaltsqualität.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "reason-full",
       "trigger": {
         "adviceReason": "full"
       },
-      "targets": [
-        "renovation-concept",
+      "reason": "Bei einer Gesamtsanierung zuerst die Gesamtstrategie festlegen.",
+      "priority": "recommended",
+      "routeTargets": [
+        "renovation-concept"
+      ],
+      "additionalTargets": [
         "energy-certificate",
         "funding-strategy",
         "construction-coordination",
         "ecological-renovation"
-      ],
-      "reason": "Bei einer Gesamtsanierung zuerst die Gesamtstrategie festlegen.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "reason-renewal",
       "trigger": {
         "adviceReason": "renewal"
       },
-      "targets": [
-        "component-horizon",
+      "reason": "Erneuerungsanlass und energetische Verbesserung zeitlich koppeln.",
+      "priority": "recommended",
+      "routeTargets": [
+        "component-horizon"
+      ],
+      "additionalTargets": [
         "funding-check",
         "construction-coordination"
-      ],
-      "reason": "Erneuerungsanlass und energetische Verbesserung zeitlich koppeln.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "reason-heating",
       "trigger": {
         "adviceReason": "heating"
       },
-      "targets": [
+      "reason": "Heizungstausch braucht Heizlast, Systemtemperatur und Warmwasser.",
+      "priority": "recommended",
+      "routeTargets": [
         "heating-replacement",
-        "heating-load-check",
+        "heating-load-check"
+      ],
+      "additionalTargets": [
         "low-temperature-check",
         "hot-water"
-      ],
-      "reason": "Heizungstausch braucht Heizlast, Systemtemperatur und Warmwasser.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "reason-costs",
       "trigger": {
         "adviceReason": "costs"
       },
-      "targets": [
-        "funding-check",
-        "operation-optimization",
-        "component-horizon"
-      ],
       "reason": "Kostenorientierung profitiert von guten Zeitfenstern und einfachen Betriebsmaßnahmen.",
-      "priority": "recommended"
+      "priority": "recommended",
+      "routeTargets": [
+        "funding-check",
+        "operation-optimization"
+      ],
+      "additionalTargets": [
+        "component-horizon"
+      ]
     },
     {
       "id": "reason-comfort",
       "trigger": {
         "adviceReason": "comfort"
       },
-      "targets": [
-        "healthy-living",
+      "reason": "Komfort umfasst Winter, Sommer, Luftqualität und Schall.",
+      "priority": "recommended",
+      "routeTargets": [
+        "healthy-living"
+      ],
+      "additionalTargets": [
         "summer-protection",
         "ventilation",
         "sound-protection"
-      ],
-      "reason": "Komfort umfasst Winter, Sommer, Luftqualität und Schall.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "fossil-heating",
       "trigger": {
         "fossilHeating": true
       },
-      "targets": [
+      "reason": "Das Zielbild benötigt eine fossilfreie Wärmeversorgung.",
+      "priority": "important",
+      "routeTargets": [
         "heating-replacement"
       ],
-      "reason": "Das Zielbild benötigt eine fossilfreie Wärmeversorgung.",
-      "priority": "important"
+      "additionalTargets": []
     },
     {
       "id": "no-pv",
       "trigger": {
         "pvState": "not-known-or-missing"
       },
-      "targets": [
+      "reason": "PV ist ein eigener Baustein von Zukunftsfit 2050.",
+      "priority": "recommended",
+      "routeTargets": [
         "pv-own-use"
       ],
-      "reason": "PV ist ein eigener Baustein von Zukunftsfit 2050.",
-      "priority": "recommended"
+      "additionalTargets": []
     },
     {
       "id": "old-building",
@@ -527,76 +582,82 @@
         "constructionYearBefore": 1995,
         "requiresMajorWork": true
       },
-      "targets": [
-        "pollutants"
-      ],
       "reason": "Bei älteren Gebäuden können bei größeren Eingriffen Schadstoffe relevant sein.",
-      "priority": "recommended"
+      "priority": "recommended",
+      "routeTargets": [],
+      "additionalTargets": [
+        "pollutants"
+      ]
     },
     {
       "id": "priority-comfort",
       "trigger": {
         "priority": "comfort"
       },
-      "targets": [
+      "reason": "Kundenpriorität Komfort & Gesundheit.",
+      "priority": "recommended",
+      "routeTargets": [],
+      "additionalTargets": [
         "healthy-living",
         "ventilation",
         "summer-protection"
-      ],
-      "reason": "Kundenpriorität Komfort & Gesundheit.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "priority-climate",
       "trigger": {
         "priority": "climate"
       },
-      "targets": [
+      "reason": "Kundenpriorität Klimaschutz.",
+      "priority": "recommended",
+      "routeTargets": [],
+      "additionalTargets": [
         "ecological-renovation",
         "pv-own-use",
         "heating-replacement"
-      ],
-      "reason": "Kundenpriorität Klimaschutz.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "priority-independence",
       "trigger": {
         "priority": "independence"
       },
-      "targets": [
+      "reason": "Kundenpriorität Autarkie & Sicherheit.",
+      "priority": "recommended",
+      "routeTargets": [],
+      "additionalTargets": [
         "pv-own-use",
         "heating-replacement",
         "electrical-infrastructure"
-      ],
-      "reason": "Kundenpriorität Unabhängigkeit.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "priority-value",
       "trigger": {
         "priority": "value"
       },
-      "targets": [
+      "reason": "Kundenpriorität Werterhalt.",
+      "priority": "recommended",
+      "routeTargets": [],
+      "additionalTargets": [
         "component-horizon",
         "future-housing",
         "circular-durable"
-      ],
-      "reason": "Kundenpriorität Werterhalt.",
-      "priority": "recommended"
+      ]
     },
     {
       "id": "priority-effort",
       "trigger": {
         "priority": "effort"
       },
-      "targets": [
+      "reason": "Kundenpriorität geringer Aufwand.",
+      "priority": "recommended",
+      "routeTargets": [],
+      "additionalTargets": [
         "operation-optimization",
         "funding-check",
         "documentation"
-      ],
-      "reason": "Kundenpriorität geringer Umsetzungsaufwand.",
-      "priority": "recommended"
+      ]
     }
   ]
 }

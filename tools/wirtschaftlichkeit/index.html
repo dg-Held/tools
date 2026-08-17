@@ -11,7 +11,7 @@
 <link href="../../shared/css/tokens.css?v=2" rel="stylesheet"/>
 <link href="../../shared/css/components.css?v=3" rel="stylesheet"/>
 <link href="../../shared/css/print.css" rel="stylesheet"/>
-<link href="wirtschaftlichkeit.css?v=5" rel="stylesheet"/>
+<link href="wirtschaftlichkeit.css?v=6" rel="stylesheet"/>
 </head>
 <body data-tool-mode="economics">
 <header class="site-header no-print">
@@ -78,11 +78,11 @@
 <fieldset><legend>Anlass</legend><div class="choice-row" id="reasonChoices">
 <button type="button" data-value="costs">Kosten senken</button><button type="button" data-value="renewal">Bauteil ohnehin sanieren</button><button type="button" data-value="heating">Heizung erneuern</button><button type="button" data-value="full">Gesamtsanierung</button><button type="button" data-value="comfort">Komfort</button><button type="button" data-value="open">noch offen</button>
 </div></fieldset>
-<fieldset><legend>Zeitraum</legend><div class="choice-row" id="timeChoices"><button type="button" data-value="now">jetzt</button><button type="button" data-value="1-3">1–3 Jahre</button><button type="button" data-value="3-10">3–10 Jahre</button><button type="button" data-value="later">langfristig</button></div></fieldset>
+<fieldset><legend>Zeitraum</legend><div class="choice-row" id="timeChoices"><button type="button" data-value="now">jetzt</button><button type="button" data-value="1-3">1–3 Jahre</button><button type="button" data-value="3-7">3–7 Jahre</button><button type="button" data-value="later">langfristig</button></div></fieldset>
 <fieldset><legend>Budget</legend><div class="choice-row" id="budgetChoices"><button type="button" data-value="lt25">&lt; 25 T€</button><button type="button" data-value="25-50">25–50 T€</button><button type="button" data-value="50-100">50–100 T€</button><button type="button" data-value="gt100">&gt; 100 T€</button><button type="button" data-value="open">offen</button></div></fieldset>
 </div>
 <div class="priorities-panel"><h3>Was ist Ihnen besonders wichtig?</h3><div class="priority-grid" id="priorityChoices">
-<button type="button" data-value="costs"><span>€</span>Kosten</button><button type="button" data-value="comfort"><span>♡</span>Komfort &amp; Gesundheit</button><button type="button" data-value="climate"><span>♻</span>Klimaschutz</button><button type="button" data-value="independence"><span>⚡</span>Unabhängigkeit</button><button type="button" data-value="value"><span>⌂</span>Werterhalt</button><button type="button" data-value="effort"><span>⚒</span>wenig Aufwand</button>
+<button type="button" data-value="costs"><span>€</span>Kosten</button><button type="button" data-value="comfort"><span>♡</span>Komfort &amp; Gesundheit</button><button type="button" data-value="climate"><span>♻</span>Klimaschutz</button><button type="button" data-value="independence"><span>⚡</span>Autarkie &amp; Sicherheit</button><button type="button" data-value="value"><span>⌂</span>Werterhalt</button><button type="button" data-value="effort"><span>⚒</span>geringer Aufwand</button>
 </div></div>
 <div class="future-fit-panel"><div><p class="eyebrow">Zielbild · Bestand</p><h3>Zukunftsfit 2050</h3><small>Wo steht das Gebäude heute?</small></div><div class="future-fit-track" id="futureFitTrack"></div></div>
 <div class="measure-heading"><div><h3>Was soll betrachtet werden?</h3><p id="measureSourceNote">Maßnahmen werden aus dem Projekt übernommen oder aus Gebäude und Baujahr vorbereitet.</p></div><div class="segmented-control" id="comparisonMode"><button class="is-selected" data-value="package" type="button">Als Paket</button><button data-value="single" type="button">Einzeln</button></div></div>
@@ -146,6 +146,6 @@
 <script src="../../shared/js/domain/energy-flow/energy-flow-core.js?v=4"></script>
 <script src="../../shared/js/domain/economics/energy-anchor-core.js?v=1"></script>
 <script src="../../shared/js/domain/economics/economics-core.js?v=2"></script>
-<script src="wirtschaftlichkeit.js?v=5"></script>
+<script src="wirtschaftlichkeit.js?v=6"></script>
 </body>
 </html>
