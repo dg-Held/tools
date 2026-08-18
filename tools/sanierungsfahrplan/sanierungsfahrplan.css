@@ -382,3 +382,86 @@
   .print-quality { background: var(--surface-muted); margin-bottom: 2.5mm; }
   .print-data-basis p { margin: .8mm 0 0; color: var(--text-muted); font-size: 6pt; line-height: 1.3; }
 }
+
+/* V0.3.1 · Linienfeinschliff + Datenstatus */
+.route-curve {
+  top: 1.55rem;
+  left: 2.55rem;
+  width: calc(100% - 5.1rem);
+  height: 3.95rem;
+}
+.route-data-legend {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  flex-wrap: wrap;
+  margin-top: .65rem;
+  color: var(--text-muted);
+  font-size: .76rem;
+}
+.route-legend-title { font-weight: 700; color: var(--text-dark); }
+.route-legend-item { display: inline-flex; align-items: center; gap: .28rem; }
+.route-item {
+  position: relative;
+}
+.route-item.has-status { padding-right: 1.65rem; }
+.route-item-status {
+  position: absolute;
+  right: .48rem;
+  top: .42rem;
+  font-style: normal;
+  font-weight: 800;
+  font-size: .84rem;
+  line-height: 1;
+}
+.route-item-status.is-calculated { color: var(--color-primary-dark); }
+.route-item-status.is-partial { color: color-mix(in srgb, var(--color-primary-dark) 65%, var(--text-muted)); }
+.route-item-status.is-open { color: var(--color-secondary); }
+.route-item--is-open { border-color: color-mix(in srgb, var(--color-secondary) 35%, var(--line)); background: linear-gradient(0deg, rgb(var(--color-secondary-soft-rgb) / .42), rgb(var(--white-rgb) / .96)); }
+.route-item--is-partial { border-color: color-mix(in srgb, var(--color-primary) 60%, var(--line)); background: linear-gradient(0deg, rgb(var(--color-primary-soft-rgb) / .58), var(--surface-muted)); }
+.route-item.is-selected.route-item--is-open,
+.route-item.is-selected.route-item--is-partial,
+.route-item.is-selected.route-item--is-calculated { box-shadow: inset 0 0 0 999px rgb(var(--color-primary-soft-rgb) / .72); }
+
+@media (max-width: 760px) {
+  .route-data-legend { margin-top: .45rem; }
+  .route-item.has-status { padding-right: 1.45rem; }
+}
+
+/* V0.3.1 · Einseitiger Ausdruck mit geschwungener Route */
+@media print {
+  .print-roadmap-page--single { break-before: auto; page-break-before: auto; }
+  .print-roadmap-title { margin: 0 0 2mm; }
+  .print-context-strip { margin-bottom: 2.4mm; }
+  .print-section-head h2 { margin: .3mm 0 1.3mm; font-size: 9.8pt; }
+  .print-route-overview { position: relative; margin: .8mm 0 2.2mm; padding-top: 3.2mm; }
+  .print-route-curve { display: block; width: 100%; height: 10.8mm; }
+  .print-route-stops { display: grid; grid-template-columns: 16mm repeat(3,1fr) 19mm; gap: 2mm; margin-top: -11.2mm; position: relative; z-index: 1; }
+  .print-route-stop { text-align: center; min-width: 0; }
+  .print-route-stop i { width: 6.4mm; height: 6.4mm; margin: 0 auto .7mm; display: block; border-radius: 50%; border: .9mm solid var(--color-primary); background: white; box-shadow: 0 0 0 .7mm rgba(var(--white-rgb) / .92); }
+  .print-route-stop:first-child i { border-color: var(--color-primary-dark); }
+  .print-route-stop--target i { width: 7.6mm; height: 7.6mm; border-color: var(--color-secondary); }
+  .print-route-stop span { display: block; font-size: 6.4pt; font-weight: 700; }
+  .print-route-stop small { display: block; color: var(--text-muted); font-size: 5.5pt; }
+  .print-route { gap: 1.8mm; margin: 0 0 2mm; }
+  .print-stage { min-height: 35mm; padding: 2.1mm 2.2mm; }
+  .print-stage h3 { font-size: 8pt; }
+  .print-stage ul { margin-top: 1.1mm; }
+  .print-stage li { margin-bottom: .55mm; font-size: 6.5pt; }
+  .print-stage-metrics { margin-top: 1.1mm; padding-top: .9mm; }
+  .print-stage-metrics span { font-size: 5.9pt; margin-top: .45mm; }
+  .print-future-fit-panel { margin: 0 0 1.8mm; padding: 2mm 2.4mm; }
+  .print-future-fit-panel h3 { font-size: 8.1pt; }
+  .print-roadmap-kpis { gap: 1.3mm; margin-bottom: 1.8mm; }
+  .print-roadmap-kpis > div { padding: 1.6mm; }
+  .print-roadmap-kpis strong { font-size: 8.4pt; }
+  .print-summary-grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 1.8mm; margin-bottom: 1.8mm; }
+  .print-priority-panel, .print-quality-inline { border: 1px solid var(--line); border-radius: 2.1mm; padding: 2.1mm 2.5mm; }
+  .print-priority-panel h3, .print-quality-inline h3 { margin: 0 0 1mm; color: var(--color-primary-dark); font-size: 7.8pt; }
+  .print-priority-panel p, .print-quality-inline li { font-size: 6.1pt; line-height: 1.28; }
+  .print-priority { margin-top: .9mm; }
+  .print-quality-inline { background: var(--surface-muted); margin-bottom: 1.6mm; }
+  .print-quality-inline ul { margin: 0; padding-left: 3.6mm; }
+  .print-quality-inline li { margin-bottom: .7mm; }
+  .print-page-note { padding-top: 1mm; font-size: 5.5pt; line-height: 1.25; }
+}

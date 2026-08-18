@@ -125,6 +125,42 @@
     return evaluation?.[kind]?.rows?.find((row) => row.stageId === stageId) ?? null;
   }
 
+  function routeDataStatus(viewMode, evaluation, stageId, item) {
+    const card = cardById(item?.cardId);
+    if (!card || viewMode === 'consulting') return null;
+    if (viewMode === 'effect') {
+      const row = evaluationStage(evaluation, 'energy', stageId);
+      if (!(card.type === 'measure' && card.energyRelevant)) return { symbol: '◌', css: 'is-open', label: 'offen' };
+      const unmodeled = new Set(row?.unmodeledCards ?? []);
+      if (unmodeled.has(card.title) || !row?.baseAvailable) return { symbol: '◌', css: 'is-open', label: 'offen' };
+      return { symbol: '●', css: 'is-calculated', label: 'berechnet' };
+    }
+    if (viewMode === 'cost') {
+      const row = evaluationStage(evaluation, 'costs', stageId);
+      const costRow = row?.cardRows?.find((entry) => entry.cardId === item.cardId);
+      if (!(card.type === 'measure' && card.economicsRelevant) || !costRow) return { symbol: '◌', css: 'is-open', label: 'offen' };
+      if (!costRow.known) return { symbol: '◌', css: 'is-open', label: 'offen' };
+      if (costRow.partial) return { symbol: '◐', css: 'is-partial', label: 'teilweise' };
+      return { symbol: '●', css: 'is-calculated', label: 'berechnet' };
+    }
+    return null;
+  }
+
+  function renderRouteLegend(viewMode) {
+    const host = $('routeLegend');
+    if (!host) return;
+    if (!['effect', 'cost'].includes(viewMode)) {
+      host.hidden = true;
+      host.innerHTML = '';
+      return;
+    }
+    host.hidden = false;
+    host.innerHTML = '<span class="route-legend-title">Legende</span>'
+      + '<span class="route-legend-item"><i class="route-item-status is-calculated">●</i> berechnet</span>'
+      + '<span class="route-legend-item"><i class="route-item-status is-partial">◐</i> teilweise</span>'
+      + '<span class="route-legend-item"><i class="route-item-status is-open">◌</i> offen</span>';
+  }
+
   async function loadJson(url) {
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Daten konnten nicht geladen werden (${response.status}).`);
@@ -339,12 +375,13 @@
           <small>${escapeHtml(stage.timing?.horizon ?? '')}</small>
           <div class="route-card-list">${shown.map((item) => {
             const card = cardById(item.cardId);
-            return `<button class="route-item ${selectedItemId === item.id ? 'is-selected' : ''}" draggable="true" data-route-item="${escapeHtml(item.id)}" title="Ziehen zum Verschieben oder anklicken für Details" type="button">${escapeHtml(card?.title ?? item.cardId)}</button>`;
+            const status = routeDataStatus(viewMode, evaluation, stage.id, item);
+            return `<button class="route-item ${selectedItemId === item.id ? 'is-selected' : ''} ${status ? `has-status route-item--${status.css}` : ''}" draggable="true" data-route-item="${escapeHtml(item.id)}" title="Ziehen zum Verschieben oder anklicken für Details" type="button">${escapeHtml(card?.title ?? item.cardId)}${status ? `<span class="route-item-status ${status.css}" aria-label="${escapeHtml(status.label)}" title="${escapeHtml(status.label)}">${status.symbol}</span>` : ''}</button>`;
           }).join('')}${stageItems.length > shown.length ? `<span class="route-more">+ ${stageItems.length - shown.length} weitere</span>` : ''}</div>
           ${routeMetricMarkup(viewMode, evaluation, stage.id)}
         </div>`;
       }).join('');
-      host.innerHTML = `<svg class="route-curve" aria-hidden="true" viewBox="0 0 1000 110" preserveAspectRatio="none"><defs><linearGradient id="roadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="M55 55 C155 32 245 78 335 55 S520 32 615 55 S800 78 945 55" fill="none" stroke="url(#roadmapRouteGradient)" stroke-width="5" stroke-linecap="round"/></svg><div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
+      host.innerHTML = `<svg class="route-curve" aria-hidden="true" viewBox="0 0 210.00005 13.229167" preserveAspectRatio="none"><defs><linearGradient id="roadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="m 189.01118,6.6145837 c -11.76575,0 -18.24319,-4.111143 -25.25014,-4.104143 -7.00695,0.0072 -12.01202,3.128999 -14.36966,4.104143 -2.35764,0.975144 -9.10234,4.1041423 -22.57278,4.1041423 -13.47081,0 -19.35904,-2.8545163 -22.78156,-4.1041423 -3.42252,-1.249626 -9.101453,-4.104143 -22.572263,-4.104143 -13.47081,0 -20.73536,3.48842 -22.57227,4.104143 -1.83691,0.615722 -7.36272,4.0969423 -14.36967,4.1041423 -7.00695,0.0072 -11.76821,-4.1041423 -23.53396,-4.1041423" fill="none" stroke="url(#roadmapRouteGradient)" stroke-width="1.05" stroke-linecap="round"/></svg><div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
       const quantitative = viewMode === 'effect'
         ? (evaluation.energy.available ? ' · Wirkung aktiv' : ' · Wirkung teilweise offen')
         : viewMode === 'cost'
@@ -363,6 +400,7 @@
       const stateClass = stage ? 'is-done' : 'is-needs';
       return `<div class="future-step ${stateClass}"><i>${stage ? (stage.order ?? '•') : '!'}</i><span>${escapeHtml(futureFitLabel(dimension))}</span><small>${stage ? escapeHtml(stage.timing?.horizon ?? stage.title) : 'offen'}</small></div>`;
     }).join('');
+    renderRouteLegend(viewMode);
   }
 
   function typeBadge(card) {
@@ -866,6 +904,10 @@
     }).join('')}</div>`;
   }
 
+  function printRouteOverviewMarkup(stages) {
+    return `<div class="print-route-overview"><svg class="print-route-curve" aria-hidden="true" viewBox="0 0 210.00005 13.229167" preserveAspectRatio="none"><defs><linearGradient id="printRoadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="m 189.01118,6.6145837 c -11.76575,0 -18.24319,-4.111143 -25.25014,-4.104143 -7.00695,0.0072 -12.01202,3.128999 -14.36966,4.104143 -2.35764,0.975144 -9.10234,4.1041423 -22.57278,4.1041423 -13.47081,0 -19.35904,-2.8545163 -22.78156,-4.1041423 -3.42252,-1.249626 -9.101453,-4.104143 -22.572263,-4.104143 -13.47081,0 -20.73536,3.48842 -22.57227,4.104143 -1.83691,0.615722 -7.36272,4.0969423 -14.36967,4.1041423 -7.00695,0.0072 -11.76821,-4.1041423 -23.53396,-4.1041423" fill="none" stroke="url(#printRoadmapRouteGradient)" stroke-width="1.05" stroke-linecap="round"/></svg><div class="print-route-stops"><div class="print-route-stop"><i></i><span>HEUTE</span><small>Bestand</small></div>${stages.map((stage) => `<div class="print-route-stop"><i></i><span>${escapeHtml(stage.title)}</span><small>${escapeHtml(stage.timing?.horizon ?? '')}</small></div>`).join('')}<div class="print-route-stop print-route-stop--target"><i></i><span>ZUKUNFTSFIT</span><small>2050</small></div></div></div>`;
+  }
+
   function printStageEffect(evaluation, stageId) {
     const energy = evaluationStage(evaluation, 'energy', stageId);
     const cost = evaluationStage(evaluation, 'costs', stageId);
@@ -910,30 +952,17 @@
     }
 
     $('roadmapPrintReport').innerHTML = `
-      <section class="print-roadmap-page print-roadmap-page--customer">
+      <section class="print-roadmap-page print-roadmap-page--single">
         <header class="print-roadmap-title"><p class="eyebrow">Sanierungsfahrplan · Beratung</p><h1>${escapeHtml(project.project?.title || 'Sanierungsfahrplan')}</h1><p>${escapeHtml(project.project?.addressLabel || 'Standort noch offen')}</p></header>
         <div class="print-context-strip"><div><span>Anlass</span><strong>${escapeHtml(REASON_LABEL[project.advice?.reason] ?? 'offen')}</strong></div><div><span>Zeitraum</span><strong>${escapeHtml(TIME_LABEL[project.advice?.timeHorizon] ?? 'offen')}</strong></div><div><span>Budget</span><strong>${escapeHtml(BUDGET_LABEL[project.advice?.budgetBand] ?? 'offen')}</strong></div><div><span>Schwerpunkte</span><strong>${escapeHtml(priorities)}</strong></div></div>
         <div class="print-section-head"><p class="eyebrow">Bestand → Etappen → Ziel</p><h2>Schritt für Schritt zu Zukunftsfit 2050</h2></div>
-        <div class="print-route-line"><span>HEUTE</span><i></i><b>ZUKUNFTSFIT 2050</b></div>
+        ${printRouteOverviewMarkup(stages)}
         <div class="print-route">${stages.map((stage) => `<section class="print-stage"><div class="print-stage-head"><h3>${escapeHtml(stage.title)}</h3><small>${escapeHtml(stage.timing?.horizon ?? '')}</small></div><ul>${itemsForStage(roadmap, stage.id).slice(0, 5).map((item) => `<li>${escapeHtml(cardById(item.cardId)?.title ?? item.cardId)}</li>`).join('')}${itemsForStage(roadmap, stage.id).length > 5 ? `<li class="print-more">+ ${itemsForStage(roadmap, stage.id).length - 5} weitere</li>` : ''}</ul>${printStageEffect(evaluation, stage.id)}</section>`).join('')}</div>
         <div class="print-future-fit-panel"><div><p class="eyebrow">Zielbild · Sanierung</p><h3>Zukunftsfit 2050</h3><small>Hülle → Technik → fossilfrei → PV</small></div>${printFutureFitMarkup(roadmap)}</div>
         ${kpis.length ? `<div class="print-roadmap-kpis">${kpis.join('')}</div>` : ''}
-        <div class="print-key-message"><span>Wichtigste Beratungsaussage</span><p>${escapeHtml(recommendation)}</p></div>
-        <footer class="print-page-note">Kosten, Förderung und Energiewirkung werden nur dort numerisch dargestellt, wo eine belastbare gemeinsame Datenbasis vorhanden ist. Offene Themen bleiben bewusst qualitativ.</footer>
-      </section>
-      <section class="print-roadmap-page print-roadmap-page--details">
-        <header class="print-details-title"><p class="eyebrow">Details zum Sanierungsfahrplan</p><h2>Etappen, Abhängigkeiten und Datenbasis</h2></header>
-        <table class="print-stage-table"><thead><tr><th>Etappe</th><th>Inhalt</th><th>Wirkung</th><th>Investition</th><th>Referenz-Erneuerung</th></tr></thead><tbody>${stages.map((stage) => {
-          const energy = evaluationStage(evaluation, 'energy', stage.id);
-          const cost = evaluationStage(evaluation, 'costs', stage.id);
-          const content = itemsForStage(roadmap, stage.id).map((item) => cardById(item.cardId)?.title ?? item.cardId).join(' · ') || '–';
-          const effect = energy?.available ? `${formatReduction(energy.savingsKwh, formatEnergy)}${energy.co2SavingsKg !== null ? ` / ${formatReduction(energy.co2SavingsKg, formatCo2)}` : ''}${energy.partial ? ' · teilweise' : ''}` : (energy?.unmodeledCards?.length ? 'qualitativ / noch offen' : '–');
-          const investment = cost?.available ? `${formatMoney(cost.fullInvestmentEur)}${cost.fundingEur > 0 ? ` / Rest ${formatMoney(cost.netInvestmentEur)}` : ''}${cost.partial ? ' · teilweise offen' : ''}` : '–';
-          return `<tr><td><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.timing?.horizon ?? '')}</small></td><td>${escapeHtml(content)}</td><td>${escapeHtml(effect)}</td><td>${escapeHtml(investment)}</td><td>${escapeHtml(printReferenceSummary(cost))}</td></tr>`;
-        }).join('')}</tbody></table>
-        <div class="print-detail-grid"><section><h3>Planungscheck</h3>${checks.length ? `<ul>${checks.map((entry) => `<li><strong>${entry.kind === 'warning' ? 'Wichtig prüfen:' : 'Synergie prüfen:'}</strong> ${escapeHtml(entry.text)}</li>`).join('')}</ul>` : '<p>Keine wesentlichen Reihenfolgekonflikte erkannt.</p>'}</section><section><h3>Mehr als Energie</h3>${priorityRows.length ? priorityRows.map((row) => `<div class="print-priority"><strong>${escapeHtml(row.title)}</strong><p>${escapeHtml(row.text)}</p></div>`).join('') : '<p>Kundenprioritäten noch offen.</p>'}</section></div>
-        <section class="print-quality"><h3>Aussagequalität &amp; Unsicherheiten</h3><ul>${(qualityNotes.length ? qualityNotes : ['Die wesentlichen quantitativen Angaben sind aus dem gemeinsamen Projektstand ableitbar; konkrete Angebote, Förderbedingungen und Bauteilzustände vor Umsetzung bestätigen.']).map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul></section>
-        <section class="print-data-basis"><h3>Datenbasis</h3><p>Energie: verbrauchsverankerte Hüllwirkung mit Energy-Flow-Core ${escapeHtml(global.EnergyFlowCore?.MODEL_VERSION ?? '–')} / Anchor ${escapeHtml(anchorCore?.MODEL_VERSION ?? '–')}. Kosten: zentrale EAT-Richtkosten ${escapeHtml(evaluationConfigs.renovationCosts?.data_date ?? '–')}. Referenz-Erneuerung: Zustand, letztes Erneuerungsjahr bzw. Gebäudealter und typische Nutzungsdauer; konkrete Termine haben Vorrang.</p><p>${escapeHtml(evaluation.energy?.note ?? '')} ${escapeHtml(evaluation.costs?.note ?? '')}</p></section>
+        <div class="print-summary-grid"><div class="print-key-message"><span>Wichtigste Beratungsaussage</span><p>${escapeHtml(recommendation)}</p></div><section class="print-priority-panel"><h3>Mehr als Energie</h3>${priorityRows.length ? priorityRows.map((row) => `<div class="print-priority"><strong>${escapeHtml(row.title)}</strong><p>${escapeHtml(row.text)}</p></div>`).join('') : '<p>Kundenprioritäten noch offen.</p>'}</section></div>
+        <section class="print-quality-inline"><h3>Aussagequalität &amp; Unsicherheiten</h3><ul>${(qualityNotes.length ? qualityNotes : ['Die wesentlichen quantitativen Angaben sind aus dem gemeinsamen Projektstand ableitbar; konkrete Angebote, Förderbedingungen und Bauteilzustände vor Umsetzung bestätigen.']).map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul></section>
+        <footer class="print-page-note"><strong>Datenbasis:</strong> Energie: verbrauchsverankerte Hüllwirkung mit Energy-Flow-Core ${escapeHtml(global.EnergyFlowCore?.MODEL_VERSION ?? '–')} / Anchor ${escapeHtml(anchorCore?.MODEL_VERSION ?? '–')}. Kosten: zentrale EAT-Richtkosten ${escapeHtml(evaluationConfigs.renovationCosts?.data_date ?? '–')}. Referenz-Erneuerung: Zustand, letztes Erneuerungsjahr bzw. Gebäudealter und typische Nutzungsdauer; konkrete Termine haben Vorrang. ${escapeHtml(evaluation.energy?.note ?? '')} ${escapeHtml(evaluation.costs?.note ?? '')}</footer>
       </section>`;
   }
 
