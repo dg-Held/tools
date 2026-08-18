@@ -1,6 +1,6 @@
 # Architektur und Datenmodell
 
-**Stand:** 17.08.2026
+**Stand:** 18.08.2026
 
 ## 1. Schichten
 
@@ -253,6 +253,19 @@ roadmap.updatedAt
 
 Ein Roadmap-Item referenziert `cardId` und – bei technischen Maßnahmen – vorhandene gemeinsame `linkedMeasureIds`. Kosten, Einsparungen, CO₂, Förderung und Referenz-Erneuerungen werden nicht als unabhängige Kopie im Fahrplan gespeichert, sondern aus den gemeinsamen Fachservices neu abgeleitet. Reine Oberflächenzustände liegen unter `modules.sanierungsfahrplan`.
 
+Ab V0.3 werden quantitative Fahrplanwerte ausschließlich **ephemer** aus gemeinsamen Kernen abgeleitet:
+
+```text
+shared/js/domain/energy-flow/project-energy-adapter.js
+shared/js/domain/economics/energy-anchor-core.js
+shared/js/domain/economics/renewal-horizon-core.js
+shared/js/domain/roadmap/roadmap-evaluation-core.js
+```
+
+Die Energiebewertung rechnet Etappen kumulativ neu. `Etappe 2` verwendet damit den Gebäudezustand **nach Etappe 1**; unabhängige Maßnahmeneinsparungen werden nicht addiert. Kosten werden nur für Karten mit belastbarer gemeinsamer Kostenbasis ausgewiesen; offene Karten werden nicht hochgerechnet. Ein konkreter Heizungstausch wird quantitativ erst einbezogen, wenn im gemeinsamen Wirtschaftlichkeitsergebnis ein Zielsystem hinterlegt ist.
+
+Der sichtbare Ansichtsmodus (`consulting`, `effect`, `cost`) liegt ausschließlich unter `modules.sanierungsfahrplan.ui.viewMode`. Er ist ein Bedienzustand und kein Fachwert. Karten-/Etappenentscheidungen liegen dagegen unter `roadmap.*` und bleiben toolübergreifendes Projektwissen.
+
 Zentrale Fahrplandaten:
 
 ```text
@@ -318,6 +331,8 @@ advice.budgetBand
 advice.budgetEur
 advice.priorities[]
 ```
+
+Gemeinsame sichtbare Semantik seit 18.08.2026: Zeitraum `3-7` wird in Wirtschaftlichkeit und Sanierungsfahrplan als **3–7 Jahre** verwendet; frühere gespeicherte `3-10`-Werte werden beim Laden auf `3-7` migriert. Die Prioritäts-IDs bleiben stabil (`costs`, `comfort`, `climate`, `independence`, `value`, `effort`); sichtbare Bezeichnungen sind toolübergreifend **Kosten · Komfort & Gesundheit · Klimaschutz · Autarkie & Sicherheit · Werterhalt · geringer Aufwand**.
 
 Gemeinsame wirtschaftliche Ebene:
 

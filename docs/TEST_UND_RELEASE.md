@@ -1,6 +1,6 @@
 # Test und Release
 
-**Stand:** 17.08.2026
+**Stand:** 18.08.2026
 
 ## Installation kleiner Austauschpakete
 
@@ -20,17 +20,27 @@
 - Adresse korrigieren und neues Projekt starten.
 - manuelle Werte bleiben vorrangig; Zurücksetzen stellt Automatik wieder her.
 
-### Sanierungsfahrplan V0.1
+### Sanierungsfahrplan V0.3.2 · Abnahmekandidat
 
-- direkte Seite `tools/sanierungsfahrplan/` ist `noindex,nofollow`; öffentliche Toolkarte bleibt `Geplant` ohne Link,
-- gemeinsamer Projektkopf, Adresse und bekannte Projektwerte werden übernommen,
-- ohne vorherige Toolberechnung kann aus wenigen Basiswerten + `Was steht ohnehin an?` ein Fahrplan vorbereitet werden,
-- automatische Erstansicht bleibt kompakt; Route zeigt nur Zeitraum und Kartentitel,
-- vollständiger Kartenkatalog ist eingeklappt und Karten können ergänzt/entfernt/zwischen Etappen verschoben werden,
-- `Maßnahme`, `Planungspunkt`, `Zukunftsthema` bleiben semantisch getrennt; Vorbereitungen sind Relationen,
-- Kundenprioritäten verändern nur Vorschlagsreihenfolge/Darstellung, nicht Fachwerte,
-- `measure-effects.json` wird von Bauteil & Sanierung und Sanierungsfahrplan als eine gemeinsame Zusatzwirkungsquelle verwendet,
-- `node tests/validate-roadmap-core.js` muss ohne Fehler bestehen.
+Pflichtprüfungen:
+
+- direkte Seite `tools/sanierungsfahrplan/` bleibt `noindex,nofollow`; öffentliche Toolkarte bleibt `Geplant` ohne Link,
+- gemeinsamer Projektkopf, Adresse und vorhandene Projektwerte werden übernommen; Start ohne vorherige Toolberechnung funktioniert,
+- alte Projekte mit `advice.timeHorizon = 3-10` werden beim Laden auf `3-7` migriert; Wirtschaftlichkeit und Sanierungsfahrplan zeigen dieselben Prioritätsbezeichnungen,
+- automatischer Erstvorschlag respektiert einen expliziten Kundenanlass (insbesondere `Heizung erneuern`) und ergänzt technische Vorprüfungen statt die gewünschte Maßnahme in eine späte Etappe zu verschieben,
+- Route zeigt maximal fünf Karten je Etappe; zusätzliche Vorschläge/Katalog bleiben außerhalb der Druckausgabe,
+- Drag & Drop zwischen Etappen und innerhalb einer Etappe funktioniert; `entfernen` verschiebt nach `Später zuordnen`,
+- Ansichten `Beratung / Wirkung / Kosten` verändern nur Darstellung, nicht die gespeicherte Fahrplanstruktur,
+- Wirkung wird kumulativ sequenziell gerechnet; Etappe 2 basiert auf Zustand nach Etappe 1; unabhängige Prozentwerte werden nicht addiert,
+- Kosten werden nur aus bekannten gemeinsamen Adaptern summiert; offene Karten werden nicht hochgerechnet,
+- Statussymbole sind visuell gleich groß und eindeutig: `● berechnet`, `◐ teilweise`, `◌ offen`; Kartenflächen bleiben neutral grau, nur aktive Karte türkis,
+- geschwungene Route schneidet im Web alle fünf Kreismittelpunkte auch nach Resize; mobile Ansicht wechselt auf die vertikale Route,
+- Planungscheck zeigt echte Reihenfolgekonflikte/verlorene Synergien und unterdrückt bereits sinnvoll gelöste Hinweise,
+- Zukunftsfit zeigt `Hülle / Technik / fossilfrei / PV` mit Etappenzeitraum bzw. `offen`,
+- einseitiger A4-Ausdruck enthält Route mit exakt deckungsgleichen Kreisen, Etappen, Zielbild, Kennwerte, Kernaussage, Mehr als Energie, Aussagequalität und kurze Datenbasis; keine zweite Detailseite,
+- `measure-effects.json` bleibt alleinige qualitative Wirkungsquelle,
+- `node tests/validate-roadmap-core.js` und `node tests/validate-roadmap-evaluation-core.js` müssen ohne Fehler bestehen,
+- vollständiger JS-Syntaxcheck, Cross-Tool-Kompatibilität und Release-Integrität müssen bestehen.
 
 ### Geometrie
 

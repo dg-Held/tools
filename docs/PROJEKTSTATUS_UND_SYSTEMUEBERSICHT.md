@@ -1,6 +1,6 @@
 # Projektstatus und Systemübersicht – Tools für Energieberatung
 
-**Stand:** 17.08.2026  
+**Stand:** 18.08.2026  
 **Zweck:** Verbindlicher Übergabestand für neue Chats und weitere Entwicklung.  
 **Pflegeregel:** Bei jedem Paket aktualisieren.
 
@@ -261,35 +261,40 @@ Haustür:
 - Energiewirkung = Anzahl × Fläche je Tür.
 - Kosten = Anzahl × Stückpreis.
 
-### Sanierungsfahrplan V0.1 · geplanter Direktlink-Pilot
+### Sanierungsfahrplan V0.3.2 · Abnahmekandidat im Direktlink-Pilot
 
-Status: erster funktionaler Pilotprototyp; auf der öffentlichen Toolübersicht als **Geplant** sichtbar, aber nicht verlinkt. Die direkte Pilotseite ist `noindex,nofollow`.
+Status: funktionaler Abnahmekandidat; auf der öffentlichen Toolübersicht weiterhin **Geplant** ohne Link, direkte Pilotseite `noindex,nofollow`.
 
-Grundsätze:
+Umgesetzt:
 
-- vollständig stand-alone nutzbar; vorherige Berechnungen sind keine Voraussetzung, vorhandene Projektwerte erhöhen nur Aussagequalität und ergänzen später Energie/CO₂/Wirtschaftlichkeit,
-- gleicher Projekt-/Adresskopf und dieselbe Adress-/TIRIS-Logik wie die bestehenden Werkzeuge,
-- minimaler Einstieg aus Projektbasis, `project.advice` und der neuen Kontextfrage **„Was steht ohnehin an?“**,
-- drei Kartentypen: **Maßnahme**, **Planungspunkt**, **Zukunftsthema**; Vorbereitungen sind Beziehungen und kein vierter Typ,
-- zentraler Kartenkatalog mit Themen zu Hülle, Technik, Heizungstausch, Warmwasser, PV/Strom, Förderung/Energieausweis, zukünftiger Wohnsituation, Barrierefreiheit/Lift, Wohngesundheit/Schadstoffen, ökologischem Sanieren, Sommerkomfort/Klimaanpassung, Sicherheit und Dokumentation,
-- automatische Vorschläge dienen als fachliche Erinnerungsstütze; die Beraterin kann den vollständigen eingeklappten Katalog jederzeit öffnen und weitere Karten hinzufügen,
-- Informationshierarchie gegen Überforderung: **Route = Zeitraum + Kartentitel**, Etappendetail = Gründe/Abhängigkeiten/Vorbereitung, Fachdetail = Energie/CO₂/Kosten/Referenz/Förderung/Methodik,
-- Hauptansicht zeigt eine starke Route **HEUTE → Etappen → ZUKUNFTSFIT 2050**; das Zielbild bleibt `Hülle → Technik → fossilfrei → PV`,
-- Kosten- und Wirkungsansicht sind im V0.1-Rohbau bewusst noch nicht aktiv; es wird kein paralleler Wirtschafts- oder Energierechner aufgebaut,
-- qualitative Zusatzwirkungen werden aus einer zentralen `measure-effects.json` gelesen und niemals zu einem Kundenscore summiert.
+- vollständig stand-alone nutzbar; gemeinsamer Projekt-/Adresskopf, Projektbasis, `project.advice` und `Was steht ohnehin an?`,
+- einheitliche Beratungstermine `jetzt / 1–3 Jahre / 3–7 Jahre / langfristig`; historische `3-10`-Werte werden auf `3-7` migriert,
+- einheitliche Kundenprioritäten **Kosten · Komfort & Gesundheit · Klimaschutz · Autarkie & Sicherheit · Werterhalt · geringer Aufwand**,
+- zentrale Kartenarten **Maßnahme / Planungspunkt / Zukunftsthema**, Drag & Drop, Reihenfolge innerhalb einer Etappe, `Später zuordnen` statt endgültigem Löschen,
+- automatische Erstbefüllung respektiert den Kundenanlass; fachliche Vorprüfungen werden daneben gestellt statt den Anlass zu verdrängen,
+- reduzierte Hauptgrafik **HEUTE → Etappen → ZUKUNFTSFIT 2050** mit maximal fünf Kartentiteln je Etappe und drei zusätzlichen Vorschlagkarten unter der Route,
+- Ansichten **Beratung / Wirkung / Kosten**; quantitative Ergebnisse werden nur aus gemeinsamen Fachkernen abgeleitet,
+- sequenzielle Energieberechnung je Etappe; keine Addition unabhängiger Prozentwerte,
+- gemeinsame Kosten-/Förder-/Erneuerungshorizont-Logik; offene Kostenpositionen werden nicht hochgerechnet,
+- Datenstatus auf Karten: **● berechnet / ◐ teilweise / ◌ offen**; Karten bleiben neutral grau, nur aktive Auswahl türkis,
+- **Planungscheck** zeigt nur relevante Konflikte/verlorene Synergien und bleibt ein Beratungsinstrument,
+- **Mehr als Energie** verschneidet qualitative Zusatzwirkungen mit den Kundenprioritäten ohne Punktescore,
+- einseitiger A4-Kundenausdruck mit Route, Etappen, Zukunftsfit, Kennwerten, Kernaussage, Mehr-als-Energie, Unsicherheiten und kompakter Datenbasis.
 
-Technischer Stand:
+Zentrale Laufzeitbausteine:
 
 ```text
 shared/js/domain/roadmap/roadmap-core.js
+shared/js/domain/roadmap/roadmap-evaluation-core.js
+shared/js/domain/energy-flow/project-energy-adapter.js
+shared/js/domain/economics/renewal-horizon-core.js
 shared/data/roadmap/cards.json
 shared/data/roadmap/relations.json
 shared/data/measures/measure-effects.json
 tools/sanierungsfahrplan/
-tests/validate-roadmap-core.js
 ```
 
-Der Roadmap-Core enthält Karten-/Etappenverwaltung, Vorschlagslogik und transparente Relationen. Die spätere Etappenrechnung muss kumulativ auf dem bereits sanierten Gebäudezustand erfolgen; unabhängige Prozentwerte dürfen nicht addiert werden.
+Noch vor V1.0 offen ist primär **Praxisabnahme und Politur**, nicht mehr die Grundarchitektur. Die Zeit-/Investitionsdarstellung kann nach V1.0 noch grafisch ausgebaut werden; Variantenvergleich mehrerer Gesamtstrategien und zusätzliche Haus-/Puzzlevisualisierung sind bewusst keine V1.0-Pflichtbestandteile.
 
 ## 6. Gemeinsame Fachkerne
 

@@ -141,6 +141,20 @@
   }
 
 
+  function migrateAdviceSemantics(project) {
+    project.advice = project.advice || {};
+    // Frühere Pilotstände verwendeten 3–10 Jahre. Seit Sanierungsfahrplan V0.2
+    // ist der gemeinsame sichtbare Zeitraum 3–7 Jahre. Die IDs der übrigen
+    // Prioritäten bleiben unverändert; nur die sichtbaren Bezeichnungen wurden
+    // toolübergreifend vereinheitlicht.
+    if (project.advice.timeHorizon === '3-10') project.advice.timeHorizon = '3-7';
+    project.metadata = {
+      ...(project.metadata || {}),
+      adviceSemantics: 'v1-2026-08-18',
+    };
+    return project;
+  }
+
   function migrateOpaqueExteriorWallSemantics(project) {
     const geometry = project.building?.geometry;
     if (!geometry) return project;
@@ -189,6 +203,7 @@
     let project = merge(model.emptyProject(), source);
     project = migrateFieldsDeep(project);
     project = migrateLegacyPaths(project);
+    project = migrateAdviceSemantics(project);
     project = migrateOpaqueExteriorWallSemantics(project);
     project.schema = 'energy-tools-project';
     project.schemaVersion = 2;

@@ -1,6 +1,6 @@
 # Methodik aller Tools
 
-**Stand:** 17.08.2026
+**Stand:** 18.08.2026
 
 ## Standortpass
 
@@ -618,58 +618,80 @@ Der gemeinsame Kern kann Anfangsinvestition, Wiederbeschaffung, Restwert, Entsor
 Die Standarddatei unterscheidet informative Normwerte und transparent gekennzeichnete Projekt-Fallbacks. Jeder Wert bleibt überschreibbar und benötigt Quelle, Status und Datenstand.
 
 
-## Sanierungsfahrplan V0.1 · Beratungs- und Orchestrierungslogik
+## Sanierungsfahrplan V0.3.2 · Abnahmekandidat
 
 ### Stand-alone-Einstieg
 
-Der Sanierungsfahrplan benötigt keine vorherige Berechnung. Vorhandene Projektdaten erhöhen die Aussagequalität und ergänzen in späteren Ausbaustufen Energie-, CO₂- und Wirtschaftlichkeitswerte, sind aber keine Voraussetzung für eine fachlich sinnvolle Sanierungsroute. Der Einstieg verwendet den gemeinsamen Projekt-/Adresskopf und übernimmt bekannte Werte. Offen sichtbar bleiben nur wenige Basisangaben; fehlende Details liegen eingeklappt.
+Der Sanierungsfahrplan benötigt keine vorherige Berechnung. Vorhandene Projektdaten erhöhen die Aussagequalität, ergänzen Energie-, CO₂- und Wirtschaftlichkeitswerte und werden nach der allgemeinen Datenpriorität `manuell/projektspezifisch > konkret/offiziell > abgeleitet > Fallback` verwendet. Der Einstieg nutzt denselben Projekt-/Adresskopf wie die übrigen Werkzeuge. Die zusätzliche Frage **„Was steht ohnehin an?“** wird unter `roadmap.context.upcomingWorks[]` als Zeitfenster gespeichert und ist ausdrücklich keine Maßnahme.
 
-Die zusätzliche Frage **„Was steht ohnehin an?“** wird unter `roadmap.context.upcomingWorks[]` als Zeitfenster gespeichert. Sie ist keine Maßnahme. Beispiel: `Bad steht an` kann `barrierearmes Bad` und `Wohngesundheit` als Gesprächsthemen vorschlagen.
+### Karten, Etappen und Vorschläge
 
-### Karten und Vorschläge
+Der zentrale Kartenkatalog unterscheidet **Maßnahme**, **Planungspunkt** und **Zukunftsthema**. `jetzt vorbereiten – später umsetzen` bleibt eine Relation und kein vierter Kartentyp. Vorschlagsregeln dürfen Anlass, vorhandene Projektdaten, ohnehin anstehende Arbeiten und Kundenprioritäten verwenden; sie verändern aber weder technische noch wirtschaftliche Fachwerte.
 
-Neben technischen **Maßnahmen** berücksichtigt der Fahrplan **Planungspunkte** und **Zukunftsthemen**. Damit werden Entscheidungen sichtbar, die heute wenig oder keine direkte Energieeinsparung bewirken, aber spätere Sanierungsschritte erleichtern oder Lock-in vermeiden können.
+Die Kundensicht bleibt bewusst reduziert:
 
-Vorschlagsregeln dürfen aus bekannten Projektwerten, ohnehin anstehenden Arbeiten, Anlass und Kundenprioritäten relevante Karten hervorheben. Kundenprioritäten beeinflussen ausschließlich Reihenfolge, Hinweise und Darstellung. Technische und wirtschaftliche Berechnungen bleiben unverändert. Es gibt keinen aufsummierten Punkte- oder Kundenscore.
+1. **Sanierungsroute:** Zeitraum + maximal fünf Kartentitel je Etappe,
+2. **Etappen im Detail:** Gründe, Abhängigkeiten, Vorbereitung und aktuell gewählte quantitative Ansicht,
+3. **Fachdetails:** Aussagequalität, Kosten-/Energiegrundlage und Methodik in eingeklappten Bereichen.
 
-Beziehungen sind transparent typisiert:
+Weitere vorgeschlagene Themen stehen direkt unter der Route; der vollständige Kartenkatalog bleibt eingeklappt und wird nicht gedruckt. Entfernte Karten wechseln zunächst nach **Später zuordnen** und bleiben damit ohne Datenverlust wieder verfügbar. Drag & Drop und die Schaltflächen `früher / später / entfernen` führen auf dieselbe gespeicherte Etappen-/Reihenfolgelogik.
 
-- `before`: vorher berücksichtigen,
-- `together`: sinnvoll gemeinsam,
-- `prepare`: jetzt für später vorbereiten,
-- `check`: gemeinsam prüfen,
-- `avoid_lock_in`: spätere Lösung nicht verbauen,
-- `suggest`: zusätzliches Beratungsthema ansprechen.
+### Kundenanlass und Reihenfolgelogik
 
-### Etappen und Informationsdichte
+Der ausdrücklich gewählte Anlass hat bei der Erstbefüllung hohe Priorität. Beispiel `Heizung erneuern`: Der Heizungstausch wird nicht automatisch in eine späte Etappe verschoben. Stattdessen werden notwendige Vorprüfungen bzw. Hinweise zu Heizlast, Hülle, Heizflächen und Vorlauftemperatur in die frühe Planung gezogen. Der **Planungscheck** zeigt nur auffällige Reihenfolgekonflikte oder verlorene Synergien; bereits sinnvoll gemeinsam angeordnete Karten werden dort nicht redundant wiederholt.
 
-Die Kundensicht ist bewusst mehrstufig:
+### Sequenzielle Energiewirkung
 
-1. **Sanierungsroute:** nur Zeitraum und Kartentitel,
-2. **Etappendetail:** wichtigste Begründung, Abhängigkeit/Vorbereitung und 1–2 qualitative Zusatzwirkungen,
-3. **Fachdetail:** Energie, CO₂, Kosten, Referenz-Erneuerung, Förderung, Aussagequalität und Methode.
-
-Der vollständige Kartenkatalog bleibt eingeklappt. Automatisch sichtbar werden nur wenige besonders relevante Themen; weitere Karten können durch die Beraterin ergänzt werden.
-
-### Energie- und Wirtschaftlichkeitslogik
-
-V0.1 ordnet Maßnahmen und Beratungsthemen zeitlich, ohne einen zweiten Energie- oder Wirtschaftlichkeitsrechner zu erstellen. Die Ansichten `Wirkung` und `Kosten` bleiben bis zur gemeinsamen Integration bewusst deaktiviert.
-
-Für die nächste Fachstufe gilt verbindlich:
+Die Ansicht **Wirkung** verwendet den gemeinsamen Energy-Flow-/Anchor-Weg. Jede Etappe wird auf dem bereits sanierten Zustand der vorherigen Etappen neu gerechnet:
 
 ```text
 Bestand
-→ Etappe 1 als Maßnahmenpaket neu rechnen
-→ Gebäudezustand nach Etappe 1
-→ Etappe 2 auf diesem Zustand neu rechnen
+→ Etappe 1 als Paket
+→ Zustand nach Etappe 1
+→ Etappe 2 auf diesem Zustand
+→ Zustand nach Etappe 2
 → ...
 ```
 
-Einzelersparnisse werden **nicht addiert**. Wirtschaftlichkeit verwendet den gemeinsamen Economics-Core einschließlich zeitlich korrekter Referenz-Erneuerungen. Typische Nutzungsdauern sind nur Orientierung; kundenseitig wird `voraussichtlicher Erneuerungshorizont` verwendet. Priorität: konkreter Termin > beobachteter Zustand > letztes Erneuerungsjahr + typische Nutzungsdauer > Gebäudealter-Fallback.
+Einzelersparnisse werden **nicht addiert**. Der reale Verbrauch bestimmt die Größenordnung, die Gebäudephysik die relative Wirkung. Heizungstausch wird quantitativ erst berücksichtigt, wenn ein konkretes Zielsystem im gemeinsamen Wirtschaftlichkeitsergebnis vorliegt. Karten ohne passenden quantitativen Adapter bleiben qualitativ.
 
-### Zusatzwirkungen
+### Kosten und Erneuerungshorizonte
 
-`shared/data/measures/measure-effects.json` ist die einzige zentrale qualitative Wirkungsquelle. `components` enthält detaillierte Bauteiltexte, `items` Kartenprofile entlang Komfort, Gesundheit, Klimaschutz, Unabhängigkeit, Werterhalt, Aufwand, Sommerkomfort, Ökologie und Resilienz. Die Profile dienen Gespräch und Darstellung, nicht der Veränderung von Energie-/Kostenrechnungen und nicht einem künstlichen Gesamtscore.
+Die Ansicht **Kosten** verwendet dieselben zentralen Richt-/Projektkosten und Referenzmodelle wie Wirtschaftlichkeit. Vollkosten, Förderung und Restinvestition werden nur dort angezeigt, wo eine belastbare gemeinsame Grundlage vorliegt; offene Karten werden nicht hochgerechnet. Referenz-Erneuerungen werden zeitlich behandelt und nicht pauschal sofort als Sowiesokosten abgezogen.
+
+Kundenseitiger Begriff ist **voraussichtlicher Erneuerungshorizont**. Priorität der Ableitung:
+
+```text
+konkreter Sanierungs-/Ersatztermin
+→ beobachteter Zustand
+→ letztes Erneuerungsjahr + typische Nutzungsdauer
+→ Gebäudealter-Fallback
+→ offen, wenn keine belastbare Grundlage vorliegt
+```
+
+Typische Nutzungsdauern sind Orientierung und kein technisches Ablaufdatum.
+
+### Datenstatus in Wirkung/Kosten
+
+Auf der Route bleibt die Kartenfläche neutral grau; nur die aktiv ausgewählte Karte ist türkis. Quantitative Datenverfügbarkeit wird ausschließlich durch ein kleines, einheitliches Statussymbol angezeigt:
+
+- **● türkis = berechnet**,
+- **◐ türkis/neutral = teilweise**,
+- **◌ berry = offen**.
+
+Die Legende verwendet dieselben grafischen Symbole. Der Datenstatus ist eine Darstellung des aktuell ableitbaren Fachstands und wird nicht separat als Fachwert gespeichert.
+
+### Zukunftsfit 2050
+
+Das Zielbild bleibt **Hülle → Technik → fossilfrei → PV** und verwendet dieselbe visuelle Logik wie Wirtschaftlichkeit. Im Fahrplan steht bei jeder Dimension der zugeordnete Etappen-/Zeithorizont; fehlt eine Einplanung, wird **offen** angezeigt. Das Zielbild wird nicht um Barrierefreiheit, Ökologie oder Wohngesundheit erweitert; diese erscheinen unter **Mehr als Energie** beziehungsweise als Karten, damit das energiefachliche Zielbild eindeutig bleibt.
+
+### Mehr als Energie
+
+`shared/data/measures/measure-effects.json` ist die einzige zentrale qualitative Wirkungsquelle. Die Kundenprioritäten **Kosten · Komfort & Gesundheit · Klimaschutz · Autarkie & Sicherheit · Werterhalt · geringer Aufwand** steuern nur Reihenfolge und Hervorhebung der Aussagen. Es gibt keinen aufsummierten Kundenscore.
+
+### Ausdruck V0.3.2
+
+Der Kundenausdruck ist bewusst auf **eine A4-Seite** reduziert. Enthalten sind Projekt-/Adresskopf, Kundenrahmen, geschwungene Sanierungsroute, Etappen mit vorhandener Wirkung/Investition, Zukunftsfit 2050, kompakte Gesamtkennwerte, wichtigste Beratungsaussage, **Mehr als Energie**, **Aussagequalität & Unsicherheiten** sowie ein kurzer Datenbasis-Hinweis. Der interne Planungscheck, zusätzliche vorgeschlagene Themen und der vollständige Kartenkatalog werden nicht gedruckt.
 
 ## Wirtschaftlichkeit V1.0 · Freigabestand
 

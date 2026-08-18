@@ -32,7 +32,7 @@
   const REASON_LABEL = { costs: 'Kosten senken', renewal: 'Bauteil ohnehin sanieren', heating: 'Heizung erneuern', full: 'Gesamtsanierung', comfort: 'Komfort', open: 'noch offen' };
   const TIME_LABEL = { now: 'jetzt', '1-3': '1–3 Jahre', '3-7': '3–7 Jahre', '3-10': '3–7 Jahre', later: 'langfristig' };
   const RELATION_LABEL = { before: 'vorher berücksichtigen', together: 'sinnvoll gemeinsam', prepare: 'jetzt vorbereiten', check: 'gemeinsam prüfen', avoid_lock_in: 'nicht verbauen', suggest: 'mitdenken' };
-  const EFFECT_LABEL = { comfort: 'Komfort', health: 'Wohngesundheit', climate: 'Klimaschutz', independence: 'Unabhängigkeit', value: 'Werterhalt', effort: 'Umsetzungsaufwand', summer: 'Sommerkomfort', ecology: 'Ökologie', resilience: 'Resilienz' };
+  const EFFECT_LABEL = { comfort: 'Komfort', health: 'Wohngesundheit', climate: 'Klimaschutz', independence: 'Autarkie & Sicherheit', value: 'Werterhalt', effort: 'geringer Aufwand', summer: 'Sommerkomfort', ecology: 'Ökologie', resilience: 'Resilienz' };
   const LEVEL_LABEL = { low: 'eher gering', medium: 'positiv', high: 'deutlich positiv', variable: 'objektabhängig' };
 
   let data = null;
@@ -130,18 +130,18 @@
     if (!card || viewMode === 'consulting') return null;
     if (viewMode === 'effect') {
       const row = evaluationStage(evaluation, 'energy', stageId);
-      if (!(card.type === 'measure' && card.energyRelevant)) return { symbol: '◌', css: 'is-open', label: 'offen' };
+      if (!(card.type === 'measure' && card.energyRelevant)) return { css: 'is-open', label: 'offen', textSymbol: '◌' };
       const unmodeled = new Set(row?.unmodeledCards ?? []);
-      if (unmodeled.has(card.title) || !row?.baseAvailable) return { symbol: '◌', css: 'is-open', label: 'offen' };
-      return { symbol: '●', css: 'is-calculated', label: 'berechnet' };
+      if (unmodeled.has(card.title) || !row?.baseAvailable) return { css: 'is-open', label: 'offen', textSymbol: '◌' };
+      return { css: 'is-calculated', label: 'berechnet', textSymbol: '●' };
     }
     if (viewMode === 'cost') {
       const row = evaluationStage(evaluation, 'costs', stageId);
       const costRow = row?.cardRows?.find((entry) => entry.cardId === item.cardId);
-      if (!(card.type === 'measure' && card.economicsRelevant) || !costRow) return { symbol: '◌', css: 'is-open', label: 'offen' };
-      if (!costRow.known) return { symbol: '◌', css: 'is-open', label: 'offen' };
-      if (costRow.partial) return { symbol: '◐', css: 'is-partial', label: 'teilweise' };
-      return { symbol: '●', css: 'is-calculated', label: 'berechnet' };
+      if (!(card.type === 'measure' && card.economicsRelevant) || !costRow) return { css: 'is-open', label: 'offen', textSymbol: '◌' };
+      if (!costRow.known) return { css: 'is-open', label: 'offen', textSymbol: '◌' };
+      if (costRow.partial) return { css: 'is-partial', label: 'teilweise', textSymbol: '◐' };
+      return { css: 'is-calculated', label: 'berechnet', textSymbol: '●' };
     }
     return null;
   }
@@ -156,9 +156,42 @@
     }
     host.hidden = false;
     host.innerHTML = '<span class="route-legend-title">Legende</span>'
-      + '<span class="route-legend-item"><i class="route-item-status is-calculated">●</i> berechnet</span>'
-      + '<span class="route-legend-item"><i class="route-item-status is-partial">◐</i> teilweise</span>'
-      + '<span class="route-legend-item"><i class="route-item-status is-open">◌</i> offen</span>';
+      + '<span class="route-legend-item"><i class="route-item-status is-calculated" aria-hidden="true"></i><span class="visually-hidden">● </span>berechnet</span>'
+      + '<span class="route-legend-item"><i class="route-item-status is-partial" aria-hidden="true"></i><span class="visually-hidden">◐ </span>teilweise</span>'
+      + '<span class="route-legend-item"><i class="route-item-status is-open" aria-hidden="true"></i><span class="visually-hidden">◌ </span>offen</span>';
+  }
+
+  function buildWavePath(points, amplitude = 18) {
+    if (!Array.isArray(points) || points.length < 2) return '';
+    let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const start = points[index];
+      const end = points[index + 1];
+      const dx = end.x - start.x;
+      const midpointX = start.x + dx / 2;
+      const direction = index % 2 === 0 ? 1 : -1;
+      const waveY = (start.y + end.y) / 2 + direction * Math.min(amplitude, Math.abs(dx) * .16);
+      const control = Math.abs(dx) * .17;
+      d += ` C ${(start.x + control).toFixed(2)} ${start.y.toFixed(2)} ${(midpointX - control).toFixed(2)} ${waveY.toFixed(2)} ${midpointX.toFixed(2)} ${waveY.toFixed(2)}`;
+      d += ` C ${(midpointX + control).toFixed(2)} ${waveY.toFixed(2)} ${(end.x - control).toFixed(2)} ${end.y.toFixed(2)} ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+    }
+    return d;
+  }
+
+  function updateRouteCurve(host = $('renovationRoute')) {
+    if (!host) return;
+    const svg = host.querySelector('.route-curve');
+    const path = svg?.querySelector('path');
+    const nodes = [...host.querySelectorAll('.route-node')];
+    if (!svg || !path || nodes.length < 2) return;
+    const hostRect = host.getBoundingClientRect();
+    if (!(hostRect.width > 0 && hostRect.height > 0)) return;
+    const points = nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return { x: rect.left - hostRect.left + rect.width / 2, y: rect.top - hostRect.top + rect.height / 2 };
+    });
+    svg.setAttribute('viewBox', `0 0 ${hostRect.width.toFixed(2)} ${hostRect.height.toFixed(2)}`);
+    path.setAttribute('d', buildWavePath(points, 22));
   }
 
   async function loadJson(url) {
@@ -376,12 +409,13 @@
           <div class="route-card-list">${shown.map((item) => {
             const card = cardById(item.cardId);
             const status = routeDataStatus(viewMode, evaluation, stage.id, item);
-            return `<button class="route-item ${selectedItemId === item.id ? 'is-selected' : ''} ${status ? `has-status route-item--${status.css}` : ''}" draggable="true" data-route-item="${escapeHtml(item.id)}" title="Ziehen zum Verschieben oder anklicken für Details" type="button">${escapeHtml(card?.title ?? item.cardId)}${status ? `<span class="route-item-status ${status.css}" aria-label="${escapeHtml(status.label)}" title="${escapeHtml(status.label)}">${status.symbol}</span>` : ''}</button>`;
+            return `<button class="route-item ${selectedItemId === item.id ? 'is-selected' : ''} ${status ? 'has-status' : ''}" draggable="true" data-route-item="${escapeHtml(item.id)}" title="Ziehen zum Verschieben oder anklicken für Details" type="button">${escapeHtml(card?.title ?? item.cardId)}${status ? `<span class="route-item-status ${status.css}" aria-label="${escapeHtml(status.label)}" title="${escapeHtml(status.label)}"><span class="visually-hidden">${status.textSymbol} ${escapeHtml(status.label)}</span></span>` : ''}</button>`;
           }).join('')}${stageItems.length > shown.length ? `<span class="route-more">+ ${stageItems.length - shown.length} weitere</span>` : ''}</div>
           ${routeMetricMarkup(viewMode, evaluation, stage.id)}
         </div>`;
       }).join('');
-      host.innerHTML = `<svg class="route-curve" aria-hidden="true" viewBox="0 0 210.00005 13.229167" preserveAspectRatio="none"><defs><linearGradient id="roadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="m 189.01118,6.6145837 c -11.76575,0 -18.24319,-4.111143 -25.25014,-4.104143 -7.00695,0.0072 -12.01202,3.128999 -14.36966,4.104143 -2.35764,0.975144 -9.10234,4.1041423 -22.57278,4.1041423 -13.47081,0 -19.35904,-2.8545163 -22.78156,-4.1041423 -3.42252,-1.249626 -9.101453,-4.104143 -22.572263,-4.104143 -13.47081,0 -20.73536,3.48842 -22.57227,4.104143 -1.83691,0.615722 -7.36272,4.0969423 -14.36967,4.1041423 -7.00695,0.0072 -11.76821,-4.1041423 -23.53396,-4.1041423" fill="none" stroke="url(#roadmapRouteGradient)" stroke-width="1.05" stroke-linecap="round"/></svg><div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
+      host.innerHTML = `<svg class="route-curve" aria-hidden="true" preserveAspectRatio="none"><defs><linearGradient id="roadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path fill="none" stroke="url(#roadmapRouteGradient)" stroke-width="5" stroke-linecap="round"/></svg><div class="route-end route-end--today"><div class="route-node"></div><strong>HEUTE</strong><small>Bestand</small></div>${stageMarkup}<div class="route-end route-end--target"><div class="route-node"></div><strong>ZUKUNFTSFIT</strong><small>2050</small></div>`;
+      requestAnimationFrame(() => updateRouteCurve(host));
       const quantitative = viewMode === 'effect'
         ? (evaluation.energy.available ? ' · Wirkung aktiv' : ' · Wirkung teilweise offen')
         : viewMode === 'cost'
@@ -905,7 +939,19 @@
   }
 
   function printRouteOverviewMarkup(stages) {
-    return `<div class="print-route-overview"><svg class="print-route-curve" aria-hidden="true" viewBox="0 0 210.00005 13.229167" preserveAspectRatio="none"><defs><linearGradient id="printRoadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="m 189.01118,6.6145837 c -11.76575,0 -18.24319,-4.111143 -25.25014,-4.104143 -7.00695,0.0072 -12.01202,3.128999 -14.36966,4.104143 -2.35764,0.975144 -9.10234,4.1041423 -22.57278,4.1041423 -13.47081,0 -19.35904,-2.8545163 -22.78156,-4.1041423 -3.42252,-1.249626 -9.101453,-4.104143 -22.572263,-4.104143 -13.47081,0 -20.73536,3.48842 -22.57227,4.104143 -1.83691,0.615722 -7.36272,4.0969423 -14.36967,4.1041423 -7.00695,0.0072 -11.76821,-4.1041423 -23.53396,-4.1041423" fill="none" stroke="url(#printRoadmapRouteGradient)" stroke-width="1.05" stroke-linecap="round"/></svg><div class="print-route-stops"><div class="print-route-stop"><i></i><span>HEUTE</span><small>Bestand</small></div>${stages.map((stage) => `<div class="print-route-stop"><i></i><span>${escapeHtml(stage.title)}</span><small>${escapeHtml(stage.timing?.horizon ?? '')}</small></div>`).join('')}<div class="print-route-stop print-route-stop--target"><i></i><span>ZUKUNFTSFIT</span><small>2050</small></div></div></div>`;
+    const labels = [{ title: 'HEUTE', timing: 'Bestand' }, ...stages.map((stage) => ({ title: stage.title, timing: stage.timing?.horizon ?? '' })), { title: 'ZUKUNFTSFIT', timing: '2050' }];
+    const width = 194;
+    const y = 7.5;
+    const points = labels.map((_, index) => ({ x: width * (.1 + index * .2), y }));
+    const path = buildWavePath(points, 4.3);
+    const circles = points.map((point, index) => {
+      const target = index === points.length - 1;
+      const first = index === 0;
+      const radius = target ? 4 : 3.3;
+      const stroke = target ? 'var(--color-secondary)' : first ? 'var(--color-primary-dark)' : 'var(--color-primary)';
+      return `<circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="${radius}" fill="white" stroke="${stroke}" stroke-width="1.15"/>`;
+    }).join('');
+    return `<div class="print-route-overview"><svg class="print-route-curve" aria-hidden="true" viewBox="0 0 ${width} 15" preserveAspectRatio="none"><defs><linearGradient id="printRoadmapRouteGradient" x1="0" x2="1"><stop offset="0%" stop-color="var(--color-primary-dark)"/><stop offset="38%" stop-color="var(--color-primary)"/><stop offset="72%" stop-color="var(--color-primary-light)"/><stop offset="100%" stop-color="var(--color-secondary)"/></linearGradient></defs><path d="${path}" fill="none" stroke="url(#printRoadmapRouteGradient)" stroke-width="1.05" stroke-linecap="round"/>${circles}</svg><div class="print-route-stops">${labels.map((label) => `<div class="print-route-stop"><span>${escapeHtml(label.title)}</span><small>${escapeHtml(label.timing)}</small></div>`).join('')}</div></div>`;
   }
 
   function printStageEffect(evaluation, stageId) {
@@ -975,6 +1021,7 @@
       $('prepareRoadmapButton').addEventListener('click', prepareRoadmap);
       $('printRoadmapBottomButton').addEventListener('click', () => { buildPrintReport(); global.dispatchEvent(new CustomEvent('energy-tools:prepare-print')); requestAnimationFrame(() => global.print()); });
       global.addEventListener('energy-tools:prepare-print', () => buildPrintReport());
+      global.addEventListener('resize', () => requestAnimationFrame(() => updateRouteCurve()));
       await initAddress();
       store.subscribe((project) => render(project));
       render(store.get());

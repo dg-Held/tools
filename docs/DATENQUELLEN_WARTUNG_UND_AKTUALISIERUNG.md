@@ -1,6 +1,6 @@
 # Datenquellen, Wartung und Aktualisierung
 
-**Stand:** 17.08.2026
+**Stand:** 18.08.2026
 
 ## 1. Quellenklassen
 
@@ -152,6 +152,8 @@ shared/data/building/existing-u-values.json
 ```
 
 `measure-effects.json` ist die **einzige zentrale Quelle für qualitative Zusatzwirkungen**. Sie enthält zwei getrennte Namensräume: `components` für bauteilspezifische Detailtexte (z. B. Winterkomfort/Feuchte) und `items` für qualitative Wirkungsprofile der Sanierungsfahrplan-Karten. Die Excel→JSON-Pipeline aktualisiert nur `components` und bewahrt `items`; dadurch entstehen keine parallelen Wirkungsdatensätze. Die Angaben verändern weder technische noch wirtschaftliche Berechnungen und werden nicht zu einem Kundenscore summiert.
+
+Für den Sanierungsfahrplan sind außerdem `shared/data/roadmap/cards.json` und `shared/data/roadmap/relations.json` zentrale Quellen. Karten-IDs sind stabil zu halten, weil `roadmap.items.*.cardId` darauf verweist. Relationen verwenden ausschließlich die dokumentierten Typen `before / together / prepare / check / avoid_lock_in / suggest`; neue Beziehungen benötigen Regressionstest und dokumentierte Beratungsbotschaft. Quantitative Energie- und Kostenwerte werden **nicht** in diesen Fahrplandateien dupliziert.
 
 Prüfungen nach Datenupdate:
 

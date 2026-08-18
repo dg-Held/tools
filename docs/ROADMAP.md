@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stand:** 17.08.2026
+**Stand:** 18.08.2026
 
 ## V1.0-Basis abgeschlossen · 11.08.2026
 
@@ -20,21 +20,26 @@ Die Praxisprüfung ist in den abgeschlossenen V1.0-Methodenstand eingeflossen. D
 
 Der Wert bleibt ausdrücklich ein Beratungs-Plausibilitätsmodell und keine Energieausweis- oder Norm-HWB-Berechnung. Zusätzliche reale Energieausweise können den Regressionssatz später erweitern. Eine methodische Änderung erfolgt erst in einer dokumentierten V1.x-Version und nur bei erkennbarem fachlichem Mehrwert.
 
-## Sanierungsfahrplan · V0.1 Pilotprototyp · 17.08.2026
+## Sanierungsfahrplan · V0.3.2 Abnahmekandidat · 18.08.2026
 
-Der erste Rohbau ist umgesetzt: gemeinsamer Projekt-/Adresseinstieg, minimale Projektbasis, `project.advice`, Kontext `Was steht ohnehin an?`, zentraler Kartenkatalog, Vorschlagsregeln, Etappenverwaltung, reduzierte Sanierungsroute, eingeklappter Gesamtkatalog sowie qualitative Zusatzwirkungen. Das Tool bleibt vorerst **Geplant**, nur per Direktlink erreichbar und `noindex,nofollow`.
+Die fachliche Grundarchitektur ist umgesetzt. Stand-alone-Einstieg, Kartenkatalog, Etappen, Drag & Drop, Kundenanlass, Planungscheck, Zukunftsfit, sequenzielle Energiewirkung, gemeinsame Kosten-/Erneuerungslogik, Datenstatus und einseitiger Kundenausdruck sind vorhanden. Das Tool bleibt bis zur Freigabe **Geplant**, nur per Direktlink erreichbar und `noindex,nofollow`.
 
-### Nächste Fach- und Integrationsschritte
+### Bis V1.0
 
-1. **Zukunftsfit 2050 zentralisieren:** bestehende Logik aus Wirtschaftlichkeit in einen gemeinsamen Future-Fit-Core überführen; Sanierungsfahrplan und Wirtschaftlichkeit dürfen keine getrennte Zielbildlogik pflegen.
-2. **Erneuerungshorizont zentralisieren:** konkrete Termine, Zustand, letztes Erneuerungsjahr + typische Nutzungsdauer und Gebäudealter-Fallback in einen gemeinsamen Service überführen.
-3. **Sequenzielle Energieintegration:** jede Etappe als Maßnahmenpaket auf dem Zustand nach der vorigen Etappe neu rechnen; keine Addition unabhängiger Prozentwerte.
-4. **Economics anbinden:** Vollkosten, zeitlich korrekte Referenz-Erneuerungen, Förderung, Restinvestition, wirtschaftlich zusätzliche Investition und Lebenszykluskosten aus dem bestehenden Economics-Core verwenden.
-5. **Zeit-/Investitionsgrafik:** Referenz-Erneuerungen neutral grau, energetische Verbesserung Türkis, Förderung Berry; Erklärung, warum eine Maßnahme in einer bestimmten Etappe sinnvoll ist.
-6. **Druck V0.x:** Seite 1 als stark reduzierte Kundenseite mit Route/Kernaussage; Seite 2 mit Etappen, Abhängigkeiten, Wirkungen, Unsicherheiten und Datenbasis.
-7. **Praxistest:** zuerst Beratungsablauf und Informationsdichte prüfen; erst danach Variantenvergleich mehrerer Gesamtstrategien und Freigabe V1.0.
+1. **Praxistest mit mehreren typischen Beratungsfällen:** u. a. Heizung zuerst, Hülle zuerst, ohnehin anstehendes Dach, Bad/Barrierefreiheit, Gebäudeteilung sowie sehr unvollständige Projektdaten.
+2. **Visuelle Abnahme:** Route, Statussymbole, mobile Darstellung und einseitiger PDF-Ausdruck bei kurzen und langen Kartentiteln.
+3. **Regelprüfung:** Planungscheck soll echte Konflikte hervorheben und bereits sichtbare/sinnvoll gelöste Synergien nicht wiederholen.
+4. **Datenstatusprüfung:** `berechnet / teilweise / offen` muss bei Wirkung und Kosten fachlich nachvollziehbar bleiben; offene Karten dürfen keine scheinpräzisen Summen erzeugen.
+5. **Releasecheck und Dokumentationsabschluss:** vollständige Syntax-/Regressionstests, Direktlink-/`noindex`-Status und zentrale Dokumentation.
 
-Nicht vorgesehen ist ein versteckter Optimierungsscore oder die Empfehlung `alles sofort`. Der Fahrplan soll nachvollziehbar zeigen, was jetzt nötig ist, was sinnvoll kombiniert wird, was warten kann, was vorbereitet werden sollte und welche heutige Entscheidung eine spätere Maßnahme nicht verbauen darf.
+### Bewusst nach V1.0
+
+- grafisch reichere Zeit-/Investitionsachse mit Referenz-Erneuerung grau, energetischer Verbesserung Türkis und Förderung Berry,
+- Variantenvergleich mehrerer Gesamtstrategien,
+- optionale Haus-/Puzzlevisualisierung als Zusatzansicht,
+- weitere objektspezifische Adapter für heute noch qualitative Technik-/Zukunftskarten.
+
+Nicht vorgesehen ist ein versteckter Optimierungsscore oder die Empfehlung `alles sofort`.
 
 ## Für die nächste V1.x-Version vorgemerkt
 
@@ -85,18 +90,9 @@ Das freigegebene Wirtschaftlichkeitstool setzt den vollständigen Beratungsablau
 
 V1.0 ist fachlich und technisch freigegeben: Kosten-/Referenzbasis und Erneuerungshorizonte sind zentralisiert, Zustände `gepflegt / altersgerecht / schadhaft` korrigieren die Automatik transparent, Wartung wird nur bei sinnvollen Defaults angesetzt, und PV bleibt ohne Ertragsadapter bewusst außerhalb der Lebenszykluskurve. Regelbasierte Förderengine, echte automatische Sensitivitätsläufe und PV-Ertrags-/Eigenverbrauchsadapter bleiben klar abgegrenzte Fachausbaustufen.
 
-### Sanierungsfahrplan
+### Sanierungsfahrplan · nach V1.0
 
-Leitgedanke für die Beratung: **„Ein Gebäude verursacht auch unabhängig vom Energieverbrauch langfristig Erhaltungsaufwand.“** Der Fahrplan soll diesen Erhaltungsaufwand sichtbar machen, ohne typische Nutzungsdauern als technisches Ablaufdatum darzustellen.
-
-- Maßnahmenkacheln,
-- jetzt / kurzfristig / mittelfristig / später,
-- Abhängigkeiten und Reihenfolgehinweise,
-- Kommentare,
-- kompakter Beratungsbericht,
-- Zustandslogik `gepflegt → leichte Instandsetzung`, `altersgerecht → Standardreferenz`, `schadhaft → größere Instandsetzung` als einfacher Beraterinnen-Override für Erneuerungshorizonte,
-- Werterhalt qualitativ als `positiv / deutlich positiv`, keine scheinpräzise Marktwertsteigerung,
-- Referenz-Erneuerungen, laufender Erhaltungsaufwand und energetische Verbesserungen auf einer gemeinsamen Zeitachse sichtbar machen.
+Nach Freigabe nur gezielte Erweiterungen: reichere Zeit-/Investitionsgrafik, Variantenvergleich, zusätzliche quantitative Fachadapter und optional eine Haus-/Puzzlevisualisierung. Die V1.0-Hauptansicht bleibt bewusst auf Route, Zielbild und Mehr-als-Energie reduziert.
 
 ## Grundsatz
 

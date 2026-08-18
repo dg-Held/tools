@@ -41,7 +41,7 @@
 
   const QUICK_DEFINITIONS = [
     ...projectEnergyAdapter.DEFAULT_ENVELOPE_DEFINITIONS,
-    { id: 'heating', componentId: 'heating', label: 'Heizung fossilfrei', systemCostId: 'heat_pump_air', manualOnly: true },
+    { id: 'heating', componentId: 'heating', label: 'Heizungstausch', systemCostId: 'heat_pump_air', manualOnly: true },
     { id: 'pv', componentId: 'pv', label: 'PV-Anlage', systemCostId: 'pv_standard', manualOnly: true, informational: true },
   ];
 
